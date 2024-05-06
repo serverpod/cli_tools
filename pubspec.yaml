@@ -1,0 +1,28 @@
+name: cli_tools
+version: 0.0.1 
+description: A collection of tools for building great command-line interfaces. 
+repository: https://github.com/serverpod/cli_tools
+homepage: https://serverpod.dev
+issue_tracker: https://github.com/serverpod/cli_tools/issues
+
+topics:
+  - cli
+  - tools
+  - command-line
+  - dart
+
+environment:
+  sdk: ^3.1.0
+
+dependencies:
+  args: ^2.5.0
+  ci: ^0.1.0
+  http: ^1.2.0
+  path: ^1.9.0
+  pub_api_client: ^2.7.0
+  pub_semver: ^2.1.4
+  super_string: ^1.0.3
+
+dev_dependencies:
+  test: ^1.24.0
+  serverpod_lints: ^1.2.6
