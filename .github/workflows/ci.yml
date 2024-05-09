@@ -1,0 +1,34 @@
+name: CLI Tools CI
+
+on:
+    push:
+        branches:
+            - main
+    pull_request:
+        branches:
+            - main
+
+jobs:
+    dart_format:
+        name: Dart format
+        runs-on: ubuntu-latest
+        steps:
+           - uses: actions/checkout@v4
+           - uses: dart-lang/setup-dart@v1.6.4
+           - name: Verify formatting
+             run: dart format --output=none --set-exit-if-changed .
+    dart_analyze:
+        name: Dart Analyze
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: dart-lang/setup-dart@v1.6.4
+            - run: dart pub get
+            - run: dart analyze --fatal-infos
+    dart_test:
+        name: Dart Test
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: dart-lang/setup-dart@v1.6.4
+            - run: dart test
