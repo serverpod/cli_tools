@@ -138,10 +138,17 @@ class BetterCommandRunner extends CommandRunner {
 
     try {
       await super.runCommand(topLevelResults);
-      if (topLevelResults.command == null) {
+      var command = topLevelResults.command;
+      if (command == null) {
         _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.help);
       } else {
-        _onAnalyticsEvent?.call(topLevelResults.command!.name!);
+        // Command name can only be null for top level results.
+        // But since we are taking the name of a command from the top level
+        // results there should always be a name specified.
+        assert(command.name != null, 'Command name should never be null.');
+        _onAnalyticsEvent?.call(
+          command.name ?? BetterCommandRunnerAnalyticsEvents.invalid,
+        );
       }
     } on UsageException catch (e) {
       _logError?.call(e.toString());
