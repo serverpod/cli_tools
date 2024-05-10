@@ -1,10 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:cli_tools/src/local_storage_manager/local_storage_manager_exceptions.dart';
 import 'package:path/path.dart' as p;
 
 /// An abstract class that provides methods for storing, fetching and removing
 /// json files from local storage.
+///
+/// Throws an [UnsupportedPlatformException] if the platform is not supported.
 abstract base class LocalStorageManager {
   /// Fetches the home directory of the current user.
   static Directory get homeDirectory {
@@ -15,7 +18,7 @@ abstract base class LocalStorageManager {
     } else if (Platform.isLinux || Platform.isMacOS) {
       return Directory(envVars['HOME']!);
     }
-    throw (Exception('Unsupported platform.'));
+    throw (UnsupportedPlatformException);
   }
 
   /// Removes a file from the local storage.
@@ -23,12 +26,11 @@ abstract base class LocalStorageManager {
   ///
   /// [fileName] The name of the file to remove.
   /// [localStoragePath] The path to the local storage directory.
-  /// [onError] A function that will be called if an error occurs. If not
-  /// provided an exception will be thrown.
+  ///
+  /// Throws a [DeleteException] if an error occurs during file deletion.
   static Future<void> removeFile({
     required String fileName,
     required String localStoragePath,
-    Function(Object e)? onError,
   }) async {
     var file = File(p.join(localStoragePath, fileName));
 
@@ -36,12 +38,8 @@ abstract base class LocalStorageManager {
 
     try {
       await file.delete();
-    } catch (e) {
-      if (onError != null) {
-        onError(e);
-      } else {
-        throw Exception('Failed to remove file. error: $e');
-      }
+    } catch (e, stackTrace) {
+      throw DeleteException(file, e, stackTrace);
     }
   }
 
@@ -51,30 +49,36 @@ abstract base class LocalStorageManager {
   /// [fileName] The name of the file to store.
   /// [json] The json data to store.
   /// [localStoragePath] The path to the local storage directory.
-  /// [onError] A function that will be called if an error occurs. If not
-  /// provided an exception will be thrown.
+  ///
+  /// Throws a [CreateException] if an error occurs during file creation.
+  /// Throws a [SerializationException] if an error occurs during serialization.
+  /// Throws a [WriteException] if an error occurs during file writing.
   static Future<void> storeJsonFile({
     required String fileName,
     required Map<String, dynamic> json,
     required String localStoragePath,
-    void Function(Object e)? onError,
   }) async {
     var file = File(p.join(localStoragePath, fileName));
 
-    try {
-      if (!file.existsSync()) {
+    if (!file.existsSync()) {
+      try {
         file.createSync(recursive: true);
+      } catch (e, stackTrace) {
+        throw CreateException(file, e, stackTrace);
       }
+    }
 
-      var jsonString = const JsonEncoder.withIndent('  ').convert(json);
+    String jsonString;
+    try {
+      jsonString = const JsonEncoder.withIndent('  ').convert(json);
+    } catch (e, stackTrace) {
+      throw SerializationException(json, e, stackTrace);
+    }
 
+    try {
       file.writeAsStringSync(jsonString);
-    } catch (e) {
-      if (onError != null) {
-        onError(e);
-      } else {
-        throw Exception('Failed to store json file. error: $e');
-      }
+    } catch (e, stackTrace) {
+      throw WriteException(file, e, stackTrace);
     }
   }
 
@@ -85,17 +89,13 @@ abstract base class LocalStorageManager {
   /// [fileName] The name of the file to fetch.
   /// [localStoragePath] The path to the local storage directory.
   /// [fromJson] A function that is used to deserialize the json data.
-  /// [onReadError] A function that will be called if an error occurs when
-  /// reading the file. If not provided, an exception will be thrown.
-  /// [onDeserializationError] A function that will be called if an error occurs
-  /// when deserializing the json data. If not provided, an exception will be
-  /// thrown.
+  ///
+  /// Throws a [ReadException] if an error occurs during file reading.
+  /// Throws a [DeserializationException] if an error occurs during deserialization.
   static Future<T?> tryFetchAndDeserializeJsonFile<T>({
     required String fileName,
     required String localStoragePath,
     required T Function(Map<String, dynamic> json) fromJson,
-    T? Function(Object e, File file)? onReadError,
-    T? Function(Object e, File file)? onDeserializationError,
   }) async {
     var file = File(p.join(localStoragePath, fileName));
 
@@ -104,22 +104,14 @@ abstract base class LocalStorageManager {
     dynamic json;
     try {
       json = jsonDecode(file.readAsStringSync());
-    } catch (e) {
-      if (onReadError != null) {
-        return onReadError(e, file);
-      } else {
-        throw Exception('Failed to read json file. error: $e');
-      }
+    } catch (e, stackTrace) {
+      throw ReadException(file, e, stackTrace);
     }
 
     try {
       return fromJson(json);
-    } catch (e) {
-      if (onDeserializationError != null) {
-        return onDeserializationError(e, file);
-      } else {
-        throw Exception('Failed to deserialize json file. error: $e');
-      }
+    } catch (e, stackTrace) {
+      throw DeserializationException(file, e, stackTrace);
     }
   }
 }
