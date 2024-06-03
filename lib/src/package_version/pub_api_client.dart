@@ -11,7 +11,6 @@ class PubApiClient {
   final Duration _requestTimeout;
 
   PubApiClient({
-    void Function(String error)? onError,
     http.Client? httpClient,
     requestTimeout = const Duration(seconds: 2),
   })  : _pubClient = PubClient(client: httpClient),
