@@ -7,7 +7,7 @@ class VoidLogger extends Logger {
   VoidLogger() : super(LogLevel.debug);
 
   @override
-  int? get wrapTextColumn => null;
+  int? get wrapTextColumn => 80;
 
   @override
   void debug(
