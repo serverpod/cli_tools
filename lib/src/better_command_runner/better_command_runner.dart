@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:cli_tools/src/better_command_runner/exit_exception.dart';
@@ -134,14 +136,9 @@ class BetterCommandRunner extends CommandRunner {
       _onAnalyticsEvent = null;
     }
 
-    await _onBeforeRunCommand?.call(this);
-
-    try {
-      await super.runCommand(topLevelResults);
+    unawaited(Future(() async {
       var command = topLevelResults.command;
-      if (command == null) {
-        _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.help);
-      } else {
+      if (command != null) {
         // Command name can only be null for top level results.
         // But since we are taking the name of a command from the top level
         // results there should always be a name specified.
@@ -149,7 +146,26 @@ class BetterCommandRunner extends CommandRunner {
         _onAnalyticsEvent?.call(
           command.name ?? BetterCommandRunnerAnalyticsEvents.invalid,
         );
+        return;
       }
+
+      // Checks if the command is valid (i.e. no unexpected arguments).
+      // If there are unexpected arguments this will trigger a [UsageException]
+      // which will be caught in the try catch around the super.runCommand call.
+      // Therefore, this ensures that the help event is not sent for
+      // commands that are invalid.
+      // Note that there are other scenarios that also trigger a [UsageException]
+      // so the try/catch statement can't be fully compensated for handled here.
+      var noUnexpectedArgs = topLevelResults.rest.isEmpty;
+      if (noUnexpectedArgs) {
+        _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.help);
+      }
+    }));
+
+    await _onBeforeRunCommand?.call(this);
+
+    try {
+      await super.runCommand(topLevelResults);
     } on UsageException catch (e) {
       _logError?.call(e.toString());
       _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.invalid);
