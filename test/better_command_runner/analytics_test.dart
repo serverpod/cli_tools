@@ -2,6 +2,8 @@ import 'package:args/command_runner.dart';
 import 'package:cli_tools/better_command_runner.dart';
 import 'package:test/test.dart';
 
+import '../test_utils.dart';
+
 class MockCommand extends Command {
   static String commandName = 'mock-command';
 
@@ -79,6 +81,8 @@ void main() {
       var args = ['--no-${BetterCommandRunnerFlags.analytics}'];
       await runner.run(args);
 
+      await flushEventQueue();
+
       expect(runner.analyticsEnabled(), isFalse);
     });
 
@@ -91,6 +95,8 @@ void main() {
       } catch (_) {
         // Ignore any exception
       }
+
+      await flushEventQueue();
 
       expect(events, hasLength(1));
       expect(events.first, equals('invalid'));
@@ -107,6 +113,8 @@ void main() {
         // Ignore any exception
       }
 
+      await flushEventQueue();
+
       expect(events, hasLength(1));
       expect(events.first, equals('invalid'));
     });
@@ -114,6 +122,8 @@ void main() {
     test('when running with no command then "help" analytics event is sent.',
         () async {
       await runner.run([]);
+
+      await flushEventQueue();
 
       expect(events, hasLength(1));
       expect(events.first, equals('help'));
@@ -123,6 +133,8 @@ void main() {
         'when running with only registered flag then "help" analytics event is sent.',
         () async {
       await runner.run(['--${BetterCommandRunnerFlags.analytics}']);
+
+      await flushEventQueue();
 
       expect(events, hasLength(1));
       expect(events.first, equals('help'));
@@ -150,6 +162,8 @@ void main() {
 
       await runner.run(args);
 
+      await flushEventQueue();
+
       expect(events, hasLength(1));
       expect(events.first, equals(MockCommand.commandName));
     });
@@ -160,6 +174,8 @@ void main() {
       var args = [MockCommand.commandName, '--name', 'serverpod'];
 
       await runner.run(args);
+
+      await flushEventQueue();
 
       expect(events, hasLength(1));
       expect(events.first, equals(MockCommand.commandName));
@@ -175,6 +191,8 @@ void main() {
       } catch (_) {
         // Ignore any exception
       }
+
+      await flushEventQueue();
 
       expect(events, hasLength(1));
       expect(events.first, equals('invalid'));
