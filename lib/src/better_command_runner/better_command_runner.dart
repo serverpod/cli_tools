@@ -154,6 +154,8 @@ class BetterCommandRunner extends CommandRunner {
       // which will be caught in the try catch around the super.runCommand call.
       // Therefore, this ensures that the help event is not sent for
       // commands that are invalid.
+      // Note that there are other scenarios that also trigger a [UsageException]
+      // so the try/catch statement can't be fully compensated for handled here.
       var noUnexpectedArgs = topLevelResults.rest.isEmpty;
       if (noUnexpectedArgs) {
         _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.help);
