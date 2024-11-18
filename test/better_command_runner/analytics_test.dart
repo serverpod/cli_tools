@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:args/command_runner.dart';
 import 'package:cli_tools/better_command_runner.dart';
 import 'package:test/test.dart';
@@ -17,6 +19,31 @@ class MockCommand extends Command {
   String get name => commandName;
 
   MockCommand() {
+    argParser.addOption(
+      'name',
+      defaultsTo: 'serverpod',
+      allowed: <String>['serverpod'],
+    );
+  }
+}
+
+class CompletableMockCommand extends Command {
+  static String commandName = 'completable-mock-command';
+
+  @override
+  String get description => 'Mock command used to test when process hangs';
+
+  Completer<void> completer = Completer<void>();
+
+  @override
+  void run() async {
+    await completer.future;
+  }
+
+  @override
+  String get name => commandName;
+
+  CompletableMockCommand() {
     argParser.addOption(
       'name',
       defaultsTo: 'serverpod',
@@ -139,6 +166,26 @@ void main() {
       expect(events, hasLength(1));
       expect(events.first, equals('help'));
     });
+
+    test('when running with help command then "help" analytics event is sent.',
+        () async {
+      await runner.run(['help']);
+
+      await flushEventQueue();
+
+      expect(events, hasLength(1));
+      expect(events.first, equals('help'));
+    });
+
+    test('when running with help flag then "help" analytics event is sent.',
+        () async {
+      await runner.run(['--help']);
+
+      await flushEventQueue();
+
+      expect(events, hasLength(1));
+      expect(events.first, equals('help'));
+    });
   });
 
   group('Given runner with registered command and analytics enabled', () {
@@ -196,6 +243,71 @@ void main() {
 
       expect(events, hasLength(1));
       expect(events.first, equals('invalid'));
+    });
+  });
+
+  group('Given runner with registered command and analytics enabled', () {
+    List<String> events = [];
+    late CompletableMockCommand command;
+    setUp(() {
+      command = CompletableMockCommand();
+      runner = BetterCommandRunner(
+        'test',
+        'this is a test cli',
+        onAnalyticsEvent: (event) => events.add(event),
+      )..addCommand(command);
+      assert(runner.analyticsEnabled());
+    });
+
+    tearDown(() {
+      events = [];
+    });
+
+    test(
+        'when running with registered command that hangs then command name is sent',
+        () async {
+      var args = [CompletableMockCommand.commandName];
+
+      unawaited(runner.run(args));
+
+      await flushEventQueue();
+
+      expect(events, hasLength(1));
+      expect(events.first, equals(CompletableMockCommand.commandName));
+
+      command.completer.complete();
+    });
+
+    test(
+        'when running with registered command that hangs and option then command name is sent,',
+        () async {
+      var args = [CompletableMockCommand.commandName, '--name', 'serverpod'];
+
+      unawaited(runner.run(args));
+
+      await flushEventQueue();
+
+      expect(events, hasLength(1));
+      expect(events.first, equals(CompletableMockCommand.commandName));
+
+      command.completer.complete();
+    });
+
+    test(
+        'when running with registered command that hangs but invalid option then "invalid" analytics event is sent,',
+        () async {
+      var args = [CompletableMockCommand.commandName, '--name', 'invalid'];
+
+      unawaited(runner.run(args).catchError((_) {
+        // Ignore parse error
+      }));
+
+      await flushEventQueue();
+
+      expect(events, hasLength(1));
+      expect(events.first, equals('invalid'));
+
+      command.completer.complete();
     });
   });
 }
