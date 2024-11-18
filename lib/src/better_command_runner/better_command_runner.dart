@@ -149,6 +149,11 @@ class BetterCommandRunner extends CommandRunner {
         return;
       }
 
+      // Checks if the command is valid (i.e. no unexpected arguments).
+      // If there are unexpected arguments this will trigger a [UsageException]
+      // which will be caught in the try catch around the super.runCommand call.
+      // Therefore, this ensures that the help event is not sent for
+      // commands that are invalid.
       var noUnexpectedArgs = topLevelResults.rest.isEmpty;
       if (noUnexpectedArgs) {
         _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.help);
