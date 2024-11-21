@@ -1,3 +1,8 @@
+## 0.1.1
+
+- fix: Report analytics event before running command.
+- feat: Add documentation generator helper.
+
 ## 0.1.0
 
 - feat: Introduce BetterCommand class to simplify command creation.
