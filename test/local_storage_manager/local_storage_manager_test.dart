@@ -62,7 +62,7 @@ void main() {
   });
 
   test(
-      'Given a json serialization error '
+      'Given a json object with non compatible values '
       'when calling storeJsonFile '
       'then it throws SerializationException', () async {
     var fileName = 'test.json';
@@ -114,7 +114,7 @@ void main() {
   });
 
   test(
-      'Given a json deserialization error '
+      'Given a malformed json file '
       'when calling tryFetchAndDeserializeJsonFile '
       'then it throws DeserializationException', () async {
     var fileName = 'invalid.json';
@@ -130,6 +130,25 @@ void main() {
         fromJson: (json) => json,
       ),
       throwsA(isA<DeserializationException>()),
+    );
+  });
+
+  test(
+      'Given a corrupt file '
+      'when calling tryFetchAndDeserializeJsonFile '
+      'then it throws ReadException', () async {
+    var fileName = 'invalid.json';
+    var file = File(p.join(localStoragePath, fileName));
+    file.writeAsBytesSync([0xC3, 0x28]);
+
+    expect(
+      () => LocalStorageManager.tryFetchAndDeserializeJsonFile<
+          Map<String, dynamic>>(
+        fileName: fileName,
+        localStoragePath: localStoragePath,
+        fromJson: (json) => json,
+      ),
+      throwsA(isA<ReadException>()),
     );
   });
 }
