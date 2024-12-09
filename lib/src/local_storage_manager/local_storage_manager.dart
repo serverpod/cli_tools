@@ -101,15 +101,15 @@ abstract base class LocalStorageManager {
 
     if (!file.existsSync()) return null;
 
-    dynamic json;
+    String fileContent;
     try {
-      json = jsonDecode(file.readAsStringSync());
+      fileContent = file.readAsStringSync();
     } catch (e, stackTrace) {
       throw ReadException(file, e, stackTrace);
     }
 
     try {
-      return fromJson(json);
+      return fromJson(jsonDecode(fileContent));
     } catch (e, stackTrace) {
       throw DeserializationException(file, e, stackTrace);
     }
