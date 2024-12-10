@@ -1,3 +1,7 @@
+## 0.1.2
+
+- fix: Don't return ReadException for failed json parsing.
+
 ## 0.1.1
 
 - fix: Report analytics event before running command.
