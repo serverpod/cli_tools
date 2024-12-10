@@ -132,7 +132,7 @@ class BetterCommandRunner extends CommandRunner {
     );
 
     if (argParser.options.containsKey(BetterCommandRunnerFlags.analytics) &&
-        !topLevelResults[BetterCommandRunnerFlags.analytics]) {
+        !topLevelResults.flag(BetterCommandRunnerFlags.analytics)) {
       _onAnalyticsEvent = null;
     }
 

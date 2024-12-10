@@ -1,5 +1,3 @@
-library logger;
-
 export 'src/logger/logger.dart';
 export 'src/logger/loggers/std_out_logger.dart';
 export 'src/logger/loggers/void_logger.dart';
