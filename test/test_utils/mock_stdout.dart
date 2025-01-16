@@ -57,7 +57,11 @@ class MockStdout implements Stdout {
 
   @override
   void write(Object? object) {
-    _buffer.write(object);
+    if (object.toString() == '\x1B[2J\x1B[H') {
+      _buffer.clear();
+    } else {
+      _buffer.write(object);
+    }
   }
 
   @override
