@@ -8,8 +8,8 @@ void main() {
   var logger = StdOutLogger(LogLevel.debug);
 
   test(
-      'Given empty standard out '
-      'when calling confirm with valid input "yes" '
+      'Given confirm prompt '
+      'when providing valid input "yes" '
       'then should return true', () async {
     late Future<bool> result;
     await collectOutput(
@@ -29,8 +29,8 @@ void main() {
   });
 
   test(
-      'Given empty standard out '
-      'when calling confirm with valid input "y" '
+      'Given confirm prompt '
+      'when providing valid input "y" '
       'then should return true', () async {
     late Future<bool> result;
     await collectOutput(
@@ -50,8 +50,8 @@ void main() {
   });
 
   test(
-      'Given empty standard out '
-      'when calling confirm with valid input capital "Y" '
+      'Given confirm prompt '
+      'when providing valid input capital "Y" '
       'then should return true', () async {
     late Future<bool> result;
     await collectOutput(
@@ -71,8 +71,8 @@ void main() {
   });
 
   test(
-      'Given empty standard out '
-      'when calling confirm with valid input "no" '
+      'Given confirm prompt '
+      'when providing valid input "no" '
       'then should return false', () async {
     late Future<bool> result;
     await collectOutput(
@@ -92,8 +92,8 @@ void main() {
   });
 
   test(
-      'Given empty standard out '
-      'when calling confirm with valid input "n" '
+      'Given confirm prompt '
+      'when providing valid input "n" '
       'then should return false', () async {
     late Future<bool> result;
     await collectOutput(
@@ -113,8 +113,8 @@ void main() {
   });
 
   test(
-      'Given empty standard out '
-      'when calling confirm with valid input capital "N" '
+      'Given confirm prompt '
+      'when providing valid input capital "N" '
       'then should return false', () async {
     late Future<bool> result;
     await collectOutput(
@@ -134,8 +134,8 @@ void main() {
   });
 
   test(
-      'Given empty standard out '
-      'when calling confirm with invalid input "invalid" and then valid input "yes" '
+      'Given confirm prompt '
+      'when providing invalid input "invalid" and then valid input "yes" '
       'then should prompt again and return true', () async {
     late Future<bool> result;
     var (:stdout, :stderr, :stdin) = await collectOutput(
@@ -162,8 +162,8 @@ void main() {
   });
 
   test(
-      'Given empty standard out '
-      'when calling confirm with empty input with default value false '
+      'Given confirm prompt '
+      'when providing empty input with default value false '
       'then should return false', () async {
     late bool result;
     await collectOutput(
@@ -184,8 +184,8 @@ void main() {
   });
 
   test(
-      'Given empty standard out '
-      'when calling confirm with empty input with default value true '
+      'Given confirm prompt '
+      'when providing empty input with default value true '
       'then should return true', () async {
     late Future<bool> result;
     await collectOutput(
@@ -206,8 +206,8 @@ void main() {
   });
 
   test(
-      'Given empty standard out '
-      'when calling confirm with empty input and then "yes" without default value '
+      'Given confirm prompt '
+      'when providing empty input and then "yes" without default value '
       'then should prompt again and return true', () async {
     late Future<bool> result;
     var (:stdout, :stderr, :stdin) = await collectOutput(
@@ -233,8 +233,8 @@ void main() {
   });
 
   test(
-      'Given empty standard out '
-      'when calling confirm without default value '
+      'Given confirm prompt '
+      'when providing no default value '
       'then should prompt with lowercase "y" and "n"', () async {
     var (:stdout, :stderr, :stdin) = await collectOutput(
       stdinLines: ['yes'],
@@ -250,8 +250,8 @@ void main() {
   });
 
   test(
-      'Given empty standard out '
-      'when calling confirm with default value true '
+      'Given confirm prompt '
+      'when providing default value true '
       'then should prompt with uppercase "Y" and lowercase "n"', () async {
     var (:stdout, :stderr, :stdin) = await collectOutput(
       stdinLines: ['yes'],
@@ -268,8 +268,8 @@ void main() {
   });
 
   test(
-      'Given empty standard out '
-      'when calling confirm with default value true '
+      'Given confirm prompt '
+      'when providing default value false '
       'then should prompt with lowercase "y" and uppercase "N"', () async {
     var (:stdout, :stderr, :stdin) = await collectOutput(
       stdinLines: ['yes'],
