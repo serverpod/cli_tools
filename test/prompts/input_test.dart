@@ -9,11 +9,11 @@ void main() {
 
   test(
       'Given input prompt '
-      'when providing valid input "hello" '
-      'then should return "hello"', () async {
+      'when providing valid input "HelloWorld" '
+      'then should return the input', () async {
     late Future<String> result;
     await collectOutput(
-      stdinLines: ['hello'],
+      stdinLines: ['HelloWorld'],
       () {
         result = input(
           'Enter something',
@@ -24,7 +24,7 @@ void main() {
 
     await expectLater(
       result,
-      completion('hello'),
+      completion('HelloWorld'),
     );
   });
 
@@ -68,27 +68,6 @@ void main() {
     await expectLater(
       result,
       completion(''),
-    );
-  });
-
-  test(
-      'Given input prompt '
-      'when providing valid input "TEST" '
-      'then should return "TEST"', () async {
-    late Future<String> result;
-    await collectOutput(
-      stdinLines: ['TEST'],
-      () {
-        result = input(
-          'Enter something',
-          logger: logger,
-        );
-      },
-    );
-
-    await expectLater(
-      result,
-      completion('TEST'),
     );
   });
 
