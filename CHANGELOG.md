@@ -1,3 +1,7 @@
+## 0.1.3
+
+- feat: Add prompts module with confirm, select, multiselect and input components.
+
 ## 0.1.2
 
 - fix: Don't return ReadException for failed json parsing.
