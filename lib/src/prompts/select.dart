@@ -3,34 +3,41 @@ import 'dart:io';
 import 'package:cli_tools/cli_tools.dart';
 import 'package:cli_tools/src/prompts/key_codes.dart';
 
-Future<List<String>> select(
-  String message, {
-  required List<String> options,
-  required Logger logger,
-}) {
-  return _interactiveSelect(
-    message,
-    options: options,
-    logger: logger,
-  );
+class Option {
+  final String name;
+
+  Option(this.name);
 }
 
-Future<List<String>> multiselect(
-  String message, {
-  required List<String> options,
+Future<Option> select(
+  String prompt, {
+  required List<Option> options,
+  required Logger logger,
+}) async {
+  return (await _interactiveSelect(
+    prompt,
+    options: options,
+    logger: logger,
+  ))
+      .first;
+}
+
+Future<List<Option>> multiselect(
+  String prompt, {
+  required List<Option> options,
   required Logger logger,
 }) {
   return _interactiveSelect(
-    message,
+    prompt,
     options: options,
     multiple: true,
     logger: logger,
   );
 }
 
-Future<List<String>> _interactiveSelect(
+Future<List<Option>> _interactiveSelect(
   String message, {
-  required List<String> options,
+  required List<Option> options,
   required Logger logger,
   bool multiple = false,
 }) async {
@@ -109,7 +116,7 @@ void _renderState({
 
   for (int i = 0; i < state.options.length; i++) {
     var radioButton = state.currentOrContains(i) ? '(●)' : '(○)';
-    var optionText = '$radioButton ${state.options[i]}';
+    var optionText = '$radioButton ${state.options[i].name}';
 
     logger.write(
       i == state.selectedIndex ? underline(optionText) : optionText,
@@ -130,7 +137,7 @@ void _renderState({
 class _SelectState {
   final int selectedIndex;
   final Set<int> selectedOptions;
-  final List<String> options;
+  final List<Option> options;
   final bool multiple;
 
   _SelectState({
@@ -172,7 +179,7 @@ class _SelectState {
     return multiple ? selectedOptions.contains(index) : selectedIndex == index;
   }
 
-  List<String> toList() {
+  List<Option> toList() {
     return multiple
         ? selectedOptions.map((index) => options[index]).toList()
         : [options[selectedIndex]];

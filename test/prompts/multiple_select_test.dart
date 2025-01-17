@@ -4,6 +4,7 @@ import 'package:cli_tools/src/prompts/select.dart';
 import 'package:test/test.dart';
 import '../test_utils/io_helper.dart';
 import 'key_code_sequence.dart';
+import 'option_matcher.dart';
 
 void main() {
   var logger = StdOutLogger(LogLevel.debug);
@@ -12,8 +13,8 @@ void main() {
       'Given multiselect prompt '
       'when confirms selection with enter line-feed '
       'then completes', () async {
-    late Future<List<String>> result;
-    var options = ['Option 1', 'Option 2', 'Option 3'];
+    late Future<List<Option>> result;
+    var options = [Option('Option 1'), Option('Option 2'), Option('Option 3')];
 
     await collectOutput(
       keyInputs: [KeyCodes.enterLF],
@@ -36,8 +37,8 @@ void main() {
       'Given multiselect prompt '
       'when confirms selection with enter carriage-return '
       'then completes', () async {
-    late Future<List<String>> result;
-    var options = ['Option 1', 'Option 2', 'Option 3'];
+    late Future<List<Option>> result;
+    var options = [Option('Option 1'), Option('Option 2'), Option('Option 3')];
 
     await collectOutput(
       keyInputs: [KeyCodes.enterCR],
@@ -65,7 +66,7 @@ void main() {
       () {
         return multiselect(
           'Choose multiple options:',
-          options: ['Option 1'],
+          options: [Option('Option 1')],
           logger: logger,
         );
       },
@@ -83,7 +84,7 @@ void main() {
       () {
         return multiselect(
           'Choose an option:',
-          options: ['Option 1'],
+          options: [Option('Option 1')],
           logger: logger,
         );
       },
@@ -101,8 +102,8 @@ void main() {
       'Given multiselect prompt '
       'when toggling multiple options and pressing Enter '
       'then should return all selected options', () async {
-    late Future<List<String>> result;
-    var options = ['Option 1', 'Option 2', 'Option 3'];
+    late Future<List<Option>> result;
+    var options = [Option('Option 1'), Option('Option 2'), Option('Option 3')];
 
     await collectOutput(
       keyInputs: [
@@ -122,7 +123,7 @@ void main() {
 
     await expectLater(
       result,
-      completion(equals(['Option 1', 'Option 2'])),
+      completion(containsAllOptions([Option('Option 1'), Option('Option 2')])),
     );
   });
 
@@ -130,8 +131,8 @@ void main() {
       'Given multiselect prompt '
       'when no options are selected and pressing Enter '
       'then should return an empty list', () async {
-    late Future<List<String>> result;
-    var options = ['Option 1', 'Option 2', 'Option 3'];
+    late Future<List<Option>> result;
+    var options = [Option('Option 1'), Option('Option 2'), Option('Option 3')];
 
     await collectOutput(
       keyInputs: [KeyCodes.enterCR],
@@ -154,8 +155,8 @@ void main() {
       'Given multiselect prompt '
       'when toggling the same option twice '
       'then should return empty list', () async {
-    late Future<List<String>> result;
-    var options = ['Option 1', 'Option 2', 'Option 3'];
+    late Future<List<Option>> result;
+    var options = [Option('Option 1'), Option('Option 2'), Option('Option 3')];
 
     await collectOutput(
       keyInputs: [
@@ -182,7 +183,7 @@ void main() {
       'Given multiselect prompt '
       'when pressing "q" key '
       'then should throw a cancellation exception', () async {
-    var options = ['Option 1', 'Option 2', 'Option 3'];
+    var options = [Option('Option 1'), Option('Option 2'), Option('Option 3')];
 
     var result = collectOutput(
       keyInputs: [KeyCodes.q],
@@ -230,7 +231,7 @@ void main() {
       () {
         return multiselect(
           'Choose multiple options:',
-          options: ['Option 1', 'Option 2', 'Option 3'],
+          options: [Option('Option 1'), Option('Option 2'), Option('Option 3')],
           logger: logger,
         );
       },

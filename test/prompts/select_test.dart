@@ -4,6 +4,7 @@ import 'package:cli_tools/src/prompts/select.dart';
 import 'package:test/test.dart';
 import '../test_utils/io_helper.dart';
 import 'key_code_sequence.dart';
+import 'option_matcher.dart';
 
 void main() {
   var logger = StdOutLogger(LogLevel.debug);
@@ -17,7 +18,7 @@ void main() {
       () {
         return select(
           'Choose an option:',
-          options: ['Option 1'],
+          options: [Option('Option 1')],
           logger: logger,
         );
       },
@@ -35,7 +36,7 @@ void main() {
       () {
         return select(
           'Choose an option:',
-          options: ['Option 1'],
+          options: [Option('Option 1')],
           logger: logger,
         );
       },
@@ -48,8 +49,8 @@ void main() {
       'Given select prompt '
       'when selecting an option with Enter '
       'then should return the selected option', () async {
-    late Future<List<String>> result;
-    var options = ['Option 1', 'Option 2', 'Option 3'];
+    late Future<Option> result;
+    var options = [Option('Option 1'), Option('Option 2'), Option('Option 3')];
 
     await collectOutput(
       keyInputs: [KeyCodes.enterCR],
@@ -60,7 +61,7 @@ void main() {
 
     await expectLater(
       result,
-      completion(equals(['Option 1'])),
+      completion(equalsOption(Option('Option 1'))),
     );
   });
 
@@ -68,8 +69,8 @@ void main() {
       'Given select prompt '
       'when confirms selection with enter line-feed '
       'then completes', () async {
-    late Future<List<String>> result;
-    var options = ['Option 1', 'Option 2', 'Option 3'];
+    late Future<Option> result;
+    var options = [Option('Option 1'), Option('Option 2'), Option('Option 3')];
 
     await collectOutput(
       keyInputs: [KeyCodes.enterLF],
@@ -92,8 +93,8 @@ void main() {
       'Given select prompt '
       'when navigating with arrow keys '
       'then should return the highlighted option on Enter', () async {
-    late Future<List<String>> result;
-    var options = ['Option 1', 'Option 2', 'Option 3'];
+    late Future<Option> result;
+    var options = [Option('Option 1'), Option('Option 2'), Option('Option 3')];
 
     await collectOutput(
       keyInputs: [
@@ -109,7 +110,7 @@ void main() {
 
     await expectLater(
       result,
-      completion(equals(['Option 2'])),
+      completion(equalsOption(Option('Option 2'))),
     );
   });
 
@@ -117,7 +118,7 @@ void main() {
       'Given select prompt '
       'when pressing "q" key '
       'then should throw a cancellation exception', () async {
-    var options = ['Option 1', 'Option 2', 'Option 3'];
+    var options = [Option('Option 1'), Option('Option 2'), Option('Option 3')];
 
     var result = collectOutput(
       keyInputs: [KeyCodes.q],
@@ -158,7 +159,7 @@ void main() {
       () {
         return select(
           'Choose an option:',
-          options: ['Option 1', 'Option 2', 'Option 3'],
+          options: [Option('Option 1'), Option('Option 2'), Option('Option 3')],
           logger: logger,
         );
       },
