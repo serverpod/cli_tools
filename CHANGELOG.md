@@ -1,3 +1,7 @@
+## 0.1.4
+
+- fix: Expose prompt features.
+
 ## 0.1.3
 
 - feat: Add prompts module with confirm, select, multiselect and input components.
