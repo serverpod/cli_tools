@@ -91,10 +91,9 @@ Future<List<String>> _interactiveSelect(
       var key = stdin.readByteSync();
 
       if (key == KeyCodes.leadingArrowEscapes[0]) {
-        // Escape sequence for arrow keys
         var next1 = stdin.readByteSync();
-        var next2 = stdin.readByteSync();
         if (next1 == KeyCodes.leadingArrowEscapes[1]) {
+          var next2 = stdin.readByteSync();
           if (next2 == KeyCodes.arrowUp) {
             selectedIndex =
                 (selectedIndex - 1 + options.length) % options.length;
