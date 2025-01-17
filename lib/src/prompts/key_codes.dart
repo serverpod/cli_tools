@@ -1,3 +1,4 @@
+/// ANSI key codes for the terminal.
 abstract final class KeyCodes {
   static var escapeSequenceStart = 27;
   static var controlSequenceIntroducer = 91;

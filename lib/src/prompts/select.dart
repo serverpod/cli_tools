@@ -3,12 +3,16 @@ import 'dart:io';
 import 'package:cli_tools/cli_tools.dart';
 import 'package:cli_tools/src/prompts/key_codes.dart';
 
+/// Object that represents an option in a select prompt.
 class Option {
+  /// The name of the option that will be displayed to the user.
   final String name;
 
+  /// Creates an [Option] with the given [name].
   Option(this.name);
 }
 
+/// Prompts the user to select an option from a list of [options].
 Future<Option> select(
   String prompt, {
   required List<Option> options,
@@ -22,6 +26,8 @@ Future<Option> select(
       .first;
 }
 
+/// Prompts the user to select multiple options from a list of [options].
+/// If no options are selected the returned list will be empty.
 Future<List<Option>> multiselect(
   String prompt, {
   required List<Option> options,
@@ -198,21 +204,21 @@ class _SelectState {
 // H indicates the Cursor Position operation. It takes two parameters,
 // defaulting to 1,1, which is the upper left corner of the terminal.
 // See https://en.wikipedia.org/wiki/ANSI_escape_code for further info.
-const eraseInDisplayControlSequence = '\x1B[2J\x1B[H';
+const _eraseInDisplayControlSequence = '\x1B[2J\x1B[H';
 void _clearTerminal() {
-  stdout.write(eraseInDisplayControlSequence);
+  stdout.write(_eraseInDisplayControlSequence);
 }
 
 // The control sequence CSI n m, named Select Graphic Rendition (SGR), sets display attributes.
 // n is the SGR parameter for the attribute to set, where 4 is for underline and 0 is for reset.
 // See https://en.wikipedia.org/wiki/ANSI_escape_code for further info.
-const underlineSelectGraphicRenditionControlSequence = '\x1B[4m';
-const resetSelectGraphicRenditionControlSequence = '\x1B[0m';
+const _underlineSelectGraphicRenditionControlSequence = '\x1B[4m';
+const _resetSelectGraphicRenditionControlSequence = '\x1B[0m';
 String underline(
   String text,
 ) =>
     [
-      underlineSelectGraphicRenditionControlSequence,
+      _underlineSelectGraphicRenditionControlSequence,
       text,
-      resetSelectGraphicRenditionControlSequence
+      _resetSelectGraphicRenditionControlSequence
     ].join('');
