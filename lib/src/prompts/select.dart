@@ -85,12 +85,12 @@ Future<List<Option>> _interactiveSelect(
       }
 
       if (keyCode == KeyCodes.escapeSequenceStart) {
-        var next1 = stdin.readByteSync();
-        if (next1 == KeyCodes.controlSequenceIntroducer) {
-          var next2 = stdin.readByteSync();
-          if (next2 == KeyCodes.arrowUp) {
+        var nextByte = stdin.readByteSync();
+        if (nextByte == KeyCodes.controlSequenceIntroducer) {
+          nextByte = stdin.readByteSync();
+          if (nextByte == KeyCodes.arrowUp) {
             state = state.prev();
-          } else if (next2 == KeyCodes.arrowDown) {
+          } else if (nextByte == KeyCodes.arrowDown) {
             state = state.next();
           }
         }
