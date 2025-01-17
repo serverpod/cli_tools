@@ -3,19 +3,25 @@ import 'dart:convert';
 import 'dart:io';
 
 class MockStdin implements Stdin {
-  final List<String> _inputs;
-  int _currentIndex = 0;
+  final List<String> _textInputs;
+  final List<int> _keyInputs;
+  int _currentTextIndex = 0;
+  int _currentByteIndex = 0;
 
-  MockStdin(this._inputs);
+  MockStdin({
+    List<String> textInputs = const [],
+    List<int> keyInputs = const [],
+  })  : _textInputs = textInputs,
+        _keyInputs = keyInputs;
 
   @override
-  bool get echoMode => throw UnimplementedError();
+  bool get echoMode => false;
 
   @override
-  set echoMode(bool value) => throw UnimplementedError();
+  set echoMode(bool value) => false;
 
   @override
-  bool get lineMode => throw UnimplementedError();
+  bool get lineMode => false;
 
   @override
   Future<bool> any(bool Function(List<int> element) test) {
@@ -145,14 +151,17 @@ class MockStdin implements Stdin {
 
   @override
   int readByteSync() {
-    throw UnimplementedError();
+    if (_currentByteIndex < _keyInputs.length) {
+      return _keyInputs[_currentByteIndex++];
+    }
+    return -1; // Simulate end of input
   }
 
   @override
   String? readLineSync(
       {Encoding encoding = systemEncoding, bool retainNewlines = false}) {
-    if (_currentIndex < _inputs.length) {
-      return _inputs[_currentIndex++];
+    if (_currentTextIndex < _textInputs.length) {
+      return _textInputs[_currentTextIndex++];
     }
     return null; // Simulate end of input
   }

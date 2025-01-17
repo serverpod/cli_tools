@@ -2,6 +2,9 @@ import 'dart:io';
 
 import 'package:cli_tools/cli_tools.dart';
 
+/// Prompts the user to confirm an action.
+/// Returns `true` if the user confirms, `false` otherwise.
+/// If [defaultValue] is provided, the user can skip the prompt by pressing Enter.
 Future<bool> confirm(
   String message, {
   bool? defaultValue,
