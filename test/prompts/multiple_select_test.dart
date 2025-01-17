@@ -3,8 +3,8 @@ import 'package:cli_tools/src/prompts/key_codes.dart';
 import 'package:cli_tools/src/prompts/select.dart';
 import 'package:test/test.dart';
 import '../test_utils/io_helper.dart';
-import 'key_code_sequence.dart';
-import 'option_matcher.dart';
+import '../test_utils/prompts/key_code_sequence.dart';
+import '../test_utils/prompts/option_matcher.dart';
 
 void main() {
   var logger = StdOutLogger(LogLevel.debug);
