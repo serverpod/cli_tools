@@ -10,6 +10,42 @@ void main() {
 
   test(
       'Given select prompt '
+      'when providing message '
+      'then should be displayed first', () async {
+    var (:stdout, :stderr, :stdin) = await collectOutput(
+      keyInputs: [KeyCodes.enterCR],
+      () {
+        return select(
+          'Choose an option:',
+          options: ['Option 1'],
+          logger: logger,
+        );
+      },
+    );
+
+    expect(stdout.output, startsWith('Choose an option:\n'));
+  });
+
+  test(
+      'Given select prompt '
+      'when providing options '
+      'then instruction should be given last', () async {
+    var (:stdout, :stderr, :stdin) = await collectOutput(
+      keyInputs: [KeyCodes.enterCR],
+      () {
+        return select(
+          'Choose an option:',
+          options: ['Option 1'],
+          logger: logger,
+        );
+      },
+    );
+
+    expect(stdout.output, endsWith('Press [Enter] to confirm.\n'));
+  });
+
+  test(
+      'Given select prompt '
       'when selecting an option with Enter '
       'then should return the selected option', () async {
     late Future<List<String>> result;
@@ -108,42 +144,6 @@ void main() {
       ),
       throwsArgumentError,
     );
-  });
-
-  test(
-      'Given select prompt '
-      'when providing message '
-      'then should be displayed first', () async {
-    var (:stdout, :stderr, :stdin) = await collectOutput(
-      keyInputs: [KeyCodes.enterCR],
-      () {
-        return select(
-          'Choose an option:',
-          options: ['Option 1'],
-          logger: logger,
-        );
-      },
-    );
-
-    expect(stdout.output, startsWith('Choose an option:\n'));
-  });
-
-  test(
-      'Given select prompt '
-      'when providing options '
-      'then instruction should be given last', () async {
-    var (:stdout, :stderr, :stdin) = await collectOutput(
-      keyInputs: [KeyCodes.enterCR],
-      () {
-        return select(
-          'Choose an option:',
-          options: ['Option 1'],
-          logger: logger,
-        );
-      },
-    );
-
-    expect(stdout.output, endsWith('Press [Enter] to confirm.\n'));
   });
 
   test(

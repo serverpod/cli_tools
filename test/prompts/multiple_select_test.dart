@@ -10,35 +10,6 @@ void main() {
 
   test(
       'Given multiselect prompt '
-      'when toggling multiple options and pressing Enter '
-      'then should return all selected options', () async {
-    late Future<List<String>> result;
-    var options = ['Option 1', 'Option 2', 'Option 3'];
-
-    await collectOutput(
-      keyInputs: [
-        KeyCodes.space, // Select Option 1
-        ...arrowDownSequence,
-        KeyCodes.space, // Select Option 2
-        KeyCodes.enterCR
-      ],
-      () {
-        result = multiselect(
-          'Choose multiple options:',
-          options: options,
-          logger: logger,
-        );
-      },
-    );
-
-    await expectLater(
-      result,
-      completion(equals(['Option 1', 'Option 2'])),
-    );
-  });
-
-  test(
-      'Given multiselect prompt '
       'when confirms selection with enter line-feed '
       'then completes', () async {
     late Future<List<String>> result;
@@ -63,8 +34,8 @@ void main() {
 
   test(
       'Given multiselect prompt '
-      'when no options are selected and pressing Enter '
-      'then should return an empty list', () async {
+      'when confirms selection with enter carriage-return '
+      'then completes', () async {
     late Future<List<String>> result;
     var options = ['Option 1', 'Option 2', 'Option 3'];
 
@@ -81,74 +52,7 @@ void main() {
 
     await expectLater(
       result,
-      completion(isEmpty),
-    );
-  });
-
-  test(
-      'Given multiselect prompt '
-      'when toggling the same option multiple times '
-      'then should only return selected options', () async {
-    late Future<List<String>> result;
-    var options = ['Option 1', 'Option 2', 'Option 3'];
-
-    await collectOutput(
-      keyInputs: [
-        KeyCodes.space, // Select option 1
-        KeyCodes.space, // Deselect option 1
-        ...arrowDownSequence,
-        KeyCodes.space, // Select Option 2
-        KeyCodes.enterCR
-      ],
-      () {
-        result = multiselect(
-          'Choose multiple options:',
-          options: options,
-          logger: logger,
-        );
-      },
-    );
-
-    await expectLater(
-      result,
-      completion(equals(['Option 2'])),
-    );
-  });
-
-  test(
-      'Given multiselect prompt '
-      'when pressing "q" key '
-      'then should throw a cancellation exception', () async {
-    var options = ['Option 1', 'Option 2', 'Option 3'];
-
-    var result = collectOutput(
-      keyInputs: [KeyCodes.q],
-      () async {
-        await multiselect(
-          'Choose multiple options:',
-          options: options,
-          logger: logger,
-        );
-      },
-    );
-
-    await expectLater(
-      result,
-      throwsA(isA<ExitException>()),
-    );
-  });
-
-  test(
-      'Given multiselect prompt '
-      'when providing empty options list '
-      'then should throw ArgumentError', () async {
-    expect(
-      () => multiselect(
-        'Choose an option:',
-        options: [],
-        logger: logger,
-      ),
-      throwsArgumentError,
+      completes,
     );
   });
 
@@ -190,6 +94,124 @@ void main() {
       endsWith(
         'Press [Space] to toggle selection, [Enter] to confirm.\n',
       ),
+    );
+  });
+
+  test(
+      'Given multiselect prompt '
+      'when toggling multiple options and pressing Enter '
+      'then should return all selected options', () async {
+    late Future<List<String>> result;
+    var options = ['Option 1', 'Option 2', 'Option 3'];
+
+    await collectOutput(
+      keyInputs: [
+        KeyCodes.space, // Select Option 1
+        ...arrowDownSequence,
+        KeyCodes.space, // Select Option 2
+        KeyCodes.enterCR
+      ],
+      () {
+        result = multiselect(
+          'Choose multiple options:',
+          options: options,
+          logger: logger,
+        );
+      },
+    );
+
+    await expectLater(
+      result,
+      completion(equals(['Option 1', 'Option 2'])),
+    );
+  });
+
+  test(
+      'Given multiselect prompt '
+      'when no options are selected and pressing Enter '
+      'then should return an empty list', () async {
+    late Future<List<String>> result;
+    var options = ['Option 1', 'Option 2', 'Option 3'];
+
+    await collectOutput(
+      keyInputs: [KeyCodes.enterCR],
+      () {
+        result = multiselect(
+          'Choose multiple options:',
+          options: options,
+          logger: logger,
+        );
+      },
+    );
+
+    await expectLater(
+      result,
+      completion(isEmpty),
+    );
+  });
+
+  test(
+      'Given multiselect prompt '
+      'when toggling the same option twice '
+      'then should return empty list', () async {
+    late Future<List<String>> result;
+    var options = ['Option 1', 'Option 2', 'Option 3'];
+
+    await collectOutput(
+      keyInputs: [
+        KeyCodes.space, // Select option 1
+        KeyCodes.space, // Deselect option 1
+        KeyCodes.enterCR
+      ],
+      () {
+        result = multiselect(
+          'Choose multiple options:',
+          options: options,
+          logger: logger,
+        );
+      },
+    );
+
+    await expectLater(
+      result,
+      completion(isEmpty),
+    );
+  });
+
+  test(
+      'Given multiselect prompt '
+      'when pressing "q" key '
+      'then should throw a cancellation exception', () async {
+    var options = ['Option 1', 'Option 2', 'Option 3'];
+
+    var result = collectOutput(
+      keyInputs: [KeyCodes.q],
+      () async {
+        await multiselect(
+          'Choose multiple options:',
+          options: options,
+          logger: logger,
+        );
+      },
+    );
+
+    await expectLater(
+      result,
+      throwsA(isA<ExitException>()),
+    );
+  });
+
+  test(
+      'Given multiselect prompt '
+      'when providing empty options list '
+      'then should throw ArgumentError', () async {
+    expect(
+      () => multiselect(
+        'Choose an option:',
+        options: [],
+        logger: logger,
+      ),
+      throwsArgumentError,
     );
   });
 
