@@ -1,5 +1,6 @@
 abstract final class KeyCodes {
-  static var leadingArrowEscapes = [27, 91];
+  static var escapeSequenceStart = 27;
+  static var controlSequenceIntroducer = 91;
   static var arrowUp = 65;
   static var arrowDown = 66;
   static var space = 32;

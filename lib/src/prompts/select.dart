@@ -38,48 +38,18 @@ Future<List<String>> _interactiveSelect(
     throw ArgumentError('Options cannot be empty.');
   }
 
-  int selectedIndex = 0;
-  var selectedOptions = <int>{}; // To store indices of selected options
+  _SelectState state = _SelectState(
+    options: options,
+    selectedIndex: 0,
+    selectedOptions: <int>{},
+    multiple: multiple,
+  );
 
-  void renderOptions() {
-    _clearTerminal();
-    // Print the prompt message
-    logger.write(
-      message,
-      LogLevel.info,
-      newLine: true,
-    );
-    // Render options with radio buttons
-    for (int i = 0; i < options.length; i++) {
-      var highlightRadio =
-          multiple ? selectedOptions.contains(i) : i == selectedIndex;
-      var radio = highlightRadio ? '(●)' : '(○)';
-      var option = (i == selectedIndex)
-          ? underline('$radio ${options[i]}')
-          : '$radio ${options[i]}';
-      logger.write(
-        option,
-        LogLevel.info,
-        newLine: true,
-      );
-    }
-
-    if (multiple) {
-      logger.write(
-        'Press [Space] to toggle selection, [Enter] to confirm.',
-        LogLevel.info,
-        newParagraph: true,
-      );
-    } else {
-      logger.write(
-        'Press [Enter] to confirm.',
-        LogLevel.info,
-        newParagraph: true,
-      );
-    }
-  }
-
-  renderOptions();
+  _renderState(
+    state: state,
+    logger: logger,
+    promptMessage: message,
+  );
 
   var originalEchoMode = stdin.echoMode;
   var originalLineMode = stdin.lineMode;
@@ -88,39 +58,34 @@ Future<List<String>> _interactiveSelect(
 
   try {
     while (true) {
-      var key = stdin.readByteSync();
+      var keyCode = stdin.readByteSync();
 
-      if (key == KeyCodes.leadingArrowEscapes[0]) {
-        var next1 = stdin.readByteSync();
-        if (next1 == KeyCodes.leadingArrowEscapes[1]) {
-          var next2 = stdin.readByteSync();
-          if (next2 == KeyCodes.arrowUp) {
-            selectedIndex =
-                (selectedIndex - 1 + options.length) % options.length;
-            renderOptions();
-          } else if (next2 == KeyCodes.arrowDown) {
-            selectedIndex = (selectedIndex + 1) % options.length;
-            renderOptions();
-          }
-        }
-      } else if (key == KeyCodes.space && multiple) {
-        // Space key to toggle selection in multiple mode
-        if (selectedOptions.contains(selectedIndex)) {
-          selectedOptions.remove(selectedIndex);
-        } else {
-          selectedOptions.add(selectedIndex);
-        }
-        renderOptions();
-      } else if (key == KeyCodes.enterCR || key == KeyCodes.enterLF) {
-        // Enter key for confirmation
-        if (multiple) {
-          return selectedOptions.map((index) => options[index]).toList();
-        } else {
-          return [options[selectedIndex]];
-        }
-      } else if (key == KeyCodes.q) {
+      var confirmSelection =
+          keyCode == KeyCodes.enterCR || keyCode == KeyCodes.enterLF;
+      if (confirmSelection) {
+        return state.toList();
+      }
+
+      var quit = keyCode == KeyCodes.q;
+      if (quit) {
         throw ExitException();
       }
+
+      if (keyCode == KeyCodes.escapeSequenceStart) {
+        var next1 = stdin.readByteSync();
+        if (next1 == KeyCodes.controlSequenceIntroducer) {
+          var next2 = stdin.readByteSync();
+          if (next2 == KeyCodes.arrowUp) {
+            state = state.prev();
+          } else if (next2 == KeyCodes.arrowDown) {
+            state = state.next();
+          }
+        }
+      } else if (keyCode == KeyCodes.space && multiple) {
+        state = state.toggleCurrent();
+      }
+
+      _renderState(state: state, logger: logger, promptMessage: message);
     }
   } finally {
     // Restore terminal settings
@@ -129,11 +94,118 @@ Future<List<String>> _interactiveSelect(
   }
 }
 
-void _clearTerminal() {
-  stdout.write('\x1B[2J\x1B[H');
+void _renderState({
+  required _SelectState state,
+  required Logger logger,
+  required String promptMessage,
+}) {
+  _clearTerminal();
+
+  logger.write(
+    promptMessage,
+    LogLevel.info,
+    newLine: true,
+  );
+
+  for (int i = 0; i < state.options.length; i++) {
+    var radioButton = state.currentOrContains(i) ? '(●)' : '(○)';
+    var optionText = '$radioButton ${state.options[i]}';
+
+    logger.write(
+      i == state.selectedIndex ? underline(optionText) : optionText,
+      LogLevel.info,
+      newLine: true,
+    );
+  }
+
+  logger.write(
+    state.multiple
+        ? 'Press [Space] to toggle selection, [Enter] to confirm.'
+        : 'Press [Enter] to confirm.',
+    LogLevel.info,
+    newParagraph: true,
+  );
 }
 
+class _SelectState {
+  final int selectedIndex;
+  final Set<int> selectedOptions;
+  final List<String> options;
+  final bool multiple;
+
+  _SelectState({
+    required this.options,
+    required this.selectedIndex,
+    required this.selectedOptions,
+    required this.multiple,
+  });
+
+  _SelectState prev() {
+    return _SelectState(
+      options: options,
+      selectedIndex: (selectedIndex - 1 + options.length) % options.length,
+      selectedOptions: selectedOptions,
+      multiple: multiple,
+    );
+  }
+
+  _SelectState next() {
+    return _SelectState(
+      options: options,
+      selectedIndex: (selectedIndex + 1) % options.length,
+      selectedOptions: selectedOptions,
+      multiple: multiple,
+    );
+  }
+
+  _SelectState toggleCurrent() {
+    return _SelectState(
+        options: options,
+        selectedIndex: selectedIndex,
+        selectedOptions: selectedOptions.contains(selectedIndex)
+            ? (selectedOptions..remove(selectedIndex))
+            : (selectedOptions..add(selectedIndex)),
+        multiple: multiple);
+  }
+
+  bool currentOrContains(int index) {
+    return multiple ? selectedOptions.contains(index) : selectedIndex == index;
+  }
+
+  List<String> toList() {
+    return multiple
+        ? selectedOptions.map((index) => options[index]).toList()
+        : [options[selectedIndex]];
+  }
+}
+
+// The clear terminal command \x1B[2J\x1B[H has the following format:
+// ESC CSI n J ESC CSI H
+// The first part is the Erase in Display (ED) escape sequence, where:
+// ESC (Escape character, starts escape sequence) = \x1B
+// CSI (Control Sequence Introducer) = [
+// n = 2, which clears entire screen (and moves cursor to upper left on DOS ANSI.SYS).
+// J indicates the Erase Display operation
+//
+// The second part is the Cursor Position escape sequence, where:
+// H indicates the Cursor Position operation. It takes two parameters,
+// defaulting to 1,1, which is the upper left corner of the terminal.
+// See https://en.wikipedia.org/wiki/ANSI_escape_code for further info.
+const eraseInDisplayControlSequence = '\x1B[2J\x1B[H';
+void _clearTerminal() {
+  stdout.write(eraseInDisplayControlSequence);
+}
+
+// The control sequence CSI n m, named Select Graphic Rendition (SGR), sets display attributes.
+// n is the SGR parameter for the attribute to set, where 4 is for underline and 0 is for reset.
+// See https://en.wikipedia.org/wiki/ANSI_escape_code for further info.
+const underlineSelectGraphicRenditionControlSequence = '\x1B[4m';
+const resetSelectGraphicRenditionControlSequence = '\x1B[0m';
 String underline(
   String text,
 ) =>
-    '\x1B[4m$text\x1B[0m';
+    [
+      underlineSelectGraphicRenditionControlSequence,
+      text,
+      resetSelectGraphicRenditionControlSequence
+    ].join('');
