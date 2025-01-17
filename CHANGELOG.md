@@ -1,8 +1,6 @@
 ## 0.1.3
 
-- feat: Add input prompt component.
-- feat: Add select and multiselect prompt components.
-- feat: Add prompts module with confirm feature
+- feat: Add prompts module with confirm, select, multiselect and input components.
 
 ## 0.1.2
 
