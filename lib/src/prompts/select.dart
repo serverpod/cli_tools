@@ -81,7 +81,7 @@ Future<List<Option>> _interactiveSelect(
 
       var quit = keyCode == KeyCodes.q;
       if (quit) {
-        throw ExitException();
+        throw ExitException.error();
       }
 
       if (keyCode == KeyCodes.escapeSequenceStart) {
