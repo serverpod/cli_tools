@@ -1,3 +1,9 @@
+# Changelog
+
+## 0.2.0
+
+- feat: BREAKING. ExitException to handle full range of valid exit codes.
+
 ## 0.1.4
 
 - fix: Expose prompt features.
