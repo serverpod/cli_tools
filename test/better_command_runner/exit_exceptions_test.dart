@@ -41,7 +41,7 @@ void main() {
       await expectLater(
         () => runner.run(args),
         throwsA(predicate<ExitException>(
-            (e) => e.exitCodeType == ExitCodeType.commandNotFound)),
+            (e) => e.exitCode == BetterCommandRunner.exitCodeCommandNotFound)),
       );
     });
 
@@ -53,7 +53,7 @@ void main() {
       await expectLater(
         () => runner.run(args),
         throwsA(predicate<ExitException>(
-            (e) => e.exitCodeType == ExitCodeType.commandNotFound)),
+            (e) => e.exitCode == BetterCommandRunner.exitCodeCommandNotFound)),
       );
     });
 
@@ -65,7 +65,7 @@ void main() {
       await expectLater(
         () => runner.run(args),
         throwsA(predicate<ExitException>(
-            (e) => e.exitCodeType == ExitCodeType.commandNotFound)),
+            (e) => e.exitCode == BetterCommandRunner.exitCodeCommandNotFound)),
       );
     });
   });

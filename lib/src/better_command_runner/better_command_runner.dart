@@ -33,6 +33,10 @@ typedef OnAnalyticsEvent = void Function(String event);
 /// The [BetterCommandRunner] class provides a more enhanced command line interface
 /// for running commands and handling command line arguments.
 class BetterCommandRunner extends CommandRunner {
+  /// Process exit code value for command not found -
+  /// The specified command was not found or couldn't be located.
+  static const int exitCodeCommandNotFound = 127;
+
   final PassMessage? _logError;
   final PassMessage? _logInfo;
   final SetLogLevel? _setLogLevel;
@@ -115,7 +119,7 @@ class BetterCommandRunner extends CommandRunner {
     } on UsageException catch (e) {
       _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.invalid);
       _logError?.call(e.toString());
-      throw ExitException(ExitCodeType.commandNotFound);
+      throw ExitException(exitCodeCommandNotFound);
     }
   }
 
@@ -169,7 +173,7 @@ class BetterCommandRunner extends CommandRunner {
     } on UsageException catch (e) {
       _logError?.call(e.toString());
       _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.invalid);
-      throw ExitException(ExitCodeType.commandNotFound);
+      throw ExitException(exitCodeCommandNotFound);
     }
   }
 
