@@ -245,4 +245,34 @@ ${underline('(●) Option 2')}
 Press [Space] to toggle selection, [Enter] to confirm.
 ''');
   });
+
+  test(
+      'Given multiple select prompt with multiple options '
+      'when moving past the last option and pressing Enter '
+      'then first option is selected', () async {
+    late Future<List<Option>> result;
+    var options = [Option('Option 1'), Option('Option 2'), Option('Option 3')];
+
+    await collectOutput(
+      keyInputs: [
+        ...arrowDownSequence, // Move to Option 2
+        ...arrowDownSequence, // Move to Option 3
+        ...arrowDownSequence, // Move to Option 1
+        KeyCodes.space, // Select Option 1
+        KeyCodes.enterCR
+      ],
+      () {
+        result = multiselect(
+          'Choose multiple options:',
+          options: options,
+          logger: logger,
+        );
+      },
+    );
+
+    await expectLater(
+      result,
+      completion(containsAllOptions([Option('Option 1')])),
+    );
+  });
 }

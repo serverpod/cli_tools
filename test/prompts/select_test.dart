@@ -173,4 +173,29 @@ ${underline('(●) Option 2')}
 Press [Enter] to confirm.
 ''');
   });
+
+  test(
+      'Given select prompt with multiple options '
+      'when moving past the last option '
+      'then should wrap around to the first option', () async {
+    late Future<Option> result;
+    var options = [Option('Option 1'), Option('Option 2'), Option('Option 3')];
+
+    await collectOutput(
+      keyInputs: [
+        ...arrowDownSequence, // Go to option 2
+        ...arrowDownSequence, // Go to option 3
+        ...arrowDownSequence, // Go to option 1
+        KeyCodes.enterCR
+      ],
+      () {
+        result = select('Choose an option:', options: options, logger: logger);
+      },
+    );
+
+    await expectLater(
+      result,
+      completion(equalsOption(Option('Option 1'))),
+    );
+  });
 }
