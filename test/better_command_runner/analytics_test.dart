@@ -65,10 +65,12 @@ void main() {
       expect(runner.analyticsEnabled(), isFalse);
     });
 
-    test('when checking available flags then analytics flag is not present.',
-        () {
-      expect(runner.argParser.options.keys, isNot(contains('analytics')));
-    });
+    test(
+      'when checking available flags then analytics flag is not present.',
+      () {
+        expect(runner.argParser.options.keys, isNot(contains('analytics')));
+      },
+    );
   });
 
   group('Given runner with onAnalyticsEvent callback defined', () {
@@ -103,89 +105,100 @@ void main() {
     });
 
     test(
-        'when running command with no-analytics flag then analytics is disabled.',
-        () async {
-      var args = ['--no-${BetterCommandRunnerFlags.analytics}'];
-      await runner.run(args);
-
-      await flushEventQueue();
-
-      expect(runner.analyticsEnabled(), isFalse);
-    });
-
-    test('when running invalid command then "invalid" analytics event is sent.',
-        () async {
-      var args = ['this could be a command argument'];
-
-      try {
+      'when running command with no-analytics flag then analytics is disabled.',
+      () async {
+        var args = ['--no-${BetterCommandRunnerFlags.analytics}'];
         await runner.run(args);
-      } catch (_) {
-        // Ignore any exception
-      }
 
-      await flushEventQueue();
+        await flushEventQueue();
 
-      expect(events, hasLength(1));
-      expect(events.first, equals('invalid'));
-    });
+        expect(runner.analyticsEnabled(), isFalse);
+      },
+    );
 
     test(
-        'when running with unknown command then "invalid" analytics event is sent.',
-        () async {
-      var args = ['--unknown-command'];
+      'when running invalid command then "invalid" analytics event is sent.',
+      () async {
+        var args = ['this could be a command argument'];
 
-      try {
-        await runner.run(args);
-      } catch (_) {
-        // Ignore any exception
-      }
+        try {
+          await runner.run(args);
+        } catch (_) {
+          // Ignore any exception
+        }
 
-      await flushEventQueue();
+        await flushEventQueue();
 
-      expect(events, hasLength(1));
-      expect(events.first, equals('invalid'));
-    });
-
-    test('when running with no command then "help" analytics event is sent.',
-        () async {
-      await runner.run([]);
-
-      await flushEventQueue();
-
-      expect(events, hasLength(1));
-      expect(events.first, equals('help'));
-    });
+        expect(events, hasLength(1));
+        expect(events.first, equals('invalid'));
+      },
+    );
 
     test(
-        'when running with only registered flag then "help" analytics event is sent.',
-        () async {
-      await runner.run(['--${BetterCommandRunnerFlags.analytics}']);
+      'when running with unknown command then "invalid" analytics event is sent.',
+      () async {
+        var args = ['--unknown-command'];
 
-      await flushEventQueue();
+        try {
+          await runner.run(args);
+        } catch (_) {
+          // Ignore any exception
+        }
 
-      expect(events, hasLength(1));
-      expect(events.first, equals('help'));
-    });
+        await flushEventQueue();
 
-    test('when running with help command then "help" analytics event is sent.',
-        () async {
-      await runner.run(['help']);
+        expect(events, hasLength(1));
+        expect(events.first, equals('invalid'));
+      },
+    );
 
-      await flushEventQueue();
+    test(
+      'when running with no command then "help" analytics event is sent.',
+      () async {
+        await runner.run([]);
 
-      expect(events, hasLength(1));
-      expect(events.first, equals('help'));
-    });
+        await flushEventQueue();
 
-    test('when running with help flag then "help" analytics event is sent.',
-        () async {
-      await runner.run(['--help']);
+        expect(events, hasLength(1));
+        expect(events.first, equals('help'));
+      },
+    );
 
-      await flushEventQueue();
+    test(
+      'when running with only registered flag then "help" analytics event is sent.',
+      () async {
+        await runner.run(['--${BetterCommandRunnerFlags.analytics}']);
 
-      expect(events, hasLength(1));
-      expect(events.first, equals('help'));
-    });
+        await flushEventQueue();
+
+        expect(events, hasLength(1));
+        expect(events.first, equals('help'));
+      },
+    );
+
+    test(
+      'when running with help command then "help" analytics event is sent.',
+      () async {
+        await runner.run(['help']);
+
+        await flushEventQueue();
+
+        expect(events, hasLength(1));
+        expect(events.first, equals('help'));
+      },
+    );
+
+    test(
+      'when running with help flag then "help" analytics event is sent.',
+      () async {
+        await runner.run(['--help']);
+
+        await flushEventQueue();
+
+        expect(events, hasLength(1));
+        expect(events.first, equals('help'));
+      },
+    );
   });
 
   group('Given runner with registered command and analytics enabled', () {
@@ -203,47 +216,51 @@ void main() {
       events = [];
     });
 
-    test('when running with registered command then command name is sent,',
-        () async {
-      var args = [MockCommand.commandName];
-
-      await runner.run(args);
-
-      await flushEventQueue();
-
-      expect(events, hasLength(1));
-      expect(events.first, equals(MockCommand.commandName));
-    });
-
     test(
-        'when running with registered command and option then command name is sent,',
-        () async {
-      var args = [MockCommand.commandName, '--name', 'serverpod'];
+      'when running with registered command then command name is sent,',
+      () async {
+        var args = [MockCommand.commandName];
 
-      await runner.run(args);
-
-      await flushEventQueue();
-
-      expect(events, hasLength(1));
-      expect(events.first, equals(MockCommand.commandName));
-    });
-
-    test(
-        'when running with registered command but invalid option then "invalid" analytics event is sent,',
-        () async {
-      var args = [MockCommand.commandName, '--name', 'invalid'];
-
-      try {
         await runner.run(args);
-      } catch (_) {
-        // Ignore any exception
-      }
 
-      await flushEventQueue();
+        await flushEventQueue();
 
-      expect(events, hasLength(1));
-      expect(events.first, equals('invalid'));
-    });
+        expect(events, hasLength(1));
+        expect(events.first, equals(MockCommand.commandName));
+      },
+    );
+
+    test(
+      'when running with registered command and option then command name is sent,',
+      () async {
+        var args = [MockCommand.commandName, '--name', 'serverpod'];
+
+        await runner.run(args);
+
+        await flushEventQueue();
+
+        expect(events, hasLength(1));
+        expect(events.first, equals(MockCommand.commandName));
+      },
+    );
+
+    test(
+      'when running with registered command but invalid option then "invalid" analytics event is sent,',
+      () async {
+        var args = [MockCommand.commandName, '--name', 'invalid'];
+
+        try {
+          await runner.run(args);
+        } catch (_) {
+          // Ignore any exception
+        }
+
+        await flushEventQueue();
+
+        expect(events, hasLength(1));
+        expect(events.first, equals('invalid'));
+      },
+    );
   });
 
   group('Given runner with registered command and analytics enabled', () {
@@ -264,50 +281,55 @@ void main() {
     });
 
     test(
-        'when running with registered command that hangs then command name is sent',
-        () async {
-      var args = [CompletableMockCommand.commandName];
+      'when running with registered command that hangs then command name is sent',
+      () async {
+        var args = [CompletableMockCommand.commandName];
 
-      unawaited(runner.run(args));
+        unawaited(runner.run(args));
 
-      await flushEventQueue();
+        await flushEventQueue();
 
-      expect(events, hasLength(1));
-      expect(events.first, equals(CompletableMockCommand.commandName));
+        expect(events, hasLength(1));
+        expect(events.first, equals(CompletableMockCommand.commandName));
 
-      command.completer.complete();
-    });
-
-    test(
-        'when running with registered command that hangs and option then command name is sent,',
-        () async {
-      var args = [CompletableMockCommand.commandName, '--name', 'serverpod'];
-
-      unawaited(runner.run(args));
-
-      await flushEventQueue();
-
-      expect(events, hasLength(1));
-      expect(events.first, equals(CompletableMockCommand.commandName));
-
-      command.completer.complete();
-    });
+        command.completer.complete();
+      },
+    );
 
     test(
-        'when running with registered command that hangs but invalid option then "invalid" analytics event is sent,',
-        () async {
-      var args = [CompletableMockCommand.commandName, '--name', 'invalid'];
+      'when running with registered command that hangs and option then command name is sent,',
+      () async {
+        var args = [CompletableMockCommand.commandName, '--name', 'serverpod'];
 
-      unawaited(runner.run(args).catchError((_) {
-        // Ignore parse error
-      }));
+        unawaited(runner.run(args));
 
-      await flushEventQueue();
+        await flushEventQueue();
 
-      expect(events, hasLength(1));
-      expect(events.first, equals('invalid'));
+        expect(events, hasLength(1));
+        expect(events.first, equals(CompletableMockCommand.commandName));
 
-      command.completer.complete();
-    });
+        command.completer.complete();
+      },
+    );
+
+    test(
+      'when running with registered command that hangs but invalid option then "invalid" analytics event is sent,',
+      () async {
+        var args = [CompletableMockCommand.commandName, '--name', 'invalid'];
+
+        unawaited(
+          runner.run(args).catchError((_) {
+            // Ignore parse error
+          }),
+        );
+
+        await flushEventQueue();
+
+        expect(events, hasLength(1));
+        expect(events.first, equals('invalid'));
+
+        command.completer.complete();
+      },
+    );
   });
 }

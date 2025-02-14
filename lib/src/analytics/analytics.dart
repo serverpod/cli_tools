@@ -10,9 +10,7 @@ abstract interface class Analytics {
   void cleanUp();
 
   /// Track an event.
-  void track({
-    required String event,
-  });
+  void track({required String event});
 }
 
 /// Analytics service for MixPanel.
@@ -26,17 +24,15 @@ class MixPanelAnalytics implements Analytics {
     required String uniqueUserId,
     required String projectToken,
     required String version,
-  })  : _uniqueUserId = uniqueUserId,
-        _projectToken = projectToken,
-        _version = version;
+  }) : _uniqueUserId = uniqueUserId,
+       _projectToken = projectToken,
+       _version = version;
 
   @override
   void cleanUp() {}
 
   @override
-  void track({
-    required String event,
-  }) {
+  void track({required String event}) {
     var payload = jsonEncode({
       'event': event,
       'properties': {
@@ -46,7 +42,7 @@ class MixPanelAnalytics implements Analytics {
         'dart_version': Platform.version,
         'is_ci': ci.isCI,
         'version': _version,
-      }
+      },
     });
 
     _quietPost(payload);
@@ -66,14 +62,16 @@ class MixPanelAnalytics implements Analytics {
 
   Future<void> _quietPost(String payload) async {
     try {
-      await http.post(
-        Uri.parse(_endpoint),
-        body: 'data=$payload',
-        headers: {
-          'Accept': 'text/plain',
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      ).timeout(const Duration(seconds: 2));
+      await http
+          .post(
+            Uri.parse(_endpoint),
+            body: 'data=$payload',
+            headers: {
+              'Accept': 'text/plain',
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+          )
+          .timeout(const Duration(seconds: 2));
     } catch (e) {
       return;
     }

@@ -101,60 +101,62 @@ void main() {
       var vegetableCommandOutput = output['spice.md'];
 
       expect(
-          vegetableCommandOutput,
-          startsWith(
-            '## Usage\n'
-            '\n'
-            '```console\n'
-            'Modifies the spice mix in your dish.\n'
-            '\n'
-            'Usage: cookcli spice <subcommand> [arguments]\n'
-            '-h, --help    Print this usage information.\n'
-            '\n'
-            'Available subcommands:\n'
-            '  add      Add something to the spice mix\n'
-            '  remove   Remove something from the spice mix\n'
-            '\n'
-            'Run "cookcli help" to see global options.\n'
-            '```\n'
-            '\n',
-          ));
+        vegetableCommandOutput,
+        startsWith(
+          '## Usage\n'
+          '\n'
+          '```console\n'
+          'Modifies the spice mix in your dish.\n'
+          '\n'
+          'Usage: cookcli spice <subcommand> [arguments]\n'
+          '-h, --help    Print this usage information.\n'
+          '\n'
+          'Available subcommands:\n'
+          '  add      Add something to the spice mix\n'
+          '  remove   Remove something from the spice mix\n'
+          '\n'
+          'Run "cookcli help" to see global options.\n'
+          '```\n'
+          '\n',
+        ),
+      );
     });
 
     test('then output ends with the sub commands', () async {
       var vegetableCommandOutput = output['spice.md'];
 
       expect(
-          vegetableCommandOutput,
-          endsWith(
-            '### Sub commands\n'
-            '\n'
-            '#### `add`\n'
-            '\n'
-            '```console\n'
-            'Add something to the spice mix\n'
-            '\n'
-            'Usage: cookcli spice add [arguments]\n'
-            '-h, --help      Print this usage information.\n'
-            '    --curry     Include curry in the spice mix.\n'
-            '    --pepper    Include pepper in the spice mix.\n'
-            '\n'
-            'Run "cookcli help" to see global options.\n'
-            '```\n'
-            '\n'
-            '#### `remove`\n'
-            '\n'
-            '```console\n'
-            'Remove something from the spice mix\n'
-            '\n'
-            'Usage: cookcli spice remove [arguments]\n'
-            '-h, --help      Print this usage information.\n'
-            '    --curry     Remove curry from the spice mix.\n'
-            '    --pepper    Remove pepper from the spice mix.\n'
-            '\n'
-            'Run "cookcli help" to see global options.\n'
-            '```\n',
-          ));
+        vegetableCommandOutput,
+        endsWith(
+          '### Sub commands\n'
+          '\n'
+          '#### `add`\n'
+          '\n'
+          '```console\n'
+          'Add something to the spice mix\n'
+          '\n'
+          'Usage: cookcli spice add [arguments]\n'
+          '-h, --help      Print this usage information.\n'
+          '    --curry     Include curry in the spice mix.\n'
+          '    --pepper    Include pepper in the spice mix.\n'
+          '\n'
+          'Run "cookcli help" to see global options.\n'
+          '```\n'
+          '\n'
+          '#### `remove`\n'
+          '\n'
+          '```console\n'
+          'Remove something from the spice mix\n'
+          '\n'
+          'Usage: cookcli spice remove [arguments]\n'
+          '-h, --help      Print this usage information.\n'
+          '    --curry     Remove curry from the spice mix.\n'
+          '    --pepper    Remove pepper from the spice mix.\n'
+          '\n'
+          'Run "cookcli help" to see global options.\n'
+          '```\n',
+        ),
+      );
     });
   });
 }

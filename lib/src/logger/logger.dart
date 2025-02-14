@@ -13,29 +13,17 @@ abstract class Logger {
   /// Display debug [message] to the user.
   /// Commands should use this for information that is important for
   /// debugging purposes.
-  void debug(
-    String message, {
-    bool newParagraph,
-    LogType type,
-  });
+  void debug(String message, {bool newParagraph, LogType type});
 
   /// Display a normal [message] to the user.
   /// Command should use this as the standard communication channel for
   /// success, progress or information messages.
-  void info(
-    String message, {
-    bool newParagraph,
-    LogType type,
-  });
+  void info(String message, {bool newParagraph, LogType type});
 
   /// Display a warning [message] to the user.
   /// Commands should use this if they have important but not critical
   /// information for the user.
-  void warning(
-    String message, {
-    bool newParagraph,
-    LogType type,
-  });
+  void warning(String message, {bool newParagraph, LogType type});
 
   /// Display an error [message] to the user.
   /// Commands should use this if they want to inform a user that an error
@@ -86,15 +74,7 @@ enum LogLevel {
   final String name;
 }
 
-enum TextLogStyle {
-  init,
-  normal,
-  hint,
-  header,
-  bullet,
-  command,
-  success,
-}
+enum TextLogStyle { init, normal, hint, header, bullet, command, success }
 
 abstract class LogType {
   const LogType();
@@ -110,10 +90,7 @@ class RawLogType extends LogType {
 /// If [title] is set the box will have a title row.
 class BoxLogType extends LogType {
   final String? title;
-  const BoxLogType({
-    this.title,
-    bool newParagraph = true,
-  });
+  const BoxLogType({this.title, bool newParagraph = true});
 }
 
 /// Abstract style console formatting.

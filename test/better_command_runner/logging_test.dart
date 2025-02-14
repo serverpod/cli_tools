@@ -86,11 +86,13 @@ void main() {
         expect(infos, hasLength(0));
       });
 
-      test('then option name is mandatory message is logged to error.',
-          () async {
-        expect(errors, hasLength(1));
-        expect(errors.first, contains('Option name is mandatory'));
-      });
+      test(
+        'then option name is mandatory message is logged to error.',
+        () async {
+          expect(errors, hasLength(1));
+          expect(errors.first, contains('Option name is mandatory'));
+        },
+      );
     });
   });
 }

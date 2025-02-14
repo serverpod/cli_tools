@@ -38,16 +38,14 @@ void main() {
   group('Given runner with registered command', () {
     setUp(() {
       mockCommand = MockCommand();
-      runner = BetterCommandRunner(
-        'test',
-        'this is a test cli',
-      )..addCommand(mockCommand);
+      runner = BetterCommandRunner('test', 'this is a test cli')
+        ..addCommand(mockCommand);
     });
 
     group('when running registered command with global flag', () {
       var args = [
         '--${BetterCommandRunnerFlags.quiet}',
-        MockCommand.commandName
+        MockCommand.commandName,
       ];
       setUp(() async => await runner.run(args));
 
@@ -85,33 +83,35 @@ void main() {
     });
 
     test(
-        'when running registered command with invalid option then command is never run.',
-        () async {
-      var args = [MockCommand.commandName, '--name', 'invalid'];
+      'when running registered command with invalid option then command is never run.',
+      () async {
+        var args = [MockCommand.commandName, '--name', 'invalid'];
 
-      try {
-        await runner.run(args);
-      } catch (_) {
-        // ignore any exceptions.
-      }
-      expect(mockCommand.numberOfRuns, equals(0));
-    });
+        try {
+          await runner.run(args);
+        } catch (_) {
+          // ignore any exceptions.
+        }
+        expect(mockCommand.numberOfRuns, equals(0));
+      },
+    );
   });
 
   test(
-      'Given runner with registered command and onBeforeRunCommand callback then onBeforeRunCommand is called before running command',
-      () async {
-    List<String> calls = [];
-    mockCommand = MockCommand(onRun: () => calls.add('command'));
-    runner = BetterCommandRunner(
-      'test',
-      'this is a test cli',
-      onBeforeRunCommand: (_) => Future(() => calls.add('callback')),
-    )..addCommand(mockCommand);
+    'Given runner with registered command and onBeforeRunCommand callback then onBeforeRunCommand is called before running command',
+    () async {
+      List<String> calls = [];
+      mockCommand = MockCommand(onRun: () => calls.add('command'));
+      runner = BetterCommandRunner(
+        'test',
+        'this is a test cli',
+        onBeforeRunCommand: (_) => Future(() => calls.add('callback')),
+      )..addCommand(mockCommand);
 
-    var args = [MockCommand.commandName];
+      var args = [MockCommand.commandName];
 
-    await runner.run(args);
-    expect(calls, equals(['callback', 'command']));
-  });
+      await runner.run(args);
+      expect(calls, equals(['callback', 'command']));
+    },
+  );
 }

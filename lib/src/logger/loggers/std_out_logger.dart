@@ -17,7 +17,7 @@ class StdOutLogger extends Logger {
   final Map<String, String>? _replacements;
 
   StdOutLogger(super.logLevel, {Map<String, String>? replacements})
-      : _replacements = replacements;
+    : _replacements = replacements;
 
   @override
   int? get wrapTextColumn => stdout.hasTerminal ? stdout.terminalColumns : null;
@@ -36,13 +36,7 @@ class StdOutLogger extends Logger {
         type,
       );
     } else {
-      _log(
-        message,
-        LogLevel.debug,
-        newParagraph,
-        type,
-        prefix: 'DEBUG: ',
-      );
+      _log(message, LogLevel.debug, newParagraph, type, prefix: 'DEBUG: ');
     }
   }
 
@@ -69,13 +63,7 @@ class StdOutLogger extends Logger {
         type,
       );
     } else {
-      _log(
-        message,
-        LogLevel.warning,
-        newParagraph,
-        type,
-        prefix: 'WARNING: ',
-      );
+      _log(message, LogLevel.warning, newParagraph, type, prefix: 'WARNING: ');
     }
   }
 
@@ -87,20 +75,9 @@ class StdOutLogger extends Logger {
     LogType type = TextLogType.normal,
   }) {
     if (ansiSupported) {
-      _log(
-        AnsiStyle.red.wrap(message),
-        LogLevel.error,
-        newParagraph,
-        type,
-      );
+      _log(AnsiStyle.red.wrap(message), LogLevel.error, newParagraph, type);
     } else {
-      _log(
-        message,
-        LogLevel.error,
-        newParagraph,
-        type,
-        prefix: 'ERROR: ',
-      );
+      _log(message, LogLevel.error, newParagraph, type, prefix: 'ERROR: ');
     }
 
     if (stackTrace != null) {
@@ -128,12 +105,7 @@ class StdOutLogger extends Logger {
     // Write an empty line before the progress message if a new paragraph is
     // requested.
     if (newParagraph) {
-      write(
-        '',
-        LogLevel.info,
-        newParagraph: false,
-        newLine: true,
-      );
+      write('', LogLevel.info, newParagraph: false, newLine: true);
     }
 
     var progress = Progress(message, stdout);
@@ -217,9 +189,9 @@ class StdOutLogger extends Logger {
     message = switch (_replacements) {
       null => message,
       Map<String, String> replacements => replacements.entries.fold(
-          message,
-          (String acc, entry) => acc.replaceAll(entry.key, entry.value),
-        ),
+        message,
+        (String acc, entry) => acc.replaceAll(entry.key, entry.value),
+      ),
     };
 
     _stopAnimationInProgress();
@@ -295,8 +267,9 @@ String _formatAsBox({
   var maxTextWidthPerLine = wrapColumn - kEdges - kPaddingLeftRight * 2;
   var lines = _wrapText(message, maxTextWidthPerLine).split('\n');
   var lineWidth = lines.map((String line) => line.length).toList();
-  var maxColumnSize =
-      lineWidth.reduce((int currLen, int maxLen) => math.max(currLen, maxLen));
+  var maxColumnSize = lineWidth.reduce(
+    (int currLen, int maxLen) => math.max(currLen, maxLen),
+  );
   var textWidth = math.min(maxColumnSize, maxTextWidthPerLine);
   var textWithPaddingWidth = textWidth + kPaddingLeftRight * 2;
 
