@@ -154,4 +154,23 @@ Press [Enter] to confirm.
 
     await expectLater(result, completion(equalsOption(Option('Option 1'))));
   });
+
+  test('Given select prompt with multiple options '
+      'when moving up past the first option '
+      'then should wrap around to the last option', () async {
+    late Future<Option> result;
+    var options = [Option('Option 1'), Option('Option 2'), Option('Option 3')];
+
+    await collectOutput(
+      keyInputs: [
+        ...arrowUpSequence, // Go to option 3
+        KeyCodes.enterCR,
+      ],
+      () {
+        result = select('Choose an option:', options: options, logger: logger);
+      },
+    );
+
+    await expectLater(result, completion(equalsOption(Option('Option 3'))));
+  });
 }

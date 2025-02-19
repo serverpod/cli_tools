@@ -231,4 +231,31 @@ Press [Space] to toggle selection, [Enter] to confirm.
       completion(containsAllOptions([Option('Option 1')])),
     );
   });
+
+  test('Given multiple select prompt with multiple options '
+      'when up past the first option and pressing Enter '
+      'then last option is selected', () async {
+    late Future<List<Option>> result;
+    var options = [Option('Option 1'), Option('Option 2'), Option('Option 3')];
+
+    await collectOutput(
+      keyInputs: [
+        ...arrowUpSequence, // Move to Option 3
+        KeyCodes.space, // Select Option 3
+        KeyCodes.enterCR,
+      ],
+      () {
+        result = multiselect(
+          'Choose multiple options:',
+          options: options,
+          logger: logger,
+        );
+      },
+    );
+
+    await expectLater(
+      result,
+      completion(containsAllOptions([Option('Option 3')])),
+    );
+  });
 }
