@@ -28,45 +28,55 @@ class MockCommand extends Command {
 
 void main() {
   group('Given runner with registered command', () {
-    var runner = BetterCommandRunner(
-      'test',
-      'this is a test cli',
-    )..addCommand(MockCommand());
+    var runner = BetterCommandRunner('test', 'this is a test cli')
+      ..addCommand(MockCommand());
 
     test(
-        'when running with unknown command then ExitException with command not found exit code is thrown.',
-        () async {
-      var args = ['unknown-command'];
+      'when running with unknown command then ExitException with command not found exit code is thrown.',
+      () async {
+        var args = ['unknown-command'];
 
-      await expectLater(
-        () => runner.run(args),
-        throwsA(predicate<ExitException>(
-            (e) => e.exitCode == BetterCommandRunner.exitCodeCommandNotFound)),
-      );
-    });
-
-    test(
-        'when running with invalid command then ExitException with command not found exit code is thrown.',
-        () async {
-      List<String> args = ['this it not a valid command'];
-
-      await expectLater(
-        () => runner.run(args),
-        throwsA(predicate<ExitException>(
-            (e) => e.exitCode == BetterCommandRunner.exitCodeCommandNotFound)),
-      );
-    });
+        await expectLater(
+          () => runner.run(args),
+          throwsA(
+            predicate<ExitException>(
+              (e) => e.exitCode == BetterCommandRunner.exitCodeCommandNotFound,
+            ),
+          ),
+        );
+      },
+    );
 
     test(
-        'when running command without mandatory option then ExitException with command not found exit code is thrown.',
-        () async {
-      List<String> args = [MockCommand.commandName];
+      'when running with invalid command then ExitException with command not found exit code is thrown.',
+      () async {
+        List<String> args = ['this it not a valid command'];
 
-      await expectLater(
-        () => runner.run(args),
-        throwsA(predicate<ExitException>(
-            (e) => e.exitCode == BetterCommandRunner.exitCodeCommandNotFound)),
-      );
-    });
+        await expectLater(
+          () => runner.run(args),
+          throwsA(
+            predicate<ExitException>(
+              (e) => e.exitCode == BetterCommandRunner.exitCodeCommandNotFound,
+            ),
+          ),
+        );
+      },
+    );
+
+    test(
+      'when running command without mandatory option then ExitException with command not found exit code is thrown.',
+      () async {
+        List<String> args = [MockCommand.commandName];
+
+        await expectLater(
+          () => runner.run(args),
+          throwsA(
+            predicate<ExitException>(
+              (e) => e.exitCode == BetterCommandRunner.exitCodeCommandNotFound,
+            ),
+          ),
+        );
+      },
+    );
   });
 }

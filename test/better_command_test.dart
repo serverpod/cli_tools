@@ -25,18 +25,20 @@ class MockCommand extends BetterCommand {
 void main() {
   group('Given a better command registered in the better command runner', () {
     var infos = <String>[];
-    var betterCommand =
-        MockCommand(logInfo: (String message) => infos.add(message));
+    var betterCommand = MockCommand(
+      logInfo: (String message) => infos.add(message),
+    );
     var runner = BetterCommandRunner('test', 'test project')
       ..addCommand(betterCommand);
 
     test(
-        'when running command option --help flag then usage is printed to commands logInfo',
-        () async {
-      await runner.run([MockCommand.commandName, '--help']);
+      'when running command option --help flag then usage is printed to commands logInfo',
+      () async {
+        await runner.run([MockCommand.commandName, '--help']);
 
-      expect(infos, hasLength(1));
-      expect(infos.first, betterCommand.usage);
-    });
+        expect(infos, hasLength(1));
+        expect(infos.first, betterCommand.usage);
+      },
+    );
   });
 }

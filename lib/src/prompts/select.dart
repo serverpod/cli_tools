@@ -22,8 +22,7 @@ Future<Option> select(
     prompt,
     options: options,
     logger: logger,
-  ))
-      .first;
+  )).first;
 }
 
 /// Prompts the user to select multiple options from a list of [options].
@@ -58,11 +57,7 @@ Future<List<Option>> _interactiveSelect(
     multiple: multiple,
   );
 
-  _renderState(
-    state: state,
-    logger: logger,
-    promptMessage: message,
-  );
+  _renderState(state: state, logger: logger, promptMessage: message);
 
   var originalEchoMode = stdin.echoMode;
   var originalLineMode = stdin.lineMode;
@@ -114,11 +109,7 @@ void _renderState({
 }) {
   _clearTerminal();
 
-  logger.write(
-    promptMessage,
-    LogLevel.info,
-    newLine: true,
-  );
+  logger.write(promptMessage, LogLevel.info, newLine: true);
 
   for (int i = 0; i < state.options.length; i++) {
     var radioButton = state.currentOrContains(i) ? '(●)' : '(○)';
@@ -173,12 +164,14 @@ class _SelectState {
 
   _SelectState toggleCurrent() {
     return _SelectState(
-        options: options,
-        selectedIndex: selectedIndex,
-        selectedOptions: selectedOptions.contains(selectedIndex)
-            ? (selectedOptions..remove(selectedIndex))
-            : (selectedOptions..add(selectedIndex)),
-        multiple: multiple);
+      options: options,
+      selectedIndex: selectedIndex,
+      selectedOptions:
+          selectedOptions.contains(selectedIndex)
+              ? (selectedOptions..remove(selectedIndex))
+              : (selectedOptions..add(selectedIndex)),
+      multiple: multiple,
+    );
   }
 
   bool currentOrContains(int index) {
@@ -214,11 +207,8 @@ void _clearTerminal() {
 // See https://en.wikipedia.org/wiki/ANSI_escape_code for further info.
 const _underlineSelectGraphicRenditionControlSequence = '\x1B[4m';
 const _resetSelectGraphicRenditionControlSequence = '\x1B[0m';
-String underline(
-  String text,
-) =>
-    [
-      _underlineSelectGraphicRenditionControlSequence,
-      text,
-      _resetSelectGraphicRenditionControlSequence
-    ].join('');
+String underline(String text) => [
+  _underlineSelectGraphicRenditionControlSequence,
+  text,
+  _resetSelectGraphicRenditionControlSequence,
+].join('');

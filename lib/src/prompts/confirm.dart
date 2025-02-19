@@ -10,9 +10,10 @@ Future<bool> confirm(
   bool? defaultValue,
   required Logger logger,
 }) async {
-  var prompt = defaultValue == null
-      ? '[y/n]'
-      : defaultValue
+  var prompt =
+      defaultValue == null
+          ? '[y/n]'
+          : defaultValue
           ? '[Y/n]'
           : '[y/N]';
 

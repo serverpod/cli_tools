@@ -104,14 +104,15 @@ void main() {
     )..addCommand(MockCommand());
 
     test(
-        'when running with registered command then command name is passed to setLogLevel callback.',
-        () async {
-      var args = [MockCommand.commandName];
+      'when running with registered command then command name is passed to setLogLevel callback.',
+      () async {
+        var args = [MockCommand.commandName];
 
-      await runner.run(args);
+        await runner.run(args);
 
-      expect(parsedCommandName, MockCommand.commandName);
-    });
+        expect(parsedCommandName, MockCommand.commandName);
+      },
+    );
 
     group('when verbose flag is passed before registered command', () {
       var args = [

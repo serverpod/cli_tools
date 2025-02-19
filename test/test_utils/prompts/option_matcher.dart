@@ -52,8 +52,9 @@ class _EqualsAllOptionsMatcher extends Matcher {
 
     for (var i = 0; i < item.length; i++) {
       if (item[i].name != _expected[i].name) {
-        return mismatchDescription
-            .add('Option at index $i has name "${item[i].name}"');
+        return mismatchDescription.add(
+          'Option at index $i has name "${item[i].name}"',
+        );
       }
     }
 

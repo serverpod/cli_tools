@@ -12,8 +12,7 @@ void main() {
     tempDir.listSync().forEach((file) => file.deleteSync());
   });
 
-  test(
-      'Given an existing file '
+  test('Given an existing file '
       'when calling removeFile '
       'then the file is deleted successfully', () async {
     var fileName = 'test.json';
@@ -28,8 +27,7 @@ void main() {
     expect(file.existsSync(), isFalse);
   });
 
-  test(
-      'Given a non-existing file '
+  test('Given a non-existing file '
       'when calling removeFile '
       'then no exception is thrown', () async {
     var fileName = 'nonexistent.json';
@@ -43,8 +41,7 @@ void main() {
     );
   });
 
-  test(
-      'Given a valid json object '
+  test('Given a valid json object '
       'when calling storeJsonFile '
       'then the file is created with correct content', () async {
     var fileName = 'test.json';
@@ -61,8 +58,7 @@ void main() {
     expect(file.readAsStringSync(), '{\n  "key": "value"\n}');
   });
 
-  test(
-      'Given a json object with non compatible values '
+  test('Given a json object with non compatible values '
       'when calling storeJsonFile '
       'then it throws SerializationException', () async {
     var fileName = 'test.json';
@@ -78,8 +74,7 @@ void main() {
     );
   });
 
-  test(
-      'Given an existing json file '
+  test('Given an existing json file '
       'when calling tryFetchAndDeserializeJsonFile '
       'then it returns the deserialized object', () async {
     var fileName = 'test.json';
@@ -88,7 +83,8 @@ void main() {
     file.writeAsStringSync(fileContent);
 
     var result = await LocalStorageManager.tryFetchAndDeserializeJsonFile<
-        Map<String, dynamic>>(
+      Map<String, dynamic>
+    >(
       fileName: fileName,
       localStoragePath: localStoragePath,
       fromJson: (json) => json,
@@ -97,14 +93,14 @@ void main() {
     expect(result, {'key': 'value'});
   });
 
-  test(
-      'Given a missing json file '
+  test('Given a missing json file '
       'when calling tryFetchAndDeserializeJsonFile '
       'then it returns null', () async {
     var fileName = 'nonexistent.json';
 
     var result = await LocalStorageManager.tryFetchAndDeserializeJsonFile<
-        Map<String, dynamic>>(
+      Map<String, dynamic>
+    >(
       fileName: fileName,
       localStoragePath: localStoragePath,
       fromJson: (json) => json,
@@ -113,8 +109,7 @@ void main() {
     expect(result, isNull);
   });
 
-  test(
-      'Given a malformed json file '
+  test('Given a malformed json file '
       'when calling tryFetchAndDeserializeJsonFile '
       'then it throws DeserializationException', () async {
     var fileName = 'invalid.json';
@@ -124,7 +119,8 @@ void main() {
 
     expect(
       () => LocalStorageManager.tryFetchAndDeserializeJsonFile<
-          Map<String, dynamic>>(
+        Map<String, dynamic>
+      >(
         fileName: fileName,
         localStoragePath: localStoragePath,
         fromJson: (json) => json,
@@ -133,8 +129,7 @@ void main() {
     );
   });
 
-  test(
-      'Given a corrupt file '
+  test('Given a corrupt file '
       'when calling tryFetchAndDeserializeJsonFile '
       'then it throws ReadException', () async {
     var fileName = 'invalid.json';
@@ -143,7 +138,8 @@ void main() {
 
     expect(
       () => LocalStorageManager.tryFetchAndDeserializeJsonFile<
-          Map<String, dynamic>>(
+        Map<String, dynamic>
+      >(
         fileName: fileName,
         localStoragePath: localStoragePath,
         fromJson: (json) => json,

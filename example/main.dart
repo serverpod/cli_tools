@@ -11,9 +11,6 @@ void main() async {
   );
   await logger.progress(
     'A progress message',
-    () async => Future.delayed(
-      const Duration(seconds: 3),
-      () => true,
-    ),
+    () async => Future.delayed(const Duration(seconds: 3), () => true),
   );
 }

@@ -5,9 +5,7 @@ import 'package:args/command_runner.dart';
 import 'package:cli_tools/src/better_command_runner/exit_exception.dart';
 
 /// A function type for executing code before running a command.
-typedef OnBeforeRunCommand = Future<void> Function(
-  BetterCommandRunner runner,
-);
+typedef OnBeforeRunCommand = Future<void> Function(BetterCommandRunner runner);
 
 /// A function type for passing log messages.
 typedef PassMessage = void Function(String message);
@@ -16,10 +14,11 @@ typedef PassMessage = void Function(String message);
 /// The [logLevel] is the log level to set.
 /// The [commandName] is the name of the command if custom rules for log
 /// levels are needed.
-typedef SetLogLevel = void Function({
-  required CommandRunnerLogLevel parsedLogLevel,
-  String? commandName,
-});
+typedef SetLogLevel =
+    void Function({
+      required CommandRunnerLogLevel parsedLogLevel,
+      String? commandName,
+    });
 
 /// A function type for tracking events.
 typedef OnAnalyticsEvent = void Function(String event);
@@ -64,18 +63,19 @@ class BetterCommandRunner extends CommandRunner {
     OnBeforeRunCommand? onBeforeRunCommand,
     OnAnalyticsEvent? onAnalyticsEvent,
     int? wrapTextColumn,
-  })  : _logError = logError,
-        _logInfo = logInfo,
-        _onBeforeRunCommand = onBeforeRunCommand,
-        _setLogLevel = setLogLevel,
-        _onAnalyticsEvent = onAnalyticsEvent,
-        _argParser = ArgParser(usageLineLength: wrapTextColumn) {
+  }) : _logError = logError,
+       _logInfo = logInfo,
+       _onBeforeRunCommand = onBeforeRunCommand,
+       _setLogLevel = setLogLevel,
+       _onAnalyticsEvent = onAnalyticsEvent,
+       _argParser = ArgParser(usageLineLength: wrapTextColumn) {
     argParser.addFlag(
       BetterCommandRunnerFlags.quiet,
       abbr: BetterCommandRunnerFlags.quietAbbr,
       defaultsTo: false,
       negatable: false,
-      help: 'Suppress all cli output. Is overridden by '
+      help:
+          'Suppress all cli output. Is overridden by '
           ' -${BetterCommandRunnerFlags.verboseAbbr}, --${BetterCommandRunnerFlags.verbose}.',
     );
 
@@ -84,7 +84,8 @@ class BetterCommandRunner extends CommandRunner {
       abbr: BetterCommandRunnerFlags.verboseAbbr,
       defaultsTo: false,
       negatable: false,
-      help: 'Prints additional information useful for development. '
+      help:
+          'Prints additional information useful for development. '
           'Overrides --${BetterCommandRunnerFlags.quietAbbr}, --${BetterCommandRunnerFlags.quiet}.',
     );
 
@@ -140,31 +141,33 @@ class BetterCommandRunner extends CommandRunner {
       _onAnalyticsEvent = null;
     }
 
-    unawaited(Future(() async {
-      var command = topLevelResults.command;
-      if (command != null) {
-        // Command name can only be null for top level results.
-        // But since we are taking the name of a command from the top level
-        // results there should always be a name specified.
-        assert(command.name != null, 'Command name should never be null.');
-        _onAnalyticsEvent?.call(
-          command.name ?? BetterCommandRunnerAnalyticsEvents.invalid,
-        );
-        return;
-      }
+    unawaited(
+      Future(() async {
+        var command = topLevelResults.command;
+        if (command != null) {
+          // Command name can only be null for top level results.
+          // But since we are taking the name of a command from the top level
+          // results there should always be a name specified.
+          assert(command.name != null, 'Command name should never be null.');
+          _onAnalyticsEvent?.call(
+            command.name ?? BetterCommandRunnerAnalyticsEvents.invalid,
+          );
+          return;
+        }
 
-      // Checks if the command is valid (i.e. no unexpected arguments).
-      // If there are unexpected arguments this will trigger a [UsageException]
-      // which will be caught in the try catch around the super.runCommand call.
-      // Therefore, this ensures that the help event is not sent for
-      // commands that are invalid.
-      // Note that there are other scenarios that also trigger a [UsageException]
-      // so the try/catch statement can't be fully compensated for handled here.
-      var noUnexpectedArgs = topLevelResults.rest.isEmpty;
-      if (noUnexpectedArgs) {
-        _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.help);
-      }
-    }));
+        // Checks if the command is valid (i.e. no unexpected arguments).
+        // If there are unexpected arguments this will trigger a [UsageException]
+        // which will be caught in the try catch around the super.runCommand call.
+        // Therefore, this ensures that the help event is not sent for
+        // commands that are invalid.
+        // Note that there are other scenarios that also trigger a [UsageException]
+        // so the try/catch statement can't be fully compensated for handled here.
+        var noUnexpectedArgs = topLevelResults.rest.isEmpty;
+        if (noUnexpectedArgs) {
+          _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.help);
+        }
+      }),
+    );
 
     await _onBeforeRunCommand?.call(this);
 

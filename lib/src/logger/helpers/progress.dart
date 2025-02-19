@@ -48,7 +48,7 @@ class ProgressAnimation {
     '⠦',
     '⠧',
     '⠇',
-    '⠏'
+    '⠏',
   ];
 
   /// The list of animation frames.
@@ -64,8 +64,8 @@ class Progress {
     this._message,
     this._stdout, {
     ProgressOptions options = const ProgressOptions(),
-  })  : _stopwatch = Stopwatch(),
-        _options = options {
+  }) : _stopwatch = Stopwatch(),
+       _options = options {
     _stopwatch
       ..reset()
       ..start();
@@ -121,7 +121,8 @@ class Progress {
   void fail([String? update]) {
     _timer?.cancel();
     _write(
-        '$_clearLine${AnsiStyle.red.wrap('✗')} ${update ?? _message} $_time\n');
+      '$_clearLine${AnsiStyle.red.wrap('✗')} ${update ?? _message} $_time\n',
+    );
     _stopwatch.stop();
   }
 

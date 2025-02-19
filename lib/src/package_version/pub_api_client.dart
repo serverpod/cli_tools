@@ -13,8 +13,8 @@ class PubApiClient {
   PubApiClient({
     http.Client? httpClient,
     requestTimeout = const Duration(seconds: 2),
-  })  : _pubClient = PubClient(client: httpClient),
-        _requestTimeout = requestTimeout;
+  }) : _pubClient = PubClient(client: httpClient),
+       _requestTimeout = requestTimeout;
 
   /// Tries to fetch the latest stable version, version does not include '-' or '+',
   /// for the package named [packageName].
