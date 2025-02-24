@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
-import 'package:cli_tools/src/better_command_runner/exit_exception.dart';
 
 /// A function type for executing code before running a command.
 typedef OnBeforeRunCommand = Future<void> Function(BetterCommandRunner runner);
@@ -14,11 +13,10 @@ typedef PassMessage = void Function(String message);
 /// The [logLevel] is the log level to set.
 /// The [commandName] is the name of the command if custom rules for log
 /// levels are needed.
-typedef SetLogLevel =
-    void Function({
-      required CommandRunnerLogLevel parsedLogLevel,
-      String? commandName,
-    });
+typedef SetLogLevel = void Function({
+  required CommandRunnerLogLevel parsedLogLevel,
+  String? commandName,
+});
 
 /// A function type for tracking events.
 typedef OnAnalyticsEvent = void Function(String event);
@@ -63,19 +61,18 @@ class BetterCommandRunner extends CommandRunner {
     OnBeforeRunCommand? onBeforeRunCommand,
     OnAnalyticsEvent? onAnalyticsEvent,
     int? wrapTextColumn,
-  }) : _logError = logError,
-       _logInfo = logInfo,
-       _onBeforeRunCommand = onBeforeRunCommand,
-       _setLogLevel = setLogLevel,
-       _onAnalyticsEvent = onAnalyticsEvent,
-       _argParser = ArgParser(usageLineLength: wrapTextColumn) {
+  })  : _logError = logError,
+        _logInfo = logInfo,
+        _onBeforeRunCommand = onBeforeRunCommand,
+        _setLogLevel = setLogLevel,
+        _onAnalyticsEvent = onAnalyticsEvent,
+        _argParser = ArgParser(usageLineLength: wrapTextColumn) {
     argParser.addFlag(
       BetterCommandRunnerFlags.quiet,
       abbr: BetterCommandRunnerFlags.quietAbbr,
       defaultsTo: false,
       negatable: false,
-      help:
-          'Suppress all cli output. Is overridden by '
+      help: 'Suppress all cli output. Is overridden by '
           ' -${BetterCommandRunnerFlags.verboseAbbr}, --${BetterCommandRunnerFlags.verbose}.',
     );
 
@@ -84,8 +81,7 @@ class BetterCommandRunner extends CommandRunner {
       abbr: BetterCommandRunnerFlags.verboseAbbr,
       defaultsTo: false,
       negatable: false,
-      help:
-          'Prints additional information useful for development. '
+      help: 'Prints additional information useful for development. '
           'Overrides --${BetterCommandRunnerFlags.quietAbbr}, --${BetterCommandRunnerFlags.quiet}.',
     );
 
@@ -120,7 +116,7 @@ class BetterCommandRunner extends CommandRunner {
     } on UsageException catch (e) {
       _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.invalid);
       _logError?.call(e.toString());
-      throw ExitException(exitCodeCommandNotFound);
+      rethrow;
     }
   }
 
@@ -176,7 +172,7 @@ class BetterCommandRunner extends CommandRunner {
     } on UsageException catch (e) {
       _logError?.call(e.toString());
       _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.invalid);
-      throw ExitException(exitCodeCommandNotFound);
+      rethrow;
     }
   }
 

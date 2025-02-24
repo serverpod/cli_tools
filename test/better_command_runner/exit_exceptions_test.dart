@@ -32,49 +32,37 @@ void main() {
       ..addCommand(MockCommand());
 
     test(
-      'when running with unknown command then ExitException with command not found exit code is thrown.',
+      'when running with unknown command then UsageException is thrown.',
       () async {
         var args = ['unknown-command'];
 
         await expectLater(
-          () => runner.run(args),
-          throwsA(
-            predicate<ExitException>(
-              (e) => e.exitCode == BetterCommandRunner.exitCodeCommandNotFound,
-            ),
-          ),
+          runner.run(args),
+          throwsA(isA<UsageException>()),
         );
       },
     );
 
     test(
-      'when running with invalid command then ExitException with command not found exit code is thrown.',
+      'when running with invalid command then UsageException is thrown.',
       () async {
         List<String> args = ['this it not a valid command'];
 
         await expectLater(
-          () => runner.run(args),
-          throwsA(
-            predicate<ExitException>(
-              (e) => e.exitCode == BetterCommandRunner.exitCodeCommandNotFound,
-            ),
-          ),
+          runner.run(args),
+          throwsA(isA<UsageException>()),
         );
       },
     );
 
     test(
-      'when running command without mandatory option then ExitException with command not found exit code is thrown.',
+      'when running command without mandatory option then UsageException is thrown.',
       () async {
         List<String> args = [MockCommand.commandName];
 
         await expectLater(
-          () => runner.run(args),
-          throwsA(
-            predicate<ExitException>(
-              (e) => e.exitCode == BetterCommandRunner.exitCodeCommandNotFound,
-            ),
-          ),
+          runner.run(args),
+          throwsA(isA<UsageException>()),
         );
       },
     );
