@@ -14,10 +14,23 @@ class StdOutLogger extends Logger {
 
   Progress? trackedAnimationInProgress;
 
+  /// [logToStderrLevelThreshold] is the log level threshold at which messages
+  /// are written to [stderr] instead of [stdout].
+  /// If null (the default), messages are written to [stdout] for all log levels.
+  final LogLevel? logToStderrLevelThreshold;
+
   final Map<String, String>? _replacements;
 
-  StdOutLogger(super.logLevel, {Map<String, String>? replacements})
-      : _replacements = replacements;
+  /// Creates a new [StdOutLogger].
+  ///
+  /// [logToStderrLevelThreshold] is the log level threshold at which messages
+  /// are written to [stderr] instead of [stdout].
+  /// If null (the default), messages are written to [stdout] for all log levels.
+  StdOutLogger(
+    super.logLevel, {
+    Map<String, String>? replacements,
+    this.logToStderrLevelThreshold,
+  }) : _replacements = replacements;
 
   @override
   int? get wrapTextColumn => stdout.hasTerminal ? stdout.terminalColumns : null;
@@ -195,10 +208,12 @@ class StdOutLogger extends Logger {
     };
 
     _stopAnimationInProgress();
-    if (logLevel.index >= LogLevel.warning.index) {
-      stderr.write('${newParagraph ? '\n' : ''}$message${newLine ? '\n' : ''}');
+    var output = '${newParagraph ? '\n' : ''}$message${newLine ? '\n' : ''}';
+    var threshold = logToStderrLevelThreshold;
+    if (threshold != null && logLevel.index >= threshold.index) {
+      stderr.write(output);
     } else {
-      stdout.write('${newParagraph ? '\n' : ''}$message${newLine ? '\n' : ''}');
+      stdout.write(output);
     }
   }
 
