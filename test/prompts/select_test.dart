@@ -99,7 +99,16 @@ void main() {
       await select('Choose an option:', options: options, logger: logger);
     });
 
-    await expectLater(result, throwsA(isA<ExitException>()));
+    await expectLater(
+      result,
+      throwsA(
+        isA<ExitException>().having(
+          (e) => e.exitCode,
+          'exit code',
+          equals(1),
+        ),
+      ),
+    );
   });
 
   test('Given select prompt '

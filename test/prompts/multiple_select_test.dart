@@ -162,7 +162,16 @@ void main() {
       );
     });
 
-    await expectLater(result, throwsA(isA<ExitException>()));
+    await expectLater(
+      result,
+      throwsA(
+        isA<ExitException>().having(
+          (e) => e.exitCode,
+          'exit code',
+          equals(1),
+        ),
+      ),
+    );
   });
 
   test('Given multiselect prompt '
