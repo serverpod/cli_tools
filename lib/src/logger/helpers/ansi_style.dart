@@ -12,7 +12,7 @@ bool get ansiSupported {
 /// [Source](https://en.wikipedia.org/wiki/ANSI_escape_code#Colors)
 enum AnsiStyle {
   terminalDefault('\x1B[39m'),
-  red('\x1B[31m'),
+  red('\x1B[91m'),
   yellow('\x1B[33m'),
   blue('\x1B[34m'),
   cyan('\x1B[36m'),
