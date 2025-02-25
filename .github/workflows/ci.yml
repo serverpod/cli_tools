@@ -13,16 +13,20 @@ jobs:
         name: Dart format
         runs-on: ubuntu-latest
         steps:
-           - uses: actions/checkout@v4
-           - uses: dart-lang/setup-dart@v1.6.4
-           - name: Verify formatting
-             run: dart format --output=none --set-exit-if-changed .
+            - uses: actions/checkout@v4
+            - uses: dart-lang/setup-dart@v1.7.1
+              with:
+                sdk: 3.6
+            - name: Verify formatting
+              run: dart format --output=none --set-exit-if-changed .
     dart_analyze:
         name: Dart Analyze
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
-            - uses: dart-lang/setup-dart@v1.6.4
+            - uses: dart-lang/setup-dart@v1.7.1
+              with:
+                sdk: 3.6
             - run: dart pub get
             - run: dart analyze --fatal-infos
     dart_test:
@@ -30,5 +34,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
-            - uses: dart-lang/setup-dart@v1.6.4
+            - uses: dart-lang/setup-dart@v1.7.1
+              with:
+                sdk: 3.6
             - run: dart test
