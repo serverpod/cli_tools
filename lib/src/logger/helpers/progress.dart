@@ -64,8 +64,8 @@ class Progress {
     this._message,
     this._stdout, {
     ProgressOptions options = const ProgressOptions(),
-  }) : _stopwatch = Stopwatch(),
-       _options = options {
+  })  : _stopwatch = Stopwatch(),
+        _options = options {
     _stopwatch
       ..reset()
       ..start();

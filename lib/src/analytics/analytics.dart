@@ -24,9 +24,9 @@ class MixPanelAnalytics implements Analytics {
     required String uniqueUserId,
     required String projectToken,
     required String version,
-  }) : _uniqueUserId = uniqueUserId,
-       _projectToken = projectToken,
-       _version = version;
+  })  : _uniqueUserId = uniqueUserId,
+        _projectToken = projectToken,
+        _version = version;
 
   @override
   void cleanUp() {}
@@ -62,16 +62,14 @@ class MixPanelAnalytics implements Analytics {
 
   Future<void> _quietPost(String payload) async {
     try {
-      await http
-          .post(
-            Uri.parse(_endpoint),
-            body: 'data=$payload',
-            headers: {
-              'Accept': 'text/plain',
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-          )
-          .timeout(const Duration(seconds: 2));
+      await http.post(
+        Uri.parse(_endpoint),
+        body: 'data=$payload',
+        headers: {
+          'Accept': 'text/plain',
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      ).timeout(const Duration(seconds: 2));
     } catch (e) {
       return;
     }

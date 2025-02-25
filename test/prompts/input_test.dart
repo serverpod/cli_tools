@@ -7,7 +7,8 @@ import '../test_utils/io_helper.dart';
 void main() {
   var logger = StdOutLogger(LogLevel.debug);
 
-  test('Given input prompt '
+  test(
+      'Given input prompt '
       'when providing valid input "HelloWorld" '
       'then should return the input', () async {
     late Future<String> result;
@@ -18,7 +19,8 @@ void main() {
     await expectLater(result, completion('HelloWorld'));
   });
 
-  test('Given input prompt '
+  test(
+      'Given input prompt '
       'when providing empty input with default value "default" '
       'then should return "default"', () async {
     late Future<String> result;
@@ -33,7 +35,8 @@ void main() {
     await expectLater(result, completion('default'));
   });
 
-  test('Given input prompt '
+  test(
+      'Given input prompt '
       'when providing empty input without default value '
       'then should return an empty string', () async {
     late Future<String> result;
@@ -44,7 +47,8 @@ void main() {
     await expectLater(result, completion(''));
   });
 
-  test('Given input prompt '
+  test(
+      'Given input prompt '
       'when providing input with leading and trailing spaces '
       'then should trim string', () async {
     late Future<String> result;
@@ -55,7 +59,8 @@ void main() {
     await expectLater(result, completion('hello'));
   });
 
-  test('Given input prompt '
+  test(
+      'Given input prompt '
       'when providing defult value '
       'then should display prompt with default value', () async {
     var (:stdout, :stderr, :stdin) = await collectOutput(
@@ -68,7 +73,8 @@ void main() {
     expect(stdout.output, 'Enter something (default): ');
   });
 
-  test('Given input prompt '
+  test(
+      'Given input prompt '
       'when providing no default value '
       'then should not display a default description', () async {
     var (:stdout, :stderr, :stdin) = await collectOutput(

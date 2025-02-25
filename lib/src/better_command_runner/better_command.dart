@@ -7,8 +7,8 @@ abstract class BetterCommand extends Command {
   final ArgParser _argParser;
 
   BetterCommand({PassMessage? logInfo, int? wrapTextColumn})
-    : _logInfo = logInfo,
-      _argParser = ArgParser(usageLineLength: wrapTextColumn);
+      : _logInfo = logInfo,
+        _argParser = ArgParser(usageLineLength: wrapTextColumn);
 
   @override
   ArgParser get argParser => _argParser;

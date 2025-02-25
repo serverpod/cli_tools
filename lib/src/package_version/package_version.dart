@@ -20,7 +20,7 @@ abstract class PackageVersion {
   /// attempting to fetch the latest version again.
   static Future<Version?> fetchLatestPackageVersion({
     required Future<void> Function(PackageVersionData versionArtefact)
-    storePackageVersionData,
+        storePackageVersionData,
     required Future<PackageVersionData?> Function() loadPackageVersionData,
     required Future<Version?> Function() fetchLatestPackageVersion,
   }) async {
@@ -47,7 +47,7 @@ abstract class PackageVersion {
   static Future<void> _storePubDevVersion(
     Version? version, {
     required Future<void> Function(PackageVersionData versionArtefact)
-    storePackageVersionData,
+        storePackageVersionData,
   }) async {
     PackageVersionData versionArtefact;
     if (version != null) {
@@ -81,7 +81,7 @@ class PackageVersionData {
       );
 
   Map<String, dynamic> toJson() => {
-    'version': version.toString(),
-    'valid_until': validUntil.millisecondsSinceEpoch,
-  };
+        'version': version.toString(),
+        'valid_until': validUntil.millisecondsSinceEpoch,
+      };
 }

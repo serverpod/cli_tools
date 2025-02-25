@@ -17,7 +17,7 @@ class StdOutLogger extends Logger {
   final Map<String, String>? _replacements;
 
   StdOutLogger(super.logLevel, {Map<String, String>? replacements})
-    : _replacements = replacements;
+      : _replacements = replacements;
 
   @override
   int? get wrapTextColumn => stdout.hasTerminal ? stdout.terminalColumns : null;
@@ -189,9 +189,9 @@ class StdOutLogger extends Logger {
     message = switch (_replacements) {
       null => message,
       Map<String, String> replacements => replacements.entries.fold(
-        message,
-        (String acc, entry) => acc.replaceAll(entry.key, entry.value),
-      ),
+          message,
+          (String acc, entry) => acc.replaceAll(entry.key, entry.value),
+        ),
     };
 
     _stopAnimationInProgress();
