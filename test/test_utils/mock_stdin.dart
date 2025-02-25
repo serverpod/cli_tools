@@ -11,8 +11,8 @@ class MockStdin implements Stdin {
   MockStdin({
     List<String> textInputs = const [],
     List<int> keyInputs = const [],
-  }) : _textInputs = textInputs,
-       _keyInputs = keyInputs;
+  })  : _textInputs = textInputs,
+        _keyInputs = keyInputs;
 
   @override
   bool get echoMode => false;

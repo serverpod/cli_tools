@@ -81,8 +81,7 @@ void main() {
         expect(
           timeDifferent,
           lessThan(const Duration(minutes: 1)),
-          reason:
-              'Failed fetch stored version should have a valid until time '
+          reason: 'Failed fetch stored version should have a valid until time '
               'close to the current time plus the bad connection retry timeout.',
         );
       });
@@ -112,8 +111,7 @@ void main() {
         expect(
           timeDifferent,
           lessThan(const Duration(minutes: 1)),
-          reason:
-              'Successfully stored version should have a valid until time '
+          reason: 'Successfully stored version should have a valid until time '
               'close to the current time plus the validity time.',
         );
       },
@@ -139,8 +137,7 @@ void main() {
         expect(
           timeDifferent,
           lessThan(const Duration(minutes: 1)),
-          reason:
-              'Failed fetch stored version should have a valid until time '
+          reason: 'Failed fetch stored version should have a valid until time '
               'close to the current time plus the bad connection retry timeout.',
         );
       },

@@ -9,7 +9,8 @@ import '../test_utils/prompts/option_matcher.dart';
 void main() {
   var logger = StdOutLogger(LogLevel.debug);
 
-  test('Given multiselect prompt '
+  test(
+      'Given multiselect prompt '
       'when confirms selection with enter line-feed '
       'then completes', () async {
     late Future<List<Option>> result;
@@ -26,7 +27,8 @@ void main() {
     await expectLater(result, completes);
   });
 
-  test('Given multiselect prompt '
+  test(
+      'Given multiselect prompt '
       'when confirms selection with enter carriage-return '
       'then completes', () async {
     late Future<List<Option>> result;
@@ -43,7 +45,8 @@ void main() {
     await expectLater(result, completes);
   });
 
-  test('Given multiselect prompt '
+  test(
+      'Given multiselect prompt '
       'when providing message '
       'then should be displayed first', () async {
     var (:stdout, :stderr, :stdin) = await collectOutput(
@@ -60,7 +63,8 @@ void main() {
     expect(stdout.output, startsWith('Choose multiple options:\n'));
   });
 
-  test('Given select prompt '
+  test(
+      'Given select prompt '
       'when providing options '
       'then instruction should be given last', () async {
     var (:stdout, :stderr, :stdin) = await collectOutput(
@@ -80,7 +84,8 @@ void main() {
     );
   });
 
-  test('Given multiselect prompt '
+  test(
+      'Given multiselect prompt '
       'when toggling multiple options and pressing Enter '
       'then should return all selected options', () async {
     late Future<List<Option>> result;
@@ -108,7 +113,8 @@ void main() {
     );
   });
 
-  test('Given multiselect prompt '
+  test(
+      'Given multiselect prompt '
       'when no options are selected and pressing Enter '
       'then should return an empty list', () async {
     late Future<List<Option>> result;
@@ -125,7 +131,8 @@ void main() {
     await expectLater(result, completion(isEmpty));
   });
 
-  test('Given multiselect prompt '
+  test(
+      'Given multiselect prompt '
       'when toggling the same option twice '
       'then should return empty list', () async {
     late Future<List<Option>> result;
@@ -149,7 +156,8 @@ void main() {
     await expectLater(result, completion(isEmpty));
   });
 
-  test('Given multiselect prompt '
+  test(
+      'Given multiselect prompt '
       'when pressing "q" key '
       'then should throw a cancellation exception', () async {
     var options = [Option('Option 1'), Option('Option 2'), Option('Option 3')];
@@ -162,10 +170,20 @@ void main() {
       );
     });
 
-    await expectLater(result, throwsA(isA<ExitException>()));
+    await expectLater(
+      result,
+      throwsA(
+        isA<ExitException>().having(
+          (e) => e.exitCode,
+          'exit code',
+          equals(1),
+        ),
+      ),
+    );
   });
 
-  test('Given multiselect prompt '
+  test(
+      'Given multiselect prompt '
       'when providing empty options list '
       'then should throw ArgumentError', () async {
     expect(
@@ -174,7 +192,8 @@ void main() {
     );
   });
 
-  test('Given multiselect prompt '
+  test(
+      'Given multiselect prompt '
       'when toggling multiple options and pressing Enter '
       'then all selected options should have filled radio button and '
       'current option should be underlined', () async {
@@ -203,7 +222,8 @@ Press [Space] to toggle selection, [Enter] to confirm.
 ''');
   });
 
-  test('Given multiple select prompt with multiple options '
+  test(
+      'Given multiple select prompt with multiple options '
       'when moving past the last option and pressing Enter '
       'then first option is selected', () async {
     late Future<List<Option>> result;
@@ -232,7 +252,8 @@ Press [Space] to toggle selection, [Enter] to confirm.
     );
   });
 
-  test('Given multiple select prompt with multiple options '
+  test(
+      'Given multiple select prompt with multiple options '
       'when up past the first option and pressing Enter '
       'then last option is selected', () async {
     late Future<List<Option>> result;
