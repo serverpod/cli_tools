@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+- feat: Changed dark red to bright red for console output.
+- feat: BREAKING. Log all to stdout by default.
+- feat: BREAKING. Preserves UsageException upon argument parse errors instead of replacing it with ExitException.
+
 ## 0.2.0
 
 - feat: BREAKING. ExitException to handle full range of valid exit codes.
