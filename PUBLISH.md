@@ -8,6 +8,6 @@ It is also possible to publish a pre-release version by adding a suffix to the v
 
 ## Create a new tag
 
-The preferred way to create a new tag is to use GitHubs interface to create a new release.
+The preferred way to create a new tag is to use GitHub's interface to create a new release.
 
-The automatically generated changelogs for the github release do not need to be modified. Instead the `CHANGELOG.md` is our source of truth on pub.dev.
+The automatically generated changelogs for the github release do not need to be modified. Instead, the `CHANGELOG.md` is our source of truth on pub.dev.
