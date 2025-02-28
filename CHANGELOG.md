@@ -2,9 +2,9 @@
 
 ## 0.3.0
 
-- feat: Changed dark red to bright red for console output.
-- feat: BREAKING. Log all to stdout by default.
+- feat: BREAKING. Logging behavior now allows configuring the log level for stderr. By default, all logs are now directed to stdout.
 - feat: BREAKING. Preserves UsageException upon argument parse errors instead of replacing it with ExitException.
+- feat: Changed dark red to bright red for console output.
 
 ## 0.2.0
 
