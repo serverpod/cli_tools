@@ -26,7 +26,7 @@ void main() {
   group('Given a better command registered in the better command runner', () {
     var infos = <String>[];
     var betterCommand = MockCommand(
-      passOutput: PassOutputFuncs(
+      passOutput: MessageOutput(
         logUsage: (u) => infos.add(u),
       ),
     );

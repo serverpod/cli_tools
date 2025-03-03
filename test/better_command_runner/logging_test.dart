@@ -33,7 +33,7 @@ void main() {
     var runner = BetterCommandRunner(
       'test',
       'this is a test cli',
-      passOutput: PassOutputFuncs(
+      messageOutput: MessageOutput(
         logUsageException: (e) => errors.add(e.toString()),
         logUsage: (u) => infos.add(u),
       ),

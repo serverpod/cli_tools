@@ -6,34 +6,28 @@ import 'package:args/command_runner.dart';
 /// A function type for executing code before running a command.
 typedef OnBeforeRunCommand = Future<void> Function(BetterCommandRunner runner);
 
-/// An interface for passing specific log messages.
-abstract interface class PassOutput {
-  void logUsageException(UsageException exception);
-
-  void logUsage(String usage);
-}
-
-/// Convenience class that implements the [PassOutput] interface with
-/// user-provided functions for logging usage exceptions and usage.
+/// A proxy for user-provided functions for passing specific log messages.
 ///
 /// It is valid to not provide a function in order to not pass that output.
-class PassOutputFuncs implements PassOutput {
+final class MessageOutput {
   final void Function(UsageException exception)? _logUsageException;
 
   final void Function(String usage)? _logUsage;
 
-  PassOutputFuncs({
+  MessageOutput({
     void Function(UsageException exception)? logUsageException,
     void Function(String usage)? logUsage,
   })  : _logUsageException = logUsageException,
         _logUsage = logUsage;
 
-  @override
+  /// Logs a usage exception.
+  /// If the function has not been provided then nothing will happen.
   void logUsageException(UsageException exception) {
     _logUsageException?.call(exception);
   }
 
-  @override
+  /// Logs a usage message.
+  /// If the function has not been provided then nothing will happen.
   void logUsage(String usage) {
     _logUsage?.call(usage);
   }
@@ -64,7 +58,7 @@ class BetterCommandRunner extends CommandRunner {
   /// The specified command was not found or couldn't be located.
   static const int exitCodeCommandNotFound = 127;
 
-  final PassOutput? _passOutput;
+  final MessageOutput? _messageOutput;
   final SetLogLevel? _setLogLevel;
   final OnBeforeRunCommand? _onBeforeRunCommand;
   OnAnalyticsEvent? _onAnalyticsEvent;
@@ -75,8 +69,7 @@ class BetterCommandRunner extends CommandRunner {
   ///
   /// - [executableName] is the name of the executable for the command line interface.
   /// - [description] is a description of the command line interface.
-  /// - [passOutput] is an optional [PassOutput] object used to pass specific log messages.
-  ///   See also [PassOutputFuncs].
+  /// - [messageOutput] is an optional [MessageOutput] object used to pass specific log messages.
   /// - [setLogLevel] function is used to set the log level.
   /// - [onBeforeRunCommand] function is executed before running a command.
   /// - [onAnalyticsEvent] function is used to track events.
@@ -84,12 +77,12 @@ class BetterCommandRunner extends CommandRunner {
   BetterCommandRunner(
     super.executableName,
     super.description, {
-    PassOutput? passOutput,
+    MessageOutput? messageOutput,
     SetLogLevel? setLogLevel,
     OnBeforeRunCommand? onBeforeRunCommand,
     OnAnalyticsEvent? onAnalyticsEvent,
     int? wrapTextColumn,
-  })  : _passOutput = passOutput,
+  })  : _messageOutput = messageOutput,
         _setLogLevel = setLogLevel,
         _onBeforeRunCommand = onBeforeRunCommand,
         _onAnalyticsEvent = onAnalyticsEvent,
@@ -141,7 +134,7 @@ class BetterCommandRunner extends CommandRunner {
     try {
       return super.parse(args);
     } on UsageException catch (e) {
-      _passOutput?.logUsageException(e);
+      _messageOutput?.logUsageException(e);
       _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.invalid);
       rethrow;
     }
@@ -149,7 +142,7 @@ class BetterCommandRunner extends CommandRunner {
 
   @override
   void printUsage() {
-    _passOutput?.logUsage(usage);
+    _messageOutput?.logUsage(usage);
   }
 
   @override
@@ -197,7 +190,7 @@ class BetterCommandRunner extends CommandRunner {
     try {
       await super.runCommand(topLevelResults);
     } on UsageException catch (e) {
-      _passOutput?.logUsageException(e);
+      _messageOutput?.logUsageException(e);
       _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.invalid);
       rethrow;
     }
