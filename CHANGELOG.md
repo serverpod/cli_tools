@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0
+
+- feat: BREAKING. BetterCommandRunner's constructor changed to use MessageOutput class for clearer specification of logging functions.
+
 ## 0.3.0
 
 - feat: BREAKING. Logging behavior now allows configuring the log level for stderr. By default, all logs are now directed to stdout.
