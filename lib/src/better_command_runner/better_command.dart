@@ -3,11 +3,11 @@ import 'package:args/command_runner.dart';
 import 'package:cli_tools/better_command_runner.dart';
 
 abstract class BetterCommand extends Command {
-  final MessageOutput? _passOutput;
+  final MessageOutput? _messageOutput;
   final ArgParser _argParser;
 
-  BetterCommand({MessageOutput? passOutput, int? wrapTextColumn})
-      : _passOutput = passOutput,
+  BetterCommand({MessageOutput? messageOutput, int? wrapTextColumn})
+      : _messageOutput = messageOutput,
         _argParser = ArgParser(usageLineLength: wrapTextColumn);
 
   @override
@@ -15,6 +15,6 @@ abstract class BetterCommand extends Command {
 
   @override
   void printUsage() {
-    _passOutput?.logUsage(usage);
+    _messageOutput?.logUsage(usage);
   }
 }
