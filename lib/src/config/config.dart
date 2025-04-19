@@ -1,3 +1,4 @@
+export 'config_parser.dart';
 export 'config_source_provider.dart';
 export 'config_source.dart';
 export 'configuration_parser.dart';

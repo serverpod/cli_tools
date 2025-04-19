@@ -645,6 +645,13 @@ void prepareOptionsForParsing(
   final Iterable<OptionDefinition> options,
   final ArgParser argParser,
 ) {
+  final argNameOpts = validateOptions(options);
+  addOptionsToParser(argNameOpts, argParser);
+}
+
+Iterable<OptionDefinition> validateOptions(
+  final Iterable<OptionDefinition> options,
+) {
   final argNameOpts = <String, OptionDefinition>{};
   final argPosOpts = <int, OptionDefinition>{};
   final envNameOpts = <String, OptionDefinition>{};
@@ -699,7 +706,14 @@ void prepareOptionsForParsing(
     }
   }
 
-  for (final opt in argNameOpts.values) {
+  return argNameOpts.values;
+}
+
+void addOptionsToParser(
+  final Iterable<OptionDefinition> argNameOpts,
+  final ArgParser argParser,
+) {
+  for (final opt in argNameOpts) {
     opt.option._addToArgParser(argParser);
   }
 }
@@ -753,6 +767,7 @@ class Configuration<O extends OptionDefinition> {
     final Map<String, String>? env,
     final ConfigurationBroker? configBroker,
     final Map<O, Object?>? presetValues,
+    final bool ignoreUnexpectedPositionalArgs = false,
   })  : _options = List<O>.from(options),
         _config = <O, OptionResolution>{},
         _errors = <String>[] {
@@ -776,6 +791,7 @@ class Configuration<O extends OptionDefinition> {
       env: env,
       configBroker: configBroker,
       presetValues: presetValues,
+      ignoreUnexpectedPositionalArgs: ignoreUnexpectedPositionalArgs,
     );
   }
 
@@ -906,6 +922,7 @@ class Configuration<O extends OptionDefinition> {
     final Map<String, String>? env,
     final ConfigurationBroker? configBroker,
     final Map<O, Object?>? presetValues,
+    final bool ignoreUnexpectedPositionalArgs = false,
   }) {
     final posArgs = (args?.rest ?? []).iterator;
     final orderedOpts = _options.sorted((final a, final b) =>
@@ -954,7 +971,7 @@ class Configuration<O extends OptionDefinition> {
     _validateGroups(optionGroups);
 
     final remainingPosArgs = posArgs.restAsList();
-    if (remainingPosArgs.isNotEmpty) {
+    if (remainingPosArgs.isNotEmpty && !ignoreUnexpectedPositionalArgs) {
       _errors.add(
           "Unexpected positional argument(s): '${remainingPosArgs.join("', '")}'");
     }
