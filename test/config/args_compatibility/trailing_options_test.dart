@@ -2,21 +2,22 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:args/args.dart';
 import 'package:test/test.dart';
+
+import 'package:cli_tools/config.dart';
 
 import 'test_utils.dart';
 
 void main() {
   test('allowTrailingOptions defaults to true', () {
-    var parser = ArgParser();
+    var parser = ConfigParser();
     expect(parser.allowTrailingOptions, isTrue);
   });
 
   group('when trailing options are allowed', () {
-    late ArgParser parser;
+    late ConfigParser parser;
     setUp(() {
-      parser = ArgParser(allowTrailingOptions: true);
+      parser = ConfigParser(allowTrailingOptions: true);
     });
 
     void expectThrows(List<String> args, String arg) {
@@ -78,14 +79,14 @@ void main() {
     test('throws on a command', () {
       parser.addCommand('com');
       expectThrows(['arg', 'com'], 'com');
-    });
+    }, skip: 'commands not supported');
   });
 
   test("uses the innermost command's trailing options behavior", () {
-    var parser = ArgParser(allowTrailingOptions: true);
+    var parser = ConfigParser(allowTrailingOptions: true);
     parser.addFlag('flag', abbr: 'f');
     var command =
-        parser.addCommand('cmd', ArgParser(allowTrailingOptions: false));
+        parser.addCommand('cmd', ConfigParser(allowTrailingOptions: false));
     command.addFlag('verbose', abbr: 'v');
 
     var results = parser.parse(['a', '-f', 'b']);
@@ -96,5 +97,5 @@ void main() {
     expect(results['flag'], isTrue); // Not trailing.
     expect(results.command!['verbose'], isFalse);
     expect(results.command!.rest, equals(['a', '-v', '--unknown']));
-  });
+  }, skip: 'commands not supported');
 }

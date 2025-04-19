@@ -5,15 +5,17 @@
 import 'package:args/args.dart';
 import 'package:test/test.dart';
 
+import 'package:cli_tools/config.dart';
+
 void main() {
-  group('ArgParser.parse() is fast', () {
+  group('ConfigParser.parse() is fast', () {
     test('for short flags', () {
-      _testParserPerformance(ArgParser()..addFlag('short', abbr: 's'), '-s');
+      _testParserPerformance(ConfigParser()..addFlag('short', abbr: 's'), '-s');
     });
 
     test('for abbreviations', () {
       _testParserPerformance(
-          ArgParser()
+          ConfigParser()
             ..addFlag('short', abbr: 's')
             ..addFlag('short2', abbr: 't')
             ..addFlag('short3', abbr: 'u')
@@ -22,11 +24,12 @@ void main() {
     });
 
     test('for long flags', () {
-      _testParserPerformance(ArgParser()..addFlag('long-flag'), '--long-flag');
+      _testParserPerformance(
+          ConfigParser()..addFlag('long-flag'), '--long-flag');
     });
 
     test('for long options with =', () {
-      _testParserPerformance(ArgParser()..addOption('long-option-name'),
+      _testParserPerformance(ConfigParser()..addOption('long-option-name'),
           '--long-option-name=long-option-value');
     });
   });
