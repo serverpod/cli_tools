@@ -449,7 +449,7 @@ class BoolParser extends ValueParser<bool> {
 
   @override
   bool parse(final String value) {
-    return bool.tryParse(value, caseSensitive: false) ?? false;
+    return bool.parse(value, caseSensitive: false);
   }
 }
 

@@ -334,7 +334,7 @@ class DurationParser extends ValueParser<Duration> {
     if (value == Duration.zero) return '0s';
 
     final sign = value.isNegative ? '-' : '';
-    final d = _unitStr(value.inDays, 24, 'd');
+    final d = _unitStr(value.inDays, null, 'd');
     final h = _unitStr(value.inHours, 24, 'h');
     final m = _unitStr(value.inMinutes, 60, 'm');
     final s = _unitStr(value.inSeconds, 60, 's');
@@ -344,8 +344,11 @@ class DurationParser extends ValueParser<Duration> {
     return '$sign$d$h$m$s$ms$us';
   }
 
-  static String _unitStr(final int value, final int mod, final String unit) {
+  static String _unitStr(final int value, final int? mod, final String unit) {
     final absValue = value.abs();
+    if (mod == null) {
+      return absValue > 0 ? '$absValue$unit' : '';
+    }
     return absValue % mod > 0 ? '${absValue.remainder(mod)}$unit' : '';
   }
 }

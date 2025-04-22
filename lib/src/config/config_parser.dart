@@ -228,6 +228,7 @@ class ConfigParser implements ArgParser {
       options: _optionDefinitions,
       argResults: argResults,
       env: env,
+      configBroker: configBroker,
       presetValues: presetValues,
       ignoreUnexpectedPositionalArgs: true,
     );
@@ -388,7 +389,7 @@ class ConfigResults implements ArgResults {
     return _configuration
         .optionsWhereSource((final source) => source != ValueSourceType.noValue)
         .map((final o) => o.option.argName)
-        .nonNulls;
+        .whereType<String>();
   }
 
   /// Returns `true` if the option with [name] was parsed from an actual

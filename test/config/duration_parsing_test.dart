@@ -213,6 +213,15 @@ void main() {
           equals('10us'));
     });
 
+    test(
+        'when calling format with 99999d Duration then it returns the string "99999d".',
+        () {
+      expect(
+        durationParser.format(const Duration(days: 99999)),
+        equals('99999d'),
+      );
+    });
+
     test('when calling format with 0 Duration then it returns the string "0s".',
         () {
       expect(durationParser.format(Duration.zero), equals('0s'));
