@@ -655,6 +655,16 @@ void main() async {
       );
       expect(config.optionalValue(typedOpt), equals([123, 456]));
     });
+
+    test('when passed several arg and env values then args take precedence',
+        () async {
+      final config = Configuration.resolve(
+        options: [typedOpt],
+        args: ['--many', '12', '--many', '45'],
+        env: <String, String>{'SERVERPOD_MANY': '123,456'},
+      );
+      expect(config.optionalValue(typedOpt), equals([12, 45]));
+    });
   });
 
   group('Given a mandatory MultiOption of integers with alias', () {
