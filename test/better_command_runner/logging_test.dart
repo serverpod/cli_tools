@@ -71,7 +71,12 @@ void main() {
 
       test('then could not find message is logged to error.', () async {
         expect(errors, hasLength(1));
-        expect(errors.first, contains('Could not find'));
+        expect(
+          errors.first,
+          contains(
+            'Unexpected positional argument(s): \'this it not a valid command\'',
+          ),
+        );
       });
     });
 
