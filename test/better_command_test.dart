@@ -4,7 +4,7 @@ import 'package:test/test.dart';
 class MockCommand extends BetterCommand {
   static String commandName = 'mock-command';
 
-  MockCommand({super.passOutput}) {
+  MockCommand({super.messageOutput}) {
     argParser.addOption(
       'name',
       defaultsTo: 'serverpod',
@@ -26,7 +26,7 @@ void main() {
   group('Given a better command registered in the better command runner', () {
     var infos = <String>[];
     var betterCommand = MockCommand(
-      passOutput: MessageOutput(
+      messageOutput: MessageOutput(
         logUsage: (u) => infos.add(u),
       ),
     );

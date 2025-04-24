@@ -1,5 +1,4 @@
 import 'package:cli_tools/cli_tools.dart';
-import 'package:cli_tools/src/prompts/input.dart';
 import 'package:test/test.dart';
 
 import '../test_utils/io_helper.dart';
