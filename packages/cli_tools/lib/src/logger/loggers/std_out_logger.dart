@@ -130,9 +130,13 @@ class StdOutLogger extends Logger {
 
     final progress = Progress(message, stdout);
     trackedAnimationInProgress = progress;
-    final bool success = await runner();
-    trackedAnimationInProgress = null;
-    success ? progress.complete() : progress.fail();
+    bool success = false;
+    try {
+      success = await runner();
+    } finally {
+      trackedAnimationInProgress = null;
+      success ? progress.complete() : progress.fail();
+    }
     return success;
   }
 
