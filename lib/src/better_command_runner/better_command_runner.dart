@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
+import 'package:cli_tools/config.dart';
+import 'package:cli_tools/src/better_command_runner/config_resolver.dart';
 
 /// A function type for executing code before running a command.
 typedef OnBeforeRunCommand = Future<void> Function(BetterCommandRunner runner);
@@ -53,7 +55,13 @@ typedef OnAnalyticsEvent = void Function(String event);
 ///
 /// The [BetterCommandRunner] class provides a more enhanced command line interface
 /// for running commands and handling command line arguments.
-class BetterCommandRunner extends CommandRunner {
+class BetterCommandRunner<O extends OptionDefinition, T>
+    extends CommandRunner<T> {
+  static const foo = <OptionDefinition>[
+    BetterCommandRunnerFlags.verboseOption,
+    BetterCommandRunnerFlags.quietOption,
+  ];
+
   /// Process exit code value for command not found -
   /// The specified command was not found or couldn't be located.
   static const int exitCodeCommandNotFound = 127;
@@ -63,7 +71,23 @@ class BetterCommandRunner extends CommandRunner {
   final OnBeforeRunCommand? _onBeforeRunCommand;
   OnAnalyticsEvent? _onAnalyticsEvent;
 
-  final ArgParser _argParser;
+  /// The gloabl option definitions.
+  late final List<O> _globalOptions;
+
+  /// The resolver for the global configuration.
+  final ConfigResolver<O> _configResolver;
+
+  Configuration<O>? _globalConfiguration;
+
+  /// The current global configuration.
+  /// (Since this object is re-entrant, the global config is regenerated each call to [runCommand].)
+  Configuration<O> get globalConfiguration {
+    final globalConfig = _globalConfiguration;
+    if (globalConfig == null) {
+      throw StateError('Global configuration not initialized');
+    }
+    return globalConfig;
+  }
 
   /// Creates a new instance of [BetterCommandRunner].
   ///
@@ -74,53 +98,71 @@ class BetterCommandRunner extends CommandRunner {
   /// - [onBeforeRunCommand] function is executed before running a command.
   /// - [onAnalyticsEvent] function is used to track events.
   /// - [wrapTextColumn] is the column width for wrapping text in the command line interface.
+  /// - [globalOptions] is an optional list of global options.
+  /// - [configResolver] is an optional custom [ConfigResolver] implementation.
+  ///
+  /// If [globalOptions] is not provided then the default global options will be used.
+  /// If no global options are desired then an empty list can be provided.
+  ///
+  /// To define a bespoke set of global options, it is recommended to define
+  /// a proper options enum. It can included any of the default global options
+  /// as well as any custom options. Example:
+  ///
+  /// ```dart
+  /// enum BespokeGlobalOption<V> implements OptionDefinition<V> {
+  ///   quiet(BetterCommandRunnerFlags.quietOption),
+  ///   verbose(BetterCommandRunnerFlags.verboseOption),
+  ///   analytics(BetterCommandRunnerFlags.analyticsOption),
+  ///   name(StringOption(
+  ///     argName: 'name',
+  ///     allowedValues: ['serverpod', 'stockholm'],
+  ///     defaultsTo: 'serverpod',
+  ///   )),
+  ///   age(IntOption(argName: 'age', helpText: 'Required age', min: 0, max: 100));
+  ///
+  ///   const BespokeGlobalOption(this.option);
+  ///
+  ///   @override
+  ///   final ConfigOptionBase<V> option;
+  /// }
+  /// ```
+  ///
+  /// If [configResolver] is not provided then [DefaultConfigResolver] will be used,
+  /// which uses the command line arguments and environment variables as input sources.
   BetterCommandRunner(
     super.executableName,
     super.description, {
+    super.suggestionDistanceLimit,
     MessageOutput? messageOutput,
     SetLogLevel? setLogLevel,
     OnBeforeRunCommand? onBeforeRunCommand,
     OnAnalyticsEvent? onAnalyticsEvent,
     int? wrapTextColumn,
+    List<O>? globalOptions,
+    ConfigResolver<O>? configResolver,
   })  : _messageOutput = messageOutput,
         _setLogLevel = setLogLevel,
         _onBeforeRunCommand = onBeforeRunCommand,
         _onAnalyticsEvent = onAnalyticsEvent,
-        _argParser = ArgParser(usageLineLength: wrapTextColumn) {
-    argParser.addFlag(
-      BetterCommandRunnerFlags.quiet,
-      abbr: BetterCommandRunnerFlags.quietAbbr,
-      defaultsTo: false,
-      negatable: false,
-      help: 'Suppress all cli output. Is overridden by '
-          ' -${BetterCommandRunnerFlags.verboseAbbr}, --${BetterCommandRunnerFlags.verbose}.',
-    );
-
-    argParser.addFlag(
-      BetterCommandRunnerFlags.verbose,
-      abbr: BetterCommandRunnerFlags.verboseAbbr,
-      defaultsTo: false,
-      negatable: false,
-      help: 'Prints additional information useful for development. '
-          'Overrides --${BetterCommandRunnerFlags.quietAbbr}, --${BetterCommandRunnerFlags.quiet}.',
-    );
-
-    if (_onAnalyticsEvent != null) {
-      argParser.addFlag(
-        BetterCommandRunnerFlags.analytics,
-        abbr: BetterCommandRunnerFlags.analyticsAbbr,
-        defaultsTo: true,
-        negatable: true,
-        help: 'Toggles if analytics data is sent. ',
-      );
+        _configResolver = configResolver ?? DefaultConfigResolver<O>(),
+        super(
+          usageLineLength: wrapTextColumn,
+        ) {
+    if (globalOptions != null) {
+      _globalOptions = globalOptions;
+    } else if (_onAnalyticsEvent != null) {
+      _globalOptions = BasicGlobalOption.values as List<O>;
+    } else {
+      _globalOptions = [
+        BasicGlobalOption.quiet as O,
+        BasicGlobalOption.verbose as O,
+      ];
     }
+    prepareOptionsForParsing(_globalOptions, argParser);
   }
 
-  @override
-  ArgParser get argParser => _argParser;
-
   /// Adds a list of commands to the command runner.
-  void addCommands(List<Command> commands) {
+  void addCommands(List<Command<T>> commands) {
     for (var command in commands) {
       addCommand(command);
     }
@@ -146,14 +188,23 @@ class BetterCommandRunner extends CommandRunner {
   }
 
   @override
-  Future<void> runCommand(ArgResults topLevelResults) async {
+  Future<T?> runCommand(ArgResults topLevelResults) async {
+    try {
+      _globalConfiguration = resolveConfiguration(topLevelResults);
+    } on UsageException catch (e) {
+      _messageOutput?.logUsageException(e);
+      _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.invalid);
+      rethrow;
+    }
+
     _setLogLevel?.call(
-      parsedLogLevel: _parseLogLevel(topLevelResults),
+      parsedLogLevel: _determineLogLevel(globalConfiguration),
       commandName: topLevelResults.command?.name,
     );
 
-    if (argParser.options.containsKey(BetterCommandRunnerFlags.analytics) &&
-        !topLevelResults.flag(BetterCommandRunnerFlags.analytics)) {
+    if (globalConfiguration.findValueOf(
+            argName: BetterCommandRunnerFlags.analytics) ==
+        false) {
       _onAnalyticsEvent = null;
     }
 
@@ -188,7 +239,7 @@ class BetterCommandRunner extends CommandRunner {
     await _onBeforeRunCommand?.call(this);
 
     try {
-      await super.runCommand(topLevelResults);
+      return super.runCommand(topLevelResults);
     } on UsageException catch (e) {
       _messageOutput?.logUsageException(e);
       _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.invalid);
@@ -196,10 +247,34 @@ class BetterCommandRunner extends CommandRunner {
     }
   }
 
-  CommandRunnerLogLevel _parseLogLevel(ArgResults topLevelResults) {
-    if (topLevelResults[BetterCommandRunnerFlags.verbose]) {
+  /// Resolves the global configuration for this command runner
+  /// using the preset [ConfigResolver].
+  /// If there are errors resolving the configuration,
+  /// a UsageException is thrown with appropriate error messages.
+  ///
+  /// This method can be overridden to change the configuration resolution
+  /// or error handling behavior.
+  Configuration<O> resolveConfiguration(ArgResults? argResults) {
+    final config = _configResolver.resolveConfiguration(
+      options: _globalOptions,
+      argResults: argResults,
+    );
+
+    if (config.errors.isNotEmpty) {
+      final buffer = StringBuffer();
+      final errors = config.errors.map(formatConfigError);
+      buffer.writeAll(errors, '\n');
+      usageException(buffer.toString());
+    }
+
+    return config;
+  }
+
+  static CommandRunnerLogLevel _determineLogLevel(Configuration config) {
+    if (config.findValueOf(argName: BetterCommandRunnerFlags.verbose) == true) {
       return CommandRunnerLogLevel.verbose;
-    } else if (topLevelResults[BetterCommandRunnerFlags.quiet]) {
+    } else if (config.findValueOf(argName: BetterCommandRunnerFlags.quiet) ==
+        true) {
       return CommandRunnerLogLevel.quiet;
     }
 
@@ -215,6 +290,43 @@ abstract class BetterCommandRunnerFlags {
   static const verboseAbbr = 'v';
   static const analytics = 'analytics';
   static const analyticsAbbr = 'a';
+
+  static const quietOption = FlagOption(
+    argName: quiet,
+    argAbbrev: quietAbbr,
+    defaultsTo: false,
+    negatable: false,
+    helpText: 'Suppress all cli output. Is overridden by '
+        ' -$verboseAbbr, --$verbose.',
+  );
+
+  static const verboseOption = FlagOption(
+    argName: verbose,
+    argAbbrev: verboseAbbr,
+    defaultsTo: false,
+    negatable: false,
+    helpText: 'Prints additional information useful for development. '
+        'Overrides --$quietAbbr, --$quiet.',
+  );
+
+  static const analyticsOption = FlagOption(
+    argName: analytics,
+    argAbbrev: analyticsAbbr,
+    defaultsTo: true,
+    negatable: true,
+    helpText: 'Toggles if analytics data is sent. ',
+  );
+}
+
+enum BasicGlobalOption<V> implements OptionDefinition<V> {
+  quiet(BetterCommandRunnerFlags.quietOption),
+  verbose(BetterCommandRunnerFlags.verboseOption),
+  analytics(BetterCommandRunnerFlags.analyticsOption);
+
+  const BasicGlobalOption(this.option);
+
+  @override
+  final ConfigOptionBase<V> option;
 }
 
 /// Constants for the command runner analytics events.
