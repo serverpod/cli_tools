@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0-beta.1
+
+- feat: Introduced the Config library for unified args and env parsing
+- fix: Include user input prompt feature in library export
+- fix: BREAKING. BetterCommand's constructor changed to use MessageOutput class for clearer specification of logging functions.
+
 ## 0.4.0
 
 - feat: BREAKING. BetterCommandRunner's constructor changed to use MessageOutput class for clearer specification of logging functions.
