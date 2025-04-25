@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cli_tools/better_command_runner.dart';
 import 'package:cli_tools/config.dart';
 import 'package:test/test.dart';
@@ -34,6 +36,11 @@ class MockCommand extends BetterCommand {
 
   @override
   Future<void> run() async {}
+
+  @override
+  FutureOr? runWithConfig(Configuration<OptionDefinition> commandConfig) {
+    throw UnimplementedError();
+  }
 }
 
 void main() {

@@ -23,6 +23,11 @@ abstract interface class ConfigResolver<O extends OptionDefinition> {
 /// [Platform.environment] as input.
 class DefaultConfigResolver<O extends OptionDefinition>
     implements ConfigResolver<O> {
+  final Map<String, String> _env;
+
+  DefaultConfigResolver({Map<String, String>? env})
+      : _env = env ?? Platform.environment;
+
   @override
   Configuration<O> resolveConfiguration({
     required Iterable<O> options,
@@ -31,7 +36,7 @@ class DefaultConfigResolver<O extends OptionDefinition>
     return Configuration.resolve(
       options: options,
       argResults: argResults,
-      env: Platform.environment,
+      env: _env,
     );
   }
 }

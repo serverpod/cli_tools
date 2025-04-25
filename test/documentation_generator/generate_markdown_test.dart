@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:args/command_runner.dart';
 import 'package:cli_tools/cli_tools.dart';
+import 'package:cli_tools/src/config/configuration.dart';
 import 'package:test/test.dart';
 
 class AddSpiceCommand extends Command {
@@ -63,6 +66,11 @@ class SpiceCommand extends BetterCommand {
 
   @override
   void run() {}
+
+  @override
+  FutureOr? runWithConfig(Configuration<OptionDefinition> commandConfig) {
+    throw UnimplementedError();
+  }
 }
 
 class VegetableCommand extends BetterCommand {
@@ -78,6 +86,11 @@ class VegetableCommand extends BetterCommand {
 
   @override
   void run() {}
+
+  @override
+  FutureOr? runWithConfig(Configuration<OptionDefinition> commandConfig) {
+    throw UnimplementedError();
+  }
 }
 
 void main() {

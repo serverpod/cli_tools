@@ -74,8 +74,5 @@ abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
 
   /// Runs this command with prepared configuration (options).
   /// Subclasses should override this method.
-  FutureOr<T>? runWithConfig(final Configuration<O> commandConfig) {
-    throw UnimplementedError(
-        'CLI command $name has not implemented runWithConfig.');
-  }
+  FutureOr<T>? runWithConfig(final Configuration<O> commandConfig);
 }
