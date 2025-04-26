@@ -58,7 +58,7 @@ class MultiStringOption extends MultiOption<String> {
     super.mandatory,
     super.hide,
   }) : super(
-          multiParser: const MultiParser(elementParser: StringParser()),
+          multiParser: const MultiParser(StringParser()),
         );
 
   /// Creates a MultiStringOption which treats input strings as single elements.
@@ -80,10 +80,7 @@ class MultiStringOption extends MultiOption<String> {
     super.mandatory,
     super.hide,
   }) : super(
-          multiParser: const MultiParser(
-            elementParser: StringParser(),
-            separator: null,
-          ),
+          multiParser: const MultiParser(StringParser(), separator: null),
         );
 }
 
@@ -104,6 +101,11 @@ class EnumParser<E extends Enum> extends ValueParser<E> {
     );
   }
 
+  @override
+  String format(final E value) {
+    return value.name;
+  }
+
   String valueHelpString() {
     return enumValues.map((final e) => e.name).join('|');
   }
@@ -113,6 +115,16 @@ class EnumParser<E extends Enum> extends ValueParser<E> {
 ///
 /// If the input is not one of the enum names,
 /// the validation throws a [FormatException].
+///
+/// Due to Dart's const semantics, the EnumParser must be
+/// provided by the caller, like so:
+///
+/// ```dart
+/// EnumOption(
+///   enumParser: EnumParser(AnimalEnum.values),
+///   argName: 'animal',
+/// )
+/// ```
 class EnumOption<E extends Enum> extends ConfigOptionBase<E> {
   const EnumOption({
     required final EnumParser<E> enumParser,
@@ -137,7 +149,10 @@ class EnumOption<E extends Enum> extends ConfigOptionBase<E> {
 
   @override
   String? valueHelpString() {
-    return valueHelp ?? (valueParser as EnumParser<E>).valueHelpString();
+    if (valueHelp != null) return valueHelp;
+    if (allowedValues != null || allowedHelp != null) return null;
+    // if no other value help is provided, auto-generate it with the enum names
+    return (valueParser as EnumParser<E>).valueHelpString();
   }
 }
 
@@ -378,11 +393,4 @@ class DurationOption extends ComparableValueOption<Duration> {
     super.min,
     super.max,
   }) : super(valueParser: const DurationParser());
-
-  @override
-  String? defaultValueString() {
-    final defValue = defaultValue();
-    if (defValue == null) return null;
-    return valueParser.format(defValue);
-  }
 }

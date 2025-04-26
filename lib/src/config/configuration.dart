@@ -83,6 +83,11 @@ abstract class ValueParser<V> {
 /// The subclasses implement specific option value types,
 /// e.g. [StringOption], [FlagOption] (boolean), [IntOption], etc.
 ///
+/// A [customValidator] may be provided for an individual option.
+/// If a value was provided the customValidator is invoked,
+/// and shall throw a [FormatException] if its format is invalid,
+/// or a [UsageException] if the it is invalid for other reasons.
+///
 /// ### Positional arguments
 ///
 /// If multiple positional arguments are defined,
@@ -163,7 +168,9 @@ class ConfigOptionBase<V> implements OptionDefinition<V> {
   }
 
   String? defaultValueString() {
-    return defaultValue()?.toString();
+    final defValue = defaultValue();
+    if (defValue == null) return null;
+    return valueParser.format(defValue);
   }
 
   String? valueHelpString() {
@@ -525,8 +532,8 @@ class MultiParser<T> extends ValueParser<List<T>> {
   final Pattern? separator;
   final String joiner;
 
-  const MultiParser({
-    required this.elementParser,
+  const MultiParser(
+    this.elementParser, {
     this.separator = ',',
     this.joiner = ',',
   });

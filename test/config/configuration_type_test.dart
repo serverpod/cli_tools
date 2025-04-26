@@ -286,7 +286,7 @@ void main() async {
 
   group('Given a MultiOption of strings', () {
     const typedOpt = MultiOption(
-      multiParser: MultiParser(elementParser: StringParser()),
+      multiParser: MultiParser(StringParser()),
       argName: 'many',
       envName: 'SERVERPOD_MANY',
       configKey: 'many',
@@ -433,7 +433,7 @@ void main() async {
 
   group('Given a MultiOption of integers without default value', () {
     const typedOpt = MultiOption(
-      multiParser: MultiParser(elementParser: IntParser()),
+      multiParser: MultiParser(IntParser()),
       argName: 'many',
       envName: 'SERVERPOD_MANY',
       configKey: 'many',
@@ -590,7 +590,7 @@ void main() async {
 
   group('Given a MultiOption of integers with default value', () {
     const typedOpt = MultiOption(
-      multiParser: MultiParser(elementParser: IntParser()),
+      multiParser: MultiParser(IntParser()),
       argName: 'many',
       envName: 'SERVERPOD_MANY',
       configKey: 'many',
@@ -669,7 +669,7 @@ void main() async {
 
   group('Given a mandatory MultiOption of integers with alias', () {
     const typedOpt = MultiOption(
-      multiParser: MultiParser(elementParser: IntParser()),
+      multiParser: MultiParser(IntParser()),
       argName: 'many',
       argAliases: ['alias-many'],
       envName: 'SERVERPOD_MANY',
