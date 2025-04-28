@@ -12,7 +12,7 @@ topics:
   - dart
 
 environment:
-  sdk: ^3.1.0
+  sdk: ^3.3.0
 
 dependencies:
   args: ^2.7.0
