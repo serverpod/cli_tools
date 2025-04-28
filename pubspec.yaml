@@ -12,7 +12,7 @@ topics:
   - dart
 
 environment:
-  sdk: ^3.1.0
+  sdk: ^3.3.0
 
 dependencies:
   args: ^2.7.0
@@ -25,7 +25,7 @@ dependencies:
   pub_semver: ^2.1.4
   rfc_6901: ^0.2.0
   super_string: ^1.0.3
-  yaml_codec: ^1.0.0
+  yaml: ^3.1.2
 
 dev_dependencies:
   test: ^1.24.0

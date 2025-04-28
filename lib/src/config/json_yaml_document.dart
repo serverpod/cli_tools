@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:rfc_6901/rfc_6901.dart';
-import 'package:yaml_codec/yaml_codec.dart';
+import 'package:yaml/yaml.dart';
 
 /// A parsed JSON or YAML document.
 ///
@@ -18,7 +18,7 @@ class JsonYamlDocument {
       : _document = jsonSource.isEmpty ? null : jsonDecode(jsonSource);
 
   JsonYamlDocument.fromYaml(final String yamlSource)
-      : _document = yamlDecode(yamlSource);
+      : _document = loadYaml(yamlSource);
 
   /// {@macro json_yaml_document.valueAtPointer}
   Object? valueAtPointer(final String pointerKey) {
