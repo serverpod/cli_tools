@@ -338,7 +338,7 @@ class ConfigOptionBase<V> implements OptionDefinition<V> {
     result = _resolveDefaultValue();
     if (result != null) return result;
 
-    return OptionResolution.noValue();
+    return const OptionResolution.noValue();
   }
 
   OptionResolution<V>? _resolveNamedArg(final ArgResults? args) {

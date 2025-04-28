@@ -1,3 +1,6 @@
+// ignore required for Dart 3.3
+// ignore_for_file: unused_local_variable
+
 import 'package:cli_tools/cli_tools.dart';
 import 'package:cli_tools/src/prompts/key_codes.dart';
 import 'package:cli_tools/src/prompts/select.dart';
