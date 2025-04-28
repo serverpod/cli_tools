@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.0-beta.4
+
+- fix!: Clarified behavior of mutually exclusive option groups
+
 ## 0.5.0-beta.3
 
 - fix: Replaced yaml_codec dependency with yaml in order to support Dart 3.3
