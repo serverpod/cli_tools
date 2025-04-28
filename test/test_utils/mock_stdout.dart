@@ -8,6 +8,8 @@ class MockStdout implements Stdout {
   Encoding encoding = utf8;
 
   @override
+  // ignore required for Dart 3.3
+  // ignore: override_on_non_overriding_member
   String lineTerminator = '\n';
 
   String get output => _buffer.toString();

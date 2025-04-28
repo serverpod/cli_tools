@@ -11,30 +11,39 @@ on:
 jobs:
     dart_format:
         name: Dart format
+        strategy:
+            matrix:
+                dart: [3.3, 3.6]
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
             - uses: dart-lang/setup-dart@v1.7.1
               with:
-                sdk: 3.6
+                sdk: ${{ matrix.dart }}
             - name: Verify formatting
               run: dart format --output=none --set-exit-if-changed .
     dart_analyze:
         name: Dart Analyze
+        strategy:
+            matrix:
+                dart: [3.3, 3.6]
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
             - uses: dart-lang/setup-dart@v1.7.1
               with:
-                sdk: 3.6
+                sdk: ${{ matrix.dart }}
             - run: dart pub get
             - run: dart analyze --fatal-infos
     dart_test:
         name: Dart Test
+        strategy:
+            matrix:
+                dart: [3.3, 3.6]
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
             - uses: dart-lang/setup-dart@v1.7.1
               with:
-                sdk: 3.6
+                sdk: ${{ matrix.dart }}
             - run: dart test
