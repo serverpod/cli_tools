@@ -80,13 +80,18 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   Configuration<O>? _globalConfiguration;
 
   /// The current global configuration.
-  /// (Since this object is re-entrant, the global config is regenerated each call to [runCommand].)
   Configuration<O> get globalConfiguration {
     final globalConfig = _globalConfiguration;
     if (globalConfig == null) {
-      throw StateError('Global configuration not initialized');
+      throw StateError('Global configuration is not initialized');
     }
     return globalConfig;
+  }
+
+  /// Sets the global configuration, by default called by [parse].
+  /// It must be set before [runCommand] is called.
+  set globalConfiguration(Configuration<O> configuration) {
+    _globalConfiguration = configuration;
   }
 
   /// Creates a new instance of [BetterCommandRunner].
@@ -171,10 +176,19 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   /// Checks if analytics is enabled.
   bool analyticsEnabled() => _onAnalyticsEvent != null;
 
+  /// Parses the command line arguments and returns the result.
+  ///
+  /// This method overrides the [CommandRunner.parse] method to resolve the
+  /// global configuration before returning the result.
+  ///
+  /// If this method is overridden, the caller is responsible for
+  /// ensuring the global configuration is set, see [globalConfiguration].
   @override
   ArgResults parse(Iterable<String> args) {
     try {
-      return super.parse(args);
+      var argResults = super.parse(args);
+      globalConfiguration = resolveConfiguration(argResults);
+      return argResults;
     } on UsageException catch (e) {
       _messageOutput?.logUsageException(e);
       _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.invalid);
@@ -187,16 +201,20 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     _messageOutput?.logUsage(usage);
   }
 
+  /// Runs the command specified by [topLevelResults].
+  ///
+  /// [globalConfiguration] is set before this method is called.
+  ///
+  /// This is notionally a protected method. It may be overridden or called from
+  /// subclasses, but it shouldn't be called externally.
+  ///
+  /// It's useful to override this to handle global flags and/or wrap the entire
+  /// command in a block. For example, you might handle the `--verbose` flag
+  /// here to enable verbose logging before running the command.
+  ///
+  /// This returns the return value of [Command.run].
   @override
   Future<T?> runCommand(ArgResults topLevelResults) async {
-    try {
-      _globalConfiguration = resolveConfiguration(topLevelResults);
-    } on UsageException catch (e) {
-      _messageOutput?.logUsageException(e);
-      _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.invalid);
-      rethrow;
-    }
-
     _setLogLevel?.call(
       parsedLogLevel: _determineLogLevel(globalConfiguration),
       commandName: topLevelResults.command?.name,

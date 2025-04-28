@@ -35,6 +35,16 @@ abstract class Logger {
     LogType type,
   });
 
+  /// Display a [message] to the user with a specified [level].
+  ///
+  /// This is for logging messages with a dynamically specified log level.
+  void log(
+    String message,
+    LogLevel level, {
+    bool newParagraph,
+    LogType type,
+  });
+
   /// Display a progress message on [LogLevel.info] while running [runner]
   /// function.
   ///
