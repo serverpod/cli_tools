@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.0-beta.2
+
+- feat: New `Logger.log` method with dynamically specified log level
+- fix: Downgrade `collection` dependency to 1.18 to be compatible with Dart 3.3
+- fix: Improved usage help composition
+- fix: BetterCommandRunner API improvements
+
 ## 0.5.0-beta.1
 
 - feat: Introduced the Config library for unified args and env parsing
