@@ -12,6 +12,16 @@ import 'package:super_string/super_string.dart';
 class StdOutLogger extends Logger {
   static const int _defaultColumnWrap = 80;
 
+  static String _levelPrefix(LogLevel level) {
+    return switch (level) {
+      LogLevel.debug => 'DEBUG: ',
+      LogLevel.info => '',
+      LogLevel.warning => 'WARNING: ',
+      LogLevel.error => 'ERROR: ',
+      LogLevel.nothing => '',
+    };
+  }
+
   Progress? trackedAnimationInProgress;
 
   /// [logToStderrLevelThreshold] is the log level threshold at which messages
@@ -41,16 +51,7 @@ class StdOutLogger extends Logger {
     bool newParagraph = false,
     LogType type = TextLogType.normal,
   }) {
-    if (ansiSupported) {
-      _log(
-        AnsiStyle.darkGray.wrap(message),
-        LogLevel.debug,
-        newParagraph,
-        type,
-      );
-    } else {
-      _log(message, LogLevel.debug, newParagraph, type, prefix: 'DEBUG: ');
-    }
+    log(message, LogLevel.debug, newParagraph: newParagraph, type: type);
   }
 
   @override
@@ -59,7 +60,7 @@ class StdOutLogger extends Logger {
     bool newParagraph = false,
     LogType type = TextLogType.normal,
   }) {
-    _log(message, LogLevel.info, newParagraph, type);
+    log(message, LogLevel.info, newParagraph: newParagraph, type: type);
   }
 
   @override
@@ -68,16 +69,7 @@ class StdOutLogger extends Logger {
     bool newParagraph = false,
     LogType type = TextLogType.normal,
   }) {
-    if (ansiSupported) {
-      _log(
-        AnsiStyle.yellow.wrap(message),
-        LogLevel.warning,
-        newParagraph,
-        type,
-      );
-    } else {
-      _log(message, LogLevel.warning, newParagraph, type, prefix: 'WARNING: ');
-    }
+    log(message, LogLevel.warning, newParagraph: newParagraph, type: type);
   }
 
   @override
@@ -87,19 +79,33 @@ class StdOutLogger extends Logger {
     StackTrace? stackTrace,
     LogType type = TextLogType.normal,
   }) {
-    if (ansiSupported) {
-      _log(AnsiStyle.red.wrap(message), LogLevel.error, newParagraph, type);
-    } else {
-      _log(message, LogLevel.error, newParagraph, type, prefix: 'ERROR: ');
-    }
+    var msg =
+        stackTrace != null ? '$message\n${stackTrace.toString()}' : message;
 
-    if (stackTrace != null) {
-      _log(
-        AnsiStyle.red.wrap(stackTrace.toString()),
-        LogLevel.error,
-        newParagraph,
-        type,
-      );
+    log(msg, LogLevel.error, newParagraph: newParagraph, type: type);
+  }
+
+  @override
+  void log(
+    String message,
+    LogLevel level, {
+    bool newParagraph = false,
+    LogType type = TextLogType.normal,
+  }) {
+    if (ansiSupported) {
+      var ansiMessage = switch (level) {
+        LogLevel.debug => AnsiStyle.darkGray.wrap(message),
+        LogLevel.info => message,
+        LogLevel.warning => AnsiStyle.yellow.wrap(message),
+        LogLevel.error => AnsiStyle.red.wrap(message),
+        LogLevel.nothing => message,
+      };
+
+      _log(ansiMessage, level, newParagraph, type);
+    } else {
+      var prefix = _levelPrefix(level);
+
+      _log(message, level, newParagraph, type, prefix: prefix);
     }
   }
 

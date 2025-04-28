@@ -39,6 +39,14 @@ class VoidLogger extends Logger {
   }) {}
 
   @override
+  void log(
+    String message,
+    LogLevel level, {
+    bool newParagraph = false,
+    LogType type = const RawLogType(),
+  }) {}
+
+  @override
   Future<void> flush() {
     return Future(() => {});
   }
