@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.0-beta.3
+
+- fix: Replaced yaml_codec dependency with yaml in order to support Dart 3.3
+- chore: Require Dart 3.3
+
 ## 0.5.0-beta.2
 
 - feat: New `Logger.log` method with dynamically specified log level
