@@ -23,11 +23,20 @@ class OptionGroup {
 
   const OptionGroup(this.name);
 
+  /// Validates the configuration option definitions as a group.
+  ///
+  /// This method is called by [prepareOptionsForParsing] to validate
+  /// the configuration option definitions as a group.
+  /// Throws an error if any definition is invalid as part of this group.
+  ///
+  /// Subclasses may override this method to perform specific validations.
+  void validateDefinitions(List<OptionDefinition> options) {}
+
   /// Validates the values of the options in this group,
   /// returning a descriptive error message if the values are invalid.
   ///
   /// Subclasses may override this method to perform specific validations.
-  String? validate(
+  String? validateValues(
     final Map<OptionDefinition, OptionResolution> optionResolutions,
   ) {
     return null;
@@ -663,6 +672,8 @@ Iterable<OptionDefinition> validateOptions(
   final argPosOpts = <int, OptionDefinition>{};
   final envNameOpts = <String, OptionDefinition>{};
 
+  final optionGroups = <OptionGroup, List<OptionDefinition>>{};
+
   for (final opt in options) {
     opt.option.validateDefinition();
 
@@ -692,7 +703,20 @@ Iterable<OptionDefinition> validateOptions(
       }
       envNameOpts[envName] = opt;
     }
+
+    final group = opt.option.group;
+    if (group != null) {
+      optionGroups.update(
+        group,
+        (final value) => [...value, opt],
+        ifAbsent: () => [opt],
+      );
+    }
   }
+
+  optionGroups.forEach((final group, final options) {
+    group.validateDefinitions(options);
+  });
 
   if (argPosOpts.isNotEmpty) {
     final orderedPosOpts = argPosOpts.values.sorted(
@@ -1001,7 +1025,7 @@ class Configuration<O extends OptionDefinition> {
     final Map<OptionGroup, Map<O, OptionResolution>> optionGroups,
   ) {
     optionGroups.forEach((final group, final optionResolutions) {
-      final error = group.validate(optionResolutions);
+      final error = group.validateValues(optionResolutions);
       if (error != null) {
         _errors.add(error);
       }

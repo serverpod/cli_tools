@@ -948,7 +948,8 @@ void main() async {
     });
   });
 
-  group('Given two options that are mutually exclusive', () {
+  group('Given two options that are mutually exclusive, disallowing defaults,',
+      () {
     const firstOpt = StringOption(
       argName: 'first',
       envName: 'FIRST',
@@ -1053,8 +1054,11 @@ void main() async {
     });
   });
 
-  group('Given two options that are mandatory and mutually exclusive', () {
-    const group = MutuallyExclusive('mutex-group', mandatory: true);
+  group('Given two options that are mutually exclusive, mandatory,', () {
+    const group = MutuallyExclusive(
+      'mutex-group',
+      mode: MutuallyExclusiveMode.mandatory,
+    );
     const firstOpt = StringOption(
       argName: 'first',
       envName: 'FIRST',
@@ -1160,6 +1164,111 @@ void main() async {
         config.errors.single,
         'Option group mutex-group requires one of the options to be provided',
       );
+    });
+  });
+
+  group(
+      'Given two options that are mutually exclusive, mandatory, '
+      'and one has a default value,', () {
+    const group = MutuallyExclusive(
+      'mutex-group',
+      mode: MutuallyExclusiveMode.mandatory,
+    );
+    const firstOpt = StringOption(
+      argName: 'first',
+      defaultsTo: 'default-first',
+      group: group,
+    );
+    const secondOpt = StringOption(
+      argName: 'second',
+      group: group,
+    );
+    final options = [firstOpt, secondOpt];
+
+    test('then option group validation throws error', () async {
+      expect(
+        () => Configuration.resolve(
+          options: options,
+          args: [],
+        ),
+        throwsA(isA<InvalidOptionConfigurationError>().having(
+          (final e) => e.message,
+          'message',
+          'Option group `mutex-group` does not allow defaults',
+        )),
+      );
+    });
+  });
+
+  group(
+      'Given two options that are mutually exclusive, allowing defaults, '
+      'and first has a default value,', () {
+    const group = MutuallyExclusive(
+      'mutex-group',
+      mode: MutuallyExclusiveMode.allowDefaults,
+    );
+    const firstOpt = StringOption(
+      argName: 'first',
+      defaultsTo: 'default-first',
+      group: group,
+    );
+    const secondOpt = StringOption(
+      argName: 'second',
+      group: group,
+    );
+    final options = [firstOpt, secondOpt];
+
+    test(
+        'when the first of the mut-ex options is provided as argument then parsing succeeds',
+        () async {
+      final args = ['--first', '1st-arg'];
+      final config = Configuration.resolve(
+        options: options,
+        args: args,
+      );
+      expect(config.errors, isEmpty);
+      expect(config.optionalValue(firstOpt), equals('1st-arg'));
+      expect(config.optionalValue(secondOpt), isNull);
+    });
+
+    test(
+        'when the second of the mut-ex options is provided as argument then both have values',
+        () async {
+      final args = ['--second', '2nd-arg'];
+      final config = Configuration.resolve(
+        options: options,
+        args: args,
+      );
+      expect(config.errors, isEmpty);
+      expect(config.optionalValue(firstOpt), equals('default-first'));
+      expect(config.optionalValue(secondOpt), equals('2nd-arg'));
+    });
+
+    test(
+        'when both mut-ex options are provided as arguments then parsing has error',
+        () async {
+      final args = ['--first', '1st-arg', '--second', '2nd-arg'];
+      final config = Configuration.resolve(
+        options: options,
+        args: args,
+      );
+      expect(config.errors, hasLength(1));
+      expect(
+        config.errors.single,
+        'These options are mutually exclusive: first, second',
+      );
+    });
+
+    test(
+        'when neither of the mut-ex options are provided then parsing succeeds with default value',
+        () async {
+      final config = Configuration.resolve(
+        options: options,
+        args: [],
+      );
+      expect(config.errors, isEmpty);
+      expect(config.optionalValue(firstOpt), equals('default-first'));
+      expect(config.optionalValue(secondOpt), isNull);
     });
   });
 
