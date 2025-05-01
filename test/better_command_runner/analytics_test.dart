@@ -59,6 +59,7 @@ void main() {
       'test',
       'this is a test cli',
       onAnalyticsEvent: null,
+      messageOutput: const MessageOutput(),
     );
 
     test('when checking if analytics is enabled then false is returned.', () {
@@ -78,6 +79,7 @@ void main() {
       'test',
       'this is a test cli',
       onAnalyticsEvent: (event) {},
+      messageOutput: const MessageOutput(),
     );
 
     test('when checking if analytics is enabled then true is returned.', () {
@@ -96,6 +98,7 @@ void main() {
         'test',
         'this is a test cli',
         onAnalyticsEvent: (event) => events.add(event),
+        messageOutput: const MessageOutput(),
       );
       assert(runner.analyticsEnabled());
     });
@@ -208,6 +211,7 @@ void main() {
         'test',
         'this is a test cli',
         onAnalyticsEvent: (event) => events.add(event),
+        messageOutput: const MessageOutput(),
       )..addCommand(MockCommand());
       assert(runner.analyticsEnabled());
     });
@@ -272,6 +276,7 @@ void main() {
         'test',
         'this is a test cli',
         onAnalyticsEvent: (event) => events.add(event),
+        messageOutput: const MessageOutput(),
       )..addCommand(command);
       assert(runner.analyticsEnabled());
     });

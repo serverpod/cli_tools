@@ -27,6 +27,7 @@ void main() {
     var runner = BetterCommandRunner(
       'test',
       'this is a test cli',
+      messageOutput: const MessageOutput(),
       setLogLevel: ({
         required CommandRunnerLogLevel parsedLogLevel,
         String? commandName,
