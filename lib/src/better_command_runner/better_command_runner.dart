@@ -184,19 +184,29 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   /// Checks if analytics is enabled.
   bool analyticsEnabled() => _onAnalyticsEvent != null;
 
+  /// Parses [args] and invokes [Command.run] on the chosen command.
+  ///
+  /// This always returns a [Future] in case the command is asynchronous. The
+  /// [Future] will throw a [UsageException] if [args] was invalid.
+  ///
+  /// This overrides the [CommandRunner.run] method in order to resolve the
+  /// global configuration before invoking [runCommand].
+  /// If this method is overridden, the overriding method must ensure that
+  /// the global configuration is set, see [globalConfiguration].
+  @override
+  Future<T?> run(Iterable<String> args) {
+    return Future.sync(() {
+      var argResults = parse(args);
+      globalConfiguration = resolveConfiguration(argResults);
+      return runCommand(argResults);
+    });
+  }
+
   /// Parses the command line arguments and returns the result.
-  ///
-  /// This method overrides the [CommandRunner.parse] method to resolve the
-  /// global configuration before returning the result.
-  ///
-  /// If this method is overridden, the caller is responsible for
-  /// ensuring the global configuration is set, see [globalConfiguration].
   @override
   ArgResults parse(Iterable<String> args) {
     try {
-      var argResults = super.parse(args);
-      globalConfiguration = resolveConfiguration(argResults);
-      return argResults;
+      return super.parse(args);
     } on UsageException catch (e) {
       _messageOutput?.logUsageException(e);
       _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.invalid);
@@ -265,7 +275,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     await _onBeforeRunCommand?.call(this);
 
     try {
-      return super.runCommand(topLevelResults);
+      return await super.runCommand(topLevelResults);
     } on UsageException catch (e) {
       _messageOutput?.logUsageException(e);
       _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.invalid);
