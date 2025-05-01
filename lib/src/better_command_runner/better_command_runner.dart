@@ -164,11 +164,11 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     if (globalOptions != null) {
       _globalOptions = globalOptions;
     } else if (_onAnalyticsEvent != null) {
-      _globalOptions = BasicGlobalOption.values as List<O>;
+      _globalOptions = StandardGlobalOption.values as List<O>;
     } else {
       _globalOptions = [
-        BasicGlobalOption.quiet as O,
-        BasicGlobalOption.verbose as O,
+        StandardGlobalOption.quiet as O,
+        StandardGlobalOption.verbose as O,
       ];
     }
     prepareOptionsForParsing(_globalOptions, argParser);
@@ -344,12 +344,12 @@ abstract class BetterCommandRunnerFlags {
   );
 }
 
-enum BasicGlobalOption<V> implements OptionDefinition<V> {
+enum StandardGlobalOption<V> implements OptionDefinition<V> {
   quiet(BetterCommandRunnerFlags.quietOption),
   verbose(BetterCommandRunnerFlags.verboseOption),
   analytics(BetterCommandRunnerFlags.analyticsOption);
 
-  const BasicGlobalOption(this.option);
+  const StandardGlobalOption(this.option);
 
   @override
   final ConfigOptionBase<V> option;
