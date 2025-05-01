@@ -12,26 +12,24 @@ typedef OnBeforeRunCommand = Future<void> Function(BetterCommandRunner runner);
 ///
 /// It is valid to not provide a function in order to not pass that output.
 final class MessageOutput {
-  final void Function(UsageException exception)? _logUsageException;
+  final void Function(String usage)? usageLogger;
+  final void Function(UsageException exception)? usageExceptionLogger;
 
-  final void Function(String usage)? _logUsage;
-
-  MessageOutput({
-    void Function(UsageException exception)? logUsageException,
-    void Function(String usage)? logUsage,
-  })  : _logUsageException = logUsageException,
-        _logUsage = logUsage;
+  const MessageOutput({
+    this.usageLogger,
+    this.usageExceptionLogger,
+  });
 
   /// Logs a usage exception.
   /// If the function has not been provided then nothing will happen.
   void logUsageException(UsageException exception) {
-    _logUsageException?.call(exception);
+    usageExceptionLogger?.call(exception);
   }
 
   /// Logs a usage message.
   /// If the function has not been provided then nothing will happen.
   void logUsage(String usage) {
-    _logUsage?.call(usage);
+    usageLogger?.call(usage);
   }
 }
 
@@ -106,6 +104,16 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   /// - [globalOptions] is an optional list of global options.
   /// - [configResolver] is an optional custom [ConfigResolver] implementation.
   ///
+  /// ## Message Output
+  ///
+  /// The [MessageOutput] object is used to control how specific log messages
+  /// are output within this library.
+  /// By default regular (non-error) usage is printed to the console,
+  /// while UsageExceptions not printed by this library and simply
+  /// propagated to the caller, i.e. the same behavior as the `args` package.
+  ///
+  /// ## Global Options
+  ///
   /// If [globalOptions] is not provided then the default global options will be used.
   /// If no global options are desired then an empty list can be provided.
   ///
@@ -138,7 +146,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     super.executableName,
     super.description, {
     super.suggestionDistanceLimit,
-    MessageOutput? messageOutput,
+    MessageOutput? messageOutput = const MessageOutput(usageLogger: print),
     SetLogLevel? setLogLevel,
     OnBeforeRunCommand? onBeforeRunCommand,
     OnAnalyticsEvent? onAnalyticsEvent,
