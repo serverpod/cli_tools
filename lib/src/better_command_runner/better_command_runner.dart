@@ -72,7 +72,6 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   /// The gloabl option definitions.
   late final List<O> _globalOptions;
 
-  /// The resolver for the global configuration.
   final ConfigResolver<O> _configResolver;
 
   Configuration<O>? _globalConfiguration;
@@ -174,6 +173,14 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     prepareOptionsForParsing(_globalOptions, argParser);
   }
 
+  /// The [MessageOutput] for the command runner.
+  /// It is also used for the commands unless they have their own.
+  MessageOutput? get messageOutput => _messageOutput;
+
+  /// The configuration resolver used for the global configuration.
+  /// It is also used for the command configurations unless they have their own.
+  ConfigResolver<O> get configResolver => _configResolver;
+
   /// Adds a list of commands to the command runner.
   void addCommands(List<Command<T>> commands) {
     for (var command in commands) {
@@ -208,7 +215,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     try {
       return super.parse(args);
     } on UsageException catch (e) {
-      _messageOutput?.logUsageException(e);
+      messageOutput?.logUsageException(e);
       _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.invalid);
       rethrow;
     }
@@ -216,7 +223,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
 
   @override
   void printUsage() {
-    _messageOutput?.logUsage(usage);
+    messageOutput?.logUsage(usage);
   }
 
   /// Runs the command specified by [topLevelResults].
@@ -277,7 +284,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     try {
       return await super.runCommand(topLevelResults);
     } on UsageException catch (e) {
-      _messageOutput?.logUsageException(e);
+      messageOutput?.logUsageException(e);
       _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.invalid);
       rethrow;
     }

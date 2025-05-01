@@ -8,11 +8,13 @@ import 'package:cli_tools/config.dart';
 import 'config_resolver.dart';
 
 abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
+  static const _defaultMessageOutput = MessageOutput(usageLogger: print);
+
   final MessageOutput? _messageOutput;
   final ArgParser _argParser;
 
   /// The configuration resolver for this command.
-  final ConfigResolver<O> _configResolver;
+  ConfigResolver<O>? _configResolver;
 
   /// The option definitions for this command.
   final List<O> options;
@@ -21,8 +23,11 @@ abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
   ///
   /// - [messageOutput] is an optional [MessageOutput] object used to pass specific log messages.
   /// - [wrapTextColumn] is the column width for wrapping text in the command line interface.
-  /// - [options] is an optional list of options.
+  /// - [options] is a list of options, empty by default.
   /// - [configResolver] is an optional custom [ConfigResolver] implementation.
+  ///
+  /// [configResolver] and [messageOutput] are optional and will default to the
+  /// values of the command runner (if any).
   ///
   /// To define a bespoke set of options, it is recommended to define
   /// a proper options enum. It can included any of the default options
@@ -47,22 +52,46 @@ abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
   /// If [configResolver] is not provided then [DefaultConfigResolver] will be used,
   /// which uses the command line arguments and environment variables as input sources.
   BetterCommand({
-    MessageOutput? messageOutput,
+    MessageOutput? messageOutput = _defaultMessageOutput,
     int? wrapTextColumn,
     this.options = const [],
-    final ConfigResolver<O>? configResolver,
+    ConfigResolver<O>? configResolver,
   })  : _messageOutput = messageOutput,
         _argParser = ArgParser(usageLineLength: wrapTextColumn),
-        _configResolver = configResolver ?? DefaultConfigResolver<O>() {
+        _configResolver = configResolver {
     prepareOptionsForParsing(options, argParser);
   }
+
+  MessageOutput? get messageOutput {
+    if (_messageOutput != _defaultMessageOutput) {
+      return _messageOutput;
+    }
+    if (runner case BetterCommandRunner<O, T> runner) {
+      return runner.messageOutput;
+    }
+    return _messageOutput;
+  }
+
+  ConfigResolver<O> get configResolver {
+    if (runner case BetterCommandRunner<O, T> runner) {
+      return runner.configResolver;
+    }
+    return _configResolver ??= DefaultConfigResolver<O>();
+  }
+
+  @override
+  BetterCommand<O, T>? get parent => super.parent as BetterCommand<O, T>?;
+
+  @override
+  BetterCommandRunner<dynamic, T>? get runner =>
+      super.runner as BetterCommandRunner<dynamic, T>?;
 
   @override
   ArgParser get argParser => _argParser;
 
   @override
   void printUsage() {
-    _messageOutput?.logUsage(usage);
+    messageOutput?.logUsage(usage);
   }
 
   /// Runs this command.
@@ -86,7 +115,7 @@ abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
   /// This method can be overridden to change the configuration resolution
   /// or error handling behavior.
   Configuration<O> resolveConfiguration(ArgResults? argResults) {
-    final config = _configResolver.resolveConfiguration(
+    final config = configResolver.resolveConfiguration(
       options: options,
       argResults: argResults,
     );
