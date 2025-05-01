@@ -301,6 +301,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     final config = _configResolver.resolveConfiguration(
       options: _globalOptions,
       argResults: argResults,
+      ignoreUnexpectedPositionalArgs: true,
     );
 
     if (config.errors.isNotEmpty) {

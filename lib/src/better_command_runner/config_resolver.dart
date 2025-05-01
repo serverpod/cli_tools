@@ -11,11 +11,15 @@ import 'package:cli_tools/config.dart' show Configuration, OptionDefinition;
 /// The purpose of this class is to delegate the configuration resolution
 /// in BetterCommandRunner and BetterCommand to a separate object
 /// they can be composed with.
+///
+/// If invoked from global command runner or a command that has
+/// subcommands, set [ignoreUnexpectedPositionalArgs] to true.
 abstract interface class ConfigResolver<O extends OptionDefinition> {
   /// {@macro config_resolver}
   Configuration<O> resolveConfiguration({
     required Iterable<O> options,
     ArgResults? argResults,
+    bool ignoreUnexpectedPositionalArgs = false,
   });
 }
 
@@ -32,11 +36,13 @@ class DefaultConfigResolver<O extends OptionDefinition>
   Configuration<O> resolveConfiguration({
     required Iterable<O> options,
     ArgResults? argResults,
+    bool ignoreUnexpectedPositionalArgs = false,
   }) {
     return Configuration.resolve(
       options: options,
       argResults: argResults,
       env: _env,
+      ignoreUnexpectedPositionalArgs: ignoreUnexpectedPositionalArgs,
     );
   }
 }
