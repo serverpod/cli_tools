@@ -74,7 +74,7 @@ void main() {
         expect(
           errors.first,
           contains(
-            'Unexpected positional argument(s): \'this it not a valid command\'',
+            'Could not find a command named "this it not a valid command".',
           ),
         );
       });
