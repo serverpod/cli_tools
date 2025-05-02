@@ -6,7 +6,10 @@ import 'package:meta/meta.dart';
 import 'option_resolution.dart';
 import 'source_type.dart';
 
-/// Common interface to enable same treatment for [ConfigOptionBase] and option enums.
+/// Common interface to enable same treatment for [ConfigOptionBase]
+/// and option enums.
+///
+/// [V] is the type of the value this option provides.
 abstract class OptionDefinition<V> {
   ConfigOptionBase<V> get option;
 }
@@ -52,7 +55,8 @@ class OptionGroup {
   int get hashCode => name.hashCode;
 }
 
-/// A [ValueParser] converts a source string value to the specific option value type.
+/// A [ValueParser] converts a source string value to the specific option
+/// value type.
 ///
 /// {@template value_parser}
 /// Must throw a [FormatException] with an appropriate message
@@ -85,7 +89,8 @@ abstract class ValueParser<V> {
 ///
 /// ### Typed values, parsing, and validation
 ///
-/// Option values are typed, and parsed using the [ValueParser].
+/// [V] is the type of the value this option provides.
+/// Option values are parsed to this type using the [ValueParser].
 /// Subclasses of [ConfigOptionBase] may also override [validateValue]
 /// to perform additional validation such as range checking.
 ///

@@ -12,26 +12,24 @@ typedef OnBeforeRunCommand = Future<void> Function(BetterCommandRunner runner);
 ///
 /// It is valid to not provide a function in order to not pass that output.
 final class MessageOutput {
-  final void Function(UsageException exception)? _logUsageException;
+  final void Function(String usage)? usageLogger;
+  final void Function(UsageException exception)? usageExceptionLogger;
 
-  final void Function(String usage)? _logUsage;
-
-  MessageOutput({
-    void Function(UsageException exception)? logUsageException,
-    void Function(String usage)? logUsage,
-  })  : _logUsageException = logUsageException,
-        _logUsage = logUsage;
+  const MessageOutput({
+    this.usageLogger,
+    this.usageExceptionLogger,
+  });
 
   /// Logs a usage exception.
   /// If the function has not been provided then nothing will happen.
   void logUsageException(UsageException exception) {
-    _logUsageException?.call(exception);
+    usageExceptionLogger?.call(exception);
   }
 
   /// Logs a usage message.
   /// If the function has not been provided then nothing will happen.
   void logUsage(String usage) {
-    _logUsage?.call(usage);
+    usageLogger?.call(usage);
   }
 }
 
@@ -74,7 +72,6 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   /// The gloabl option definitions.
   late final List<O> _globalOptions;
 
-  /// The resolver for the global configuration.
   final ConfigResolver<O> _configResolver;
 
   Configuration<O>? _globalConfiguration;
@@ -105,6 +102,16 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   /// - [wrapTextColumn] is the column width for wrapping text in the command line interface.
   /// - [globalOptions] is an optional list of global options.
   /// - [configResolver] is an optional custom [ConfigResolver] implementation.
+  ///
+  /// ## Message Output
+  ///
+  /// The [MessageOutput] object is used to control how specific log messages
+  /// are output within this library.
+  /// By default regular (non-error) usage is printed to the console,
+  /// while UsageExceptions not printed by this library and simply
+  /// propagated to the caller, i.e. the same behavior as the `args` package.
+  ///
+  /// ## Global Options
   ///
   /// If [globalOptions] is not provided then the default global options will be used.
   /// If no global options are desired then an empty list can be provided.
@@ -138,7 +145,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     super.executableName,
     super.description, {
     super.suggestionDistanceLimit,
-    MessageOutput? messageOutput,
+    MessageOutput? messageOutput = const MessageOutput(usageLogger: print),
     SetLogLevel? setLogLevel,
     OnBeforeRunCommand? onBeforeRunCommand,
     OnAnalyticsEvent? onAnalyticsEvent,
@@ -155,16 +162,27 @@ class BetterCommandRunner<O extends OptionDefinition, T>
         ) {
     if (globalOptions != null) {
       _globalOptions = globalOptions;
-    } else if (_onAnalyticsEvent != null) {
-      _globalOptions = BasicGlobalOption.values as List<O>;
-    } else {
-      _globalOptions = [
-        BasicGlobalOption.quiet as O,
-        BasicGlobalOption.verbose as O,
+    } else if (O == OptionDefinition || O == StandardGlobalOption) {
+      _globalOptions = <O>[
+        StandardGlobalOption.quiet as O,
+        StandardGlobalOption.verbose as O,
+        if (_onAnalyticsEvent != null) StandardGlobalOption.analytics as O,
       ];
+    } else {
+      throw ArgumentError(
+        'globalOptions not provided and O is not assignable from StandardGlobalOption: $O',
+      );
     }
     prepareOptionsForParsing(_globalOptions, argParser);
   }
+
+  /// The [MessageOutput] for the command runner.
+  /// It is also used for the commands unless they have their own.
+  MessageOutput? get messageOutput => _messageOutput;
+
+  /// The configuration resolver used for the global configuration.
+  /// It is also used for the command configurations unless they have their own.
+  ConfigResolver<O> get configResolver => _configResolver;
 
   /// Adds a list of commands to the command runner.
   void addCommands(List<Command<T>> commands) {
@@ -176,21 +194,31 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   /// Checks if analytics is enabled.
   bool analyticsEnabled() => _onAnalyticsEvent != null;
 
+  /// Parses [args] and invokes [Command.run] on the chosen command.
+  ///
+  /// This always returns a [Future] in case the command is asynchronous. The
+  /// [Future] will throw a [UsageException] if [args] was invalid.
+  ///
+  /// This overrides the [CommandRunner.run] method in order to resolve the
+  /// global configuration before invoking [runCommand].
+  /// If this method is overridden, the overriding method must ensure that
+  /// the global configuration is set, see [globalConfiguration].
+  @override
+  Future<T?> run(Iterable<String> args) {
+    return Future.sync(() {
+      var argResults = parse(args);
+      globalConfiguration = resolveConfiguration(argResults);
+      return runCommand(argResults);
+    });
+  }
+
   /// Parses the command line arguments and returns the result.
-  ///
-  /// This method overrides the [CommandRunner.parse] method to resolve the
-  /// global configuration before returning the result.
-  ///
-  /// If this method is overridden, the caller is responsible for
-  /// ensuring the global configuration is set, see [globalConfiguration].
   @override
   ArgResults parse(Iterable<String> args) {
     try {
-      var argResults = super.parse(args);
-      globalConfiguration = resolveConfiguration(argResults);
-      return argResults;
+      return super.parse(args);
     } on UsageException catch (e) {
-      _messageOutput?.logUsageException(e);
+      messageOutput?.logUsageException(e);
       _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.invalid);
       rethrow;
     }
@@ -198,7 +226,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
 
   @override
   void printUsage() {
-    _messageOutput?.logUsage(usage);
+    messageOutput?.logUsage(usage);
   }
 
   /// Runs the command specified by [topLevelResults].
@@ -257,9 +285,9 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     await _onBeforeRunCommand?.call(this);
 
     try {
-      return super.runCommand(topLevelResults);
+      return await super.runCommand(topLevelResults);
     } on UsageException catch (e) {
-      _messageOutput?.logUsageException(e);
+      messageOutput?.logUsageException(e);
       _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.invalid);
       rethrow;
     }
@@ -276,6 +304,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     final config = _configResolver.resolveConfiguration(
       options: _globalOptions,
       argResults: argResults,
+      ignoreUnexpectedPositionalArgs: true,
     );
 
     if (config.errors.isNotEmpty) {
@@ -336,12 +365,12 @@ abstract class BetterCommandRunnerFlags {
   );
 }
 
-enum BasicGlobalOption<V> implements OptionDefinition<V> {
+enum StandardGlobalOption<V> implements OptionDefinition<V> {
   quiet(BetterCommandRunnerFlags.quietOption),
   verbose(BetterCommandRunnerFlags.verboseOption),
   analytics(BetterCommandRunnerFlags.analyticsOption);
 
-  const BasicGlobalOption(this.option);
+  const StandardGlobalOption(this.option);
 
   @override
   final ConfigOptionBase<V> option;

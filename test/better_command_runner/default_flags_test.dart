@@ -7,6 +7,7 @@ void main() {
       'test',
       'test description',
       onAnalyticsEvent: (event) {},
+      messageOutput: const MessageOutput(),
     );
 
     test(

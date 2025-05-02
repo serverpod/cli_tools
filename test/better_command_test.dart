@@ -50,7 +50,7 @@ void main() {
     var infos = <String>[];
     var analyticsEvents = <String>[];
     var messageOutput = MessageOutput(
-      logUsage: (u) => infos.add(u),
+      usageLogger: (u) => infos.add(u),
     );
 
     var betterCommand = MockCommand(
@@ -149,7 +149,7 @@ void main() {
     var infos = <String>[];
     var analyticsEvents = <String>[];
     var messageOutput = MessageOutput(
-      logUsage: (u) => infos.add(u),
+      usageLogger: (u) => infos.add(u),
     );
 
     var betterCommand = MockCommand(
@@ -199,7 +199,7 @@ void main() {
       'without analytics set up and default global options', () {
     var infos = <String>[];
     var messageOutput = MessageOutput(
-      logUsage: (u) => infos.add(u),
+      usageLogger: (u) => infos.add(u),
     );
 
     var betterCommand = MockCommand(
@@ -248,7 +248,7 @@ void main() {
       'with additional global options', () {
     var infos = <String>[];
     var messageOutput = MessageOutput(
-      logUsage: (u) => infos.add(u),
+      usageLogger: (u) => infos.add(u),
     );
 
     var betterCommand = MockCommand(

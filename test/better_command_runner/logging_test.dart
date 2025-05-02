@@ -34,8 +34,8 @@ void main() {
       'test',
       'this is a test cli',
       messageOutput: MessageOutput(
-        logUsageException: (e) => errors.add(e.toString()),
-        logUsage: (u) => infos.add(u),
+        usageExceptionLogger: (e) => errors.add(e.toString()),
+        usageLogger: (u) => infos.add(u),
       ),
     )..addCommand(MockCommand());
     tearDown(() {
@@ -74,7 +74,7 @@ void main() {
         expect(
           errors.first,
           contains(
-            'Unexpected positional argument(s): \'this it not a valid command\'',
+            'Could not find a command named "this it not a valid command".',
           ),
         );
       });
