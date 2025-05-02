@@ -8,7 +8,7 @@ import 'package:cli_tools/config.dart';
 void main(List<String> args) async {
   var commandRunner = BetterCommandRunner(
     'example',
-    'Example CLI commmand',
+    'Example CLI command',
     globalOptions: [
       StandardGlobalOption.quiet,
       StandardGlobalOption.verbose,
@@ -108,6 +108,9 @@ class TimeSeriesCommand extends BetterCommand<TimeSeriesOption, void> {
     var length = commandConfig.optionalValue(TimeSeriesOption.length);
     var interval = commandConfig.optionalValue(TimeSeriesOption.interval);
     interval ??= (until.difference(start) ~/ length!);
+    if (interval < const Duration(milliseconds: 1)) {
+      interval = const Duration(milliseconds: 1);
+    }
 
     while (start.isBefore(until)) {
       print(start);

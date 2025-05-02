@@ -162,13 +162,16 @@ class BetterCommandRunner<O extends OptionDefinition, T>
         ) {
     if (globalOptions != null) {
       _globalOptions = globalOptions;
-    } else if (_onAnalyticsEvent != null) {
-      _globalOptions = StandardGlobalOption.values as List<O>;
-    } else {
-      _globalOptions = [
+    } else if (O == OptionDefinition || O == StandardGlobalOption) {
+      _globalOptions = <O>[
         StandardGlobalOption.quiet as O,
         StandardGlobalOption.verbose as O,
+        if (_onAnalyticsEvent != null) StandardGlobalOption.analytics as O,
       ];
+    } else {
+      throw ArgumentError(
+        'globalOptions not provided and O is not assignable from StandardGlobalOption: $O',
+      );
     }
     prepareOptionsForParsing(_globalOptions, argParser);
   }
