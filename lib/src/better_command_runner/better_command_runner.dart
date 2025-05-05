@@ -72,7 +72,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   /// The gloabl option definitions.
   late final List<O> _globalOptions;
 
-  final ConfigResolver<O> _configResolver;
+  final ConfigResolver _configResolver;
 
   Configuration<O>? _globalConfiguration;
 
@@ -151,12 +151,12 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     OnAnalyticsEvent? onAnalyticsEvent,
     int? wrapTextColumn,
     List<O>? globalOptions,
-    ConfigResolver<O>? configResolver,
+    ConfigResolver? configResolver,
   })  : _messageOutput = messageOutput,
         _setLogLevel = setLogLevel,
         _onBeforeRunCommand = onBeforeRunCommand,
         _onAnalyticsEvent = onAnalyticsEvent,
-        _configResolver = configResolver ?? DefaultConfigResolver<O>(),
+        _configResolver = configResolver ?? DefaultConfigResolver(),
         super(
           usageLineLength: wrapTextColumn,
         ) {
@@ -182,7 +182,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
 
   /// The configuration resolver used for the global configuration.
   /// It is also used for the command configurations unless they have their own.
-  ConfigResolver<O> get configResolver => _configResolver;
+  ConfigResolver get configResolver => _configResolver;
 
   /// Adds a list of commands to the command runner.
   void addCommands(List<Command<T>> commands) {

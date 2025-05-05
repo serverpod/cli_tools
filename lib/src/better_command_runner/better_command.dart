@@ -14,7 +14,7 @@ abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
   final ArgParser _argParser;
 
   /// The configuration resolver for this command.
-  ConfigResolver<O>? _configResolver;
+  ConfigResolver? _configResolver;
 
   /// The option definitions for this command.
   final List<O> options;
@@ -28,6 +28,9 @@ abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
   ///
   /// [configResolver] and [messageOutput] are optional and will default to the
   /// values of the command runner (if any).
+  ///
+  /// If no [configResolver] is provided then [DefaultConfigResolver] will be used,
+  /// which uses the command line arguments and environment variables as input sources.
   ///
   /// To define a bespoke set of options, it is recommended to define
   /// a proper options enum. It can included any of the default options
@@ -48,14 +51,11 @@ abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
   ///   final ConfigOptionBase<V> option;
   /// }
   /// ```
-  ///
-  /// If [configResolver] is not provided then [DefaultConfigResolver] will be used,
-  /// which uses the command line arguments and environment variables as input sources.
   BetterCommand({
     MessageOutput? messageOutput = _defaultMessageOutput,
     int? wrapTextColumn,
     this.options = const [],
-    ConfigResolver<O>? configResolver,
+    ConfigResolver? configResolver,
   })  : _messageOutput = messageOutput,
         _argParser = ArgParser(usageLineLength: wrapTextColumn),
         _configResolver = configResolver {
@@ -72,11 +72,11 @@ abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
     return _messageOutput;
   }
 
-  ConfigResolver<O> get configResolver {
+  ConfigResolver get configResolver {
     if (runner case BetterCommandRunner<O, T> runner) {
       return runner.configResolver;
     }
-    return _configResolver ??= DefaultConfigResolver<O>();
+    return _configResolver ??= DefaultConfigResolver();
   }
 
   @override

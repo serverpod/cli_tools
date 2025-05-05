@@ -14,9 +14,9 @@ import 'package:cli_tools/config.dart' show Configuration, OptionDefinition;
 ///
 /// If invoked from global command runner or a command that has
 /// subcommands, set [ignoreUnexpectedPositionalArgs] to true.
-abstract interface class ConfigResolver<O extends OptionDefinition> {
+abstract interface class ConfigResolver {
   /// {@macro config_resolver}
-  Configuration<O> resolveConfiguration({
+  Configuration<O> resolveConfiguration<O extends OptionDefinition>({
     required Iterable<O> options,
     ArgResults? argResults,
     bool ignoreUnexpectedPositionalArgs = false,
@@ -25,15 +25,14 @@ abstract interface class ConfigResolver<O extends OptionDefinition> {
 
 /// The default behavior is to invoke this using the [argResults] and
 /// [Platform.environment] as input.
-class DefaultConfigResolver<O extends OptionDefinition>
-    implements ConfigResolver<O> {
+class DefaultConfigResolver implements ConfigResolver {
   final Map<String, String> _env;
 
   DefaultConfigResolver({Map<String, String>? env})
       : _env = env ?? Platform.environment;
 
   @override
-  Configuration<O> resolveConfiguration({
+  Configuration<O> resolveConfiguration<O extends OptionDefinition>({
     required Iterable<O> options,
     ArgResults? argResults,
     bool ignoreUnexpectedPositionalArgs = false,
