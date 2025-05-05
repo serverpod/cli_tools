@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:args/command_runner.dart';
 import 'package:cli_tools/cli_tools.dart';
-import 'package:cli_tools/src/config/configuration.dart';
 import 'package:test/test.dart';
 
 class AddSpiceCommand extends Command {
