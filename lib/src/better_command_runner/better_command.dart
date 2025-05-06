@@ -80,7 +80,8 @@ abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
   }
 
   @override
-  BetterCommand<O, T>? get parent => super.parent as BetterCommand<O, T>?;
+  BetterCommand<dynamic, T>? get parent =>
+      super.parent as BetterCommand<dynamic, T>?;
 
   @override
   BetterCommandRunner<dynamic, T>? get runner =>
