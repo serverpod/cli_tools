@@ -6,7 +6,6 @@ import 'package:args/command_runner.dart';
 import 'package:cli_tools/config.dart';
 
 import 'better_command_runner.dart';
-import 'config_resolver.dart';
 
 /// An extension of [Command] with additional features.
 ///
