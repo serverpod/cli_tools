@@ -792,7 +792,7 @@ class Configuration<O extends OptionDefinition> {
   /// This is a 1:1 copy including the errors.
   Configuration.from({
     required final Configuration<O> configuration,
-  })  : _options = List.from(configuration.options),
+  })  : _options = List.from(configuration._options),
         _config = Map.from(configuration._config),
         _errors = List.from(configuration._errors);
 

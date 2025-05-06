@@ -205,11 +205,17 @@ class BetterCommandRunner<O extends OptionDefinition, T>
       var argResults = parse(args);
       globalConfiguration = resolveConfiguration(argResults);
 
-      if (globalConfiguration.errors.isNotEmpty) {
-        final buffer = StringBuffer();
-        final errors = globalConfiguration.errors.map(formatConfigError);
-        buffer.writeAll(errors, '\n');
-        usageException(buffer.toString());
+      try {
+        if (globalConfiguration.errors.isNotEmpty) {
+          final buffer = StringBuffer();
+          final errors = globalConfiguration.errors.map(formatConfigError);
+          buffer.writeAll(errors, '\n');
+          usageException(buffer.toString());
+        }
+      } on UsageException catch (e) {
+        messageOutput?.logUsageException(e);
+        _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.invalid);
+        rethrow;
       }
 
       return runCommand(argResults);
