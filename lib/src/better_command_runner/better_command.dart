@@ -1,20 +1,25 @@
 import 'dart:async' show FutureOr;
+import 'dart:io' show Platform;
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
-import 'package:cli_tools/better_command_runner.dart';
 import 'package:cli_tools/config.dart';
 
-import 'config_resolver.dart';
+import 'better_command_runner.dart';
 
+/// An extension of [Command] with additional features.
+///
+/// The [BetterCommand] class uses the config library to provide
+/// a more enhanced command line interface for running commands and handling
+/// command line arguments, environment variables, and configuration.
 abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
   static const _defaultMessageOutput = MessageOutput(usageLogger: print);
 
   final MessageOutput? _messageOutput;
   final ArgParser _argParser;
 
-  /// The configuration resolver for this command.
-  ConfigResolver<O>? _configResolver;
+  /// The environment variables used for configuration resolution.
+  final Map<String, String> envVariables;
 
   /// The option definitions for this command.
   final List<O> options;
@@ -24,10 +29,13 @@ abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
   /// - [messageOutput] is an optional [MessageOutput] object used to pass specific log messages.
   /// - [wrapTextColumn] is the column width for wrapping text in the command line interface.
   /// - [options] is a list of options, empty by default.
-  /// - [configResolver] is an optional custom [ConfigResolver] implementation.
+  /// - [env] is an optional map of environment variables. If not set then
+  ///   [Platform.environment] will be used.
   ///
-  /// [configResolver] and [messageOutput] are optional and will default to the
-  /// values of the command runner (if any).
+  /// [messageOutput] is optional and will default to the
+  /// value of the command runner (if any).
+  ///
+  /// ## Options
   ///
   /// To define a bespoke set of options, it is recommended to define
   /// a proper options enum. It can included any of the default options
@@ -48,17 +56,14 @@ abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
   ///   final ConfigOptionBase<V> option;
   /// }
   /// ```
-  ///
-  /// If [configResolver] is not provided then [DefaultConfigResolver] will be used,
-  /// which uses the command line arguments and environment variables as input sources.
   BetterCommand({
     MessageOutput? messageOutput = _defaultMessageOutput,
     int? wrapTextColumn,
     this.options = const [],
-    ConfigResolver<O>? configResolver,
+    Map<String, String>? env,
   })  : _messageOutput = messageOutput,
         _argParser = ArgParser(usageLineLength: wrapTextColumn),
-        _configResolver = configResolver {
+        envVariables = env ?? Platform.environment {
     prepareOptionsForParsing(options, argParser);
   }
 
@@ -72,15 +77,9 @@ abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
     return _messageOutput;
   }
 
-  ConfigResolver<O> get configResolver {
-    if (runner case BetterCommandRunner<O, T> runner) {
-      return runner.configResolver;
-    }
-    return _configResolver ??= DefaultConfigResolver<O>();
-  }
-
   @override
-  BetterCommand<O, T>? get parent => super.parent as BetterCommand<O, T>?;
+  BetterCommand<dynamic, T>? get parent =>
+      super.parent as BetterCommand<dynamic, T>?;
 
   @override
   BetterCommandRunner<dynamic, T>? get runner =>
@@ -98,27 +97,14 @@ abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
   /// Resolves the configuration (args, env, etc) and runs the command
   /// subclass via [runWithConfig].
   ///
+  /// If there are errors resolving the configuration,
+  /// a UsageException is thrown with appropriate error messages.
+  ///
   /// Subclasses should override [runWithConfig],
   /// unless they want to handle the configuration resolution themselves.
   @override
   FutureOr<T>? run() {
     final config = resolveConfiguration(argResults);
-
-    return runWithConfig(config);
-  }
-
-  /// Resolves the configuration for this command
-  /// using the preset [ConfigResolver].
-  /// If there are errors resolving the configuration,
-  /// a UsageException is thrown with appropriate error messages.
-  ///
-  /// This method can be overridden to change the configuration resolution
-  /// or error handling behavior.
-  Configuration<O> resolveConfiguration(ArgResults? argResults) {
-    final config = configResolver.resolveConfiguration(
-      options: options,
-      argResults: argResults,
-    );
 
     if (config.errors.isNotEmpty) {
       final buffer = StringBuffer();
@@ -127,10 +113,22 @@ abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
       usageException(buffer.toString());
     }
 
-    return config;
+    return runWithConfig(config);
   }
 
-  /// Runs this command with prepared configuration (options).
+  /// Resolves the configuration for this command.
+  ///
+  /// This method can be overridden to change the configuration resolution
+  /// behavior.
+  Configuration<O> resolveConfiguration(ArgResults? argResults) {
+    return Configuration.resolve(
+      options: options,
+      argResults: argResults,
+      env: envVariables,
+    );
+  }
+
+  /// Runs this command with the resolved configuration (option values).
   /// Subclasses should override this method.
   FutureOr<T>? runWithConfig(final Configuration<O> commandConfig);
 }

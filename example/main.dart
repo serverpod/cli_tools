@@ -3,7 +3,6 @@ import 'dart:io' show exit;
 
 import 'package:args/command_runner.dart';
 import 'package:cli_tools/cli_tools.dart';
-import 'package:cli_tools/config.dart';
 
 void main(List<String> args) async {
   var commandRunner = BetterCommandRunner(

@@ -787,6 +787,15 @@ class Configuration<O extends OptionDefinition> {
           presetValues: values,
         );
 
+  /// Creates a configuration by copying the contents from another.
+  ///
+  /// This is a 1:1 copy including the errors.
+  Configuration.from({
+    required final Configuration<O> configuration,
+  })  : _options = List.from(configuration._options),
+        _config = Map.from(configuration._config),
+        _errors = List.from(configuration._errors);
+
   /// Creates a configuration with option values resolved from the provided context.
   ///
   /// [argResults] is used if provided. Otherwise [args] is used if provided.

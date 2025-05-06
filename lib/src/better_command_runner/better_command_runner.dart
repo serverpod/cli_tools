@@ -1,9 +1,9 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:cli_tools/config.dart';
-import 'package:cli_tools/src/better_command_runner/config_resolver.dart';
 
 /// A function type for executing code before running a command.
 typedef OnBeforeRunCommand = Future<void> Function(BetterCommandRunner runner);
@@ -45,14 +45,15 @@ typedef SetLogLevel = void Function({
 /// A function type for tracking events.
 typedef OnAnalyticsEvent = void Function(String event);
 
-/// A custom implementation of [CommandRunner] with additional features.
+/// An extension of [CommandRunner] with additional features.
 ///
 /// This class extends the [CommandRunner] class from the `args` package and adds
 /// additional functionality such as logging, setting log levels, tracking events,
 /// and handling analytics.
 ///
-/// The [BetterCommandRunner] class provides a more enhanced command line interface
-/// for running commands and handling command line arguments.
+/// The [BetterCommandRunner] class uses the config library to provide
+/// a more enhanced command line interface for running commands and handling
+/// command line arguments, environment variables, and configuration.
 class BetterCommandRunner<O extends OptionDefinition, T>
     extends CommandRunner<T> {
   static const foo = <OptionDefinition>[
@@ -69,10 +70,11 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   final OnBeforeRunCommand? _onBeforeRunCommand;
   OnAnalyticsEvent? _onAnalyticsEvent;
 
+  /// The environment variables used for configuration resolution.
+  final Map<String, String> envVariables;
+
   /// The gloabl option definitions.
   late final List<O> _globalOptions;
-
-  final ConfigResolver<O> _configResolver;
 
   Configuration<O>? _globalConfiguration;
 
@@ -101,7 +103,8 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   /// - [onAnalyticsEvent] function is used to track events.
   /// - [wrapTextColumn] is the column width for wrapping text in the command line interface.
   /// - [globalOptions] is an optional list of global options.
-  /// - [configResolver] is an optional custom [ConfigResolver] implementation.
+  /// - [env] is an optional map of environment variables. If not set then
+  ///   [Platform.environment] will be used.
   ///
   /// ## Message Output
   ///
@@ -138,9 +141,6 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   ///   final ConfigOptionBase<V> option;
   /// }
   /// ```
-  ///
-  /// If [configResolver] is not provided then [DefaultConfigResolver] will be used,
-  /// which uses the command line arguments and environment variables as input sources.
   BetterCommandRunner(
     super.executableName,
     super.description, {
@@ -151,12 +151,12 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     OnAnalyticsEvent? onAnalyticsEvent,
     int? wrapTextColumn,
     List<O>? globalOptions,
-    ConfigResolver<O>? configResolver,
+    Map<String, String>? env,
   })  : _messageOutput = messageOutput,
         _setLogLevel = setLogLevel,
         _onBeforeRunCommand = onBeforeRunCommand,
         _onAnalyticsEvent = onAnalyticsEvent,
-        _configResolver = configResolver ?? DefaultConfigResolver<O>(),
+        envVariables = env ?? Platform.environment,
         super(
           usageLineLength: wrapTextColumn,
         ) {
@@ -179,10 +179,6 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   /// The [MessageOutput] for the command runner.
   /// It is also used for the commands unless they have their own.
   MessageOutput? get messageOutput => _messageOutput;
-
-  /// The configuration resolver used for the global configuration.
-  /// It is also used for the command configurations unless they have their own.
-  ConfigResolver<O> get configResolver => _configResolver;
 
   /// Adds a list of commands to the command runner.
   void addCommands(List<Command<T>> commands) {
@@ -208,6 +204,20 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     return Future.sync(() {
       var argResults = parse(args);
       globalConfiguration = resolveConfiguration(argResults);
+
+      try {
+        if (globalConfiguration.errors.isNotEmpty) {
+          final buffer = StringBuffer();
+          final errors = globalConfiguration.errors.map(formatConfigError);
+          buffer.writeAll(errors, '\n');
+          usageException(buffer.toString());
+        }
+      } on UsageException catch (e) {
+        messageOutput?.logUsageException(e);
+        _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.invalid);
+        rethrow;
+      }
+
       return runCommand(argResults);
     });
   }
@@ -293,28 +303,17 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     }
   }
 
-  /// Resolves the global configuration for this command runner
-  /// using the preset [ConfigResolver].
-  /// If there are errors resolving the configuration,
-  /// a UsageException is thrown with appropriate error messages.
+  /// Resolves the global configuration for this command runner.
   ///
   /// This method can be overridden to change the configuration resolution
-  /// or error handling behavior.
+  /// behavior.
   Configuration<O> resolveConfiguration(ArgResults? argResults) {
-    final config = _configResolver.resolveConfiguration(
+    return Configuration.resolve(
       options: _globalOptions,
       argResults: argResults,
+      env: envVariables,
       ignoreUnexpectedPositionalArgs: true,
     );
-
-    if (config.errors.isNotEmpty) {
-      final buffer = StringBuffer();
-      final errors = config.errors.map(formatConfigError);
-      buffer.writeAll(errors, '\n');
-      usageException(buffer.toString());
-    }
-
-    return config;
   }
 
   static CommandRunnerLogLevel _determineLogLevel(Configuration config) {
@@ -384,3 +383,15 @@ abstract class BetterCommandRunnerAnalyticsEvents {
 
 /// An enum for the command runner log levels.
 enum CommandRunnerLogLevel { quiet, verbose, normal }
+
+/// Formats a configuration error message.
+String formatConfigError(final String error) {
+  if (error.isEmpty) return error;
+  final suffix = _isPunctuation(error.substring(error.length - 1)) ? '' : '.';
+  return '${error[0].toUpperCase()}${error.substring(1)}$suffix';
+}
+
+/// Returns true if the character is a punctuation mark.
+bool _isPunctuation(final String char) {
+  return RegExp(r'\p{P}', unicode: true).hasMatch(char);
+}
