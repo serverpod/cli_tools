@@ -1,8 +1,17 @@
 # Changelog
 
+## 0.5.0-beta.5
+
+- refactor: Support ConfigurationBroker that depends on dynamic state
+- refactor: Support bespoke Configuration subclass
+- refactor: Simplified default usage of BetterCommand/Runner
+- refactor: Subcommands inherit output behavior from their command runner unless overridden
+- refactor: The default terminal usage output behavior is now the same as the args package `Command` / `CommandRunner`
+- docs: A full example of using `BetterCommandRunner`, `BetterCommand`, and `Configuration` options in the example folder
+
 ## 0.5.0-beta.4
 
-- fix!: Clarified behavior of mutually exclusive option groups
+- fix: BREAKING. Clarified behavior of mutually exclusive option groups
 
 ## 0.5.0-beta.3
 
