@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart' show UsageException;
 
@@ -213,6 +215,20 @@ class ConfigParser implements ArgParser {
   @override
   void addSeparator(final String text) => parser.addSeparator(text);
 
+  /// Parses [args], a list of command-line arguments, matches them against the
+  /// flags and options defined by this parser, and returns the result.
+  ///
+  /// Supports additional configuration sources:
+  /// - [env] is a map of environment variable names to their values.
+  /// - [configBroker] is a configuration broker that can provide values for
+  ///   options, for example from a configuration file.
+  /// - [presetValues] is a map of options with predetermined values.
+  ///
+  /// If [env] is not provided it defaults to the current platform's environment
+  /// variables.
+  ///
+  /// Throws UsageException with appropriate error messages if any validation
+  /// errors occur.
   @override
   ConfigResults parse(
     final Iterable<String> args, {
@@ -227,7 +243,7 @@ class ConfigParser implements ArgParser {
     final configuration = Configuration.resolve(
       options: _optionDefinitions,
       argResults: argResults,
-      env: env,
+      env: env ?? Platform.environment,
       configBroker: configBroker,
       presetValues: presetValues,
       ignoreUnexpectedPositionalArgs: true,
