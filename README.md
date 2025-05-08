@@ -2,7 +2,16 @@
 
 # CLI Tools
 
-This package contains tools for building great command line interfaces. These tools were developed for the Serverpod CLI but can be used in any Dart project.
+This package contains tools for building great command line interfaces.
+These tools were developed for the Serverpod CLI but can be used in any Dart project.
+
+## Config library
+
+The config library is a significant extension to the args package and enables
+typed options, environment variables and configuration files as input, and
+better error reporting.
+
+[Config README](README_config.md)
 
 ## Contributing to the Project
 
