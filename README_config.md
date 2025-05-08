@@ -6,9 +6,10 @@ The main features are:
 
 - Typed arg options: `int`, `DateTime`, `Duration`, user-defined `Enums`.
   - Automatic parsing and user-friendly error messages.
-  - Type-specific constraints, such as min/max for all Comparable option types.
+  - Type-specific constraints, such as min/max for all `Comparable` option types.
   - Multivalued options are typed, e.g. `List<MyEnum>`.
   - Custom types can easily be added and combined with the existing ones.
+  - See [Supported option types](#supported-option-types) for the complete list.
 
 - Equal support for positional arguments, with proper validation.
   - Arguments can be both positional and named, making the --name optional.
@@ -17,7 +18,7 @@ The main features are:
   - Options can be specified both via arguments and environment variables.
   - Environment variables have the same typed values support as args.
 
-- Options can be fetched from configuration files as well.
+- Options can be fetched from [configuration files](#using-configuration-files) as well.
   - YAML/JSON configuration file support.
 
 - Options can have custom value-providing callbacks.
@@ -154,7 +155,7 @@ abstract final class _ProjectOptions {
     final Configuration commandConfig,
   ) async {
     final name = commandConfig.value(_ProjectOptions.name);
-    final enambe = commandConfig.value(_ProjectOptions.enable);
+    final enable = commandConfig.value(_ProjectOptions.enable);
     ...
   }
 ```
@@ -306,6 +307,26 @@ a `ConfigurationBroker` needs to be provided when resolving the
   );
 ```
 
+A file-reading ConfigurationBroker can be implemented like this:
+
+```dart
+class FileConfigBroker implements ConfigurationBroker {
+  ConfigurationSource? _configSource;
+
+  FileConfigBroker();
+
+  @override
+  String? valueOrNull(final String key, final Configuration cfg) {
+    // By lazy-loading the config, the file path can depend on another option
+    _configSource ??= ConfigurationParser.fromFile(
+      cfg.value(TimeSeriesOption.configFile).path,
+    );
+    final value = _configSource?.valueOrNull(key);
+    return value is String ? value : null;
+  }
+}
+```
+
 To reference a value from the configuration broker in an option definition,
 specify the `configKey`. In this example, the configuration file is a JSON or
 YAML file and the JSON pointer syntax is used.
@@ -318,7 +339,7 @@ YAML file and the JSON pointer syntax is used.
   ));
 ```
 
-See the full example [example/config_file_example.dart](example/config_file_example.dart).
+See the full example in [example/config_file_example.dart](example/config_file_example.dart).
 
 ### Multiple configuration sources
 
