@@ -4,10 +4,10 @@ The config library is a significant extension to the Dart args package.
 
 The main features are:
 
-- Typed arg options: `int`, `DateTime`, `Duration`, specific `Enums`.
+- Typed arg options: `int`, `DateTime`, `Duration`, user-defined `Enums`.
   - Automatic parsing and user-friendly error messages.
-  - Type-specific constraints, such as min/max for int and DateTime options.
-  - Multi-valued options are typed, e.g. `List<MyEnum>`.
+  - Type-specific constraints, such as min/max for all Comparable option types.
+  - Multivalued options are typed, e.g. `List<MyEnum>`.
   - Custom types can easily be added and combined with the existing ones.
 
 - Equal support for positional arguments, with proper validation.
@@ -38,11 +38,15 @@ These tools were developed for the Serverpod CLI but can be used in any Dart pro
 ## Drop-in replacement
 
 The `ConfigParser` class is designed as a drop-in replacement for `ArgParser`
-from the `args` package. Its purpose is to make it very easy to transition
+from the `args` package. Its purpose is to make it easy to transition
 to the config library - just replace the name `ArgParser` with `ConfigParser`.
 
 It maintains almost complete compatibility with the original package while
 enabling direct use of the new features.
+
+It achieves complete compatibility with the original package with the exception
+of addCommand(), which you can replace with
+[`BetterCommandRunner`](lib/src/better_command_runner/better_command_runner.dart).
 
 - **Compatibility**: The `ConfigParser` implements the same interface as
   `ArgParser`, and returns a `ConfigResults` object that implements `ArgResults`.
@@ -56,7 +60,8 @@ enabling direct use of the new features.
   ```
 
 - **Key Differences**:
-  - The `addCommand()` method is not supported (see `BetterCommand` instaed)
+  - The `addCommand()` method is not supported
+  (see [`BetterCommandRunner`](lib/src/better_command_runner/better_command_runner.dart) instead)
   - All validation is performed up-front with consistent error messages
   - The parser supports additional configuration sources (environment variables, config files)
 
@@ -157,6 +162,64 @@ abstract final class _ProjectOptions {
 > Note that options that are mandatory or have a default value have a guaranteed value.
 They return a non-nullable type, while "optional" options return a nullable type.
 
+### Main classes
+
+An instance of the [OptionDefinition](lib/src/config/configuration.dart) class
+defines an option.
+This is an abstract class and implemented by option Enum types
+as well as the base option class `ConfigOptionBase`. 
+The latter is typically
+not used directly, instead the typed subclasses are used such as `StringOption`
+or `IntOption`.
+
+An instance of the [Configuration](lib/src/config/configuration.dart) class
+holds a configuration, i.e. the values for a set of option definitions.
+
+### Resolution order
+
+The configuration library resolves each option value in a specific order, with earlier sources taking precedence over later ones.
+
+1. **Command-line arguments**
+   - Named arguments (e.g., `--verbose` or `-v`) have top precedence
+   - Positional arguments are resolved after named
+   - Specified using `argName`, `argAbbrev`, and `argPos`
+
+2. **Environment variables**
+   - Environment variables have second precedence after CLI arguments
+   - Variable name is specified using `envName`
+
+3. **Configuration files**
+   - Values from configuration files (e.g. YAML/JSON)
+   - Lookup key is specified using `configKey`
+
+4. **Custom value providers**
+   - Values from custom callbacks
+   - Callbacks are allowed to depend on other option values
+     (option definition order is significant in this case)
+   - Callback is specified using `fromCustom`
+
+5. **Default values**
+   - A default value guarantees that an option has a value
+   - Const values are specified using `defaultsTo`
+   - Non-const values are specifed with a callback using `fromDefault`
+
+This order ensures that:
+- Command-line arguments always take precedence, allowing users to override any other settings
+- Environment variables can be used for values used across multiple command invocations,
+  or to override other configuration sources
+- Configuration files provide persistent settings
+- Custom providers enable complex logic and integration with external systems
+- Default values serve as a fallback when no other value is specified
+
+### Resolution sources
+
+Only the value sources provided to the `Configuration.resolve` constructor are
+actually included. This means that any precedence tiers can be skipped,
+regardless of what the option definitions say.
+
+This enables flexible inclusion of sources depending on context
+and helps constructing specific test cases.
+
 ### Supported option types
 
 The library provides a rich set of typed options out of the box. All option types support the common arguments like `argName`, `helpText`, `mandatory`, etc. Below are the additional type-specific arguments:
@@ -221,7 +284,7 @@ sequenceDiagram
 In Dart, commands are often implemented using `Command` and `CommandRunner`
 from the `args` package.
 
-In order to use the config library with these, they need to be subclassed
+To use the config library with these, they need to be subclassed
 to modify the use of `ArgParser` and introduce `Configuration`. This has
 already been done for you, with the `BetterCommand` and `BetterCommandRunner`
 classes in the `better_command_runner` library in this package.
@@ -230,7 +293,7 @@ See the full example [example/config_simple_example.dart](example/config_simple_
 
 ## Using configuration files
 
-In order to use configuration files as a source of option values,
+To use configuration files as a source of option values,
 a `ConfigurationBroker` needs to be provided when resolving the
 `Configuration`.
 
@@ -244,7 +307,7 @@ a `ConfigurationBroker` needs to be provided when resolving the
 ```
 
 To reference a value from the configuration broker in an option definition,
-specify the `configKey`. In this example the configuration file is a JSON or
+specify the `configKey`. In this example, the configuration file is a JSON or
 YAML file and the JSON pointer syntax is used.
 
 ```dart
@@ -262,7 +325,11 @@ See the full example [example/config_file_example.dart](example/config_file_exam
 By using the `MultiDomainConfigBroker`, configuration sources
 from multiple providers can be used, called configuration *domains*.
 
-They are distinguished by the format used in the configKey.
+They are distinguished by the format used in the configKey,
+which needs to specify a so-called *qualified key* -
+qualifying the key with the domain it is found in.
+
+Domains are matched using `Pattern`, e.g. string prefixes or regular expressions.
 For example, a simple prefix and colon syntax can be used:
 
 ```dart
@@ -278,10 +345,30 @@ For example, a simple prefix and colon syntax can be used:
   ));
 ```
 
-Advanced pattern matching is also suppored, enabling complex keys including
-paths and URLs.
+The first domain that matches the qualified key is used to retrieve the value.
+This means that the order of the domains is significant if the matching patterns
+overlap.
 
-For more information, see the `MultiDomainConfigBroker` source documentation.
+#### RegExp domains
+
+Advanced pattern matching is supported via `RegExp`, enabling complex qualifiers
+including paths and URLs, such that the key pattern qualifies the domain.
+
+When using regular expressions to identify the domain, the value key is derived
+from the qualified key depending on the capturing groups in the regex.
+
+- If the regex has no capturing groups:
+  - If the regex matches a shorter string than the qualified key, the value key is the remainder after the match.\
+    This makes prefix matching simple.
+  - If the regex matches the entire qualified key, the value key is the entire qualified key.\
+    This can be used for specific syntaxes like URLs.
+
+- If the regex has one or more capturing groups:\
+  The value key is the string captured by the first group.
+
+For more information, see the
+[`MultiDomainConfigBroker`](lib/src/config/multi_config_source.dart)
+source documentation.
 
 ## Contributing to the Project
 
