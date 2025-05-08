@@ -1,35 +1,18 @@
 # Changelog
 
-## 0.5.0-beta.5
+## 0.5.0
 
-- refactor: Support ConfigurationBroker that depends on dynamic state
-- refactor: Support bespoke Configuration subclass
-- refactor: Simplified default usage of BetterCommand/Runner
-- refactor: Subcommands inherit output behavior from their command runner unless overridden
+- feat: Introduced the `config` library for unified args and env parsing
+- docs: Added README and code examples for the `config` library
+- fix: BREAKING. `BetterCommand` constructor changed to use `MessageOutput` class for clearer specification of logging functions.
+- feat: BREAKING. Simplified default usage of `BetterCommand/Runner`
+- feat: Subcommands inherit output behavior from their command runner unless overridden
 - refactor: The default terminal usage output behavior is now the same as the args package `Command` / `CommandRunner`
-- docs: A full example of using `BetterCommandRunner`, `BetterCommand`, and `Configuration` options in the example folder
-
-## 0.5.0-beta.4
-
-- fix: BREAKING. Clarified behavior of mutually exclusive option groups
-
-## 0.5.0-beta.3
-
-- fix: Replaced yaml_codec dependency with yaml in order to support Dart 3.3
-- chore: Require Dart 3.3
-
-## 0.5.0-beta.2
-
 - feat: New `Logger.log` method with dynamically specified log level
-- fix: Downgrade `collection` dependency to 1.18 to be compatible with Dart 3.3
-- fix: Improved usage help composition
-- fix: BetterCommandRunner API improvements
-
-## 0.5.0-beta.1
-
-- feat: Introduced the Config library for unified args and env parsing
 - fix: Include user input prompt feature in library export
-- fix: BREAKING. BetterCommand's constructor changed to use MessageOutput class for clearer specification of logging functions.
+- fix: Downgrade `collection` dependency to 1.18 to be compatible with Dart 3.3
+- fix: Replaced `yaml_codec` dependency with `yaml` in order to support Dart 3.3
+- chore: Require Dart 3.3
 
 ## 0.4.0
 
