@@ -1,10 +1,6 @@
-import 'dart:async' show FutureOr;
-import 'dart:io' show exit;
-
-import 'package:args/command_runner.dart';
 import 'package:cli_tools/cli_tools.dart';
 
-void main(List<String> args) async {
+Future<int> main(List<String> args) async {
   var commandRunner = BetterCommandRunner(
     'example',
     'Example CLI command',
@@ -19,7 +15,7 @@ void main(List<String> args) async {
     await commandRunner.run(args);
   } on UsageException catch (e) {
     print(e);
-    exit(1);
+    return 1;
   }
 
   /// Simple example of using the [StdOutLogger] class.
@@ -43,6 +39,7 @@ void main(List<String> args) async {
     'A progress message',
     () async => Future.delayed(const Duration(seconds: 3), () => true),
   );
+  return 0;
 }
 
 /// Options are defineable as enums as well as regular lists.
@@ -99,7 +96,7 @@ class TimeSeriesCommand extends BetterCommand<TimeSeriesOption, void> {
   String get description => 'Generate a series of time stamps';
 
   @override
-  FutureOr<void>? runWithConfig(Configuration<TimeSeriesOption> commandConfig) {
+  void runWithConfig(Configuration<TimeSeriesOption> commandConfig) {
     var start = DateTime.now();
     var until = commandConfig.value(TimeSeriesOption.until);
 
