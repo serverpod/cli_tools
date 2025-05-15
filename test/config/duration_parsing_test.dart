@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 import 'package:cli_tools/config.dart';
 
 void main() {
-  group('Given a DurationParser', () {
+  group('Given a DurationParser with normal default unit "s"', () {
     const durationParser = DurationParser();
 
     test('when calling parse with empty string then it throws FormatException.',
@@ -248,6 +248,63 @@ void main() {
         () {
       expect(durationParser.format(const Duration(days: 2, hours: 22)),
           equals('2d22h'));
+    });
+  });
+
+  group('Given a DurationParser with custom default unit "ms"', () {
+    const durationParser = DurationParser(
+      defaultUnit: DurationUnit.milliseconds,
+    );
+
+    test('when calling parse with empty string then it throws FormatException.',
+        () {
+      expect(
+        () => durationParser.parse(''),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('when calling parse with "-" then it throws FormatException.', () {
+      expect(
+        () => durationParser.parse('-'),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test(
+        'when calling parse with just an ms unit then it throws FormatException.',
+        () {
+      expect(
+        () => durationParser.parse('ms'),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test(
+        'when calling parse with 10 (implicit ms unit) then it successfully returns a 10ms Duration.',
+        () {
+      expect(
+        durationParser.parse('10'),
+        equals(const Duration(milliseconds: 10)),
+      );
+    });
+
+    test(
+        'when calling parse with 10ms then it successfully returns a 10ms Duration.',
+        () {
+      expect(
+        durationParser.parse('10ms'),
+        equals(const Duration(milliseconds: 10)),
+      );
+    });
+
+    test(
+        'when calling parse with 10s then it successfully returns a 10s Duration.',
+        () {
+      expect(
+        durationParser.parse('10s'),
+        equals(const Duration(seconds: 10)),
+      );
     });
   });
 }
