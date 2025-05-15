@@ -263,7 +263,7 @@ void main() async {
       expect(
         config.errors.single,
         equals(
-            'Invalid value for option `duration` <integer[s|m|h|d]>: -2s is below the minimum (0s)'),
+            'Invalid value for option `duration` <integer[us|ms|s|m|h|d]>: -2s is below the minimum (0s)'),
       );
     });
 
@@ -279,7 +279,7 @@ void main() async {
       expect(
         config.errors.single,
         equals(
-            'Invalid value for option `duration` <integer[s|m|h|d]>: 20d is above the maximum (2d)'),
+            'Invalid value for option `duration` <integer[us|ms|s|m|h|d]>: 20d is above the maximum (2d)'),
       );
     });
   });

@@ -311,7 +311,9 @@ class DateTimeOption extends ComparableValueOption<DateTime> {
 ///
 /// Throws [FormatException] if parsing failed.
 class DurationParser extends ValueParser<Duration> {
-  const DurationParser();
+  final String defaultUnit;
+
+  const DurationParser({this.defaultUnit = 's'});
 
   @override
   Duration parse(final String value) {
@@ -324,7 +326,7 @@ class DurationParser extends ValueParser<Duration> {
       throw FormatException('Invalid duration value "$value"');
     }
     final valueStr = match.group(1);
-    final unit = match.group(2) ?? 's';
+    final unit = match.group(2) ?? defaultUnit;
     final val = int.parse(valueStr ?? '');
     switch (unit) {
       case 's':
@@ -383,7 +385,7 @@ class DurationOption extends ComparableValueOption<Duration> {
     super.fromDefault,
     super.defaultsTo,
     super.helpText,
-    super.valueHelp = 'integer[s|m|h|d]',
+    super.valueHelp = 'integer[us|ms|s|m|h|d]',
     super.allowedHelp,
     super.group,
     super.allowedValues,
@@ -393,4 +395,29 @@ class DurationOption extends ComparableValueOption<Duration> {
     super.min,
     super.max,
   }) : super(valueParser: const DurationParser());
+
+  /// Creates a DurationOption with a custom duration parser,
+  /// e.g. with a specific default unit.
+  const DurationOption.custom({
+    required final DurationParser parser,
+    super.argName,
+    super.argAliases,
+    super.argAbbrev,
+    super.argPos,
+    super.envName,
+    super.configKey,
+    super.fromCustom,
+    super.fromDefault,
+    super.defaultsTo,
+    super.helpText,
+    super.valueHelp = 'integer[us|ms|s|m|h|d]',
+    super.allowedHelp,
+    super.group,
+    super.allowedValues,
+    super.customValidator,
+    super.mandatory,
+    super.hide,
+    super.min,
+    super.max,
+  }) : super(valueParser: parser);
 }
