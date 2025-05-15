@@ -252,7 +252,9 @@ void main() {
   });
 
   group('Given a DurationParser with custom default unit "ms"', () {
-    const durationParser = DurationParser(defaultUnit: 'ms');
+    const durationParser = DurationParser(
+      defaultUnit: DurationUnit.milliseconds,
+    );
 
     test('when calling parse with empty string then it throws FormatException.',
         () {

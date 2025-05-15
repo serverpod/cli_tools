@@ -295,12 +295,27 @@ class DateTimeOption extends ComparableValueOption<DateTime> {
   }) : super(valueParser: const DateTimeParser());
 }
 
+/// The time units supported by the [DurationParser].
+enum DurationUnit {
+  microseconds('us'),
+  milliseconds('ms'),
+  seconds('s'),
+  minutes('m'),
+  hours('h'),
+  days('d');
+
+  final String suffix;
+
+  const DurationUnit(this.suffix);
+}
+
 /// Parses a duration string into a [Duration] object.
 ///
 /// The input string must be a number followed by an optional unit
 /// which is one of: seconds (s), minutes (m), hours (h), days (d),
 /// milliseconds (ms), or microseconds (us).
-/// If no unit is specified, seconds are assumed.
+/// If no unit is specified, the [defaultUnit] is assumed, which is in
+/// seconds if not specified otherwise.
 /// Examples:
 /// - `10`, equivalent to `10s`
 /// - `10m`
@@ -311,9 +326,9 @@ class DateTimeOption extends ComparableValueOption<DateTime> {
 ///
 /// Throws [FormatException] if parsing failed.
 class DurationParser extends ValueParser<Duration> {
-  final String defaultUnit;
+  final DurationUnit defaultUnit;
 
-  const DurationParser({this.defaultUnit = 's'});
+  const DurationParser({this.defaultUnit = DurationUnit.seconds});
 
   @override
   Duration parse(final String value) {
@@ -326,24 +341,25 @@ class DurationParser extends ValueParser<Duration> {
       throw FormatException('Invalid duration value "$value"');
     }
     final valueStr = match.group(1);
-    final unit = match.group(2) ?? defaultUnit;
+    final unit = _determineUnit(match.group(2));
     final val = int.parse(valueStr ?? '');
-    switch (unit) {
-      case 's':
-        return Duration(seconds: val);
-      case 'm':
-        return Duration(minutes: val);
-      case 'h':
-        return Duration(hours: val);
-      case 'd':
-        return Duration(days: val);
-      case 'ms':
-        return Duration(milliseconds: val);
-      case 'us':
-        return Duration(microseconds: val);
-      default:
-        throw FormatException('Invalid duration unit "$unit".');
-    }
+    return switch (unit) {
+      DurationUnit.seconds => Duration(seconds: val),
+      DurationUnit.minutes => Duration(minutes: val),
+      DurationUnit.hours => Duration(hours: val),
+      DurationUnit.days => Duration(days: val),
+      DurationUnit.milliseconds => Duration(milliseconds: val),
+      DurationUnit.microseconds => Duration(microseconds: val),
+    };
+  }
+
+  DurationUnit _determineUnit(final String? suffix) {
+    if (suffix == null) return defaultUnit;
+
+    return DurationUnit.values.firstWhere(
+      (final unit) => unit.suffix == suffix,
+      orElse: () => throw FormatException('Invalid duration unit "$suffix".'),
+    );
   }
 
   @override
