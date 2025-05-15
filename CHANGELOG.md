@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1
+- feat: Support specifying a default unit other than seconds in DurationParser.
+- docs: Moved config readme into main readme.
+
 ## 0.5.0
 
 - feat: Introduced the `config` library for unified args and env parsing
