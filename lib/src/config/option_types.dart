@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
 
-import 'configuration.dart';
+import 'options.dart';
 
 /// ValueParser that returns the input string unchanged.
 class StringParser extends ValueParser<String> {

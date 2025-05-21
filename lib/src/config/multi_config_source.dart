@@ -1,5 +1,7 @@
 import 'config_source_provider.dart';
 import 'configuration.dart';
+import 'configuration_broker.dart';
+import 'options.dart';
 
 /// A [ConfigurationBroker] that combines configuration sources
 /// from multiple providers, called configuration *domains*.

@@ -1,5 +1,6 @@
-import 'configuration.dart';
+import 'exceptions.dart';
 import 'option_resolution.dart';
+import 'options.dart';
 
 enum MutuallyExclusiveMode {
   noDefaults,
