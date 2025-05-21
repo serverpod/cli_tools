@@ -4,7 +4,7 @@ import 'package:args/args.dart';
 import 'package:args/command_runner.dart' show UsageException;
 
 import 'configuration.dart';
-import 'options.dart';
+import 'option_types.dart';
 import 'source_type.dart';
 
 /// A backwards compatible parser for command args and configuration sources.
