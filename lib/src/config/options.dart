@@ -13,7 +13,28 @@ import 'source_type.dart';
 /// and option enums.
 ///
 /// [V] is the type of the value this option provides.
-abstract class OptionDefinition<V> {
+///
+/// ## Example
+///
+/// The typical usage pattern is to use an enum with the options
+/// and implement this interface like so:
+/// ```dart
+/// enum MyAppOption<V> implements OptionDefinition<V> {
+///   username(StringOption(
+///     argName: 'username',
+///     envName: 'USERNAME',
+///   ));
+///
+///   const MyAppOption(this.option);
+///
+///   @override
+///   final ConfigOptionBase<V> option;
+/// }
+/// ```
+///
+/// See [ConfigOptionBase] for more information on options,
+/// and [Configuration] on how to initialize the configuration.
+abstract interface class OptionDefinition<V> {
   ConfigOptionBase<V> get option;
 }
 
@@ -135,7 +156,27 @@ abstract class ValueParser<V> {
 /// it is guaranteed to have a value and can be retrieved using
 /// the non-nullable [value] method.
 /// Otherwise it may be retrieved using the nullable [valueOrNull] method.
-class ConfigOptionBase<V> implements OptionDefinition<V> {
+///
+/// ## Example
+///
+/// The typical usage pattern is to use an enum with the options
+/// and instantiate subclasses of [ConfigOptionBase] like so:
+/// ```dart
+/// enum MyAppOption<V> implements OptionDefinition<V> {
+///   username(StringOption(
+///     argName: 'username',
+///     envName: 'USERNAME',
+///   ));
+///
+///   const MyAppOption(this.option);
+///
+///   @override
+///   final ConfigOptionBase<V> option;
+/// }
+/// ```
+///
+/// See [Configuration] on how to initialize the configuration.
+abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
   final ValueParser<V> valueParser;
 
   final String? argName;

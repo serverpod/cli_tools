@@ -9,6 +9,37 @@ import 'option_resolution.dart';
 import 'source_type.dart';
 
 /// A configuration object that holds the values for a set of configuration options.
+///
+/// The typical usage pattern is to use an enum with the options
+/// and implement the configuration like so:
+/// ```dart
+/// import 'dart:io' show Platform;
+/// import 'package:cli_tools/config.dart';
+///
+/// enum MyAppOption<V> implements OptionDefinition<V> {
+///   username(StringOption(
+///     argName: 'username',
+///     envName: 'USERNAME',
+///     mandatory: true,
+///   ));
+///
+///   const MyAppOption(this.option);
+///
+///   @override
+///   final ConfigOptionBase<V> option;
+/// }
+///
+/// void main(final List<String> args) async {
+///   final config = Configuration.resolve(
+///     options: MyAppOption.values,
+///     args: args,
+///     env: Platform.environment,
+///   );
+///
+///   final username = config.value(MyAppOption.username);
+///   print('Provided username is $username');
+/// }
+/// ```
 class Configuration<O extends OptionDefinition> {
   final List<O> _options;
   final Map<O, OptionResolution> _config;
