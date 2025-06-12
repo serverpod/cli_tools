@@ -309,7 +309,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   /// This method can be overridden to change the configuration resolution
   /// behavior.
   Configuration<O> resolveConfiguration(ArgResults? argResults) {
-    return Configuration.resolve(
+    return Configuration.resolveNoExcept(
       options: _globalOptions,
       argResults: argResults,
       env: envVariables,

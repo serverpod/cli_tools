@@ -6,6 +6,7 @@ import 'configuration_broker.dart';
 import 'exceptions.dart';
 import 'options.dart';
 import 'option_resolution.dart';
+import 'output_formatting.dart';
 import 'source_type.dart';
 
 /// A configuration object that holds the values for a set of configuration options.
@@ -51,7 +52,7 @@ class Configuration<O extends OptionDefinition> {
   /// instead the caller is responsible for checking if [errors] is non-empty.
   Configuration.fromValues({
     required final Map<O, Object?> values,
-  }) : this.resolve(
+  }) : this.resolveNoExcept(
           options: values.keys,
           presetValues: values,
         );
@@ -65,16 +66,18 @@ class Configuration<O extends OptionDefinition> {
         _config = Map.from(configuration._config),
         _errors = List.from(configuration._errors);
 
+  /// {@template Configuration.resolveNoExcept}
   /// Creates a configuration with option values resolved from the provided context.
   ///
   /// [argResults] is used if provided. Otherwise [args] is used if provided.
   ///
   /// If [presetValues] is provided, the values present will override the other sources,
   /// including if they are null.
+  /// {@endtemplate}
   ///
   /// This does not throw upon value parsing or validation errors,
   /// instead the caller is responsible for checking if [errors] is non-empty.
-  Configuration.resolve({
+  Configuration.resolveNoExcept({
     required final Iterable<O> options,
     ArgResults? argResults,
     final Iterable<String>? args,
@@ -107,6 +110,45 @@ class Configuration<O extends OptionDefinition> {
       presetValues: presetValues,
       ignoreUnexpectedPositionalArgs: ignoreUnexpectedPositionalArgs,
     );
+  }
+
+  /// {@macro Configuration.resolveNoExcept}
+  ///
+  /// Throws a [UsageException] with error and correct usage information
+  /// if there were any errors during configuration resolution.
+  /// A caller can use [resolveNoExcept] insteadto handle the errors themselves.
+  factory Configuration.resolve({
+    required final Iterable<O> options,
+    final ArgResults? argResults,
+    final Iterable<String>? args,
+    final Map<String, String>? env,
+    final ConfigurationBroker? configBroker,
+    final Map<O, Object?>? presetValues,
+    final bool ignoreUnexpectedPositionalArgs = false,
+  }) {
+    final config = Configuration.resolveNoExcept(
+      options: options,
+      argResults: argResults,
+      args: args,
+      env: env,
+      configBroker: configBroker,
+      presetValues: presetValues,
+      ignoreUnexpectedPositionalArgs: ignoreUnexpectedPositionalArgs,
+    );
+    config.throwExceptionOnErrors();
+    return config;
+  }
+
+  /// Throws a [UsageException] with error and correct usage information
+  /// if there were any errors during configuration resolution.
+  /// Can be overridden to change the exception or its content.
+  void throwExceptionOnErrors() {
+    if (_errors.isNotEmpty) {
+      final buffer = StringBuffer();
+      final errors = _errors.map(formatConfigError);
+      buffer.writeAll(errors, '\n');
+      throw UsageException(buffer.toString(), usage);
+    }
   }
 
   /// Returns the usage help text for the options of this configuration.

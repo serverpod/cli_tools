@@ -14,7 +14,7 @@ void main() async {
       );
 
       group('when passing arg that is non-existent', () {
-        final config = Configuration.resolve(
+        final config = Configuration.resolveNoExcept(
           options: [dirOpt],
           args: ['--folder', 'does-not-exist'],
         );
@@ -37,7 +37,7 @@ void main() async {
           await d.dir(existingDirName).create();
           dirPath = p.join(d.sandbox, existingDirName);
 
-          config = Configuration.resolve(
+          config = Configuration.resolveNoExcept(
             options: [dirOpt],
             args: ['--folder', dirPath],
           );
@@ -61,7 +61,7 @@ void main() async {
           await d.file(existingFileName).create();
           filePath = p.join(d.sandbox, existingFileName);
 
-          config = Configuration.resolve(
+          config = Configuration.resolveNoExcept(
             options: [dirOpt],
             args: ['--folder', filePath],
           );
@@ -87,7 +87,7 @@ void main() async {
       );
 
       group('when passing arg that is non-existent', () {
-        final config = Configuration.resolve(
+        final config = Configuration.resolveNoExcept(
           options: [dirOpt],
           args: ['--folder', 'does-not-exist'],
         );
@@ -112,7 +112,7 @@ void main() async {
           await d.dir(existingDirName).create();
           dirPath = p.join(d.sandbox, existingDirName);
 
-          config = Configuration.resolve(
+          config = Configuration.resolveNoExcept(
             options: [dirOpt],
             args: ['--folder', dirPath],
           );
@@ -136,7 +136,7 @@ void main() async {
           await d.file(existingFileName).create();
           filePath = p.join(d.sandbox, existingFileName);
 
-          config = Configuration.resolve(
+          config = Configuration.resolveNoExcept(
             options: [dirOpt],
             args: ['--folder', filePath],
           );
@@ -162,7 +162,7 @@ void main() async {
       );
 
       group('when passing arg that is non-existent', () {
-        final config = Configuration.resolve(
+        final config = Configuration.resolveNoExcept(
           options: [dirOpt],
           args: ['--folder', 'does-not-exist'],
         );
@@ -185,7 +185,7 @@ void main() async {
           await d.dir(existingDirName).create();
           dirPath = p.join(d.sandbox, existingDirName);
 
-          config = Configuration.resolve(
+          config = Configuration.resolveNoExcept(
             options: [dirOpt],
             args: ['--folder', dirPath],
           );
@@ -211,7 +211,7 @@ void main() async {
           await d.file(existingFileName).create();
           filePath = p.join(d.sandbox, existingFileName);
 
-          config = Configuration.resolve(
+          config = Configuration.resolveNoExcept(
             options: [dirOpt],
             args: ['--folder', filePath],
           );
@@ -239,7 +239,7 @@ void main() async {
       );
 
       group('when passing arg that is non-existent', () {
-        final config = Configuration.resolve(
+        final config = Configuration.resolveNoExcept(
           options: [fileOpt],
           args: ['--file', 'does-not-exist'],
         );
@@ -262,7 +262,7 @@ void main() async {
           await d.dir(existingDirName).create();
           dirPath = p.join(d.sandbox, existingDirName);
 
-          config = Configuration.resolve(
+          config = Configuration.resolveNoExcept(
             options: [fileOpt],
             args: ['--file', dirPath],
           );
@@ -288,7 +288,7 @@ void main() async {
           await d.file(existingFileName).create();
           filePath = p.join(d.sandbox, existingFileName);
 
-          config = Configuration.resolve(
+          config = Configuration.resolveNoExcept(
             options: [fileOpt],
             args: ['--file', filePath],
           );
@@ -312,7 +312,7 @@ void main() async {
       );
 
       group('when passing arg that is non-existent', () {
-        final config = Configuration.resolve(
+        final config = Configuration.resolveNoExcept(
           options: [fileOpt],
           args: ['--file', 'does-not-exist'],
         );
@@ -337,7 +337,7 @@ void main() async {
           await d.dir(existingDirName).create();
           dirPath = p.join(d.sandbox, existingDirName);
 
-          config = Configuration.resolve(
+          config = Configuration.resolveNoExcept(
             options: [fileOpt],
             args: ['--file', dirPath],
           );
@@ -363,7 +363,7 @@ void main() async {
           await d.file(existingFileName).create();
           filePath = p.join(d.sandbox, existingFileName);
 
-          config = Configuration.resolve(
+          config = Configuration.resolveNoExcept(
             options: [fileOpt],
             args: ['--file', filePath],
           );
@@ -387,7 +387,7 @@ void main() async {
       );
 
       group('when passing arg that is non-existent', () {
-        final config = Configuration.resolve(
+        final config = Configuration.resolveNoExcept(
           options: [fileOpt],
           args: ['--file', 'does-not-exist'],
         );
@@ -410,7 +410,7 @@ void main() async {
           await d.dir(existingDirName).create();
           dirPath = p.join(d.sandbox, existingDirName);
 
-          config = Configuration.resolve(
+          config = Configuration.resolveNoExcept(
             options: [fileOpt],
             args: ['--file', dirPath],
           );
@@ -436,7 +436,7 @@ void main() async {
           await d.file(existingFileName).create();
           filePath = p.join(d.sandbox, existingFileName);
 
-          config = Configuration.resolve(
+          config = Configuration.resolveNoExcept(
             options: [fileOpt],
             args: ['--file', filePath],
           );

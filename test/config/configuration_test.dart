@@ -135,7 +135,7 @@ void main() async {
     test(
         'when getting the usage from a resolved configuration '
         'then the usage is returned', () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [projectIdOpt],
       );
       expect(
@@ -147,7 +147,7 @@ void main() async {
     test('then command line argument has first precedence', () async {
       final args = ['--project', '123'];
       final envVars = {'PROJECT_ID': '456'};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [projectIdOpt],
         args: args,
         env: envVars,
@@ -160,7 +160,7 @@ void main() async {
     test('then env variable has second precedence', () async {
       final args = <String>[];
       final envVars = {'PROJECT_ID': '456'};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [projectIdOpt],
         args: args,
         env: envVars,
@@ -173,7 +173,7 @@ void main() async {
     test('then configKey has third precedence', () async {
       final args = <String>[];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [projectIdOpt],
         args: args,
         env: envVars,
@@ -186,7 +186,7 @@ void main() async {
     test('then fromCustom function has fourth precedence', () async {
       final args = <String>[];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [projectIdOpt],
         args: args,
         env: envVars,
@@ -199,7 +199,7 @@ void main() async {
       // Note: This is the behavior of ArgParser.
       // It may be considered to make this a usage error instead.
       final args = ['--project', '123', '--project', '456'];
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [projectIdOpt],
         args: args,
       );
@@ -219,7 +219,7 @@ void main() async {
     test('then command line argument has first precedence', () async {
       final args = ['--project', '123'];
       final envVars = {'PROJECT_ID': '456'};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [projectIdOpt],
         args: args,
         env: envVars,
@@ -232,7 +232,7 @@ void main() async {
     test('then env variable has second precedence', () async {
       final args = <String>[];
       final envVars = {'PROJECT_ID': '456'};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [projectIdOpt],
         args: args,
         env: envVars,
@@ -245,7 +245,7 @@ void main() async {
     test('then configKey has third precedence', () async {
       final args = <String>[];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [projectIdOpt],
         args: args,
         env: envVars,
@@ -258,7 +258,7 @@ void main() async {
     test('then defaultsTo value has last precedence', () async {
       final args = <String>[];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [projectIdOpt],
         args: args,
         env: envVars,
@@ -278,7 +278,7 @@ void main() async {
     test('then command line argument has first precedence', () async {
       final args = ['--verbose'];
       final envVars = {'VERBOSE': 'false'};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [verboseFlag],
         args: args,
         env: envVars,
@@ -289,7 +289,7 @@ void main() async {
     test('then env variable has second precedence', () async {
       final args = <String>[];
       final envVars = {'VERBOSE': 'true'};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [verboseFlag],
         args: args,
         env: envVars,
@@ -308,7 +308,7 @@ void main() async {
     test('then defaultsTo value has last precedence', () async {
       final args = <String>[];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [verboseFlag],
         args: args,
         env: envVars,
@@ -328,7 +328,7 @@ void main() async {
         () async {
       final args = ['--project', '123'];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [projectIdOpt],
         args: args,
         env: envVars,
@@ -340,7 +340,7 @@ void main() async {
         () async {
       final args = <String>[];
       final envVars = {'PROJECT_ID': '456'};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [projectIdOpt],
         args: args,
         env: envVars,
@@ -351,7 +351,7 @@ void main() async {
     test('when not provided then calling value() throws StateError', () async {
       final args = <String>[];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [projectIdOpt],
         args: args,
         env: envVars,
@@ -362,7 +362,7 @@ void main() async {
     test('when provided as argument then parsing succeeds', () async {
       final args = ['--project', '123'];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [projectIdOpt],
         args: args,
         env: envVars,
@@ -373,7 +373,7 @@ void main() async {
     test('when provided as env variable then parsing succeeds', () async {
       final args = <String>[];
       final envVars = {'PROJECT_ID': '456'};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [projectIdOpt],
         args: args,
         env: envVars,
@@ -385,7 +385,7 @@ void main() async {
         () async {
       final args = <String>[];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [projectIdOpt],
         args: args,
         env: envVars,
@@ -401,10 +401,65 @@ void main() async {
       mandatory: true,
     );
 
+    test(
+        'when not provided and calling resolveNoExcept '
+        'then it returns normally with a registered error message', () async {
+      final args = <String>[];
+      final envVars = <String, String>{};
+      final config = Configuration.resolveNoExcept(
+        options: [projectIdOpt],
+        args: args,
+        env: envVars,
+      );
+      expect(config.errors, hasLength(1));
+      expect(config.errors.first, 'option `project` is mandatory');
+      expect(
+        () => config.value(projectIdOpt),
+        throwsA(isA<StateError>().having(
+          (final e) => e.message,
+          'message',
+          contains(
+              'No value available for option `project` due to previous errors'),
+        )),
+      );
+    });
+
+    test(
+        'when not provided and calling resolve '
+        'then it throws a UsageException', () async {
+      final args = <String>[];
+      final envVars = <String, String>{};
+      expect(
+          () => Configuration.resolve(
+                options: [projectIdOpt],
+                args: args,
+                env: envVars,
+              ),
+          throwsA(isA<UsageException>()
+              .having(
+                (final e) => e.message,
+                'message',
+                contains('Option `project` is mandatory.'),
+              )
+              .having(
+                (final e) => e.usage,
+                'usage',
+                contains('--project (mandatory)'),
+              )));
+    });
+  });
+
+  group('Given a mandatory configuration option', () {
+    const projectIdOpt = StringOption(
+      argName: 'project',
+      envName: 'PROJECT_ID',
+      mandatory: true,
+    );
+
     test('when provided as argument then parsing succeeds', () async {
       final args = ['--project', '123'];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [projectIdOpt],
         args: args,
         env: envVars,
@@ -416,7 +471,7 @@ void main() async {
     test('when provided as env variable then parsing succeeds', () async {
       final args = <String>[];
       final envVars = {'PROJECT_ID': '456'};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [projectIdOpt],
         args: args,
         env: envVars,
@@ -428,7 +483,7 @@ void main() async {
     test('when not provided then parsing has error', () async {
       final args = <String>[];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [projectIdOpt],
         args: args,
         env: envVars,
@@ -463,7 +518,7 @@ void main() async {
     test('when provided as env variable then parsing succeeds', () async {
       final args = <String>[];
       final envVars = {'PROJECT_ID': '456'};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [projectIdOpt],
         args: args,
         env: envVars,
@@ -475,7 +530,7 @@ void main() async {
     test('when not provided then parsing has error', () async {
       final args = <String>[];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [projectIdOpt],
         args: args,
         env: envVars,
@@ -568,7 +623,7 @@ void main() async {
         () async {
       final args = ['pos-arg'];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
         env: envVars,
@@ -580,7 +635,7 @@ void main() async {
     test('when provided before named argument then parsing succeeds', () async {
       final args = ['pos-arg', '--project', '123'];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
         env: envVars,
@@ -592,7 +647,7 @@ void main() async {
     test('when provided after named argument then parsing succeeds', () async {
       final args = ['--project', '123', 'pos-arg'];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
         env: envVars,
@@ -606,7 +661,7 @@ void main() async {
         () async {
       final args = <String>[];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
         env: envVars,
@@ -619,7 +674,7 @@ void main() async {
         () async {
       final args = <String>[];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
         env: envVars,
@@ -643,7 +698,7 @@ void main() async {
         () async {
       final args = ['pos-arg'];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
         env: envVars,
@@ -655,7 +710,7 @@ void main() async {
     test('when provided before named argument then parsing succeeds', () async {
       final args = ['pos-arg', '--project', '123'];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
         env: envVars,
@@ -667,7 +722,7 @@ void main() async {
     test('when provided after named argument then parsing succeeds', () async {
       final args = ['--project', '123', 'pos-arg'];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
         env: envVars,
@@ -679,7 +734,7 @@ void main() async {
     test('when not provided then parsing has error', () async {
       final args = <String>[];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
         env: envVars,
@@ -713,7 +768,7 @@ void main() async {
         () async {
       final args = ['1st-arg'];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
         env: envVars,
@@ -727,7 +782,7 @@ void main() async {
         () async {
       final args = ['--first', '1st-arg'];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
         env: envVars,
@@ -742,7 +797,7 @@ void main() async {
         () async {
       final args = ['--second', '2st-arg'];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
         env: envVars,
@@ -756,7 +811,7 @@ void main() async {
         () async {
       final args = ['1st-arg', '2nd-arg'];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
         env: envVars,
@@ -771,7 +826,7 @@ void main() async {
         () async {
       final args = ['1st-arg', '--second', '2nd-arg'];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
         env: envVars,
@@ -786,7 +841,7 @@ void main() async {
         () async {
       final args = ['--first', '1st-arg', '2nd-arg'];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
         env: envVars,
@@ -801,7 +856,7 @@ void main() async {
         () async {
       final args = ['2nd-arg', '--first', '1st-arg'];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
         env: envVars,
@@ -814,7 +869,7 @@ void main() async {
     test('when provided as 2 named arguments then parsing succeeds', () async {
       final args = ['--first', '1st-arg', '--second', '2nd-arg'];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
         env: envVars,
@@ -829,7 +884,7 @@ void main() async {
         () async {
       final args = ['--second', '2nd-arg', '--first', '1st-arg'];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
         env: envVars,
@@ -842,7 +897,7 @@ void main() async {
     test('when not provided then parsing succeeds and both are null', () async {
       final args = <String>[];
       final envVars = <String, String>{};
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
         env: envVars,
@@ -857,7 +912,7 @@ void main() async {
       final args = ['1st-arg', '2nd-arg', '3rd-arg'];
       final envVars = <String, String>{};
 
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
         env: envVars,
@@ -875,7 +930,7 @@ void main() async {
       final args = ['--first', '1st-arg', '--second', '2nd-arg', '3rd-arg'];
       final envVars = <String, String>{};
 
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
         env: envVars,
@@ -903,7 +958,7 @@ void main() async {
         'when the first option is provided using primary name then parsing succeeds',
         () async {
       final args = ['--first', '1st-arg'];
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
       );
@@ -916,7 +971,7 @@ void main() async {
         'when the first option is provided using first alias then parsing succeeds',
         () async {
       final args = ['--alias-first-a', '1st-arg'];
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
       );
@@ -929,7 +984,7 @@ void main() async {
         'when the first option is provided using second alias then parsing succeeds',
         () async {
       final args = ['--alias-first-b', '1st-arg'];
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
       );
@@ -942,7 +997,7 @@ void main() async {
         'when the first option is provided twice using aliases then the last value is used',
         () async {
       final args = ['--alias-first-a', '1st-arg', '--alias-first-b', '2nd-arg'];
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
       );
@@ -960,7 +1015,7 @@ void main() async {
         '--alias-second-b',
         '2nd-arg'
       ];
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
       );
@@ -988,7 +1043,7 @@ void main() async {
         'when the first of the mut-ex options is provided as argument then parsing succeeds',
         () async {
       final args = ['--first', '1st-arg'];
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
       );
@@ -1001,7 +1056,7 @@ void main() async {
         'when the second of the mut-ex options is provided as argument then parsing succeeds',
         () async {
       final args = ['--second', '2nd-arg'];
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
       );
@@ -1013,7 +1068,7 @@ void main() async {
     test(
         'when the first of the mut-ex options is provided as env var then parsing succeeds',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         env: {'FIRST': '1st-arg'},
       );
@@ -1025,7 +1080,7 @@ void main() async {
     test(
         'when the second of the mut-ex options is provided as env var then parsing succeeds',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         env: {'SECOND': '2nd-arg'},
       );
@@ -1038,7 +1093,7 @@ void main() async {
         'when both mut-ex options are provided as arguments then parsing has error',
         () async {
       final args = ['--first', '1st-arg', '--second', '2nd-arg'];
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
       );
@@ -1052,7 +1107,7 @@ void main() async {
     test(
         'when both mut-ex options are provided as arg and env var then parsing has error',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: ['--first', '1st-arg'],
         env: {'SECOND': '2nd-arg'},
@@ -1067,7 +1122,7 @@ void main() async {
     test(
         'when neither of the mut-ex options are provided then parsing succeeds',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
       );
       expect(config.errors, isEmpty);
@@ -1097,7 +1152,7 @@ void main() async {
         'when the first of the mut-ex options is provided as argument then parsing succeeds',
         () async {
       final args = ['--first', '1st-arg'];
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
       );
@@ -1110,7 +1165,7 @@ void main() async {
         'when the second of the mut-ex options is provided as argument then parsing succeeds',
         () async {
       final args = ['--second', '2nd-arg'];
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
       );
@@ -1122,7 +1177,7 @@ void main() async {
     test(
         'when the first of the mut-ex options is provided as env var then parsing succeeds',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         env: {'FIRST': '1st-arg'},
       );
@@ -1134,7 +1189,7 @@ void main() async {
     test(
         'when the second of the mut-ex options is provided as env var then parsing succeeds',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         env: {'SECOND': '2nd-arg'},
       );
@@ -1147,7 +1202,7 @@ void main() async {
         'when both mut-ex options are provided as arguments then parsing has error',
         () async {
       final args = ['--first', '1st-arg', '--second', '2nd-arg'];
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
       );
@@ -1161,7 +1216,7 @@ void main() async {
     test(
         'when both mut-ex options are provided as arg and env var then parsing has error',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: ['--first', '1st-arg'],
         env: {'SECOND': '2nd-arg'},
@@ -1176,7 +1231,7 @@ void main() async {
     test(
         'when neither of the mut-ex options are provided then parsing has error',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: [],
         env: {},
@@ -1209,7 +1264,7 @@ void main() async {
 
     test('then option group validation throws error', () async {
       expect(
-        () => Configuration.resolve(
+        () => Configuration.resolveNoExcept(
           options: options,
           args: [],
         ),
@@ -1244,7 +1299,7 @@ void main() async {
         'when the first of the mut-ex options is provided as argument then parsing succeeds',
         () async {
       final args = ['--first', '1st-arg'];
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
       );
@@ -1257,7 +1312,7 @@ void main() async {
         'when the second of the mut-ex options is provided as argument then both have values',
         () async {
       final args = ['--second', '2nd-arg'];
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
       );
@@ -1270,7 +1325,7 @@ void main() async {
         'when both mut-ex options are provided as arguments then parsing has error',
         () async {
       final args = ['--first', '1st-arg', '--second', '2nd-arg'];
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
       );
@@ -1284,7 +1339,7 @@ void main() async {
     test(
         'when neither of the mut-ex options are provided then parsing succeeds with default value',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: [],
       );
@@ -1316,7 +1371,7 @@ void main() async {
     test('when one option from each group is provided then parsing succeeds',
         () async {
       final args = ['--first', '1st-arg', '--third', '3rd-arg'];
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
       );
@@ -1331,7 +1386,7 @@ void main() async {
         'when two options from the same group are provided then parsing has error',
         () async {
       final args = ['--first', '1st-arg', '--second', '2nd-arg'];
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: args,
       );
@@ -1362,7 +1417,7 @@ void main() async {
         () async {
       final options = [configFileOpt, projectIdOpt];
 
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: options,
         args: ['--file', 'config.yaml'],
         env: <String, String>{},
@@ -1377,7 +1432,7 @@ void main() async {
       final options = [projectIdOpt, configFileOpt];
 
       expect(
-        () => Configuration.resolve(
+        () => Configuration.resolveNoExcept(
           options: options,
           args: ['--file', 'config.yaml'],
           env: <String, String>{},

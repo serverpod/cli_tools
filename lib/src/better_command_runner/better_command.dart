@@ -122,7 +122,7 @@ abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
   /// This method can be overridden to change the configuration resolution
   /// behavior.
   Configuration<O> resolveConfiguration(ArgResults? argResults) {
-    return Configuration.resolve(
+    return Configuration.resolveNoExcept(
       options: options,
       argResults: argResults,
       env: envVariables,

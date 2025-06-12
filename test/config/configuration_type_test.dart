@@ -17,7 +17,7 @@ void main() async {
     );
 
     test('when passed a valid value then it is parsed correctly', () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--animal', 'cat'],
         env: <String, String>{},
@@ -26,7 +26,7 @@ void main() async {
     });
 
     test('when passed an invalid value then it reports an error', () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--animal', 'unicorn'],
         env: <String, String>{},
@@ -49,7 +49,7 @@ void main() async {
 
     test('when passed a valid positive value then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--number', '123'],
         env: <String, String>{},
@@ -59,7 +59,7 @@ void main() async {
 
     test('when passed a valid negative value then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--number', '-123'],
         env: <String, String>{},
@@ -68,7 +68,7 @@ void main() async {
     });
 
     test('when passed a non-integer value then it reports an error', () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--number', '0.45'],
         env: <String, String>{},
@@ -81,7 +81,7 @@ void main() async {
       );
     });
     test('when passed a non-number value then it reports an error', () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--number', 'unicorn'],
         env: <String, String>{},
@@ -104,7 +104,7 @@ void main() async {
     );
 
     test('when passed a valid value then it is parsed correctly', () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--number', '123'],
         env: <String, String>{},
@@ -115,7 +115,7 @@ void main() async {
     test(
         'when passed an integer value less than the range then it reports an error',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--number', '99'],
         env: <String, String>{},
@@ -131,7 +131,7 @@ void main() async {
     test(
         'when passed an integer value greater than the range then it reports an error',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--number', '201'],
         env: <String, String>{},
@@ -155,7 +155,7 @@ void main() async {
     );
 
     test('when passed a valid value then it is parsed correctly', () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--number', '100'],
       );
@@ -164,7 +164,7 @@ void main() async {
 
     test('when passed an invalid integer value as arg then it reports an error',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--number', '99'],
       );
@@ -179,7 +179,7 @@ void main() async {
     test(
         'when passed an invalid integer value as env var then it reports an error',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         env: <String, String>{'NUMBER': '99'},
       );
@@ -203,7 +203,7 @@ void main() async {
 
     test('when passed a valid days value then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--duration', '1d'],
         env: <String, String>{},
@@ -213,7 +213,7 @@ void main() async {
 
     test('when passed a valid hours value then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--duration', '2h'],
         env: <String, String>{},
@@ -223,7 +223,7 @@ void main() async {
 
     test('when passed a valid minutes value then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--duration', '3m'],
         env: <String, String>{},
@@ -233,7 +233,7 @@ void main() async {
 
     test('when passed a valid seconds value then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--duration', '24s'],
         env: <String, String>{},
@@ -243,7 +243,7 @@ void main() async {
 
     test('when passed a valid value with no unit then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--duration', '2'],
         env: <String, String>{},
@@ -253,7 +253,7 @@ void main() async {
 
     test('when passed a value less than the range then it reports an error',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--duration', '-2s'],
         env: <String, String>{},
@@ -269,7 +269,7 @@ void main() async {
 
     test('when passed a value greater than the range then it reports an error',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--duration', '20d'],
         env: <String, String>{},
@@ -293,7 +293,7 @@ void main() async {
     );
 
     test('when passed no values then it is parsed correctly', () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: [],
       );
@@ -302,7 +302,7 @@ void main() async {
 
     test('when passed a single arg value then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--many', '123'],
       );
@@ -311,7 +311,7 @@ void main() async {
 
     test('when passed several arg values then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--many', '123', '--many', '456'],
       );
@@ -321,7 +321,7 @@ void main() async {
     test(
         'when passed several comma-separated arg values then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--many', '123,456'],
       );
@@ -329,7 +329,7 @@ void main() async {
     });
 
     test('when passed empty env value then it is parsed correctly', () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         env: <String, String>{'SERVERPOD_MANY': ''},
       );
@@ -339,7 +339,7 @@ void main() async {
     test(
         'when passed several comma-separated env values then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         env: <String, String>{'SERVERPOD_MANY': '123,456'},
       );
@@ -349,7 +349,7 @@ void main() async {
     test(
         'when passed null value from config source then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         configBroker: _TestConfigBroker({'many': null}),
       );
@@ -359,7 +359,7 @@ void main() async {
     test(
         'when passed empty array of strings from config source then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         configBroker: _TestConfigBroker({'many': <String>[]}),
       );
@@ -369,7 +369,7 @@ void main() async {
     test(
         'when passed empty array of ints from config source then it reports a type error',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         configBroker: _TestConfigBroker({'many': <int>[]}),
       );
@@ -384,7 +384,7 @@ void main() async {
     test(
         'when passed string array value from config source then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         configBroker: _TestConfigBroker({
           'many': ['123', '456']
@@ -396,7 +396,7 @@ void main() async {
     test(
         'when passed plain string value from config source then it is parsed into a single-element array',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         configBroker: _TestConfigBroker({'many': 'plain-string'}),
       );
@@ -406,7 +406,7 @@ void main() async {
     test(
         'when passed int array value from config source then it reports a type error',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         configBroker: _TestConfigBroker({
           'many': [123]
@@ -423,7 +423,7 @@ void main() async {
     test(
         'when passed several comma-separated values in a plain string from config source then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         configBroker: _TestConfigBroker({'many': '123,456'}),
       );
@@ -440,7 +440,7 @@ void main() async {
     );
 
     test('when passed no values then it is parsed correctly', () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: [],
       );
@@ -449,7 +449,7 @@ void main() async {
 
     test('when passed a single arg value then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--many', '123'],
       );
@@ -458,7 +458,7 @@ void main() async {
 
     test('when passed several arg values then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--many', '123', '--many', '456'],
       );
@@ -468,7 +468,7 @@ void main() async {
     test(
         'when passed several comma-separated arg values then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--many', '123,456'],
       );
@@ -476,7 +476,7 @@ void main() async {
     });
 
     test('when passed empty env value then it reports a parse error', () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         env: <String, String>{'SERVERPOD_MANY': ''},
       );
@@ -491,7 +491,7 @@ void main() async {
     test(
         'when passed several comma-separated env values then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         env: <String, String>{'SERVERPOD_MANY': '123,456'},
       );
@@ -501,7 +501,7 @@ void main() async {
     test(
         'when passed null value from config source then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         configBroker: _TestConfigBroker({'many': null}),
       );
@@ -511,7 +511,7 @@ void main() async {
     test(
         'when passed empty array of strings from config source then it reports a type error',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         configBroker: _TestConfigBroker({'many': <String>[]}),
       );
@@ -526,7 +526,7 @@ void main() async {
     test(
         'when passed empty array of ints from config source then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         configBroker: _TestConfigBroker({'many': <int>[]}),
       );
@@ -536,7 +536,7 @@ void main() async {
     test(
         'when passed int array value from config source then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         configBroker: _TestConfigBroker({
           'many': [123, 456]
@@ -548,7 +548,7 @@ void main() async {
     test(
         'when passed plain string value from config source then it reports a parse error',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         configBroker: _TestConfigBroker({'many': 'plain-string'}),
       );
@@ -563,7 +563,7 @@ void main() async {
     test(
         'when passed string array value from config source then it reports a type error',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         configBroker: _TestConfigBroker({
           'many': ['123']
@@ -580,7 +580,7 @@ void main() async {
     test(
         'when passed several comma-separated values in a plain string from config source then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         configBroker: _TestConfigBroker({'many': '123,456'}),
       );
@@ -598,7 +598,7 @@ void main() async {
     );
 
     test('when passed no values then it produces the default value', () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: [],
       );
@@ -607,7 +607,7 @@ void main() async {
 
     test('when passed a single arg value then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--many', '123'],
       );
@@ -616,7 +616,7 @@ void main() async {
 
     test('when passed several arg values then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--many', '123', '--many', '456'],
       );
@@ -626,7 +626,7 @@ void main() async {
     test(
         'when passed several comma-separated arg values then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--many', '123,456'],
       );
@@ -634,7 +634,7 @@ void main() async {
     });
 
     test('when passed empty env value then it reports a parse error', () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         env: <String, String>{'SERVERPOD_MANY': ''},
       );
@@ -649,7 +649,7 @@ void main() async {
     test(
         'when passed several comma-separated env values then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         env: <String, String>{'SERVERPOD_MANY': '123,456'},
       );
@@ -658,7 +658,7 @@ void main() async {
 
     test('when passed several arg and env values then args take precedence',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--many', '12', '--many', '45'],
         env: <String, String>{'SERVERPOD_MANY': '123,456'},
@@ -678,7 +678,7 @@ void main() async {
     );
 
     test('when passed no values then it reports a parse error', () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: [],
       );
@@ -691,7 +691,7 @@ void main() async {
 
     test('when passed a single arg value then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--many', '123'],
       );
@@ -700,7 +700,7 @@ void main() async {
 
     test('when passed several arg values then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--many', '123', '--many', '456'],
       );
@@ -710,7 +710,7 @@ void main() async {
     test(
         'when passed several arg values using both regular name and alias '
         'then it is parsed correctly', () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--many', '123', '--alias-many', '456'],
       );
@@ -720,7 +720,7 @@ void main() async {
     test(
         'when passed several comma-separated arg values then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--many', '123,456'],
       );
@@ -728,7 +728,7 @@ void main() async {
     });
 
     test('when passed empty env value then it reports a parse error', () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         env: <String, String>{'SERVERPOD_MANY': ''},
       );
@@ -743,7 +743,7 @@ void main() async {
     test(
         'when passed several comma-separated env values then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         env: <String, String>{'SERVERPOD_MANY': '123,456'},
       );
@@ -760,7 +760,7 @@ void main() async {
     );
 
     test('when passed no value then it is parsed correctly', () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: [],
       );
@@ -768,7 +768,7 @@ void main() async {
     });
 
     test('when passed a valid value then it is parsed correctly', () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--many', 'foo'],
       );
@@ -777,7 +777,7 @@ void main() async {
 
     test('when passed a valid empty value then it is parsed correctly',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--many', ''],
       );
@@ -786,7 +786,7 @@ void main() async {
 
     test('when passed an invalid value as arg then it reports an error',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--many', 'wrong'],
       );
@@ -801,7 +801,7 @@ void main() async {
 
     test('when passed an invalid value as env var then it reports an error',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         env: <String, String>{'MANY': 'wrong'},
       );
@@ -817,7 +817,7 @@ void main() async {
 
     test('when passed a valid and an invalid value then it reports an error',
         () async {
-      final config = Configuration.resolve(
+      final config = Configuration.resolveNoExcept(
         options: [typedOpt],
         args: ['--many', 'foo', '--many', 'wrong'],
       );
