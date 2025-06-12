@@ -266,12 +266,12 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
   @mustCallSuper
   void validateDefinition() {
     if (argName == null && argAbbrev != null) {
-      throw InvalidOptionConfigurationError(this,
+      throw OptionDefinitionError(this,
           "An argument option can't have an abbreviation but not a full name");
     }
 
     if ((fromDefault != null || defaultsTo != null) && mandatory) {
-      throw InvalidOptionConfigurationError(
+      throw OptionDefinitionError(
           this, "Mandatory options can't have default values");
     }
   }
@@ -733,7 +733,7 @@ Iterable<OptionDefinition> validateOptions(
     final argName = opt.option.argName;
     if (argName != null) {
       if (argNameOpts.containsKey(opt.option.argName)) {
-        throw InvalidOptionConfigurationError(
+        throw OptionDefinitionError(
             opt, 'Duplicate argument name: ${opt.option.argName} for $opt');
       }
       argNameOpts[argName] = opt;
@@ -742,7 +742,7 @@ Iterable<OptionDefinition> validateOptions(
     final argPos = opt.option.argPos;
     if (argPos != null) {
       if (argPosOpts.containsKey(opt.option.argPos)) {
-        throw InvalidOptionConfigurationError(
+        throw OptionDefinitionError(
             opt, 'Duplicate argument position: ${opt.option.argPos} for $opt');
       }
       argPosOpts[argPos] = opt;
@@ -751,7 +751,7 @@ Iterable<OptionDefinition> validateOptions(
     final envName = opt.option.envName;
     if (envName != null) {
       if (envNameOpts.containsKey(opt.option.envName)) {
-        throw InvalidOptionConfigurationError(opt,
+        throw OptionDefinitionError(opt,
             'Duplicate environment variable name: ${opt.option.envName} for $opt');
       }
       envNameOpts[envName] = opt;
@@ -776,14 +776,14 @@ Iterable<OptionDefinition> validateOptions(
         (final a, final b) => a.option.argPos!.compareTo(b.option.argPos!));
 
     if (orderedPosOpts.first.option.argPos != 0) {
-      throw InvalidOptionConfigurationError(
+      throw OptionDefinitionError(
         orderedPosOpts.first,
         'First positional argument must have index 0.',
       );
     }
 
     if (orderedPosOpts.last.option.argPos != orderedPosOpts.length - 1) {
-      throw InvalidOptionConfigurationError(
+      throw OptionDefinitionError(
         orderedPosOpts.last,
         'The positional arguments must have consecutive indices without gaps.',
       );

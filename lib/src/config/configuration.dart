@@ -264,7 +264,7 @@ class Configuration<O extends OptionDefinition> {
     final resolution = _config[option];
 
     if (resolution == null) {
-      throw InvalidOptionConfigurationError(option,
+      throw OptionDefinitionError(option,
           'Out-of-order dependency on not-yet-resolved ${option.qualifiedString()}');
     }
 

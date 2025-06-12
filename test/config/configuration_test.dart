@@ -14,7 +14,7 @@ void main() async {
       expect(
         () => [projectIdOpt].prepareForParsing(parser),
         throwsA(allOf(
-          isA<InvalidOptionConfigurationError>(),
+          isA<OptionDefinitionError>(),
           (final e) => e.toString().contains(
                 "An argument option can't have an abbreviation but not a full name",
               ),
@@ -34,7 +34,7 @@ void main() async {
       expect(
         () => [projectIdOpt].prepareForParsing(parser),
         throwsA(allOf(
-          isA<InvalidOptionConfigurationError>(),
+          isA<OptionDefinitionError>(),
           (final e) => e
               .toString()
               .contains("Mandatory options can't have default values"),
@@ -57,7 +57,7 @@ void main() async {
       expect(
         () => [projectIdOpt].prepareForParsing(parser),
         throwsA(allOf(
-          isA<InvalidOptionConfigurationError>(),
+          isA<OptionDefinitionError>(),
           (final e) => e
               .toString()
               .contains("Mandatory options can't have default values"),
@@ -574,7 +574,7 @@ void main() async {
         () async {
       final parser = ArgParser();
       expect(() => [argNameOpt, duplicateOpt].prepareForParsing(parser),
-          throwsA(isA<InvalidOptionConfigurationError>()));
+          throwsA(isA<OptionDefinitionError>()));
     });
 
     test(
@@ -582,7 +582,7 @@ void main() async {
         () async {
       final parser = ArgParser();
       expect(() => [envNameOpt, duplicateOpt].prepareForParsing(parser),
-          throwsA(isA<InvalidOptionConfigurationError>()));
+          throwsA(isA<OptionDefinitionError>()));
     });
 
     test(
@@ -590,7 +590,7 @@ void main() async {
         () async {
       final parser = ArgParser();
       expect(() => [argPosOpt, duplicateOpt].prepareForParsing(parser),
-          throwsA(isA<InvalidOptionConfigurationError>()));
+          throwsA(isA<OptionDefinitionError>()));
     });
 
     test(
@@ -598,7 +598,7 @@ void main() async {
         () async {
       final parser = ArgParser();
       expect(() => [argPosOpt, argPos2Opt].prepareForParsing(parser),
-          throwsA(isA<InvalidOptionConfigurationError>()));
+          throwsA(isA<OptionDefinitionError>()));
     });
 
     test(
@@ -606,7 +606,7 @@ void main() async {
         () async {
       final parser = ArgParser();
       expect(() => [argPos2Opt].prepareForParsing(parser),
-          throwsA(isA<InvalidOptionConfigurationError>()));
+          throwsA(isA<OptionDefinitionError>()));
     });
   });
 
@@ -1268,7 +1268,7 @@ void main() async {
           options: options,
           args: [],
         ),
-        throwsA(isA<InvalidOptionConfigurationError>().having(
+        throwsA(isA<OptionDefinitionError>().having(
           (final e) => e.message,
           'message',
           'Option group `mutex-group` does not allow defaults',
@@ -1438,7 +1438,7 @@ void main() async {
           env: <String, String>{},
           configBroker: configSource,
         ),
-        throwsA(isA<InvalidOptionConfigurationError>().having(
+        throwsA(isA<OptionDefinitionError>().having(
             (final e) => e.message,
             'message',
             'Out-of-order dependency on not-yet-resolved option `file`')),

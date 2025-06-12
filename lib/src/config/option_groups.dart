@@ -39,7 +39,7 @@ class MutuallyExclusive extends OptionGroup {
 
     for (final opt in options) {
       if (opt.option.defaultValue() != null) {
-        throw InvalidOptionConfigurationError(
+        throw OptionDefinitionError(
           opt,
           'Option group `$name` does not allow defaults',
         );
