@@ -806,4 +806,11 @@ extension PrepareOptions on Iterable<OptionDefinition> {
   /// Validates and prepares these options for the provided argument parser.
   void prepareForParsing(final ArgParser argParser) =>
       prepareOptionsForParsing(this, argParser);
+
+  /// Returns the usage help text for these options.
+  String get usage {
+    final parser = ArgParser();
+    prepareForParsing(parser);
+    return parser.usage;
+  }
 }

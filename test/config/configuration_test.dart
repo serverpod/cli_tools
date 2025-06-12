@@ -122,6 +122,28 @@ void main() async {
       defaultsTo: 'constDefaultValue',
     );
 
+    test(
+        'when getting the usage from a list with the option '
+        'then the usage is returned', () async {
+      final options = [projectIdOpt];
+      expect(
+        options.usage,
+        equals('--project    (defaults to "defaultValueFunction")'),
+      );
+    });
+
+    test(
+        'when getting the usage from a resolved configuration '
+        'then the usage is returned', () async {
+      final config = Configuration.resolve(
+        options: [projectIdOpt],
+      );
+      expect(
+        config.usage,
+        equals('--project    (defaults to "defaultValueFunction")'),
+      );
+    });
+
     test('then command line argument has first precedence', () async {
       final args = ['--project', '123'];
       final envVars = {'PROJECT_ID': '456'};

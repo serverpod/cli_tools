@@ -109,6 +109,9 @@ class Configuration<O extends OptionDefinition> {
     );
   }
 
+  /// Returns the usage help text for the options of this configuration.
+  String get usage => _options.usage;
+
   /// Gets the option definitions for this configuration.
   Iterable<O> get options => _config.keys;
 
