@@ -4,6 +4,7 @@ import 'dart:io' show Platform;
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:cli_tools/config.dart';
+import 'package:cli_tools/src/config/output_formatting.dart';
 
 /// A function type for executing code before running a command.
 typedef OnBeforeRunCommand = Future<void> Function(BetterCommandRunner runner);
@@ -383,15 +384,3 @@ abstract class BetterCommandRunnerAnalyticsEvents {
 
 /// An enum for the command runner log levels.
 enum CommandRunnerLogLevel { quiet, verbose, normal }
-
-/// Formats a configuration error message.
-String formatConfigError(final String error) {
-  if (error.isEmpty) return error;
-  final suffix = _isPunctuation(error.substring(error.length - 1)) ? '' : '.';
-  return '${error[0].toUpperCase()}${error.substring(1)}$suffix';
-}
-
-/// Returns true if the character is a punctuation mark.
-bool _isPunctuation(final String char) {
-  return RegExp(r'\p{P}', unicode: true).hasMatch(char);
-}
