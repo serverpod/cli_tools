@@ -1,6 +1,7 @@
 import 'config_source.dart';
 import 'configuration.dart';
 import 'configuration_parser.dart';
+import 'options.dart';
 
 /// Provider of a [ConfigurationSource] that is dynamically
 /// based on the current configuration.

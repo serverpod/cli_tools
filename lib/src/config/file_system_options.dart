@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:args/command_runner.dart';
 
-import 'configuration.dart';
+import 'options.dart';
 
 enum PathExistMode {
   mayExist,

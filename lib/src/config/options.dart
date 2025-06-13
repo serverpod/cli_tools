@@ -1,439 +1,816 @@
+import 'package:args/args.dart';
+import 'package:args/command_runner.dart';
+import 'package:cli_tools/src/config/exceptions.dart';
+import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
 import 'configuration.dart';
+import 'configuration_broker.dart';
+import 'option_resolution.dart';
+import 'source_type.dart';
 
-/// ValueParser that returns the input string unchanged.
-class StringParser extends ValueParser<String> {
-  const StringParser();
+/// Common interface to enable same treatment for [ConfigOptionBase]
+/// and option enums.
+///
+/// [V] is the type of the value this option provides.
+///
+/// ## Example
+///
+/// The typical usage pattern is to use an enum with the options
+/// and implement this interface like so:
+/// ```dart
+/// enum MyAppOption<V> implements OptionDefinition<V> {
+///   username(StringOption(
+///     argName: 'username',
+///     envName: 'USERNAME',
+///   ));
+///
+///   const MyAppOption(this.option);
+///
+///   @override
+///   final ConfigOptionBase<V> option;
+/// }
+/// ```
+///
+/// See [ConfigOptionBase] for more information on options,
+/// and [Configuration] on how to initialize the configuration.
+abstract interface class OptionDefinition<V> {
+  ConfigOptionBase<V> get option;
+}
+
+/// An option group allows grouping options together under a common name,
+/// and optionally provide option value validation on the group as a whole.
+///
+/// [name] might be used as group header in usage information
+/// so it is recommended to format it appropriately, e.g. `File mode`.
+///
+/// An [OptionGroup] is uniquely identified by its [name].
+class OptionGroup {
+  final String name;
+
+  const OptionGroup(this.name);
+
+  /// Validates the configuration option definitions as a group.
+  ///
+  /// This method is called by [prepareOptionsForParsing] to validate
+  /// the configuration option definitions as a group.
+  /// Throws an error if any definition is invalid as part of this group.
+  ///
+  /// Subclasses may override this method to perform specific validations.
+  void validateDefinitions(List<OptionDefinition> options) {}
+
+  /// Validates the values of the options in this group,
+  /// returning a descriptive error message if the values are invalid.
+  ///
+  /// Subclasses may override this method to perform specific validations.
+  String? validateValues(
+    final Map<OptionDefinition, OptionResolution> optionResolutions,
+  ) {
+    return null;
+  }
 
   @override
-  String parse(final String value) {
-    return value;
+  bool operator ==(final Object other) {
+    if (identical(this, other)) return true;
+    return other is OptionGroup && other.name == name;
+  }
+
+  @override
+  int get hashCode => name.hashCode;
+}
+
+/// A [ValueParser] converts a source string value to the specific option
+/// value type.
+///
+/// {@template value_parser}
+/// Must throw a [FormatException] with an appropriate message
+/// if the value cannot be parsed.
+/// {@endtemplate}
+abstract class ValueParser<V> {
+  const ValueParser();
+
+  /// Converts a source string value to the specific option value type.
+  /// {@macro value_parser}
+  V parse(final String value);
+
+  /// Returns a usage documentation friendly string representation of the value.
+  /// The default implementation simply invokes [toString].
+  String format(final V value) {
+    return value.toString();
   }
 }
 
-/// String value configuration option.
-class StringOption extends ConfigOptionBase<String> {
-  const StringOption({
-    super.argName,
-    super.argAliases,
-    super.argAbbrev,
-    super.argPos,
-    super.envName,
-    super.configKey,
-    super.fromCustom,
-    super.fromDefault,
-    super.defaultsTo,
-    super.helpText,
-    super.valueHelp,
-    super.allowedHelp,
-    super.group,
-    super.allowedValues,
-    super.customValidator,
-    super.mandatory,
-    super.hide,
-  }) : super(
-          valueParser: const StringParser(),
-        );
-}
+/// Defines a configuration option that can be set from configuration sources.
+///
+/// When an option can be set in multiple ways, the precedence is as follows:
+///
+/// 1. Named command line argument
+/// 2. Positional command line argument
+/// 3. Environment variable
+/// 4. By lookup key in configuration sources (such as files)
+/// 5. A custom callback function
+/// 6. Default value
+///
+/// ### Typed values, parsing, and validation
+///
+/// [V] is the type of the value this option provides.
+/// Option values are parsed to this type using the [ValueParser].
+/// Subclasses of [ConfigOptionBase] may also override [validateValue]
+/// to perform additional validation such as range checking.
+///
+/// The subclasses implement specific option value types,
+/// e.g. [StringOption], [FlagOption] (boolean), [IntOption], etc.
+///
+/// A [customValidator] may be provided for an individual option.
+/// If a value was provided the customValidator is invoked,
+/// and shall throw a [FormatException] if its format is invalid,
+/// or a [UsageException] if the it is invalid for other reasons.
+///
+/// ### Positional arguments
+///
+/// If multiple positional arguments are defined,
+/// follow these restrictions to prevent ambiguity:
+///  - all but the last one must be mandatory
+///  - all but the last one must have no non-argument configuration sources
+///
+/// If an argument is defined as both named and positional,
+/// and the named argument is provided, the positional index
+/// is still consumed so that subsequent positional arguments
+/// will get the correct value.
+///
+/// Note that this prevents an option from being provided both
+/// named and positional on the same command line.
+///
+/// ### Mandatory and Default
+///
+/// If [mandatory] is true, the option must be provided in the
+/// configuration sources, i.e. be explicitly set.
+/// This cannot be used together with [defaultsTo] or [fromDefault].
+///
+/// If no value is provided from the configuration sources,
+/// the [fromDefault] callback is used if available,
+/// otherwise the [defaultsTo] value is used.
+/// [fromDefault] must return the same value if called multiple times.
+///
+/// If an option is either mandatory or has a default value,
+/// it is guaranteed to have a value and can be retrieved using
+/// the non-nullable [value] method.
+/// Otherwise it may be retrieved using the nullable [valueOrNull] method.
+///
+/// ## Example
+///
+/// The typical usage pattern is to use an enum with the options
+/// and instantiate subclasses of [ConfigOptionBase] like so:
+/// ```dart
+/// enum MyAppOption<V> implements OptionDefinition<V> {
+///   username(StringOption(
+///     argName: 'username',
+///     envName: 'USERNAME',
+///   ));
+///
+///   const MyAppOption(this.option);
+///
+///   @override
+///   final ConfigOptionBase<V> option;
+/// }
+/// ```
+///
+/// See [Configuration] on how to initialize the configuration.
+abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
+  final ValueParser<V> valueParser;
 
-/// Convenience class for multi-value configuration option for strings.
-class MultiStringOption extends MultiOption<String> {
-  /// Creates a MultiStringOption which splits input strings on commas.
-  const MultiStringOption({
-    super.argName,
-    super.argAliases,
-    super.argAbbrev,
-    super.envName,
-    super.configKey,
-    super.fromCustom,
-    super.fromDefault,
-    super.defaultsTo,
-    super.helpText,
-    super.valueHelp,
-    super.allowedHelp,
-    super.group,
-    super.allowedValues,
-    super.customValidator,
-    super.mandatory,
-    super.hide,
-  }) : super(
-          multiParser: const MultiParser(StringParser()),
-        );
+  final String? argName;
+  final List<String>? argAliases;
+  final String? argAbbrev;
+  final int? argPos;
+  final String? envName;
+  final String? configKey;
+  final V? Function(Configuration cfg)? fromCustom;
+  final V Function()? fromDefault;
+  final V? defaultsTo;
 
-  /// Creates a MultiStringOption which treats input strings as single elements.
-  const MultiStringOption.noSplit({
-    super.argName,
-    super.argAliases,
-    super.argAbbrev,
-    super.envName,
-    super.configKey,
-    super.fromCustom,
-    super.fromDefault,
-    super.defaultsTo,
-    super.helpText,
-    super.valueHelp,
-    super.allowedHelp,
-    super.group,
-    super.allowedValues,
-    super.customValidator,
-    super.mandatory,
-    super.hide,
-  }) : super(
-          multiParser: const MultiParser(StringParser(), separator: null),
-        );
-}
+  final String? helpText;
+  final String? valueHelp;
+  final Map<String, String>? allowedHelp;
+  final OptionGroup? group;
 
-/// Parses a string value into an enum value.
-/// Currently requires an exact, case-sensitive match.
-class EnumParser<E extends Enum> extends ValueParser<E> {
-  final List<E> enumValues;
+  final List<V>? allowedValues;
+  final void Function(V value)? customValidator;
+  final bool mandatory;
+  final bool hide;
 
-  const EnumParser(this.enumValues);
+  const ConfigOptionBase({
+    required this.valueParser,
+    this.argName,
+    this.argAliases,
+    this.argAbbrev,
+    this.argPos,
+    this.envName,
+    this.configKey,
+    this.fromCustom,
+    this.fromDefault,
+    this.defaultsTo,
+    this.helpText,
+    this.valueHelp,
+    this.allowedHelp,
+    this.group,
+    this.allowedValues,
+    this.customValidator,
+    this.mandatory = false,
+    this.hide = false,
+  });
+
+  V? defaultValue() {
+    final df = fromDefault;
+    return (df != null ? df() : defaultsTo);
+  }
+
+  String? defaultValueString() {
+    final defValue = defaultValue();
+    if (defValue == null) return null;
+    return valueParser.format(defValue);
+  }
+
+  String? valueHelpString() {
+    return valueHelp;
+  }
+
+  /// Adds this configuration option to the provided argument parser.
+  void _addToArgParser(final ArgParser argParser) {
+    final argName = this.argName;
+    if (argName == null) {
+      throw StateError("Can't add option without arg name to arg parser.");
+    }
+    argParser.addOption(
+      argName,
+      abbr: argAbbrev,
+      help: helpText,
+      valueHelp: valueHelpString(),
+      allowed: allowedValues?.map(valueParser.format),
+      allowedHelp: allowedHelp,
+      defaultsTo: defaultValueString(),
+      mandatory: mandatory,
+      hide: hide,
+      aliases: argAliases ?? const [],
+    );
+  }
+
+  /// Validates the configuration option definition.
+  ///
+  /// This method is called by [prepareOptionsForParsing] to validate
+  /// the configuration option definition.
+  /// Throws an error if the definition is invalid.
+  ///
+  /// Subclasses may override this method to perform specific validations.
+  /// If they do, they must also call the super implementation.
+  @mustCallSuper
+  void validateDefinition() {
+    if (argName == null && argAbbrev != null) {
+      throw InvalidOptionConfigurationError(this,
+          "An argument option can't have an abbreviation but not a full name");
+    }
+
+    if ((fromDefault != null || defaultsTo != null) && mandatory) {
+      throw InvalidOptionConfigurationError(
+          this, "Mandatory options can't have default values");
+    }
+  }
+
+  /// Validates the parsed value,
+  /// throwing a [FormatException] if the value is invalid,
+  /// or a [UsageException] if the value is invalid for other reasons.
+  ///
+  /// Subclasses may override this method to perform specific validations.
+  /// If they do, they must also call the super implementation.
+  @mustCallSuper
+  void validateValue(final V value) {
+    if (allowedValues?.contains(value) == false) {
+      throw UsageException(
+          '`$value` is not an allowed value for ${qualifiedString()}', '');
+    }
+
+    customValidator?.call(value);
+  }
+
+  /// Returns self.
+  @override
+  ConfigOptionBase<V> get option => this;
 
   @override
-  E parse(final String value) {
-    return enumValues.firstWhere(
-      (final e) => e.name == value,
-      orElse: () => throw FormatException(
-        '"$value" is not in ${valueHelpString()}',
-      ),
+  String toString() => argName ?? envName ?? '<unnamed option>';
+
+  String qualifiedString() {
+    if (argName != null) {
+      return V is bool ? 'flag `$argName`' : 'option `$argName`';
+    }
+    if (envName != null) {
+      return 'environment variable `$envName`';
+    }
+    if (argPos != null) {
+      return 'positional argument $argPos';
+    }
+    if (configKey != null) {
+      return 'configuration key `$configKey`';
+    }
+    return _unnamedOptionString;
+  }
+
+  static const _unnamedOptionString = '<unnamed option>';
+
+  /////////////////////
+  // Value resolution
+
+  /// Returns the resolved value of this configuration option from the provided context.
+  /// For options with positional arguments this must be invoked in ascending position order.
+  /// Returns the result with the resolved value or error.
+  ///
+  /// This method is intended for internal use.
+  OptionResolution<V> resolveValue(
+    final Configuration cfg, {
+    final ArgResults? args,
+    final Iterator<String>? posArgs,
+    final Map<String, String>? env,
+    final ConfigurationBroker? configBroker,
+  }) {
+    OptionResolution<V> res;
+    try {
+      res = _doResolve(
+        cfg,
+        args: args,
+        posArgs: posArgs,
+        env: env,
+        configBroker: configBroker,
+      );
+    } on Exception catch (e) {
+      return OptionResolution.error(
+        'Failed to resolve ${option.qualifiedString()}: $e',
+      );
+    }
+
+    if (res.error != null) {
+      return res;
+    }
+
+    final stringValue = res.stringValue;
+    if (stringValue != null) {
+      // value provided by string-based config source, parse to the designated type
+      try {
+        res = res.copyWithValue(
+          option.option.valueParser.parse(stringValue),
+        );
+      } on FormatException catch (e) {
+        return res.copyWithError(
+          _makeFormatErrorMessage(e),
+        );
+      }
+    }
+
+    final error = validateOptionValue(res.value);
+    if (error != null) return res.copyWithError(error);
+
+    return res;
+  }
+
+  OptionResolution<V> _doResolve(
+    final Configuration cfg, {
+    final ArgResults? args,
+    final Iterator<String>? posArgs,
+    final Map<String, String>? env,
+    final ConfigurationBroker? configBroker,
+  }) {
+    OptionResolution<V>? result;
+
+    result = _resolveNamedArg(args);
+    if (result != null) return result;
+
+    result = _resolvePosArg(posArgs);
+    if (result != null) return result;
+
+    result = _resolveEnvVar(env);
+    if (result != null) return result;
+
+    result = _resolveConfigValue(cfg, configBroker);
+    if (result != null) return result;
+
+    result = _resolveCustomValue(cfg);
+    if (result != null) return result;
+
+    result = _resolveDefaultValue();
+    if (result != null) return result;
+
+    return const OptionResolution.noValue();
+  }
+
+  OptionResolution<V>? _resolveNamedArg(final ArgResults? args) {
+    final argOptName = argName;
+    if (argOptName == null || args == null || !args.wasParsed(argOptName)) {
+      return null;
+    }
+    return OptionResolution(
+      stringValue: args.option(argOptName),
+      source: ValueSourceType.arg,
+    );
+  }
+
+  OptionResolution<V>? _resolvePosArg(final Iterator<String>? posArgs) {
+    final argOptPos = argPos;
+    if (argOptPos == null || posArgs == null) return null;
+    if (!posArgs.moveNext()) return null;
+    return OptionResolution(
+      stringValue: posArgs.current,
+      source: ValueSourceType.arg,
+    );
+  }
+
+  OptionResolution<V>? _resolveEnvVar(final Map<String, String>? env) {
+    final envVarName = envName;
+    if (envVarName == null || env == null || !env.containsKey(envVarName)) {
+      return null;
+    }
+    return OptionResolution(
+      stringValue: env[envVarName],
+      source: ValueSourceType.envVar,
+    );
+  }
+
+  OptionResolution<V>? _resolveConfigValue(
+    final Configuration cfg,
+    final ConfigurationBroker? configBroker,
+  ) {
+    final key = configKey;
+    if (configBroker == null || key == null) return null;
+    final value = configBroker.valueOrNull(key, cfg);
+    if (value == null) return null;
+    if (value is String) {
+      return OptionResolution(
+        stringValue: value,
+        source: ValueSourceType.config,
+      );
+    }
+    if (value is V) {
+      return OptionResolution(
+        value: value as V,
+        source: ValueSourceType.config,
+      );
+    }
+    return OptionResolution.error(
+      '${option.qualifiedString()} value $value '
+      'is of type ${value.runtimeType}, not $V.',
+    );
+  }
+
+  OptionResolution<V>? _resolveCustomValue(final Configuration cfg) {
+    final value = fromCustom?.call(cfg);
+    if (value == null) return null;
+    return OptionResolution(
+      value: value,
+      source: ValueSourceType.custom,
+    );
+  }
+
+  OptionResolution<V>? _resolveDefaultValue() {
+    final value = fromDefault?.call() ?? defaultsTo;
+    if (value == null) return null;
+    return OptionResolution(
+      value: value,
+      source: ValueSourceType.defaultValue,
+    );
+  }
+
+  /// Returns an error message if the value is invalid, or null if valid.
+  ///
+  /// This method is intended for internal use.
+  String? validateOptionValue(final V? value) {
+    if (value == null && mandatory) {
+      return '${qualifiedString()} is mandatory';
+    }
+
+    if (value != null) {
+      try {
+        validateValue(value);
+      } on FormatException catch (e) {
+        return _makeFormatErrorMessage(e);
+      } on UsageException catch (e) {
+        return _makeErrorMessage(e.message);
+      }
+    }
+    return null;
+  }
+
+  String _makeFormatErrorMessage(final FormatException e) {
+    const prefix = 'FormatException: ';
+    var message = e.toString();
+    if (message.startsWith(prefix)) {
+      message = message.substring(prefix.length);
+    }
+    return _makeErrorMessage(message);
+  }
+
+  String _makeErrorMessage(final String message) {
+    final help = valueHelp != null ? ' <$valueHelp>' : '';
+    return 'Invalid value for ${qualifiedString()}$help: $message';
+  }
+}
+
+/// Parses a boolean value from a string.
+class BoolParser extends ValueParser<bool> {
+  const BoolParser();
+
+  @override
+  bool parse(final String value) {
+    return bool.parse(value, caseSensitive: false);
+  }
+}
+
+/// Boolean value configuration option.
+class FlagOption extends ConfigOptionBase<bool> {
+  final bool negatable;
+  final bool hideNegatedUsage;
+
+  const FlagOption({
+    super.argName,
+    super.argAliases,
+    super.argAbbrev,
+    super.envName,
+    super.configKey,
+    super.fromCustom,
+    super.fromDefault,
+    super.defaultsTo,
+    super.helpText,
+    super.valueHelp,
+    super.group,
+    super.customValidator,
+    super.mandatory,
+    super.hide,
+    this.negatable = true,
+    this.hideNegatedUsage = false,
+  }) : super(
+          valueParser: const BoolParser(),
+        );
+
+  @override
+  void _addToArgParser(final ArgParser argParser) {
+    final argName = this.argName;
+    if (argName == null) {
+      throw StateError("Can't add flag without arg name to arg parser.");
+    }
+    argParser.addFlag(
+      argName,
+      abbr: argAbbrev,
+      help: helpText,
+      defaultsTo: defaultValue(),
+      negatable: negatable,
+      hideNegatedUsage: hideNegatedUsage,
+      hide: hide,
+      aliases: argAliases ?? const [],
     );
   }
 
   @override
-  String format(final E value) {
-    return value.name;
-  }
-
-  String valueHelpString() {
-    return enumValues.map((final e) => e.name).join('|');
-  }
-}
-
-/// Enum value configuration option.
-///
-/// If the input is not one of the enum names,
-/// the validation throws a [FormatException].
-///
-/// Due to Dart's const semantics, the EnumParser must be
-/// provided by the caller, like so:
-///
-/// ```dart
-/// EnumOption(
-///   enumParser: EnumParser(AnimalEnum.values),
-///   argName: 'animal',
-/// )
-/// ```
-class EnumOption<E extends Enum> extends ConfigOptionBase<E> {
-  const EnumOption({
-    required final EnumParser<E> enumParser,
-    super.argName,
-    super.argAliases,
-    super.argAbbrev,
-    super.argPos,
-    super.envName,
-    super.configKey,
-    super.fromCustom,
-    super.fromDefault,
-    super.defaultsTo,
-    super.helpText,
-    super.valueHelp,
-    super.allowedHelp,
-    super.group,
-    super.allowedValues,
-    super.customValidator,
-    super.mandatory,
-    super.hide,
-  }) : super(valueParser: enumParser);
-
-  @override
-  String? valueHelpString() {
-    if (valueHelp != null) return valueHelp;
-    if (allowedValues != null || allowedHelp != null) return null;
-    // if no other value help is provided, auto-generate it with the enum names
-    return (valueParser as EnumParser<E>).valueHelpString();
+  OptionResolution<bool>? _resolveNamedArg(final ArgResults? args) {
+    final argOptName = argName;
+    if (argOptName == null || args == null || !args.wasParsed(argOptName)) {
+      return null;
+    }
+    return OptionResolution(
+      value: args.flag(argOptName),
+      source: ValueSourceType.arg,
+    );
   }
 }
 
-/// Base class for configuration options that
-/// support minimum and maximum range checking.
+/// Parses a list of values from a comma-separated string.
 ///
-/// If the input is outside the specified limits
-/// the validation throws a [FormatException].
-class ComparableValueOption<V extends Comparable> extends ConfigOptionBase<V> {
-  final V? min;
-  final V? max;
+/// The [elementParser] is used to parse the individual elements.
+///
+/// The [separator] is the pattern that separates the elements,
+/// if the input is a single string. It is comma by default.
+/// If it is null, the input is treated as a single element.
+///
+/// The [joiner] is the string that joins the elements in the
+/// formatted display string, also comma by default.
+class MultiParser<T> extends ValueParser<List<T>> {
+  final ValueParser<T> elementParser;
+  final Pattern? separator;
+  final String joiner;
 
-  const ComparableValueOption({
-    required super.valueParser,
-    super.argName,
-    super.argAliases,
-    super.argAbbrev,
-    super.argPos,
-    super.envName,
-    super.configKey,
-    super.fromCustom,
-    super.fromDefault,
-    super.defaultsTo,
-    super.helpText,
-    super.valueHelp,
-    super.allowedHelp,
-    super.group,
-    super.allowedValues,
-    super.customValidator,
-    super.mandatory,
-    super.hide,
-    this.min,
-    this.max,
+  const MultiParser(
+    this.elementParser, {
+    this.separator = ',',
+    this.joiner = ',',
   });
 
   @override
-  @mustCallSuper
-  void validateValue(final V value) {
-    super.validateValue(value);
-
-    final mininum = min;
-    if (mininum != null && value.compareTo(mininum) < 0) {
-      throw FormatException(
-        '${valueParser.format(value)} is below the minimum '
-        '(${valueParser.format(mininum)})',
-      );
-    }
-    final maximum = max;
-    if (maximum != null && value.compareTo(maximum) > 0) {
-      throw FormatException(
-        '${valueParser.format(value)} is above the maximum '
-        '(${valueParser.format(maximum)})',
-      );
-    }
+  List<T> parse(final String value) {
+    final sep = separator;
+    if (sep == null) return [elementParser.parse(value)];
+    return value.split(sep).map(elementParser.parse).toList();
   }
-}
-
-class IntParser extends ValueParser<int> {
-  const IntParser();
 
   @override
-  int parse(final String value) {
-    return int.parse(value);
+  String format(final List<T> value) {
+    return value.map(elementParser.format).join(joiner);
   }
 }
 
-/// Integer value configuration option.
-///
-/// Supports minimum and maximum range checking.
-class IntOption extends ComparableValueOption<int> {
-  const IntOption({
+/// Multi-value configuration option.
+class MultiOption<T> extends ConfigOptionBase<List<T>> {
+  final List<T>? allowedElementValues;
+
+  const MultiOption({
+    required final MultiParser<T> multiParser,
     super.argName,
     super.argAliases,
     super.argAbbrev,
-    super.argPos,
     super.envName,
     super.configKey,
     super.fromCustom,
     super.fromDefault,
     super.defaultsTo,
     super.helpText,
-    super.valueHelp = 'integer',
+    super.valueHelp,
     super.allowedHelp,
     super.group,
-    super.allowedValues,
+    final List<T>? allowedValues,
     super.customValidator,
     super.mandatory,
     super.hide,
-    super.min,
-    super.max,
-  }) : super(valueParser: const IntParser());
-}
-
-/// Parses a date string into a [DateTime] object.
-/// Throws [FormatException] if parsing failed.
-///
-/// This implementation is more forgiving than [DateTime.parse].
-/// In addition to the standard T and space separators between
-/// date and time it also allows [-_/:t].
-class DateTimeParser extends ValueParser<DateTime> {
-  const DateTimeParser();
+  })  : allowedElementValues = allowedValues,
+        super(
+          valueParser: multiParser,
+        );
 
   @override
-  DateTime parse(final String value) {
-    final val = DateTime.tryParse(value);
-    if (val != null) return val;
-    if (value.length >= 11 && '-_/:t'.contains(value[10])) {
-      final val =
-          DateTime.tryParse('${value.substring(0, 10)}T${value.substring(11)}');
-      if (val != null) return val;
+  void _addToArgParser(final ArgParser argParser) {
+    final argName = this.argName;
+    if (argName == null) {
+      throw StateError("Can't add option without arg name to arg parser.");
     }
-    throw FormatException('Invalid date-time "$value"');
-  }
-}
 
-/// Date-time value configuration option.
-///
-/// Supports minimum and maximum range checking.
-class DateTimeOption extends ComparableValueOption<DateTime> {
-  const DateTimeOption({
-    super.argName,
-    super.argAliases,
-    super.argAbbrev,
-    super.argPos,
-    super.envName,
-    super.configKey,
-    super.fromCustom,
-    super.fromDefault,
-    super.defaultsTo,
-    super.helpText,
-    super.valueHelp = 'YYYY-MM-DDtHH:MM:SSz',
-    super.allowedHelp,
-    super.group,
-    super.allowedValues,
-    super.customValidator,
-    super.mandatory,
-    super.hide,
-    super.min,
-    super.max,
-  }) : super(valueParser: const DateTimeParser());
-}
-
-/// The time units supported by the [DurationParser].
-enum DurationUnit {
-  microseconds('us'),
-  milliseconds('ms'),
-  seconds('s'),
-  minutes('m'),
-  hours('h'),
-  days('d');
-
-  final String suffix;
-
-  const DurationUnit(this.suffix);
-}
-
-/// Parses a duration string into a [Duration] object.
-///
-/// The input string must be a number followed by an optional unit
-/// which is one of: seconds (s), minutes (m), hours (h), days (d),
-/// milliseconds (ms), or microseconds (us).
-/// If no unit is specified, the [defaultUnit] is assumed, which is in
-/// seconds if not specified otherwise.
-/// Examples:
-/// - `10`, equivalent to `10s`
-/// - `10m`
-/// - `10h`
-/// - `10d`
-/// - `10ms`
-/// - `10us`
-///
-/// Throws [FormatException] if parsing failed.
-class DurationParser extends ValueParser<Duration> {
-  final DurationUnit defaultUnit;
-
-  const DurationParser({this.defaultUnit = DurationUnit.seconds});
-
-  @override
-  Duration parse(final String value) {
-    // integer followed by an optional unit (s, m, h, d, ms, us)
-    const pattern = r'^(-?\d+)([smhd]|ms|us)?$';
-    final regex = RegExp(pattern);
-    final match = regex.firstMatch(value);
-
-    if (match == null || match.groupCount != 2) {
-      throw FormatException('Invalid duration value "$value"');
-    }
-    final valueStr = match.group(1);
-    final unit = _determineUnit(match.group(2));
-    final val = int.parse(valueStr ?? '');
-    return switch (unit) {
-      DurationUnit.seconds => Duration(seconds: val),
-      DurationUnit.minutes => Duration(minutes: val),
-      DurationUnit.hours => Duration(hours: val),
-      DurationUnit.days => Duration(days: val),
-      DurationUnit.milliseconds => Duration(milliseconds: val),
-      DurationUnit.microseconds => Duration(microseconds: val),
-    };
-  }
-
-  DurationUnit _determineUnit(final String? suffix) {
-    if (suffix == null) return defaultUnit;
-
-    return DurationUnit.values.firstWhere(
-      (final unit) => unit.suffix == suffix,
-      orElse: () => throw FormatException('Invalid duration unit "$suffix".'),
+    final multiParser = valueParser as MultiParser<T>;
+    argParser.addMultiOption(
+      argName,
+      abbr: argAbbrev,
+      help: helpText,
+      valueHelp: valueHelpString(),
+      allowed: allowedElementValues?.map(multiParser.elementParser.format),
+      allowedHelp: allowedHelp,
+      defaultsTo: defaultValue()?.map(multiParser.elementParser.format),
+      hide: hide,
+      splitCommas: multiParser.separator == ',',
+      aliases: argAliases ?? const [],
     );
   }
 
   @override
-  String format(final Duration value) {
-    if (value == Duration.zero) return '0s';
-
-    final sign = value.isNegative ? '-' : '';
-    final d = _unitStr(value.inDays, null, 'd');
-    final h = _unitStr(value.inHours, 24, 'h');
-    final m = _unitStr(value.inMinutes, 60, 'm');
-    final s = _unitStr(value.inSeconds, 60, 's');
-    final ms = _unitStr(value.inMilliseconds, 1000, 'ms');
-    final us = _unitStr(value.inMicroseconds, 1000, 'us');
-
-    return '$sign$d$h$m$s$ms$us';
+  OptionResolution<List<T>>? _resolveNamedArg(final ArgResults? args) {
+    final argOptName = argName;
+    if (argOptName == null || args == null || !args.wasParsed(argOptName)) {
+      return null;
+    }
+    final multiParser = valueParser as MultiParser<T>;
+    return OptionResolution(
+      value: args
+          .multiOption(argOptName)
+          .map(multiParser.elementParser.parse)
+          .toList(),
+      source: ValueSourceType.arg,
+    );
   }
 
-  static String _unitStr(final int value, final int? mod, final String unit) {
-    final absValue = value.abs();
-    if (mod == null) {
-      return absValue > 0 ? '$absValue$unit' : '';
+  @override
+  @mustCallSuper
+  void validateValue(final List<T> value) {
+    super.validateValue(value);
+
+    final allowed = allowedElementValues;
+    if (allowed != null) {
+      for (final v in value) {
+        if (allowed.contains(v) == false) {
+          throw UsageException(
+              '`$v` is not an allowed value for ${qualifiedString()}', '');
+        }
+      }
     }
-    return absValue % mod > 0 ? '${absValue.remainder(mod)}$unit' : '';
   }
 }
 
-/// Duration value configuration option.
-///
-/// Supports minimum and maximum range checking.
-class DurationOption extends ComparableValueOption<Duration> {
-  const DurationOption({
-    super.argName,
-    super.argAliases,
-    super.argAbbrev,
-    super.argPos,
-    super.envName,
-    super.configKey,
-    super.fromCustom,
-    super.fromDefault,
-    super.defaultsTo,
-    super.helpText,
-    super.valueHelp = 'integer[us|ms|s|m|h|d]',
-    super.allowedHelp,
-    super.group,
-    super.allowedValues,
-    super.customValidator,
-    super.mandatory,
-    super.hide,
-    super.min,
-    super.max,
-  }) : super(valueParser: const DurationParser());
+/// Extension to add a [qualifiedString] shorthand method to [OptionDefinition].
+/// Since enum classes that implement [OptionDefinition] don't inherit
+/// its method implementations, this extension provides this method
+/// implementation instead.
+extension QualifiedString on OptionDefinition {
+  String qualifiedString() {
+    final str = option.qualifiedString();
+    if (str == ConfigOptionBase._unnamedOptionString && this is Enum) {
+      return (this as Enum).name;
+    }
+    return str;
+  }
+}
 
-  /// Creates a DurationOption with a custom duration parser,
-  /// e.g. with a specific default unit.
-  const DurationOption.custom({
-    required final DurationParser parser,
-    super.argName,
-    super.argAliases,
-    super.argAbbrev,
-    super.argPos,
-    super.envName,
-    super.configKey,
-    super.fromCustom,
-    super.fromDefault,
-    super.defaultsTo,
-    super.helpText,
-    super.valueHelp = 'integer[us|ms|s|m|h|d]',
-    super.allowedHelp,
-    super.group,
-    super.allowedValues,
-    super.customValidator,
-    super.mandatory,
-    super.hide,
-    super.min,
-    super.max,
-  }) : super(valueParser: parser);
+/// Validates and prepares a set of options for the provided argument parser.
+void prepareOptionsForParsing(
+  final Iterable<OptionDefinition> options,
+  final ArgParser argParser,
+) {
+  final argNameOpts = validateOptions(options);
+  addOptionsToParser(argNameOpts, argParser);
+}
+
+Iterable<OptionDefinition> validateOptions(
+  final Iterable<OptionDefinition> options,
+) {
+  final argNameOpts = <String, OptionDefinition>{};
+  final argPosOpts = <int, OptionDefinition>{};
+  final envNameOpts = <String, OptionDefinition>{};
+
+  final optionGroups = <OptionGroup, List<OptionDefinition>>{};
+
+  for (final opt in options) {
+    opt.option.validateDefinition();
+
+    final argName = opt.option.argName;
+    if (argName != null) {
+      if (argNameOpts.containsKey(opt.option.argName)) {
+        throw InvalidOptionConfigurationError(
+            opt, 'Duplicate argument name: ${opt.option.argName} for $opt');
+      }
+      argNameOpts[argName] = opt;
+    }
+
+    final argPos = opt.option.argPos;
+    if (argPos != null) {
+      if (argPosOpts.containsKey(opt.option.argPos)) {
+        throw InvalidOptionConfigurationError(
+            opt, 'Duplicate argument position: ${opt.option.argPos} for $opt');
+      }
+      argPosOpts[argPos] = opt;
+    }
+
+    final envName = opt.option.envName;
+    if (envName != null) {
+      if (envNameOpts.containsKey(opt.option.envName)) {
+        throw InvalidOptionConfigurationError(opt,
+            'Duplicate environment variable name: ${opt.option.envName} for $opt');
+      }
+      envNameOpts[envName] = opt;
+    }
+
+    final group = opt.option.group;
+    if (group != null) {
+      optionGroups.update(
+        group,
+        (final value) => [...value, opt],
+        ifAbsent: () => [opt],
+      );
+    }
+  }
+
+  optionGroups.forEach((final group, final options) {
+    group.validateDefinitions(options);
+  });
+
+  if (argPosOpts.isNotEmpty) {
+    final orderedPosOpts = argPosOpts.values.sorted(
+        (final a, final b) => a.option.argPos!.compareTo(b.option.argPos!));
+
+    if (orderedPosOpts.first.option.argPos != 0) {
+      throw InvalidOptionConfigurationError(
+        orderedPosOpts.first,
+        'First positional argument must have index 0.',
+      );
+    }
+
+    if (orderedPosOpts.last.option.argPos != orderedPosOpts.length - 1) {
+      throw InvalidOptionConfigurationError(
+        orderedPosOpts.last,
+        'The positional arguments must have consecutive indices without gaps.',
+      );
+    }
+  }
+
+  return argNameOpts.values;
+}
+
+void addOptionsToParser(
+  final Iterable<OptionDefinition> argNameOpts,
+  final ArgParser argParser,
+) {
+  for (final opt in argNameOpts) {
+    opt.option._addToArgParser(argParser);
+  }
+}
+
+extension PrepareOptions on Iterable<OptionDefinition> {
+  /// Validates and prepares these options for the provided argument parser.
+  void prepareForParsing(final ArgParser argParser) =>
+      prepareOptionsForParsing(this, argParser);
+
+  /// Returns the usage help text for these options.
+  String get usage {
+    final parser = ArgParser();
+    prepareForParsing(parser);
+    return parser.usage;
+  }
 }
