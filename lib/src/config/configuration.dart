@@ -116,7 +116,7 @@ class Configuration<O extends OptionDefinition> {
   ///
   /// Throws a [UsageException] with error and correct usage information
   /// if there were any errors during configuration resolution.
-  /// A caller can use [resolveNoExcept] insteadto handle the errors themselves.
+  /// A caller can use [resolveNoExcept] instead to handle the errors themselves.
   factory Configuration.resolve({
     required final Iterable<O> options,
     final ArgResults? argResults,
