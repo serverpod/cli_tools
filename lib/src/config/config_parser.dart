@@ -1,7 +1,6 @@
 import 'dart:io' show Platform;
 
 import 'package:args/args.dart';
-import 'package:args/command_runner.dart' show UsageException;
 
 import 'configuration.dart';
 import 'configuration_broker.dart';
@@ -250,13 +249,6 @@ class ConfigParser implements ArgParser {
       presetValues: presetValues,
       ignoreUnexpectedPositionalArgs: true,
     );
-
-    if (configuration.errors.isNotEmpty) {
-      throw UsageException(
-        configuration.errors.join('\n'),
-        usage,
-      );
-    }
 
     _invokeCallbacks(configuration);
 

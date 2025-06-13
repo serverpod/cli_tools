@@ -4,6 +4,7 @@ import 'dart:io' show Platform;
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:cli_tools/config.dart';
+import 'package:cli_tools/src/config/output_formatting.dart';
 
 import 'better_command_runner.dart';
 
@@ -121,7 +122,7 @@ abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
   /// This method can be overridden to change the configuration resolution
   /// behavior.
   Configuration<O> resolveConfiguration(ArgResults? argResults) {
-    return Configuration.resolve(
+    return Configuration.resolveNoExcept(
       options: options,
       argResults: argResults,
       env: envVariables,

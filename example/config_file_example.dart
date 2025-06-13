@@ -60,7 +60,7 @@ class TimeSeriesCommand extends BetterCommand<TimeSeriesOption, void> {
 
   @override
   Configuration<TimeSeriesOption> resolveConfiguration(ArgResults? argResults) {
-    return Configuration.resolve(
+    return Configuration.resolveNoExcept(
       options: options,
       argResults: argResults,
       env: envVariables,

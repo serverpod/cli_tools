@@ -333,7 +333,7 @@ class DurationParser extends ValueParser<Duration> {
   @override
   Duration parse(final String value) {
     // integer followed by an optional unit (s, m, h, d, ms, us)
-    const pattern = r'^(-?\d+)([smhd]|ms|us)?$';
+    const pattern = r'^(-?\d+)(ms|us|[smhd])?$';
     final regex = RegExp(pattern);
     final match = regex.firstMatch(value);
 
