@@ -89,16 +89,8 @@ class Configuration<O extends OptionDefinition> {
         _config = <O, OptionResolution>{},
         _errors = <String>[] {
     if (argResults == null && args != null) {
-      final parser = ArgParser();
-      options.prepareForParsing(parser);
-
-      try {
-        argResults = parser.parse(args);
-      } on FormatException catch (e) {
-        _errors.add(e.message);
-        for (var o in _options) {
-          _config[o] = const OptionResolution.error('Previous ArgParser error');
-        }
+      argResults = _prepareArgResults(args);
+      if (argResults == null) {
         return;
       }
     }
@@ -117,26 +109,49 @@ class Configuration<O extends OptionDefinition> {
   /// Throws a [UsageException] with error and correct usage information
   /// if there were any errors during configuration resolution.
   /// A caller can use [resolveNoExcept] instead to handle the errors themselves.
-  factory Configuration.resolve({
+  Configuration.resolve({
     required final Iterable<O> options,
-    final ArgResults? argResults,
+    ArgResults? argResults,
     final Iterable<String>? args,
     final Map<String, String>? env,
     final ConfigurationBroker? configBroker,
     final Map<O, Object?>? presetValues,
     final bool ignoreUnexpectedPositionalArgs = false,
-  }) {
-    final config = Configuration.resolveNoExcept(
-      options: options,
-      argResults: argResults,
-      args: args,
+  })  : _options = List<O>.from(options),
+        _config = <O, OptionResolution>{},
+        _errors = <String>[] {
+    if (argResults == null && args != null) {
+      argResults = _prepareArgResults(args);
+      if (argResults == null) {
+        throwExceptionOnErrors();
+        return;
+      }
+    }
+
+    _resolveWithArgResults(
+      args: argResults,
       env: env,
       configBroker: configBroker,
       presetValues: presetValues,
       ignoreUnexpectedPositionalArgs: ignoreUnexpectedPositionalArgs,
     );
-    config.throwExceptionOnErrors();
-    return config;
+
+    throwExceptionOnErrors();
+  }
+
+  ArgResults? _prepareArgResults(final Iterable<String> args) {
+    final parser = ArgParser();
+    _options.prepareForParsing(parser);
+
+    try {
+      return parser.parse(args);
+    } on FormatException catch (e) {
+      _errors.add(e.message);
+      for (var o in _options) {
+        _config[o] = const OptionResolution.error('Previous ArgParser error');
+      }
+      return null;
+    }
   }
 
   /// Throws a [UsageException] with error and correct usage information
