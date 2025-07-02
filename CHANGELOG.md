@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.6.1
+- refactor: Configuration.resolve is a regular constructor instead of a factory constructor
+
 ## 0.6.0
 - feat!: By default, `Configuration` `resolve` throws an informative `UsageException` on user input error.
 - feat: Config library provides usage help text for set of options.
