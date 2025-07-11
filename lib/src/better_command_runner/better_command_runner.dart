@@ -7,7 +7,10 @@ import 'package:cli_tools/config.dart';
 import 'package:cli_tools/src/config/output_formatting.dart';
 
 /// A function type for executing code before running a command.
-typedef OnBeforeRunCommand = Future<void> Function(BetterCommandRunner runner);
+typedef OnBeforeRunCommand = Future<void> Function(
+  BetterCommandRunner runner,
+  ArgResults topLevelResults,
+);
 
 /// A proxy for user-provided functions for passing specific log messages.
 ///
@@ -293,7 +296,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
       }),
     );
 
-    await _onBeforeRunCommand?.call(this);
+    await _onBeforeRunCommand?.call(this, topLevelResults);
 
     try {
       return await super.runCommand(topLevelResults);

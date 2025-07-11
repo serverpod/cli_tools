@@ -105,7 +105,7 @@ void main() {
       runner = BetterCommandRunner(
         'test',
         'this is a test cli',
-        onBeforeRunCommand: (_) => Future(() => calls.add('callback')),
+        onBeforeRunCommand: (_, __) => Future(() => calls.add('callback')),
       )..addCommand(mockCommand);
 
       var args = [MockCommand.commandName];
