@@ -57,11 +57,6 @@ typedef OnAnalyticsEvent = void Function(String event);
 /// command line arguments, environment variables, and configuration.
 class BetterCommandRunner<O extends OptionDefinition, T>
     extends CommandRunner<T> {
-  static const foo = <OptionDefinition>[
-    BetterCommandRunnerFlags.verboseOption,
-    BetterCommandRunnerFlags.quietOption,
-  ];
-
   /// Process exit code value for command not found -
   /// The specified command was not found or couldn't be located.
   static const int exitCodeCommandNotFound = 127;
