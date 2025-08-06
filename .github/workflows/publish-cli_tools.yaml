@@ -1,4 +1,4 @@
-name: Publish CLI Tools
+name: Publish cli_tools package
 
 on:
     push:
