@@ -4,7 +4,9 @@
 import 'package:cli_tools/cli_tools.dart';
 import 'package:cli_tools/src/prompts/key_codes.dart';
 import 'package:cli_tools/src/prompts/select.dart';
+import 'package:config/better_command_runner.dart' show ExitException;
 import 'package:test/test.dart';
+
 import '../test_utils/io_helper.dart';
 import '../test_utils/prompts/key_code_sequence.dart';
 import '../test_utils/prompts/option_matcher.dart';

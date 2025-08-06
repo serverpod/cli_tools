@@ -1,4 +1,4 @@
-import '../../better_command_runner.dart';
+import 'package:config/better_command_runner.dart' show BetterCommandRunner;
 
 class CommandDocumentationGenerator {
   final BetterCommandRunner commandRunner;

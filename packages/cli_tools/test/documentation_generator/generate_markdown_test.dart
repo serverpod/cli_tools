@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:args/command_runner.dart';
 import 'package:cli_tools/cli_tools.dart';
+import 'package:config/better_command_runner.dart';
+import 'package:config/config.dart' show Configuration, OptionDefinition;
 import 'package:test/test.dart';
 
 class AddSpiceCommand extends Command {
