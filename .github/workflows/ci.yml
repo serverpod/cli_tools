@@ -14,36 +14,47 @@ jobs:
         strategy:
             matrix:
                 dart: [3.3, 3.6]
+                package: [cli_tools]
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
             - uses: dart-lang/setup-dart@v1.7.1
               with:
                 sdk: ${{ matrix.dart }}
-            - name: Verify formatting
+            - name: Verify formatting ${{ matrix.package }}
               run: dart format --output=none --set-exit-if-changed .
+              working-directory: packages/${{ matrix.package }}
+
     dart_analyze:
         name: Dart Analyze
         strategy:
             matrix:
                 dart: [3.3, 3.6]
+                package: [cli_tools]
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
             - uses: dart-lang/setup-dart@v1.7.1
               with:
                 sdk: ${{ matrix.dart }}
-            - run: dart pub get
-            - run: dart analyze --fatal-infos
+            - name: Dart get and analyze ${{ matrix.package }}
+              run: |
+                dart pub get
+                dart analyze --fatal-infos
+              working-directory: packages/${{ matrix.package }}
+
     dart_test:
         name: Dart Test
         strategy:
             matrix:
                 dart: [3.3, 3.6]
+                package: [cli_tools]
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
             - uses: dart-lang/setup-dart@v1.7.1
               with:
                 sdk: ${{ matrix.dart }}
-            - run: dart test
+            - name: Dart test ${{ matrix.package }}
+              run: dart test
+              working-directory: packages/${{ matrix.package }}
