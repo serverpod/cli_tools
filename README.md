@@ -1,4 +1,4 @@
-![Serverpod banner](https://github.com/serverpod/serverpod/raw/main/misc/images/github-header.webp)
+[![Serverpod banner](https://github.com/serverpod/serverpod/raw/main/misc/images/github-header.webp)](https://github.com/serverpod/serverpod)
 
 The cli_tools repository contains open-source packages that help you build CLI commands.  
 
