@@ -19,7 +19,7 @@ If you are considering contributing code, please check the existing issues to se
 
 ## Contributing code
 
-Pull request are very much welcome. If you are working on something more significant than just a smaller bug fix, please declare your interest on an issue first. This way we can discuss the changes to ensure that they align with the project's goals and prevent duplicated work.
+Pull requests are very much welcome. If you are working on something more significant than just a smaller bug fix, please declare your interest on an issue first. This way we can discuss the changes to ensure that they align with the project's goals and prevent duplicated work.
 
 ### Code style
 
@@ -52,3 +52,7 @@ We encourage you to support others using these packages by sharing your knowledg
 ## Contributing with issues
 
 Help us make these packages better by filing [issue](https://github.com/serverpod/cli_tools/issues/new) for bugs, feature requests, or improvements. When filing an issue, please provide as much information as possible to help us understand the problem or suggestion.
+
+# Documentation
+
+See the repository [README](README.md) for further documentation.

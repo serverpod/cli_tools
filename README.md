@@ -1,14 +1,14 @@
 ![Serverpod banner](https://github.com/serverpod/serverpod/raw/main/misc/images/github-header.webp)
 
-The cli_tools repository houses packages with tools and libraries to support CLI command development.
+The cli_tools repository contains open-source packages that help you build CLI commands.  
 
-These packages are open source and maintained and used by Serverpod.
+They are actively maintained and used by the Serverpod team.
 
 ## Packages
 
 ### cli_tools
 
-The [cli_tools package](packages/cli_tools/README.md) contains a number of tools and libraries for CLI development, for example terminal logging, user input prompting, and collecting usage analytics.
+The [cli_tools package](packages/cli_tools/README.md) offers several utilities for CLI development, for example: terminal logging, user-input prompting, and usage-analytics collection.
 
 
 ## Contributing Guidelines
