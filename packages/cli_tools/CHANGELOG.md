@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.0-beta.1
+- refactor: Reorganized files in new subdir packages/cli_tools
+- fix!: Removed unused static options list in BetterCommandRunner
+
 ## 0.6.1
 - refactor: Configuration.resolve is a regular constructor instead of a factory constructor
 
