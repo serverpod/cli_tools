@@ -10,6 +10,13 @@ They are actively maintained and used by the Serverpod team.
 
 The [cli_tools package](packages/cli_tools/README.md) offers several utilities for CLI development, for example: terminal logging, user-input prompting, and usage-analytics collection.
 
+### config
+
+The [config package](packages/config/README.md) provides comprehensive
+configuration ingestion and validation, including typed command line options,
+environment variables, and configuration files as input, and better error
+reporting.
+
 
 ## Contributing Guidelines
 
