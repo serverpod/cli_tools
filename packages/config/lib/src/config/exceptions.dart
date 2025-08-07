@@ -1,4 +1,4 @@
-import 'package:cli_tools/src/config/options.dart';
+import 'options.dart';
 
 /// Indicates that the option definition is invalid.
 class OptionDefinitionError extends Error {

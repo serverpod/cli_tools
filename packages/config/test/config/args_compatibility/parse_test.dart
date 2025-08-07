@@ -6,7 +6,7 @@
 
 import 'package:test/test.dart';
 
-import 'package:cli_tools/config.dart';
+import 'package:config/config.dart';
 
 import 'test_utils.dart';
 

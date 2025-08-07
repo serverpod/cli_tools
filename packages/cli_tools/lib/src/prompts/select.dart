@@ -1,7 +1,8 @@
 import 'dart:io';
 
 import 'package:cli_tools/cli_tools.dart';
-import 'package:cli_tools/src/prompts/key_codes.dart';
+
+import 'key_codes.dart';
 
 /// Object that represents an option in a select prompt.
 class Option {

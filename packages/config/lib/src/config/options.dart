@@ -1,6 +1,6 @@
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
-import 'package:cli_tools/src/config/exceptions.dart';
+import 'exceptions.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 

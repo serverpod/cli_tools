@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.7.0-beta.2
+- refactor!: Moved out the `config` library from the `cli_tools` package and into its own package, to be published as `config` on pub.dev.
+
 ## 0.7.0-beta.1
 - refactor: Reorganized files in new subdir packages/cli_tools
 - fix!: Removed unused static options list in BetterCommandRunner

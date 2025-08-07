@@ -1,6 +1,5 @@
 export 'analytics.dart';
 export 'better_command_runner.dart';
-export 'config.dart';
 export 'docs_generator.dart';
 export 'local_storage_manager.dart';
 export 'logger.dart';

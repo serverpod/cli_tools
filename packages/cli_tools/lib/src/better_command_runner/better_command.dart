@@ -3,8 +3,7 @@ import 'dart:io' show Platform;
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
-import 'package:cli_tools/config.dart';
-import 'package:cli_tools/src/config/output_formatting.dart';
+import 'package:config/config.dart';
 
 import 'better_command_runner.dart';
 

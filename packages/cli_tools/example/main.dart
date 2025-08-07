@@ -1,4 +1,5 @@
 import 'package:cli_tools/cli_tools.dart';
+import 'package:config/config.dart';
 
 Future<int> main(List<String> args) async {
   var commandRunner = BetterCommandRunner(

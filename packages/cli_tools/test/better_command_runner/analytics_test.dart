@@ -4,7 +4,7 @@ import 'package:args/command_runner.dart';
 import 'package:cli_tools/better_command_runner.dart';
 import 'package:test/test.dart';
 
-import '../test_utils/test_utils.dart';
+import '../test_utils/test_utils.dart' show flushEventQueue;
 
 class MockCommand extends Command {
   static String commandName = 'mock-command';

@@ -1,28 +1,27 @@
-name: cli_tools
+name: config
 version: 0.7.0-beta.2
-description: A collection of tools for building great command-line interfaces.
+description: A package for parsing command-line arguments and configuration files.
 repository: https://github.com/serverpod/cli_tools
-homepage: https://serverpod.dev
 issue_tracker: https://github.com/serverpod/cli_tools/issues
+documentation: https://github.com/serverpod/cli_tools/packages/config/README.md
 
 topics:
   - cli
-  - tools
-  - command-line
-  - dart
+  - args
+  - command
+  - configuration
+  - yaml
 
 environment:
   sdk: ^3.3.0
 
 dependencies:
   args: ^2.7.0
-  ci: ^0.1.0
-  config: ^0.7.0-beta.2
-  http: '>=0.13.0 <2.0.0'
+  collection: ^1.18.0
+  meta: ^1.11.0
   path: ^1.8.2
-  pub_api_client: '>=2.4.0 <4.0.0'
-  pub_semver: ^2.1.4
-  super_string: ^1.0.3
+  rfc_6901: ^0.2.0
+  yaml: ^3.1.2
 
 dev_dependencies:
   serverpod_lints: '>=1.2.6'

@@ -5,7 +5,7 @@
 import 'package:args/args.dart';
 import 'package:test/test.dart';
 
-import 'package:cli_tools/config.dart';
+import 'package:config/config.dart';
 
 void main() {
   group('ConfigParser.parse() is fast', () {

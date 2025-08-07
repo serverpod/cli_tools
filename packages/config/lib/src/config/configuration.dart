@@ -15,7 +15,7 @@ import 'source_type.dart';
 /// and implement the configuration like so:
 /// ```dart
 /// import 'dart:io' show Platform;
-/// import 'package:cli_tools/config.dart';
+/// import 'package:config/config.dart';
 ///
 /// enum MyAppOption<V> implements OptionDefinition<V> {
 ///   username(StringOption(

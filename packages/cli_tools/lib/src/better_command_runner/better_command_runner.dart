@@ -3,8 +3,7 @@ import 'dart:io' show Platform;
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
-import 'package:cli_tools/config.dart';
-import 'package:cli_tools/src/config/output_formatting.dart';
+import 'package:config/config.dart';
 
 /// A function type for executing code before running a command.
 typedef OnBeforeRunCommand = Future<void> Function(BetterCommandRunner runner);

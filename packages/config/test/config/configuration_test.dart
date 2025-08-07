@@ -1,7 +1,7 @@
 import 'package:args/args.dart';
 import 'package:test/test.dart';
 
-import 'package:cli_tools/config.dart';
+import 'package:config/config.dart';
 
 void main() async {
   group('Given invalid configuration abbrevation without full name', () {
