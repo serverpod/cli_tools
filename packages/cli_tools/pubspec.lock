@@ -71,7 +71,7 @@ packages:
       path: "../config"
       relative: true
     source: path
-    version: "0.7.0-beta.2"
+    version: "0.7.0"
   convert:
     dependency: transitive
     description:
