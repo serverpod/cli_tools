@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:config/better_command_runner.dart';
+import 'package:cli_tools/better_command_runner.dart';
 import 'package:config/config.dart';
 import 'package:test/test.dart';
 

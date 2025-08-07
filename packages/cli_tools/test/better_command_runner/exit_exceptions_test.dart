@@ -1,5 +1,5 @@
 import 'package:args/command_runner.dart';
-import 'package:config/better_command_runner.dart';
+import 'package:cli_tools/better_command_runner.dart';
 import 'package:test/test.dart';
 
 class MockCommand extends Command {

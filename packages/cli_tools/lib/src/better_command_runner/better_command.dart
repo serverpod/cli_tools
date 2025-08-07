@@ -4,8 +4,6 @@ import 'dart:io' show Platform;
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:config/config.dart';
-import 'package:config/src/config/output_formatting.dart'
-    show formatConfigError;
 
 import 'better_command_runner.dart';
 

@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:cli_tools/cli_tools.dart';
-import 'package:config/better_command_runner.dart' show ExitException;
 
 import 'key_codes.dart';
 

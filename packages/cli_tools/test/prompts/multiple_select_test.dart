@@ -2,9 +2,8 @@
 // ignore_for_file: unused_local_variable
 
 import 'package:cli_tools/cli_tools.dart';
-import 'package:cli_tools/src/prompts/key_codes.dart';
-import 'package:cli_tools/src/prompts/select.dart';
-import 'package:config/better_command_runner.dart' show ExitException;
+import 'package:cli_tools/src/prompts/key_codes.dart' show KeyCodes;
+import 'package:cli_tools/src/prompts/select.dart' show underline;
 import 'package:test/test.dart';
 
 import '../test_utils/io_helper.dart';

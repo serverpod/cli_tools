@@ -10,4 +10,5 @@ export 'multi_config_source.dart';
 export 'option_groups.dart';
 export 'option_types.dart';
 export 'options.dart';
+export 'output_formatting.dart' show formatConfigError;
 export 'source_type.dart';
