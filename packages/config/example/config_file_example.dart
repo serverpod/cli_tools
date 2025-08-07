@@ -1,28 +1,49 @@
-import 'dart:io' show File;
+import 'dart:io' show File, Platform;
 
-import 'package:args/args.dart' show ArgResults;
 import 'package:config/config.dart';
-import 'package:config/better_command_runner.dart';
 
+/// Example of accessing a configuration file as fallback if the option
+/// is not specified on the command line.
+/// It also shows how to make the configuration file itself
+/// configurable via the command line or environment variable.
+///
+/// Run this example program like so:
+/// ```sh
+/// dart run example/config_file_example.dart --config=example/config.yaml
+/// ```
+/// or
+/// ```sh
+/// CONFIG_FILE=example/config.yaml dart run example/config_file_example.dart
+/// ```
+/// Command line usage:
+/// ```sh
+///     --config                               The path to the config file
+///                                            (defaults to "File: 'example/config.yaml'")
+/// -i, --interval=<integer[us|ms|s|m|h|d]>    The interval between the series elements
+/// ```
 Future<int> main(List<String> args) async {
-  var commandRunner = BetterCommandRunner(
-    'example',
-    'Example CLI command',
-  );
-  commandRunner.addCommand(TimeSeriesCommand());
-
+  final Configuration<TimeSeriesOption> config;
   try {
-    await commandRunner.run(args);
+    config = Configuration.resolve(
+      options: TimeSeriesOption.values,
+      args: args,
+      env: Platform.environment,
+      configBroker: FileConfigBroker(),
+    );
   } on UsageException catch (e) {
     print(e);
     return 1;
   }
+
+  var interval = config.optionalValue(TimeSeriesOption.interval);
+  print('interval: $interval');
   return 0;
 }
 
 enum TimeSeriesOption<V> implements OptionDefinition<V> {
   configFile(FileOption(
     argName: 'config',
+    envName: 'CONFIG_FILE',
     helpText: 'The path to the config file',
     fromDefault: _defaultConfigFilePath,
     mode: PathExistMode.mustExist,
@@ -43,32 +64,6 @@ enum TimeSeriesOption<V> implements OptionDefinition<V> {
 }
 
 File _defaultConfigFilePath() => File('example/config.yaml');
-
-class TimeSeriesCommand extends BetterCommand<TimeSeriesOption, void> {
-  TimeSeriesCommand({super.env}) : super(options: TimeSeriesOption.values);
-
-  @override
-  String get name => 'series';
-
-  @override
-  String get description => 'Generate a series of time stamps';
-
-  @override
-  void runWithConfig(Configuration<TimeSeriesOption> commandConfig) {
-    var interval = commandConfig.optionalValue(TimeSeriesOption.interval);
-    print('interval: $interval');
-  }
-
-  @override
-  Configuration<TimeSeriesOption> resolveConfiguration(ArgResults? argResults) {
-    return Configuration.resolveNoExcept(
-      options: options,
-      argResults: argResults,
-      env: envVariables,
-      configBroker: FileConfigBroker(),
-    );
-  }
-}
 
 class FileConfigBroker implements ConfigurationBroker {
   ConfigurationSource? _configSource;

@@ -1,11 +1,30 @@
 import 'package:cli_tools/cli_tools.dart';
+import 'package:config/config.dart';
 
 Future<int> main(List<String> args) async {
+  var commandRunner = BetterCommandRunner(
+    'example',
+    'Example CLI command',
+    globalOptions: [
+      StandardGlobalOption.quiet,
+      StandardGlobalOption.verbose,
+    ],
+  );
+  commandRunner.addCommand(TimeSeriesCommand());
+
+  try {
+    await commandRunner.run(args);
+  } on UsageException catch (e) {
+    print(e);
+    return 1;
+  }
+
   /// Simple example of using the [StdOutLogger] class.
   final LogLevel logLevel;
-  if (args.contains('--verbose')) {
+  if (commandRunner.globalConfiguration.value(StandardGlobalOption.verbose)) {
     logLevel = LogLevel.debug;
-  } else if (args.contains('--quiet')) {
+  } else if (commandRunner.globalConfiguration
+      .value(StandardGlobalOption.quiet)) {
     logLevel = LogLevel.error;
   } else {
     logLevel = LogLevel.info;
@@ -22,4 +41,77 @@ Future<int> main(List<String> args) async {
     () async => Future.delayed(const Duration(seconds: 3), () => true),
   );
   return 0;
+}
+
+/// Options are defineable as enums as well as regular lists.
+///
+/// The enum approach is more distinct and type safe.
+/// The list approach is more dynamic and permits non-const initialization.
+enum TimeSeriesOption<V> implements OptionDefinition<V> {
+  until(DateTimeOption(
+    argName: 'until',
+    envName: 'SERIES_UNTIL', // can also be specified as environment variable
+    fromDefault: _defaultUntil,
+    helpText: 'The end timestamp of the series',
+  )),
+  length(IntOption(
+    argName: 'length',
+    argAbbrev: 'l',
+    argPos: 0, // can also be specified as positional argument
+    helpText: 'The number of elements in the series',
+    min: 1,
+    max: 100,
+    group: _granularityGroup,
+  )),
+  interval(DurationOption(
+    argName: 'interval',
+    argAbbrev: 'i',
+    helpText: 'The interval between the series elements',
+    min: Duration(seconds: 1),
+    max: Duration(days: 1),
+    group: _granularityGroup,
+  ));
+
+  const TimeSeriesOption(this.option);
+
+  @override
+  final ConfigOptionBase<V> option;
+}
+
+/// Exactly one of the options in this group must be set.
+const _granularityGroup = MutuallyExclusive(
+  'Granularity',
+  mode: MutuallyExclusiveMode.mandatory,
+);
+
+/// A function can be used as a const initializer.
+DateTime _defaultUntil() => DateTime.now().add(const Duration(days: 1));
+
+class TimeSeriesCommand extends BetterCommand<TimeSeriesOption, void> {
+  TimeSeriesCommand() : super(options: TimeSeriesOption.values);
+
+  @override
+  String get name => 'series';
+
+  @override
+  String get description => 'Generate a series of time stamps';
+
+  @override
+  void runWithConfig(Configuration<TimeSeriesOption> commandConfig) {
+    var start = DateTime.now();
+    var until = commandConfig.value(TimeSeriesOption.until);
+
+    // exactly one of these options is set
+    var length = commandConfig.optionalValue(TimeSeriesOption.length);
+    var interval = commandConfig.optionalValue(TimeSeriesOption.interval);
+    interval ??= (until.difference(start) ~/ length!);
+    if (interval < const Duration(milliseconds: 1)) {
+      interval = const Duration(milliseconds: 1);
+    }
+
+    while (start.isBefore(until)) {
+      print(start);
+      start = start.add(interval);
+    }
+  }
 }
