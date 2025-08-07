@@ -1,9 +1,9 @@
 name: config
-version: 0.7.0-beta.2
+version: 0.7.0
 description: A package for parsing command-line arguments and configuration files.
 repository: https://github.com/serverpod/cli_tools
 issue_tracker: https://github.com/serverpod/cli_tools/issues
-documentation: https://github.com/serverpod/cli_tools/packages/config/README.md
+documentation: https://github.com/serverpod/cli_tools/blob/main/packages/config/README.md
 
 topics:
   - cli

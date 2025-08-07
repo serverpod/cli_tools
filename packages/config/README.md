@@ -6,22 +6,6 @@ The config package is a significant extension to the args package and enables
 typed options, environment variables and configuration files as input, and
 better error reporting.
 
-## Contributing to the Project
-
-We are happy to accept contributions. To contribute, please do the following:
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a pull request
-6. Discuss and modify the pull request as necessary
-7. The pull request will be accepted and merged by the repository owner
-
-Tests are required to accept any pull requests.
-
-See also [CONTRIBUTING](/CONTRIBUTING.md).
-
 ## Overview
 
 The config library is a significant extension to the Dart args package.
@@ -414,3 +398,19 @@ from the qualified key depending on the capturing groups in the regex.
 For more information, see the
 [`MultiDomainConfigBroker`](lib/src/config/multi_config_source.dart)
 source documentation.
+
+## Contributing to the Project
+
+We are happy to accept contributions. To contribute, please do the following:
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a pull request
+6. Discuss and modify the pull request as necessary
+7. The pull request will be accepted and merged by the repository owner
+
+Tests are required to accept any pull requests.
+
+See also [CONTRIBUTING](/CONTRIBUTING.md).
