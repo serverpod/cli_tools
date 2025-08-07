@@ -103,7 +103,7 @@ Here is a real-life example, from a _show logs_ command,
 that shows how to create a set of options for a particular command as an _enum_.
 
 ```dart
-import 'package:cli_tools/config.dart';
+import 'package:config/config.dart';
 
 enum LogOption<V> implements OptionDefinition<V> {
   limit(IntOption(
