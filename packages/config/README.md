@@ -55,7 +55,8 @@ enabling direct use of the new features.
 
 It achieves complete compatibility with the original package with the exception
 of addCommand(), which you can replace with
-[`BetterCommandRunner`](lib/src/better_command_runner/better_command_runner.dart).
+[`BetterCommandRunner`](../cli_tools/lib/src/better_command_runner/better_command_runner.dart)
+from the [`cli_tools package`](https://pub.dev/packages/cli_tools).
 
 - **Compatibility**: The `ConfigParser` implements the same interface as
   `ArgParser`, and returns a `ConfigResults` object that implements `ArgResults`.
@@ -70,7 +71,7 @@ of addCommand(), which you can replace with
 
 - **Key Differences**:
   - The `addCommand()` method is not supported
-  (see [`BetterCommandRunner`](lib/src/better_command_runner/better_command_runner.dart) instead)
+  (see [`BetterCommandRunner`](../cli_tools/lib/src/better_command_runner/better_command_runner.dart) instead)
   - All validation is performed up-front with consistent error messages
   - The parser supports additional configuration sources (environment variables, config files)
 
@@ -296,9 +297,10 @@ from the `args` package.
 To use the config library with these, they need to be subclassed
 to modify the use of `ArgParser` and introduce `Configuration`. This has
 already been done for you, with the `BetterCommand` and `BetterCommandRunner`
-classes in the `better_command_runner` library in this package.
+classes in the `better_command_runner` library in the
+[`cli_tools package`](https://pub.dev/packages/cli_tools).
 
-See the full example [example/config_simple_example.dart](example/config_simple_example.dart).
+See the full example [cli_tools/example/simple_command_example.dart](../cli_tools/example/simple_command_example.dart).
 
 ## Using configuration files
 
