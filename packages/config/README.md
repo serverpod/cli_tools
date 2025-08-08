@@ -55,7 +55,7 @@ enabling direct use of the new features.
 
 It achieves complete compatibility with the original package with the exception
 of addCommand(), which you can replace with
-[`BetterCommandRunner`](https://github.com/serverpod/cli_tools/blob/pkg-split/packages/cli_tools/lib/src/better_command_runner/better_command_runner.dart)
+[`BetterCommandRunner`](https://github.com/serverpod/cli_tools/blob/main/packages/cli_tools/lib/src/better_command_runner/better_command_runner.dart)
 from the [`cli_tools package`](https://pub.dev/packages/cli_tools).
 
 - **Compatibility**: The `ConfigParser` implements the same interface as
@@ -71,7 +71,7 @@ from the [`cli_tools package`](https://pub.dev/packages/cli_tools).
 
 - **Key Differences**:
   - The `addCommand()` method is not supported
-  (see [`BetterCommandRunner`](https://github.com/serverpod/cli_tools/blob/pkg-split/packages/cli_tools/lib/src/better_command_runner/better_command_runner.dart) instead)
+  (see [`BetterCommandRunner`](https://github.com/serverpod/cli_tools/blob/main/packages/cli_tools/lib/src/better_command_runner/better_command_runner.dart) instead)
   - All validation is performed up-front with consistent error messages
   - The parser supports additional configuration sources (environment variables, config files)
 
@@ -300,7 +300,7 @@ already been done for you, with the `BetterCommand` and `BetterCommandRunner`
 classes in the `better_command_runner` library in the
 [`cli_tools package`](https://pub.dev/packages/cli_tools).
 
-See the full example [cli_tools/example/simple_command_example.dart](https://github.com/serverpod/cli_tools/blob/pkg-split/packages/cli_tools/example/simple_command_example.dart).
+See the full example [cli_tools/example/simple_command_example.dart](https://github.com/serverpod/cli_tools/blob/main/packages/cli_tools/example/simple_command_example.dart).
 
 ## Using configuration files
 
