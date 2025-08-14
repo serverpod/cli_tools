@@ -1,0 +1,19 @@
+name: cli_tools_repo
+
+packages:
+  - packages/**
+
+ide:
+  intellij:
+    enabled: false
+
+command:
+  version:
+    workspaceChangelog: false
+
+scripts:
+  test:
+    description: "Run all tests"
+    run: dart test
+    exec:
+      concurrency: 1

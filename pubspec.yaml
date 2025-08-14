@@ -1,0 +1,19 @@
+name: cli_tools_repo
+publish_to: none
+description: A collection of packages for building great command-line interfaces.
+repository: https://github.com/serverpod/cli_tools
+homepage: https://serverpod.dev
+issue_tracker: https://github.com/serverpod/cli_tools/issues
+
+topics:
+  - cli
+  - tools
+  - terminal
+  - configuration
+  - yaml
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dev_dependencies:
+  melos: ^6.3.3
