@@ -1,4 +1,6 @@
-# Changelog
+## 0.7.2
+
+ - **DOCS**(config): Corrected GitHub links in README.
 
 ## 0.7.1
 - docs: Corrected BetterCommand references and links in README

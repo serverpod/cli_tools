@@ -1,4 +1,6 @@
-# Changelog
+## 0.7.1
+
+ - **CHORE**(cli_tools): Bumped `config` dependency.
 
 ## 0.7.0
 - refactor!: Moved out the `config` library from the `cli_tools` package and into its own package, to be published as `config` on pub.dev.

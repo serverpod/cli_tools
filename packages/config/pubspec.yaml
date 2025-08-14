@@ -1,5 +1,5 @@
 name: config
-version: 0.7.1
+version: 0.7.2
 description: A package for parsing command-line arguments and configuration files.
 repository: https://github.com/serverpod/cli_tools
 issue_tracker: https://github.com/serverpod/cli_tools/issues
