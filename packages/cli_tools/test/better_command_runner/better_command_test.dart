@@ -4,7 +4,7 @@ import 'package:cli_tools/better_command_runner.dart';
 import 'package:config/config.dart';
 import 'package:test/test.dart';
 
-enum BespokeGlobalOption<V> implements OptionDefinition<V> {
+enum BespokeGlobalOption<V extends Object> implements OptionDefinition<V> {
   quiet(BetterCommandRunnerFlags.quietOption),
   verbose(BetterCommandRunnerFlags.verboseOption),
   analytics(BetterCommandRunnerFlags.analyticsOption),
