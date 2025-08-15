@@ -1,8 +1,9 @@
 import 'package:args/command_runner.dart';
 import 'package:cli_tools/better_command_runner.dart';
+import 'package:config/config.dart' show OptionDefinition;
 import 'package:test/test.dart';
 
-class MockCommand extends Command {
+class MockCommand extends Command<void> {
   static String commandName = 'mock-command';
 
   @override
@@ -24,7 +25,7 @@ void main() {
     logLevel = null;
   });
   group('Given runner with setLogLevel callback', () {
-    final runner = BetterCommandRunner(
+    final runner = BetterCommandRunner<OptionDefinition<Object>, void>(
       'test',
       'this is a test cli',
       messageOutput: const MessageOutput(),
@@ -92,7 +93,7 @@ void main() {
   });
 
   group('Given runner with setLogLevel callback and registered command', () {
-    final runner = BetterCommandRunner(
+    final runner = BetterCommandRunner<OptionDefinition<Object>, void>(
       'test',
       'this is a test cli',
       setLogLevel: ({

@@ -6,7 +6,8 @@ import 'package:args/command_runner.dart';
 import 'package:config/config.dart';
 
 /// A function type for executing code before running a command.
-typedef OnBeforeRunCommand = Future<void> Function(BetterCommandRunner runner);
+typedef OnBeforeRunCommand<O extends OptionDefinition<Object>, T> = Future<void>
+    Function(BetterCommandRunner<O, T> runner);
 
 /// A proxy for user-provided functions for passing specific log messages.
 ///
@@ -54,7 +55,7 @@ typedef OnAnalyticsEvent = void Function(String event);
 /// The [BetterCommandRunner] class uses the config library to provide
 /// a more enhanced command line interface for running commands and handling
 /// command line arguments, environment variables, and configuration.
-class BetterCommandRunner<O extends OptionDefinition, T>
+class BetterCommandRunner<O extends OptionDefinition<Object>, T>
     extends CommandRunner<T> {
   /// Process exit code value for command not found -
   /// The specified command was not found or couldn't be located.
@@ -62,7 +63,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
 
   final MessageOutput? _messageOutput;
   final SetLogLevel? _setLogLevel;
-  final OnBeforeRunCommand? _onBeforeRunCommand;
+  final OnBeforeRunCommand<O, T>? _onBeforeRunCommand;
   OnAnalyticsEvent? _onAnalyticsEvent;
 
   /// The environment variables used for configuration resolution.
@@ -143,7 +144,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     final MessageOutput? messageOutput =
         const MessageOutput(usageLogger: print),
     final SetLogLevel? setLogLevel,
-    final OnBeforeRunCommand? onBeforeRunCommand,
+    final OnBeforeRunCommand<O, T>? onBeforeRunCommand,
     final OnAnalyticsEvent? onAnalyticsEvent,
     final int? wrapTextColumn,
     final List<O>? globalOptions,

@@ -2,11 +2,12 @@ import 'dart:async';
 
 import 'package:args/command_runner.dart';
 import 'package:cli_tools/better_command_runner.dart';
+import 'package:config/config.dart' show OptionDefinition;
 import 'package:test/test.dart';
 
 import '../test_utils/test_utils.dart' show flushEventQueue;
 
-class MockCommand extends Command {
+class MockCommand extends Command<void> {
   static String commandName = 'mock-command';
 
   @override
@@ -27,7 +28,7 @@ class MockCommand extends Command {
   }
 }
 
-class CompletableMockCommand extends Command {
+class CompletableMockCommand extends Command<void> {
   static String commandName = 'completable-mock-command';
 
   @override
@@ -53,9 +54,9 @@ class CompletableMockCommand extends Command {
 }
 
 void main() {
-  late BetterCommandRunner runner;
+  late BetterCommandRunner<OptionDefinition<Object>, void> runner;
   group('Given runner with null onAnalyticsEvent callback', () {
-    final runner = BetterCommandRunner(
+    final runner = BetterCommandRunner<OptionDefinition<Object>, void>(
       'test',
       'this is a test cli',
       onAnalyticsEvent: null,
@@ -75,7 +76,7 @@ void main() {
   });
 
   group('Given runner with onAnalyticsEvent callback defined', () {
-    final runner = BetterCommandRunner(
+    final runner = BetterCommandRunner<OptionDefinition<Object>, void>(
       'test',
       'this is a test cli',
       onAnalyticsEvent: (final event) {},
@@ -94,7 +95,7 @@ void main() {
   group('Given runner with analytics enabled', () {
     List<String> events = [];
     setUp(() {
-      runner = BetterCommandRunner(
+      runner = BetterCommandRunner<OptionDefinition<Object>, void>(
         'test',
         'this is a test cli',
         onAnalyticsEvent: (final event) => events.add(event),
@@ -207,7 +208,7 @@ void main() {
   group('Given runner with registered command and analytics enabled', () {
     List<String> events = [];
     setUp(() {
-      runner = BetterCommandRunner(
+      runner = BetterCommandRunner<OptionDefinition<Object>, void>(
         'test',
         'this is a test cli',
         onAnalyticsEvent: (final event) => events.add(event),
@@ -272,7 +273,7 @@ void main() {
     late CompletableMockCommand command;
     setUp(() {
       command = CompletableMockCommand();
-      runner = BetterCommandRunner(
+      runner = BetterCommandRunner<OptionDefinition<Object>, void>(
         'test',
         'this is a test cli',
         onAnalyticsEvent: (final event) => events.add(event),
