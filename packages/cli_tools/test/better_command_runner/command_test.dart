@@ -4,7 +4,7 @@ import 'package:args/command_runner.dart';
 import 'package:cli_tools/better_command_runner.dart';
 import 'package:test/test.dart';
 
-class MockCommand extends Command {
+class MockCommand extends Command<void> {
   void Function()? onRun;
   static String commandName = 'mock-command';
   List<String> trackedOptions = [];
@@ -16,7 +16,7 @@ class MockCommand extends Command {
   @override
   void run() {
     onRun?.call();
-    trackedOptions.add(argResults!['name']);
+    trackedOptions.add(argResults!['name'] as String);
     numberOfRuns++;
   }
 
@@ -43,7 +43,7 @@ void main() {
     });
 
     group('when running registered command with global flag', () {
-      var args = [
+      final args = [
         '--${BetterCommandRunnerFlags.quiet}',
         MockCommand.commandName,
       ];
@@ -55,7 +55,7 @@ void main() {
     });
 
     group('when running registered command without option', () {
-      var args = [MockCommand.commandName];
+      final args = [MockCommand.commandName];
       setUp(() async => await runner.run(args));
 
       test('then command is run once', () {
@@ -69,7 +69,7 @@ void main() {
     });
 
     group('when running registered command and valid option', () {
-      var args = [MockCommand.commandName, '--name', 'stockholm'];
+      final args = [MockCommand.commandName, '--name', 'stockholm'];
       setUp(() async => await runner.run(args));
 
       test('then command is run once', () {
@@ -85,7 +85,7 @@ void main() {
     test(
       'when running registered command with invalid option then command is never run.',
       () async {
-        var args = [MockCommand.commandName, '--name', 'invalid'];
+        final args = [MockCommand.commandName, '--name', 'invalid'];
 
         try {
           await runner.run(args);
@@ -100,15 +100,15 @@ void main() {
   test(
     'Given runner with registered command and onBeforeRunCommand callback then onBeforeRunCommand is called before running command',
     () async {
-      List<String> calls = [];
+      final List<String> calls = [];
       mockCommand = MockCommand(onRun: () => calls.add('command'));
       runner = BetterCommandRunner(
         'test',
         'this is a test cli',
-        onBeforeRunCommand: (_) => Future(() => calls.add('callback')),
+        onBeforeRunCommand: (final _) => Future(() => calls.add('callback')),
       )..addCommand(mockCommand);
 
-      var args = [MockCommand.commandName];
+      final args = [MockCommand.commandName];
 
       await runner.run(args);
       expect(calls, equals(['callback', 'command']));

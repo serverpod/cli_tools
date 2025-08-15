@@ -13,8 +13,8 @@ import 'package:config/config.dart';
 /// ```sh
 /// INTERVAL=1s dart run example/simple_command_example.dart show
 /// ```
-Future<int> main(List<String> args) async {
-  var commandRunner = BetterCommandRunner(
+Future<int> main(final List<String> args) async {
+  final commandRunner = BetterCommandRunner(
     'example',
     'Example CLI command',
   );
@@ -56,8 +56,8 @@ class ShowCommand extends BetterCommand<ShowOption, void> {
   String get description => 'Show the configured interval';
 
   @override
-  void runWithConfig(Configuration<ShowOption> commandConfig) {
-    var interval = commandConfig.value(ShowOption.interval);
+  void runWithConfig(final Configuration<ShowOption> commandConfig) {
+    final interval = commandConfig.value(ShowOption.interval);
     print('interval: $interval');
   }
 }

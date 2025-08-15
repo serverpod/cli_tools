@@ -68,7 +68,7 @@ class SpiceCommand extends BetterCommand {
   void run() {}
 
   @override
-  FutureOr? runWithConfig(Configuration<OptionDefinition> commandConfig) {
+  FutureOr? runWithConfig(final Configuration<OptionDefinition> commandConfig) {
     throw UnimplementedError();
   }
 }
@@ -88,7 +88,7 @@ class VegetableCommand extends BetterCommand {
   void run() {}
 
   @override
-  FutureOr? runWithConfig(Configuration<OptionDefinition> commandConfig) {
+  FutureOr? runWithConfig(final Configuration<OptionDefinition> commandConfig) {
     throw UnimplementedError();
   }
 }
@@ -98,11 +98,11 @@ void main() {
     late Map<String, String> output;
 
     setUpAll(() async {
-      var commandRunner =
+      final commandRunner =
           BetterCommandRunner('cookcli', 'A cli to create wonderful dishes.')
             ..addCommand(SpiceCommand())
             ..addCommand(VegetableCommand());
-      var generator = CommandDocumentationGenerator(commandRunner);
+      final generator = CommandDocumentationGenerator(commandRunner);
       output = generator.generateMarkdown();
     });
 
@@ -111,7 +111,7 @@ void main() {
     });
 
     test('then output starts with the main command', () async {
-      var vegetableCommandOutput = output['spice.md'];
+      final vegetableCommandOutput = output['spice.md'];
 
       expect(
         vegetableCommandOutput,
@@ -136,7 +136,7 @@ void main() {
     });
 
     test('then output ends with the sub commands', () async {
-      var vegetableCommandOutput = output['spice.md'];
+      final vegetableCommandOutput = output['spice.md'];
 
       expect(
         vegetableCommandOutput,

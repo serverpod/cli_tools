@@ -30,7 +30,7 @@ enum AnsiStyle {
 
   /// Wraps text with ansi escape code for style if stdout has terminal and
   /// supports ansi escapes.
-  String wrap(String text) {
+  String wrap(final String text) {
     if (!ansiSupported) {
       return text;
     }

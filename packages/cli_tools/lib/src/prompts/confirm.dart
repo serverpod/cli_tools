@@ -1,16 +1,16 @@
 import 'dart:io';
 
-import 'package:cli_tools/cli_tools.dart';
+import '../logger/logger.dart';
 
 /// Prompts the user to confirm an action.
 /// Returns `true` if the user confirms, `false` otherwise.
 /// If [defaultValue] is provided, the user can skip the prompt by pressing Enter.
 Future<bool> confirm(
-  String message, {
-  bool? defaultValue,
-  required Logger logger,
+  final String message, {
+  final bool? defaultValue,
+  required final Logger logger,
 }) async {
-  var prompt = defaultValue == null
+  final prompt = defaultValue == null
       ? '[y/n]'
       : defaultValue
           ? '[Y/n]'
@@ -23,7 +23,7 @@ Future<bool> confirm(
       newLine: false,
       newParagraph: false,
     );
-    var input = stdin.readLineSync()?.trim().toLowerCase();
+    final input = stdin.readLineSync()?.trim().toLowerCase();
 
     if (input == null || input.isEmpty) {
       if (defaultValue != null) {

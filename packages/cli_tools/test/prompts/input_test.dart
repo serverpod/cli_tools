@@ -7,7 +7,7 @@ import 'package:test/test.dart';
 import '../test_utils/io_helper.dart';
 
 void main() {
-  var logger = StdOutLogger(LogLevel.debug);
+  final logger = StdOutLogger(LogLevel.debug);
 
   test(
       'Given input prompt '
@@ -65,7 +65,7 @@ void main() {
       'Given input prompt '
       'when providing defult value '
       'then should display prompt with default value', () async {
-    var (:stdout, :stderr, :stdin) = await collectOutput(
+    final (:stdout, :stderr, :stdin) = await collectOutput(
       stdinLines: [''],
       () async {
         await input('Enter something', defaultValue: 'default', logger: logger);
@@ -79,7 +79,7 @@ void main() {
       'Given input prompt '
       'when providing no default value '
       'then should not display a default description', () async {
-    var (:stdout, :stderr, :stdin) = await collectOutput(
+    final (:stdout, :stderr, :stdin) = await collectOutput(
       stdinLines: ['value'],
       () async {
         await input('Enter something', logger: logger);

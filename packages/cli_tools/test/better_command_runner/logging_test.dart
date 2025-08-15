@@ -17,7 +17,7 @@ class MockCommand extends Command {
       // To make an option truly mandatory, you need to set mandatory to true.
       // and also define a callback.
       mandatory: true,
-      callback: (name) {},
+      callback: (final name) {},
       allowed: <String>['serverpod'],
     );
   }
@@ -28,14 +28,14 @@ class MockCommand extends Command {
 
 void main() {
   group('Given runner with registered command and logging monitor', () {
-    var errors = <String>[];
-    var infos = <String>[];
-    var runner = BetterCommandRunner(
+    final errors = <String>[];
+    final infos = <String>[];
+    final runner = BetterCommandRunner(
       'test',
       'this is a test cli',
       messageOutput: MessageOutput(
-        usageExceptionLogger: (e) => errors.add(e.toString()),
-        usageLogger: (u) => infos.add(u),
+        usageExceptionLogger: (final e) => errors.add(e.toString()),
+        usageLogger: (final u) => infos.add(u),
       ),
     )..addCommand(MockCommand());
     tearDown(() {

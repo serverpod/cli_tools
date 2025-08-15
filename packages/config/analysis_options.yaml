@@ -1,5 +1,13 @@
 include: package:serverpod_lints/cli.yaml
 
 analyzer:
+  language:
+    strict-raw-types: false
   errors:
-    unnecessary_final: false
+    inference_failure_on_instance_creation: ignore
+    inference_failure_on_function_invocation: ignore
+    inference_failure_on_untyped_parameter: ignore
+
+linter:
+  rules:
+    prefer_relative_imports: true

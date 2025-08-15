@@ -2,8 +2,8 @@ import 'package:cli_tools/src/prompts/prompts.dart';
 
 import 'package:test/test.dart';
 
-Matcher equalsOption(Option expected) => _EqualsOptionMatcher(expected);
-Matcher containsAllOptions(List<Option> expected) =>
+Matcher equalsOption(final Option expected) => _EqualsOptionMatcher(expected);
+Matcher containsAllOptions(final List<Option> expected) =>
     _EqualsAllOptionsMatcher(expected);
 
 class _EqualsAllOptionsMatcher extends Matcher {
@@ -12,7 +12,7 @@ class _EqualsAllOptionsMatcher extends Matcher {
   _EqualsAllOptionsMatcher(this._expected);
 
   @override
-  bool matches(dynamic item, Map matchState) {
+  bool matches(final dynamic item, final Map matchState) {
     if (item is! List<Option>) {
       return false;
     }
@@ -31,16 +31,16 @@ class _EqualsAllOptionsMatcher extends Matcher {
   }
 
   @override
-  Description describe(Description description) {
+  Description describe(final Description description) {
     return description.add('List of Options');
   }
 
   @override
   Description describeMismatch(
-    dynamic item,
-    Description mismatchDescription,
-    Map matchState,
-    bool verbose,
+    final dynamic item,
+    final Description mismatchDescription,
+    final Map matchState,
+    final bool verbose,
   ) {
     if (item is! List<Option>) {
       return mismatchDescription.add('is not a List of Options');
@@ -68,7 +68,7 @@ class _EqualsOptionMatcher extends Matcher {
   _EqualsOptionMatcher(this._expected);
 
   @override
-  bool matches(dynamic item, Map matchState) {
+  bool matches(final dynamic item, final Map matchState) {
     if (item is! Option) {
       return false;
     }
@@ -77,16 +77,16 @@ class _EqualsOptionMatcher extends Matcher {
   }
 
   @override
-  Description describe(Description description) {
+  Description describe(final Description description) {
     return description.add('Option with name "${_expected.name}"');
   }
 
   @override
   Description describeMismatch(
-    dynamic item,
-    Description mismatchDescription,
-    Map matchState,
-    bool verbose,
+    final dynamic item,
+    final Description mismatchDescription,
+    final Map matchState,
+    final bool verbose,
   ) {
     if (item is! Option) {
       return mismatchDescription.add('is not an Option');

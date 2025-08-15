@@ -38,7 +38,7 @@ class MockCommand extends BetterCommand {
   Future<void> run() async {}
 
   @override
-  FutureOr? runWithConfig(Configuration<OptionDefinition> commandConfig) {
+  FutureOr? runWithConfig(final Configuration<OptionDefinition> commandConfig) {
     throw UnimplementedError();
   }
 }
@@ -47,19 +47,19 @@ void main() {
   group(
       'Given a better command registered in the better command runner '
       'with analytics set up and default global options', () {
-    var infos = <String>[];
-    var analyticsEvents = <String>[];
-    var messageOutput = MessageOutput(
-      usageLogger: (u) => infos.add(u),
+    final infos = <String>[];
+    final analyticsEvents = <String>[];
+    final messageOutput = MessageOutput(
+      usageLogger: (final u) => infos.add(u),
     );
 
-    var betterCommand = MockCommand(
+    final betterCommand = MockCommand(
       messageOutput: messageOutput,
     );
-    var runner = BetterCommandRunner(
+    final runner = BetterCommandRunner(
       'test',
       'test project',
-      onAnalyticsEvent: (e) => analyticsEvents.add(e),
+      onAnalyticsEvent: (final e) => analyticsEvents.add(e),
       messageOutput: messageOutput,
     )..addCommand(betterCommand);
 
@@ -125,7 +125,7 @@ void main() {
     test(
         'when running with invalid subcommand '
         'then invalid command analytics is sent', () async {
-      await runner.run(['no-such-command']).catchError((_) {});
+      await runner.run(['no-such-command']).catchError((final _) {});
 
       await Future.delayed(const Duration(milliseconds: 100));
       expect(analyticsEvents, hasLength(1));
@@ -146,19 +146,19 @@ void main() {
   group(
       'Given a better command registered in the better command runner '
       'with analytics set up and empty global options', () {
-    var infos = <String>[];
-    var analyticsEvents = <String>[];
-    var messageOutput = MessageOutput(
-      usageLogger: (u) => infos.add(u),
+    final infos = <String>[];
+    final analyticsEvents = <String>[];
+    final messageOutput = MessageOutput(
+      usageLogger: (final u) => infos.add(u),
     );
 
-    var betterCommand = MockCommand(
+    final betterCommand = MockCommand(
       messageOutput: messageOutput,
     );
-    var runner = BetterCommandRunner(
+    final runner = BetterCommandRunner(
       'test',
       'test project',
-      onAnalyticsEvent: (e) => analyticsEvents.add(e),
+      onAnalyticsEvent: (final e) => analyticsEvents.add(e),
       globalOptions: <OptionDefinition>[],
       messageOutput: messageOutput,
     )..addCommand(betterCommand);
@@ -197,15 +197,15 @@ void main() {
   group(
       'Given a better command registered in the better command runner '
       'without analytics set up and default global options', () {
-    var infos = <String>[];
-    var messageOutput = MessageOutput(
-      usageLogger: (u) => infos.add(u),
+    final infos = <String>[];
+    final messageOutput = MessageOutput(
+      usageLogger: (final u) => infos.add(u),
     );
 
-    var betterCommand = MockCommand(
+    final betterCommand = MockCommand(
       messageOutput: messageOutput,
     );
-    var runner = BetterCommandRunner(
+    final runner = BetterCommandRunner(
       'test',
       'test project',
       messageOutput: messageOutput,
@@ -246,15 +246,15 @@ void main() {
   group(
       'Given a better command registered in the better command runner '
       'with additional global options', () {
-    var infos = <String>[];
-    var messageOutput = MessageOutput(
-      usageLogger: (u) => infos.add(u),
+    final infos = <String>[];
+    final messageOutput = MessageOutput(
+      usageLogger: (final u) => infos.add(u),
     );
 
-    var betterCommand = MockCommand(
+    final betterCommand = MockCommand(
       messageOutput: messageOutput,
     );
-    var runner = BetterCommandRunner(
+    final runner = BetterCommandRunner(
       'test',
       'test project',
       globalOptions: BespokeGlobalOption.values,

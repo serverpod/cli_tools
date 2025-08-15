@@ -22,13 +22,13 @@ final class MessageOutput {
 
   /// Logs a usage exception.
   /// If the function has not been provided then nothing will happen.
-  void logUsageException(UsageException exception) {
+  void logUsageException(final UsageException exception) {
     usageExceptionLogger?.call(exception);
   }
 
   /// Logs a usage message.
   /// If the function has not been provided then nothing will happen.
-  void logUsage(String usage) {
+  void logUsage(final String usage) {
     usageLogger?.call(usage);
   }
 }
@@ -84,7 +84,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
 
   /// Sets the global configuration, by default called by [parse].
   /// It must be set before [runCommand] is called.
-  set globalConfiguration(Configuration<O> configuration) {
+  set globalConfiguration(final Configuration<O> configuration) {
     _globalConfiguration = configuration;
   }
 
@@ -140,13 +140,14 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     super.executableName,
     super.description, {
     super.suggestionDistanceLimit,
-    MessageOutput? messageOutput = const MessageOutput(usageLogger: print),
-    SetLogLevel? setLogLevel,
-    OnBeforeRunCommand? onBeforeRunCommand,
-    OnAnalyticsEvent? onAnalyticsEvent,
-    int? wrapTextColumn,
-    List<O>? globalOptions,
-    Map<String, String>? env,
+    final MessageOutput? messageOutput =
+        const MessageOutput(usageLogger: print),
+    final SetLogLevel? setLogLevel,
+    final OnBeforeRunCommand? onBeforeRunCommand,
+    final OnAnalyticsEvent? onAnalyticsEvent,
+    final int? wrapTextColumn,
+    final List<O>? globalOptions,
+    final Map<String, String>? env,
   })  : _messageOutput = messageOutput,
         _setLogLevel = setLogLevel,
         _onBeforeRunCommand = onBeforeRunCommand,
@@ -176,8 +177,8 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   MessageOutput? get messageOutput => _messageOutput;
 
   /// Adds a list of commands to the command runner.
-  void addCommands(List<Command<T>> commands) {
-    for (var command in commands) {
+  void addCommands(final List<Command<T>> commands) {
+    for (final command in commands) {
       addCommand(command);
     }
   }
@@ -195,9 +196,9 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   /// If this method is overridden, the overriding method must ensure that
   /// the global configuration is set, see [globalConfiguration].
   @override
-  Future<T?> run(Iterable<String> args) {
+  Future<T?> run(final Iterable<String> args) {
     return Future.sync(() {
-      var argResults = parse(args);
+      final argResults = parse(args);
       globalConfiguration = resolveConfiguration(argResults);
 
       try {
@@ -219,7 +220,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
 
   /// Parses the command line arguments and returns the result.
   @override
-  ArgResults parse(Iterable<String> args) {
+  ArgResults parse(final Iterable<String> args) {
     try {
       return super.parse(args);
     } on UsageException catch (e) {
@@ -247,7 +248,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   ///
   /// This returns the return value of [Command.run].
   @override
-  Future<T?> runCommand(ArgResults topLevelResults) async {
+  Future<T?> runCommand(final ArgResults topLevelResults) async {
     _setLogLevel?.call(
       parsedLogLevel: _determineLogLevel(globalConfiguration),
       commandName: topLevelResults.command?.name,
@@ -261,7 +262,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
 
     unawaited(
       Future(() async {
-        var command = topLevelResults.command;
+        final command = topLevelResults.command;
         if (command != null) {
           // Command name can only be null for top level results.
           // But since we are taking the name of a command from the top level
@@ -280,7 +281,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
         // commands that are invalid.
         // Note that there are other scenarios that also trigger a [UsageException]
         // so the try/catch statement can't be fully compensated for handled here.
-        var noUnexpectedArgs = topLevelResults.rest.isEmpty;
+        final noUnexpectedArgs = topLevelResults.rest.isEmpty;
         if (noUnexpectedArgs) {
           _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.help);
         }
@@ -302,7 +303,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   ///
   /// This method can be overridden to change the configuration resolution
   /// behavior.
-  Configuration<O> resolveConfiguration(ArgResults? argResults) {
+  Configuration<O> resolveConfiguration(final ArgResults? argResults) {
     return Configuration.resolveNoExcept(
       options: _globalOptions,
       argResults: argResults,
@@ -311,7 +312,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     );
   }
 
-  static CommandRunnerLogLevel _determineLogLevel(Configuration config) {
+  static CommandRunnerLogLevel _determineLogLevel(final Configuration config) {
     if (config.findValueOf(argName: BetterCommandRunnerFlags.verbose) == true) {
       return CommandRunnerLogLevel.verbose;
     } else if (config.findValueOf(argName: BetterCommandRunnerFlags.quiet) ==

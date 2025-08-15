@@ -1,9 +1,10 @@
 import 'dart:async';
 
-import 'package:cli_tools/src/package_version/pub_api_client_exceptions.dart';
 import 'package:http/http.dart' as http;
 import 'package:pub_api_client/pub_api_client.dart';
 import 'package:pub_semver/pub_semver.dart';
+
+import 'pub_api_client_exceptions.dart';
 
 /// A client for the pub.dev API.
 class PubApiClient {
@@ -11,8 +12,8 @@ class PubApiClient {
   final Duration _requestTimeout;
 
   PubApiClient({
-    http.Client? httpClient,
-    requestTimeout = const Duration(seconds: 2),
+    final http.Client? httpClient,
+    final Duration requestTimeout = const Duration(seconds: 2),
   })  : _pubClient = PubClient(client: httpClient),
         _requestTimeout = requestTimeout;
 
@@ -24,10 +25,10 @@ class PubApiClient {
   ///
   /// Throws a [VersionFetchException] if the request fails.
   /// Throws a [VersionParseException] if the version can not be parsed.
-  Future<Version?> tryFetchLatestStableVersion(String packageName) async {
+  Future<Version?> tryFetchLatestStableVersion(final String packageName) async {
     String? latestStableVersion;
     try {
-      var packageVersions = await _pubClient
+      final packageVersions = await _pubClient
           .packageVersions(packageName)
           .timeout(_requestTimeout);
       latestStableVersion = _tryGetLatestStableVersion(packageVersions);
@@ -53,8 +54,8 @@ class PubApiClient {
     }
   }
 
-  String? _tryGetLatestStableVersion(List<String> packageVersions) {
-    for (var version in packageVersions) {
+  String? _tryGetLatestStableVersion(final List<String> packageVersions) {
+    for (final version in packageVersions) {
       if (!version.contains('-') && !version.contains('+')) {
         return version;
       }
@@ -65,7 +66,7 @@ class PubApiClient {
 
   /// Required because of an issue with the pub_api_client package.
   /// Issue: https://github.com/leoafarias/pub_api_client/issues/35
-  String _formatPubClientException(Object exception) {
+  String _formatPubClientException(final Object exception) {
     try {
       return exception.toString();
     } catch (_) {

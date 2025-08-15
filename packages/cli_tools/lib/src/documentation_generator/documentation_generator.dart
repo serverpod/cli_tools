@@ -6,12 +6,12 @@ class CommandDocumentationGenerator {
   CommandDocumentationGenerator(this.commandRunner);
 
   Map<String, String> generateMarkdown() {
-    var commands = commandRunner.commands.values;
+    final commands = commandRunner.commands.values;
 
-    var files = <String, String>{};
+    final files = <String, String>{};
 
-    for (var command in commands) {
-      StringBuffer markdown = StringBuffer();
+    for (final command in commands) {
+      final StringBuffer markdown = StringBuffer();
       markdown.writeln('## Usage\n');
 
       if (command.argParser.options.isNotEmpty) {
@@ -21,9 +21,9 @@ class CommandDocumentationGenerator {
       }
 
       if (command.subcommands.isNotEmpty) {
-        var numberOfSubcommands = command.subcommands.length;
+        final numberOfSubcommands = command.subcommands.length;
         markdown.writeln('### Sub commands\n');
-        for (var (i, subcommand) in command.subcommands.entries.indexed) {
+        for (final (i, subcommand) in command.subcommands.entries.indexed) {
           markdown.writeln('#### `${subcommand.key}`\n');
           markdown.writeln('```console');
           markdown.writeln(subcommand.value.usage);

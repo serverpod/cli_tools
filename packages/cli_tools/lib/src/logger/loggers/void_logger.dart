@@ -1,4 +1,4 @@
-import 'package:cli_tools/src/logger/logger.dart';
+import '../logger.dart';
 
 /// Logger that logs no output.
 ///
@@ -11,39 +11,39 @@ class VoidLogger extends Logger {
 
   @override
   void debug(
-    String message, {
-    bool newParagraph = false,
-    LogType type = const RawLogType(),
+    final String message, {
+    final bool newParagraph = false,
+    final LogType type = const RawLogType(),
   }) {}
 
   @override
   void info(
-    String message, {
-    bool newParagraph = false,
-    LogType type = const RawLogType(),
+    final String message, {
+    final bool newParagraph = false,
+    final LogType type = const RawLogType(),
   }) {}
 
   @override
   void warning(
-    String message, {
-    bool newParagraph = false,
-    LogType type = const RawLogType(),
+    final String message, {
+    final bool newParagraph = false,
+    final LogType type = const RawLogType(),
   }) {}
 
   @override
   void error(
-    String message, {
-    bool newParagraph = false,
-    StackTrace? stackTrace,
-    LogType type = const RawLogType(),
+    final String message, {
+    final bool newParagraph = false,
+    final StackTrace? stackTrace,
+    final LogType type = const RawLogType(),
   }) {}
 
   @override
   void log(
-    String message,
-    LogLevel level, {
-    bool newParagraph = false,
-    LogType type = const RawLogType(),
+    final String message,
+    final LogLevel level, {
+    final bool newParagraph = false,
+    final LogType type = const RawLogType(),
   }) {}
 
   @override
@@ -53,18 +53,18 @@ class VoidLogger extends Logger {
 
   @override
   Future<bool> progress(
-    String message,
-    Future<bool> Function() runner, {
-    bool newParagraph = true,
+    final String message,
+    final Future<bool> Function() runner, {
+    final bool newParagraph = true,
   }) async {
     return await runner();
   }
 
   @override
   void write(
-    String message,
-    LogLevel logLevel, {
-    bool newParagraph = false,
-    bool newLine = true,
+    final String message,
+    final LogLevel logLevel, {
+    final bool newParagraph = false,
+    final bool newLine = true,
   }) {}
 }

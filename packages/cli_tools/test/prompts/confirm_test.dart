@@ -7,7 +7,7 @@ import 'package:test/test.dart';
 import '../test_utils/io_helper.dart';
 
 void main() {
-  var logger = StdOutLogger(LogLevel.debug);
+  final logger = StdOutLogger(LogLevel.debug);
 
   test(
       'Given confirm prompt '
@@ -86,7 +86,7 @@ void main() {
       'when providing invalid input "invalid" and then valid input "yes" '
       'then should prompt again and return true', () async {
     late Future<bool> result;
-    var (:stdout, :stderr, :stdin) = await collectOutput(
+    final (:stdout, :stderr, :stdin) = await collectOutput(
       stdinLines: ['invalid', 'yes'],
       () {
         result = confirm('Are you sure?', logger: logger);
@@ -136,7 +136,7 @@ void main() {
       'when providing empty input and then "yes" without default value '
       'then should prompt again and return true', () async {
     late Future<bool> result;
-    var (:stdout, :stderr, :stdin) = await collectOutput(
+    final (:stdout, :stderr, :stdin) = await collectOutput(
       stdinLines: ['  ', 'yes'],
       () {
         result = confirm('Are you sure?', logger: logger);
@@ -157,7 +157,7 @@ void main() {
       'Given confirm prompt '
       'when providing no default value '
       'then should prompt with lowercase "y" and "n"', () async {
-    var (:stdout, :stderr, :stdin) = await collectOutput(
+    final (:stdout, :stderr, :stdin) = await collectOutput(
       stdinLines: ['yes'],
       () async {
         await confirm('Are you sure?', logger: logger);
@@ -171,7 +171,7 @@ void main() {
       'Given confirm prompt '
       'when providing default value true '
       'then should prompt with uppercase "Y" and lowercase "n"', () async {
-    var (:stdout, :stderr, :stdin) = await collectOutput(
+    final (:stdout, :stderr, :stdin) = await collectOutput(
       stdinLines: ['yes'],
       () async {
         await confirm('Are you sure?', defaultValue: true, logger: logger);
@@ -185,7 +185,7 @@ void main() {
       'Given confirm prompt '
       'when providing default value false '
       'then should prompt with lowercase "y" and uppercase "N"', () async {
-    var (:stdout, :stderr, :stdin) = await collectOutput(
+    final (:stdout, :stderr, :stdin) = await collectOutput(
       stdinLines: ['yes'],
       () async {
         await confirm('Are you sure?', defaultValue: false, logger: logger);

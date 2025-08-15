@@ -1,8 +1,7 @@
+import 'package:config/config.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
-
-import 'package:config/config.dart';
 
 void main() async {
   group('Given a DirOption', () {

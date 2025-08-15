@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:cli_tools/cli_tools.dart';
-
+import '../../better_command_runner.dart' show ExitException;
+import '../logger/logger.dart';
 import 'key_codes.dart';
 
 /// Object that represents an option in a select prompt.
@@ -15,9 +15,9 @@ class Option {
 
 /// Prompts the user to select an option from a list of [options].
 Future<Option> select(
-  String prompt, {
-  required List<Option> options,
-  required Logger logger,
+  final String prompt, {
+  required final List<Option> options,
+  required final Logger logger,
 }) async {
   return (await _interactiveSelect(
     prompt,
@@ -30,9 +30,9 @@ Future<Option> select(
 /// Prompts the user to select multiple options from a list of [options].
 /// If no options are selected the returned list will be empty.
 Future<List<Option>> multiselect(
-  String prompt, {
-  required List<Option> options,
-  required Logger logger,
+  final String prompt, {
+  required final List<Option> options,
+  required final Logger logger,
 }) {
   return _interactiveSelect(
     prompt,
@@ -43,10 +43,10 @@ Future<List<Option>> multiselect(
 }
 
 Future<List<Option>> _interactiveSelect(
-  String message, {
-  required List<Option> options,
-  required Logger logger,
-  bool multiple = false,
+  final String message, {
+  required final List<Option> options,
+  required final Logger logger,
+  final bool multiple = false,
 }) async {
   if (options.isEmpty) {
     throw ArgumentError('Options cannot be empty.');
@@ -61,22 +61,22 @@ Future<List<Option>> _interactiveSelect(
 
   _renderState(state: state, logger: logger, promptMessage: message);
 
-  var originalEchoMode = stdin.echoMode;
-  var originalLineMode = stdin.lineMode;
+  final originalEchoMode = stdin.echoMode;
+  final originalLineMode = stdin.lineMode;
   stdin.echoMode = false;
   stdin.lineMode = false;
 
   try {
     while (true) {
-      var keyCode = stdin.readByteSync();
+      final keyCode = stdin.readByteSync();
 
-      var confirmSelection =
+      final confirmSelection =
           keyCode == KeyCodes.enterCR || keyCode == KeyCodes.enterLF;
       if (confirmSelection) {
         return state.toList();
       }
 
-      var quit = keyCode == KeyCodes.q;
+      final quit = keyCode == KeyCodes.q;
       if (quit) {
         throw ExitException.error();
       }
@@ -105,17 +105,17 @@ Future<List<Option>> _interactiveSelect(
 }
 
 void _renderState({
-  required _SelectState state,
-  required Logger logger,
-  required String promptMessage,
+  required final _SelectState state,
+  required final Logger logger,
+  required final String promptMessage,
 }) {
   _clearTerminal();
 
   logger.write(promptMessage, LogLevel.info, newLine: true);
 
   for (int i = 0; i < state.options.length; i++) {
-    var radioButton = state.currentOrContains(i) ? '(●)' : '(○)';
-    var optionText = '$radioButton ${state.options[i].name}';
+    final radioButton = state.currentOrContains(i) ? '(●)' : '(○)';
+    final optionText = '$radioButton ${state.options[i].name}';
 
     logger.write(
       i == state.selectedIndex ? underline(optionText) : optionText,
@@ -175,13 +175,13 @@ class _SelectState {
     );
   }
 
-  bool currentOrContains(int index) {
+  bool currentOrContains(final int index) {
     return multiple ? selectedOptions.contains(index) : selectedIndex == index;
   }
 
   List<Option> toList() {
     return multiple
-        ? selectedOptions.map((index) => options[index]).toList()
+        ? selectedOptions.map((final index) => options[index]).toList()
         : [options[selectedIndex]];
   }
 }
@@ -208,7 +208,7 @@ void _clearTerminal() {
 // See https://en.wikipedia.org/wiki/ANSI_escape_code for further info.
 const _underlineSelectGraphicRenditionControlSequence = '\x1B[4m';
 const _resetSelectGraphicRenditionControlSequence = '\x1B[0m';
-String underline(String text) => [
+String underline(final String text) => [
       _underlineSelectGraphicRenditionControlSequence,
       text,
       _resetSelectGraphicRenditionControlSequence,
