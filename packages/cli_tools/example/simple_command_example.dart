@@ -29,7 +29,7 @@ Future<int> main(final List<String> args) async {
   return 0;
 }
 
-enum ShowOption<V> implements OptionDefinition<V> {
+enum ShowOption<V extends Object> implements OptionDefinition<V> {
   interval(DurationOption(
     argName: 'interval',
     argAbbrev: 'i',

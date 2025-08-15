@@ -360,7 +360,7 @@ abstract class BetterCommandRunnerFlags {
   );
 }
 
-enum StandardGlobalOption<V> implements OptionDefinition<V> {
+enum StandardGlobalOption<V extends Object> implements OptionDefinition<V> {
   quiet(BetterCommandRunnerFlags.quietOption),
   verbose(BetterCommandRunnerFlags.verboseOption),
   analytics(BetterCommandRunnerFlags.analyticsOption);
