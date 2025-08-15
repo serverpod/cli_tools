@@ -41,7 +41,7 @@ int main(final List<String> args) {
 ///
 /// The enum approach is more distinct and type safe.
 /// The list approach is more dynamic and permits non-const initialization.
-enum TimeSeriesOption<V> implements OptionDefinition<V> {
+enum TimeSeriesOption<V extends Object> implements OptionDefinition<V> {
   until(DateTimeOption(
     argName: 'until',
     envName: 'SERIES_UNTIL', // can also be specified as environment variable

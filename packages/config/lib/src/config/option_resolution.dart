@@ -1,6 +1,6 @@
 import 'source_type.dart';
 
-final class OptionResolution<V> {
+final class OptionResolution<V extends Object> {
   final String? stringValue;
   final V? value;
   final String? error;
