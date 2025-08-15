@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_escaping_inner_quotes, prefer_final_locals, prefer_final_in_for_each, prefer_final_parameters
+// ignore_for_file: avoid_escaping_inner_quotes, prefer_final_locals, prefer_final_in_for_each, prefer_final_parameters, strict_raw_type
 
 @Skip('CommandRunner not supported')
 library;

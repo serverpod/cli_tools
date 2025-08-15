@@ -19,7 +19,7 @@ import 'source_type.dart';
 /// The typical usage pattern is to use an enum with the options
 /// and implement this interface like so:
 /// ```dart
-/// enum MyAppOption<V> implements OptionDefinition<V> {
+/// enum MyAppOption<V extends Object> implements OptionDefinition<V> {
 ///   username(StringOption(
 ///     argName: 'username',
 ///     envName: 'USERNAME',
@@ -34,7 +34,7 @@ import 'source_type.dart';
 ///
 /// See [ConfigOptionBase] for more information on options,
 /// and [Configuration] on how to initialize the configuration.
-abstract interface class OptionDefinition<V> {
+abstract interface class OptionDefinition<V extends Object> {
   ConfigOptionBase<V> get option;
 }
 
@@ -162,7 +162,7 @@ abstract class ValueParser<V> {
 /// The typical usage pattern is to use an enum with the options
 /// and instantiate subclasses of [ConfigOptionBase] like so:
 /// ```dart
-/// enum MyAppOption<V> implements OptionDefinition<V> {
+/// enum MyAppOption<V extends Object> implements OptionDefinition<V> {
 ///   username(StringOption(
 ///     argName: 'username',
 ///     envName: 'USERNAME',
@@ -176,7 +176,8 @@ abstract class ValueParser<V> {
 /// ```
 ///
 /// See [Configuration] on how to initialize the configuration.
-abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
+abstract class ConfigOptionBase<V extends Object>
+    implements OptionDefinition<V> {
   final ValueParser<V> valueParser;
 
   final String? argName;
@@ -449,7 +450,7 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
     }
     if (value is V) {
       return OptionResolution(
-        value: value as V,
+        value: value,
         source: ValueSourceType.config,
       );
     }
