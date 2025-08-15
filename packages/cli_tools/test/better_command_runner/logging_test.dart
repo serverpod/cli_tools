@@ -1,8 +1,9 @@
 import 'package:args/command_runner.dart';
 import 'package:cli_tools/better_command_runner.dart';
+import 'package:config/config.dart' show OptionDefinition;
 import 'package:test/test.dart';
 
-class MockCommand extends Command {
+class MockCommand extends Command<void> {
   static String commandName = 'mock-command';
 
   @override
@@ -30,7 +31,7 @@ void main() {
   group('Given runner with registered command and logging monitor', () {
     final errors = <String>[];
     final infos = <String>[];
-    final runner = BetterCommandRunner(
+    final runner = BetterCommandRunner<OptionDefinition<Object>, void>(
       'test',
       'this is a test cli',
       messageOutput: MessageOutput(

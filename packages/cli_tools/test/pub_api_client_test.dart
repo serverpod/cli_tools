@@ -14,7 +14,7 @@ MockClient createMockClient({
   return MockClient((final request) {
     if (request.method != 'GET') throw NoSuchMethodError;
     return Future<http.Response>(() async {
-      await Future.delayed(responseDelay);
+      await Future<void>.delayed(responseDelay);
       return http.Response(body, status);
     });
   });

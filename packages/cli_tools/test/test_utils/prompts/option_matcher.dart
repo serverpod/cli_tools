@@ -12,7 +12,7 @@ class _EqualsAllOptionsMatcher extends Matcher {
   _EqualsAllOptionsMatcher(this._expected);
 
   @override
-  bool matches(final dynamic item, final Map matchState) {
+  bool matches(final dynamic item, final Map<dynamic, dynamic> matchState) {
     if (item is! List<Option>) {
       return false;
     }
@@ -39,7 +39,7 @@ class _EqualsAllOptionsMatcher extends Matcher {
   Description describeMismatch(
     final dynamic item,
     final Description mismatchDescription,
-    final Map matchState,
+    final Map<dynamic, dynamic> matchState,
     final bool verbose,
   ) {
     if (item is! List<Option>) {
@@ -68,7 +68,7 @@ class _EqualsOptionMatcher extends Matcher {
   _EqualsOptionMatcher(this._expected);
 
   @override
-  bool matches(final dynamic item, final Map matchState) {
+  bool matches(final dynamic item, final Map<dynamic, dynamic> matchState) {
     if (item is! Option) {
       return false;
     }
@@ -85,7 +85,7 @@ class _EqualsOptionMatcher extends Matcher {
   Description describeMismatch(
     final dynamic item,
     final Description mismatchDescription,
-    final Map matchState,
+    final Map<dynamic, dynamic> matchState,
     final bool verbose,
   ) {
     if (item is! Option) {
