@@ -1,15 +1,15 @@
 import 'dart:io';
 
-import 'package:cli_tools/cli_tools.dart';
+import '../logger/logger.dart';
 
 /// Prompts the user for input.
 /// If [defaultValue] is provided, the user can skip the prompt by pressing Enter.
 Future<String> input(
-  String message, {
-  String? defaultValue,
-  required Logger logger,
+  final String message, {
+  final String? defaultValue,
+  required final Logger logger,
 }) async {
-  var defaultDescription = defaultValue == null ? '' : ' ($defaultValue)';
+  final defaultDescription = defaultValue == null ? '' : ' ($defaultValue)';
 
   logger.write(
     '$message$defaultDescription: ',
@@ -17,8 +17,8 @@ Future<String> input(
     newLine: false,
     newParagraph: false,
   );
-  var input = stdin.readLineSync()?.trim();
-  var missingInput = input == null || input.isEmpty;
+  final input = stdin.readLineSync()?.trim();
+  final missingInput = input == null || input.isEmpty;
   if (missingInput) {
     return defaultValue ?? '';
   }

@@ -21,3 +21,13 @@ reporting.
 ## Contributing Guidelines
 
 To contribute to cli_tools, see the [contribution guidelines](CONTRIBUTING.md).
+
+### Development workflow
+
+This repo uses [melos](https://melos.invertase.dev/) to aid in development,
+test, and publishing.
+
+After cloning the repo, run `melos bootstrap` (or `melos bs`) to initialize it
+(this will also run `dart pub get`).
+
+Run `melos test` to run all the tests.

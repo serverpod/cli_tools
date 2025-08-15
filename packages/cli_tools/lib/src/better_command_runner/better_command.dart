@@ -57,10 +57,10 @@ abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
   /// }
   /// ```
   BetterCommand({
-    MessageOutput? messageOutput = _defaultMessageOutput,
-    int? wrapTextColumn,
+    final MessageOutput? messageOutput = _defaultMessageOutput,
+    final int? wrapTextColumn,
     this.options = const [],
-    Map<String, String>? env,
+    final Map<String, String>? env,
   })  : _messageOutput = messageOutput,
         _argParser = ArgParser(usageLineLength: wrapTextColumn),
         envVariables = env ?? Platform.environment {
@@ -71,7 +71,7 @@ abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
     if (_messageOutput != _defaultMessageOutput) {
       return _messageOutput;
     }
-    if (runner case BetterCommandRunner<O, T> runner) {
+    if (runner case final BetterCommandRunner<O, T> runner) {
       return runner.messageOutput;
     }
     return _messageOutput;
@@ -120,7 +120,7 @@ abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
   ///
   /// This method can be overridden to change the configuration resolution
   /// behavior.
-  Configuration<O> resolveConfiguration(ArgResults? argResults) {
+  Configuration<O> resolveConfiguration(final ArgResults? argResults) {
     return Configuration.resolveNoExcept(
       options: options,
       argResults: argResults,

@@ -8,12 +8,12 @@ import 'test_utils/io_helper.dart';
 
 void main() {
   group('Given a StdOutLogger with default settings', () {
-    var logger = StdOutLogger(LogLevel.debug);
+    final logger = StdOutLogger(LogLevel.debug);
 
     test(
         'when logging debug message '
         'then log output is written to stdout and correct', () async {
-      var (:stdout, :stderr, :stdin) = await collectOutput(
+      final (:stdout, :stderr, :stdin) = await collectOutput(
         () => logger.debug('debug message'),
       );
       expect(stdout.output, 'DEBUG: debug message\n');
@@ -23,7 +23,7 @@ void main() {
     test(
         'when logging info message '
         'then log output is written to stdout and correct', () async {
-      var (:stdout, :stderr, :stdin) = await collectOutput(
+      final (:stdout, :stderr, :stdin) = await collectOutput(
         () => logger.info('info message'),
       );
       expect(stdout.output, 'info message\n');
@@ -33,7 +33,7 @@ void main() {
     test(
         'when logging warning message '
         'then log output is written to stdout and correct', () async {
-      var (:stdout, :stderr, :stdin) = await collectOutput(
+      final (:stdout, :stderr, :stdin) = await collectOutput(
         () => logger.warning('warning message'),
       );
       expect(stdout.output, 'WARNING: warning message\n');
@@ -43,7 +43,7 @@ void main() {
     test(
         'when logging error message via log method'
         'then log output is written to stdout and correct', () async {
-      var (:stdout, :stderr, :stdin) = await collectOutput(
+      final (:stdout, :stderr, :stdin) = await collectOutput(
         () => logger.log('error message', LogLevel.error),
       );
       expect(stdout.output, 'ERROR: error message\n');
@@ -53,7 +53,7 @@ void main() {
     test(
         'when logging debug message via log method'
         'then log output is written to stdout and correct', () async {
-      var (:stdout, :stderr, :stdin) = await collectOutput(
+      final (:stdout, :stderr, :stdin) = await collectOutput(
         () => logger.log('debug message', LogLevel.debug),
       );
       expect(stdout.output, 'DEBUG: debug message\n');
@@ -63,7 +63,7 @@ void main() {
     test(
         'when logging info message via log method'
         'then log output is written to stdout and correct', () async {
-      var (:stdout, :stderr, :stdin) = await collectOutput(
+      final (:stdout, :stderr, :stdin) = await collectOutput(
         () => logger.log('info message', LogLevel.info),
       );
       expect(stdout.output, 'info message\n');
@@ -73,7 +73,7 @@ void main() {
     test(
         'when logging warning message via log method'
         'then log output is written to stdout and correct', () async {
-      var (:stdout, :stderr, :stdin) = await collectOutput(
+      final (:stdout, :stderr, :stdin) = await collectOutput(
         () => logger.log('warning message', LogLevel.warning),
       );
       expect(stdout.output, 'WARNING: warning message\n');
@@ -83,7 +83,7 @@ void main() {
     test(
         'when logging error message '
         'then log output is written to stdout and correct', () async {
-      var (:stdout, :stderr, :stdin) = await collectOutput(
+      final (:stdout, :stderr, :stdin) = await collectOutput(
         () => logger.error('error message'),
       );
       expect(stdout.output, 'ERROR: error message\n');
@@ -92,7 +92,7 @@ void main() {
   });
 
   group('Given a StdOutLogger with warning log-to-stderr threshold', () {
-    var logger = StdOutLogger(
+    final logger = StdOutLogger(
       LogLevel.debug,
       logToStderrLevelThreshold: LogLevel.warning,
     );
@@ -100,7 +100,7 @@ void main() {
     test(
         'when logging debug message '
         'then log output is written to stdout and correct', () async {
-      var (:stdout, :stderr, :stdin) = await collectOutput(
+      final (:stdout, :stderr, :stdin) = await collectOutput(
         () => logger.debug('debug message'),
       );
       expect(stdout.output, 'DEBUG: debug message\n');
@@ -110,7 +110,7 @@ void main() {
     test(
         'when logging info message '
         'then log output is written to stdout and correct', () async {
-      var (:stdout, :stderr, :stdin) = await collectOutput(
+      final (:stdout, :stderr, :stdin) = await collectOutput(
         () => logger.info('info message'),
       );
       expect(stdout.output, 'info message\n');
@@ -120,7 +120,7 @@ void main() {
     test(
         'when logging warning message '
         'then log output is written to stderr and correct', () async {
-      var (:stdout, :stderr, :stdin) = await collectOutput(
+      final (:stdout, :stderr, :stdin) = await collectOutput(
         () => logger.warning('warning message'),
       );
       expect(stdout.output, '');
@@ -130,7 +130,7 @@ void main() {
     test(
         'when logging error message '
         'then log output is written to stderr and correct', () async {
-      var (:stdout, :stderr, :stdin) = await collectOutput(
+      final (:stdout, :stderr, :stdin) = await collectOutput(
         () => logger.error('error message'),
       );
       expect(stdout.output, '');

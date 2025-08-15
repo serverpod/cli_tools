@@ -13,36 +13,39 @@ abstract class Logger {
   /// Display debug [message] to the user.
   /// Commands should use this for information that is important for
   /// debugging purposes.
-  void debug(String message, {bool newParagraph, LogType type});
+  void debug(final String message,
+      {final bool newParagraph, final LogType type});
 
   /// Display a normal [message] to the user.
   /// Command should use this as the standard communication channel for
   /// success, progress or information messages.
-  void info(String message, {bool newParagraph, LogType type});
+  void info(final String message,
+      {final bool newParagraph, final LogType type});
 
   /// Display a warning [message] to the user.
   /// Commands should use this if they have important but not critical
   /// information for the user.
-  void warning(String message, {bool newParagraph, LogType type});
+  void warning(final String message,
+      {final bool newParagraph, final LogType type});
 
   /// Display an error [message] to the user.
   /// Commands should use this if they want to inform a user that an error
   /// has occurred.
   void error(
-    String message, {
-    bool newParagraph,
-    StackTrace? stackTrace,
-    LogType type,
+    final String message, {
+    final bool newParagraph,
+    final StackTrace? stackTrace,
+    final LogType type,
   });
 
   /// Display a [message] to the user with a specified [level].
   ///
   /// This is for logging messages with a dynamically specified log level.
   void log(
-    String message,
-    LogLevel level, {
-    bool newParagraph,
-    LogType type,
+    final String message,
+    final LogLevel level, {
+    final bool newParagraph,
+    final LogType type,
   });
 
   /// Display a progress message on [LogLevel.info] while running [runner]
@@ -51,9 +54,9 @@ abstract class Logger {
   /// Uses return value from [runner] to print set progress success status.
   /// Returns return value from [runner].
   Future<bool> progress(
-    String message,
-    Future<bool> Function() runner, {
-    bool newParagraph,
+    final String message,
+    final Future<bool> Function() runner, {
+    final bool newParagraph,
   });
 
   /// Directly write a [message] to the output.
@@ -63,10 +66,10 @@ abstract class Logger {
   /// If [newParagraph] is set to true, output is written as a new paragraph.
   /// [LogLevel] can be set to control the log level of the message.
   void write(
-    String message,
-    LogLevel logLevel, {
-    bool newParagraph = false,
-    bool newLine = true,
+    final String message,
+    final LogLevel logLevel, {
+    final bool newParagraph = false,
+    final bool newLine = true,
   });
 
   /// Returns a [Future] that completes once all logging is complete.
@@ -100,7 +103,7 @@ class RawLogType extends LogType {
 /// If [title] is set the box will have a title row.
 class BoxLogType extends LogType {
   final String? title;
-  const BoxLogType({this.title, bool newParagraph = true});
+  const BoxLogType({this.title, final bool newParagraph = true});
 }
 
 /// Abstract style console formatting.

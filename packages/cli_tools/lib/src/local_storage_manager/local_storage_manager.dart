@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:cli_tools/src/local_storage_manager/local_storage_manager_exceptions.dart';
 import 'package:path/path.dart' as p;
+
+import 'local_storage_manager_exceptions.dart';
 
 /// An abstract class that provides methods for storing, fetching and removing
 /// json files from local storage.
@@ -11,7 +12,7 @@ import 'package:path/path.dart' as p;
 abstract base class LocalStorageManager {
   /// Fetches the home directory of the current user.
   static Directory get homeDirectory {
-    var envVars = Platform.environment;
+    final envVars = Platform.environment;
 
     if (Platform.isWindows) {
       return Directory(envVars['UserProfile']!);
@@ -29,10 +30,10 @@ abstract base class LocalStorageManager {
   ///
   /// Throws a [DeleteException] if an error occurs during file deletion.
   static Future<void> removeFile({
-    required String fileName,
-    required String localStoragePath,
+    required final String fileName,
+    required final String localStoragePath,
   }) async {
-    var file = File(p.join(localStoragePath, fileName));
+    final file = File(p.join(localStoragePath, fileName));
 
     if (!file.existsSync()) return;
 
@@ -54,11 +55,11 @@ abstract base class LocalStorageManager {
   /// Throws a [SerializationException] if an error occurs during serialization.
   /// Throws a [WriteException] if an error occurs during file writing.
   static Future<void> storeJsonFile({
-    required String fileName,
-    required Map<String, dynamic> json,
-    required String localStoragePath,
+    required final String fileName,
+    required final Map<String, dynamic> json,
+    required final String localStoragePath,
   }) async {
-    var file = File(p.join(localStoragePath, fileName));
+    final file = File(p.join(localStoragePath, fileName));
 
     if (!file.existsSync()) {
       try {
@@ -93,11 +94,11 @@ abstract base class LocalStorageManager {
   /// Throws a [ReadException] if an error occurs during file reading.
   /// Throws a [DeserializationException] if an error occurs during deserialization.
   static Future<T?> tryFetchAndDeserializeJsonFile<T>({
-    required String fileName,
-    required String localStoragePath,
-    required T Function(Map<String, dynamic> json) fromJson,
+    required final String fileName,
+    required final String localStoragePath,
+    required final T Function(Map<String, dynamic> json) fromJson,
   }) async {
-    var file = File(p.join(localStoragePath, fileName));
+    final file = File(p.join(localStoragePath, fileName));
 
     if (!file.existsSync()) return null;
 
@@ -109,7 +110,7 @@ abstract base class LocalStorageManager {
     }
 
     try {
-      return fromJson(jsonDecode(fileContent));
+      return fromJson(jsonDecode(fileContent) as Map<String, dynamic>);
     } catch (e, stackTrace) {
       throw DeserializationException(file, e, stackTrace);
     }

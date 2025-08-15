@@ -17,7 +17,7 @@ class MockCommand extends Command {
       // To make an option truly mandatory, you need to set mandatory to true.
       // and also define a callback.
       mandatory: true,
-      callback: (name) {},
+      callback: (final name) {},
       allowed: <String>['serverpod'],
     );
   }
@@ -28,13 +28,13 @@ class MockCommand extends Command {
 
 void main() {
   group('Given runner with registered command', () {
-    var runner = BetterCommandRunner('test', 'this is a test cli')
+    final runner = BetterCommandRunner('test', 'this is a test cli')
       ..addCommand(MockCommand());
 
     test(
       'when running with unknown command then UsageException is thrown.',
       () async {
-        var args = ['unknown-command'];
+        final args = ['unknown-command'];
 
         await expectLater(
           runner.run(args),
@@ -46,7 +46,7 @@ void main() {
     test(
       'when running with invalid command then UsageException is thrown.',
       () async {
-        List<String> args = ['this it not a valid command'];
+        final List<String> args = ['this it not a valid command'];
 
         await expectLater(
           runner.run(args),
@@ -58,7 +58,7 @@ void main() {
     test(
       'when running command without mandatory option then UsageException is thrown.',
       () async {
-        List<String> args = [MockCommand.commandName];
+        final List<String> args = [MockCommand.commandName];
 
         await expectLater(
           runner.run(args),

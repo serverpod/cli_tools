@@ -3,17 +3,17 @@ import 'package:test/test.dart';
 
 void main() {
   group('Given BetterCommandRunner runner with onAnalyticsEvent', () {
-    var runner = BetterCommandRunner(
+    final runner = BetterCommandRunner(
       'test',
       'test description',
-      onAnalyticsEvent: (event) {},
+      onAnalyticsEvent: (final event) {},
       messageOutput: const MessageOutput(),
     );
 
     test(
       'when run with --verbose flag then runner completes successfully.',
       () async {
-        var args = ['--verbose'];
+        final args = ['--verbose'];
         await expectLater(
           runner.run(args),
           completes,
@@ -24,7 +24,7 @@ void main() {
     );
 
     test('when run with -v flag then runner completes successfully.', () async {
-      var args = ['-v'];
+      final args = ['-v'];
       await expectLater(
         runner.run(args),
         completes,
@@ -36,7 +36,7 @@ void main() {
     test(
       'when run with --quiet flag then runner completes successfully.',
       () async {
-        var args = ['--quiet'];
+        final args = ['--quiet'];
         await expectLater(
           runner.run(args),
           completes,
@@ -47,7 +47,7 @@ void main() {
     );
 
     test('when run with -q flag then runner completes successfully.', () async {
-      var args = ['-q'];
+      final args = ['-q'];
       await expectLater(
         runner.run(args),
         completes,
@@ -59,7 +59,7 @@ void main() {
     test(
       'when run with --analytics flag then runner completes successfully.',
       () async {
-        var args = ['--analytics'];
+        final args = ['--analytics'];
         await expectLater(
           runner.run(args),
           completes,
@@ -70,7 +70,7 @@ void main() {
     );
 
     test('when run with -a flag then runner completes successfully.', () async {
-      var args = ['-a'];
+      final args = ['-a'];
       await expectLater(
         runner.run(args),
         completes,

@@ -20,7 +20,7 @@ import 'package:config/config.dart';
 ///     -l, --length=<integer>                     The number of elements in the series
 ///     -i, --interval=<integer[us|ms|s|m|h|d]>    The interval between the series elements
 /// ```
-int main(List<String> args) {
+int main(final List<String> args) {
   final Configuration<TimeSeriesOption> config;
   try {
     config = Configuration.resolve(
@@ -81,12 +81,12 @@ const _granularityGroup = MutuallyExclusive(
 /// A function can be used as a const initializer.
 DateTime _defaultUntil() => DateTime.now().add(const Duration(days: 1));
 
-void generateTimeSeries(Configuration<TimeSeriesOption> config) {
+void generateTimeSeries(final Configuration<TimeSeriesOption> config) {
   var start = DateTime.now();
-  var until = config.value(TimeSeriesOption.until);
+  final until = config.value(TimeSeriesOption.until);
 
   // exactly one of these options is set
-  var length = config.optionalValue(TimeSeriesOption.length);
+  final length = config.optionalValue(TimeSeriesOption.length);
   var interval = config.optionalValue(TimeSeriesOption.interval);
   interval ??= (until.difference(start) ~/ length!);
   if (interval < const Duration(milliseconds: 1)) {

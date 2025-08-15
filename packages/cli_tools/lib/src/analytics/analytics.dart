@@ -10,7 +10,7 @@ abstract interface class Analytics {
   void cleanUp();
 
   /// Track an event.
-  void track({required String event});
+  void track({required final String event});
 }
 
 /// Analytics service for MixPanel.
@@ -21,9 +21,9 @@ class MixPanelAnalytics implements Analytics {
   final String _version;
 
   MixPanelAnalytics({
-    required String uniqueUserId,
-    required String projectToken,
-    required String version,
+    required final String uniqueUserId,
+    required final String projectToken,
+    required final String version,
   })  : _uniqueUserId = uniqueUserId,
         _projectToken = projectToken,
         _version = version;
@@ -32,8 +32,8 @@ class MixPanelAnalytics implements Analytics {
   void cleanUp() {}
 
   @override
-  void track({required String event}) {
-    var payload = jsonEncode({
+  void track({required final String event}) {
+    final payload = jsonEncode({
       'event': event,
       'properties': {
         'distinct_id': _uniqueUserId,
@@ -60,7 +60,7 @@ class MixPanelAnalytics implements Analytics {
     }
   }
 
-  Future<void> _quietPost(String payload) async {
+  Future<void> _quietPost(final String payload) async {
     try {
       await http.post(
         Uri.parse(_endpoint),

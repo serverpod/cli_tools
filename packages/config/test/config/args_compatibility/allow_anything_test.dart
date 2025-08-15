@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_final_locals
+
 @Skip('ArgParser.allowAnything() not supported')
 library;
 

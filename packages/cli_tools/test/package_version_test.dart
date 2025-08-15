@@ -3,19 +3,19 @@ import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 
 void main() {
-  var versionForTest = Version(1, 1, 0);
+  final versionForTest = Version(1, 1, 0);
 
   group('Given version is returned from load', () {
     test(
       'when fetched with "valid until" time in the future then version is returned.',
       () async {
-        var packageVersionData = PackageVersionData(
+        final packageVersionData = PackageVersionData(
           versionForTest,
           DateTime.now().add(const Duration(hours: 1)),
         );
 
-        var fetchedVersion = await PackageVersion.fetchLatestPackageVersion(
-          storePackageVersionData: (PackageVersionData _) async => (),
+        final fetchedVersion = await PackageVersion.fetchLatestPackageVersion(
+          storePackageVersionData: (final PackageVersionData _) async => (),
           loadPackageVersionData: () async => packageVersionData,
           fetchLatestPackageVersion: () async => null,
         );
@@ -30,15 +30,15 @@ void main() {
         'when successful in fetching latest version from fetch then new version is stored and returned.',
         () async {
           PackageVersionData? storedPackageVersion;
-          PackageVersionData packageVersionData = PackageVersionData(
+          final PackageVersionData packageVersionData = PackageVersionData(
             versionForTest,
             DateTime.now().subtract(const Duration(hours: 1)),
           );
-          var pubDevVersion = versionForTest.nextMajor;
+          final pubDevVersion = versionForTest.nextMajor;
 
-          var fetchedVersion = await PackageVersion.fetchLatestPackageVersion(
+          final fetchedVersion = await PackageVersion.fetchLatestPackageVersion(
             storePackageVersionData:
-                (PackageVersionData versionDataToStore) async =>
+                (final PackageVersionData versionDataToStore) async =>
                     (storedPackageVersion = versionDataToStore),
             loadPackageVersionData: () async => packageVersionData,
             fetchLatestPackageVersion: () async => pubDevVersion,
@@ -48,7 +48,7 @@ void main() {
           expect(fetchedVersion, pubDevVersion);
           expect(storedPackageVersion, isNotNull);
           expect(storedPackageVersion?.version, pubDevVersion);
-          var timeDifferent = storedPackageVersion?.validUntil.difference(
+          final timeDifferent = storedPackageVersion?.validUntil.difference(
             DateTime.now().add(
               PackageVersionConstants.localStorageValidityTime,
             ),
@@ -65,9 +65,9 @@ void main() {
 
       test('when failing to fetch latest then null is returned.', () async {
         PackageVersionData? storedPackageVersion;
-        var version = await PackageVersion.fetchLatestPackageVersion(
+        final version = await PackageVersion.fetchLatestPackageVersion(
           storePackageVersionData:
-              (PackageVersionData packageVersionData) async =>
+              (final PackageVersionData packageVersionData) async =>
                   (storedPackageVersion = packageVersionData),
           loadPackageVersionData: () async => null,
           fetchLatestPackageVersion: () async => null,
@@ -75,7 +75,7 @@ void main() {
 
         expect(version, isNull);
         expect(storedPackageVersion, isNotNull);
-        var timeDifferent = storedPackageVersion?.validUntil.difference(
+        final timeDifferent = storedPackageVersion?.validUntil.difference(
           DateTime.now().add(PackageVersionConstants.badConnectionRetryTimeout),
         );
         expect(
@@ -93,9 +93,9 @@ void main() {
       'when successful in fetching latest version then version is stored and returned.',
       () async {
         PackageVersionData? storedPackageVersion;
-        var version = await PackageVersion.fetchLatestPackageVersion(
+        final version = await PackageVersion.fetchLatestPackageVersion(
           storePackageVersionData:
-              (PackageVersionData packageVersionData) async =>
+              (final PackageVersionData packageVersionData) async =>
                   (storedPackageVersion = packageVersionData),
           loadPackageVersionData: () async => null,
           fetchLatestPackageVersion: () async => versionForTest,
@@ -105,7 +105,7 @@ void main() {
         expect(version, versionForTest);
         expect(storedPackageVersion, isNotNull);
         expect(storedPackageVersion?.version, versionForTest);
-        var timeDifferent = storedPackageVersion?.validUntil.difference(
+        final timeDifferent = storedPackageVersion?.validUntil.difference(
           DateTime.now().add(PackageVersionConstants.localStorageValidityTime),
         );
         expect(
@@ -121,9 +121,9 @@ void main() {
       'when failing to fetch latest then timeout is stored and null is returned.',
       () async {
         PackageVersionData? storedPackageVersion;
-        var version = await PackageVersion.fetchLatestPackageVersion(
+        final version = await PackageVersion.fetchLatestPackageVersion(
           storePackageVersionData:
-              (PackageVersionData packageVersionData) async =>
+              (final PackageVersionData packageVersionData) async =>
                   (storedPackageVersion = packageVersionData),
           loadPackageVersionData: () async => null,
           fetchLatestPackageVersion: () async => null,
@@ -131,7 +131,7 @@ void main() {
 
         expect(version, isNull);
         expect(storedPackageVersion, isNotNull);
-        var timeDifferent = storedPackageVersion?.validUntil.difference(
+        final timeDifferent = storedPackageVersion?.validUntil.difference(
           DateTime.now().add(PackageVersionConstants.badConnectionRetryTimeout),
         );
         expect(

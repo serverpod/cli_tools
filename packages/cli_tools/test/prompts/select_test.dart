@@ -11,13 +11,13 @@ import '../test_utils/prompts/key_code_sequence.dart';
 import '../test_utils/prompts/option_matcher.dart';
 
 void main() {
-  var logger = StdOutLogger(LogLevel.debug);
+  final logger = StdOutLogger(LogLevel.debug);
 
   test(
       'Given select prompt '
       'when providing message '
       'then should be displayed first', () async {
-    var (:stdout, :stderr, :stdin) = await collectOutput(
+    final (:stdout, :stderr, :stdin) = await collectOutput(
       keyInputs: [KeyCodes.enterCR],
       () {
         return select(
@@ -35,7 +35,7 @@ void main() {
       'Given select prompt '
       'when providing options '
       'then instruction should be given last', () async {
-    var (:stdout, :stderr, :stdin) = await collectOutput(
+    final (:stdout, :stderr, :stdin) = await collectOutput(
       keyInputs: [KeyCodes.enterCR],
       () {
         return select(
@@ -54,7 +54,11 @@ void main() {
       'when selecting an option with Enter '
       'then should return the selected option', () async {
     late Future<Option> result;
-    var options = [Option('Option 1'), Option('Option 2'), Option('Option 3')];
+    final options = [
+      Option('Option 1'),
+      Option('Option 2'),
+      Option('Option 3')
+    ];
 
     await collectOutput(keyInputs: [KeyCodes.enterCR], () {
       result = select('Choose an option:', options: options, logger: logger);
@@ -68,7 +72,11 @@ void main() {
       'when confirms selection with enter line-feed '
       'then completes', () async {
     late Future<Option> result;
-    var options = [Option('Option 1'), Option('Option 2'), Option('Option 3')];
+    final options = [
+      Option('Option 1'),
+      Option('Option 2'),
+      Option('Option 3')
+    ];
 
     await collectOutput(keyInputs: [KeyCodes.enterLF], () {
       result = select('Choose an option:', options: options, logger: logger);
@@ -82,7 +90,11 @@ void main() {
       'when navigating with arrow keys '
       'then should return the highlighted option on Enter', () async {
     late Future<Option> result;
-    var options = [Option('Option 1'), Option('Option 2'), Option('Option 3')];
+    final options = [
+      Option('Option 1'),
+      Option('Option 2'),
+      Option('Option 3')
+    ];
 
     await collectOutput(
       keyInputs: [
@@ -103,9 +115,13 @@ void main() {
       'Given select prompt '
       'when pressing "q" key '
       'then should throw a cancellation exception', () async {
-    var options = [Option('Option 1'), Option('Option 2'), Option('Option 3')];
+    final options = [
+      Option('Option 1'),
+      Option('Option 2'),
+      Option('Option 3')
+    ];
 
-    var result = collectOutput(keyInputs: [KeyCodes.q], () async {
+    final result = collectOutput(keyInputs: [KeyCodes.q], () async {
       await select('Choose an option:', options: options, logger: logger);
     });
 
@@ -113,7 +129,7 @@ void main() {
       result,
       throwsA(
         isA<ExitException>().having(
-          (e) => e.exitCode,
+          (final e) => e.exitCode,
           'exit code',
           equals(1),
         ),
@@ -135,7 +151,7 @@ void main() {
       'Given select prompt '
       'when highlighting second option '
       'then radio button should be filled and option underlined', () async {
-    var (:stdout, :stderr, :stdin) = await collectOutput(
+    final (:stdout, :stderr, :stdin) = await collectOutput(
       keyInputs: [...arrowDownSequence, KeyCodes.enterCR],
       () {
         return select(
@@ -160,7 +176,11 @@ Press [Enter] to confirm.
       'when moving past the last option '
       'then should wrap around to the first option', () async {
     late Future<Option> result;
-    var options = [Option('Option 1'), Option('Option 2'), Option('Option 3')];
+    final options = [
+      Option('Option 1'),
+      Option('Option 2'),
+      Option('Option 3')
+    ];
 
     await collectOutput(
       keyInputs: [
@@ -182,7 +202,11 @@ Press [Enter] to confirm.
       'when moving up past the first option '
       'then should wrap around to the last option', () async {
     late Future<Option> result;
-    var options = [Option('Option 1'), Option('Option 2'), Option('Option 3')];
+    final options = [
+      Option('Option 1'),
+      Option('Option 2'),
+      Option('Option 3')
+    ];
 
     await collectOutput(
       keyInputs: [

@@ -4,8 +4,8 @@ import 'package:collection/collection.dart';
 
 import 'configuration_broker.dart';
 import 'exceptions.dart';
-import 'options.dart';
 import 'option_resolution.dart';
+import 'options.dart';
 import 'output_formatting.dart';
 import 'source_type.dart';
 
@@ -147,7 +147,7 @@ class Configuration<O extends OptionDefinition> {
       return parser.parse(args);
     } on FormatException catch (e) {
       _errors.add(e.message);
-      for (var o in _options) {
+      for (final o in _options) {
         _config[o] = const OptionResolution.error('Previous ArgParser error');
       }
       return null;

@@ -24,13 +24,13 @@ void main() {
     logLevel = null;
   });
   group('Given runner with setLogLevel callback', () {
-    var runner = BetterCommandRunner(
+    final runner = BetterCommandRunner(
       'test',
       'this is a test cli',
       messageOutput: const MessageOutput(),
       setLogLevel: ({
-        required CommandRunnerLogLevel parsedLogLevel,
-        String? commandName,
+        required final CommandRunnerLogLevel parsedLogLevel,
+        final String? commandName,
       }) {
         logLevel = parsedLogLevel;
         parsedCommandName = commandName;
@@ -49,7 +49,7 @@ void main() {
     });
 
     group('when only quiet flag is provided', () {
-      var args = ['--${BetterCommandRunnerFlags.quiet}'];
+      final args = ['--${BetterCommandRunnerFlags.quiet}'];
 
       setUp(() async => await runner.run(args));
       test('then parsed log level is quiet.', () {
@@ -62,7 +62,7 @@ void main() {
     });
 
     group('when only verbose flag is provided', () {
-      var args = ['--${BetterCommandRunnerFlags.verbose}'];
+      final args = ['--${BetterCommandRunnerFlags.verbose}'];
 
       setUp(() async => await runner.run(args));
       test('then parsed log level is verbose.', () {
@@ -75,7 +75,7 @@ void main() {
     });
 
     group('when both quiet and verbose flags are provided', () {
-      var args = [
+      final args = [
         '--${BetterCommandRunnerFlags.quiet}',
         '--${BetterCommandRunnerFlags.verbose}',
       ];
@@ -92,12 +92,12 @@ void main() {
   });
 
   group('Given runner with setLogLevel callback and registered command', () {
-    var runner = BetterCommandRunner(
+    final runner = BetterCommandRunner(
       'test',
       'this is a test cli',
       setLogLevel: ({
-        required CommandRunnerLogLevel parsedLogLevel,
-        String? commandName,
+        required final CommandRunnerLogLevel parsedLogLevel,
+        final String? commandName,
       }) {
         logLevel = parsedLogLevel;
         parsedCommandName = commandName;
@@ -107,7 +107,7 @@ void main() {
     test(
       'when running with registered command then command name is passed to setLogLevel callback.',
       () async {
-        var args = [MockCommand.commandName];
+        final args = [MockCommand.commandName];
 
         await runner.run(args);
 
@@ -116,7 +116,7 @@ void main() {
     );
 
     group('when verbose flag is passed before registered command', () {
-      var args = [
+      final args = [
         '--${BetterCommandRunnerFlags.verbose}',
         MockCommand.commandName,
       ];
@@ -132,7 +132,7 @@ void main() {
     });
 
     group('when verbose flag is passed after registered command', () {
-      var args = [
+      final args = [
         MockCommand.commandName,
         '--${BetterCommandRunnerFlags.verbose}',
       ];

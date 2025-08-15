@@ -55,7 +55,7 @@ class CompletableMockCommand extends Command {
 void main() {
   late BetterCommandRunner runner;
   group('Given runner with null onAnalyticsEvent callback', () {
-    var runner = BetterCommandRunner(
+    final runner = BetterCommandRunner(
       'test',
       'this is a test cli',
       onAnalyticsEvent: null,
@@ -75,10 +75,10 @@ void main() {
   });
 
   group('Given runner with onAnalyticsEvent callback defined', () {
-    var runner = BetterCommandRunner(
+    final runner = BetterCommandRunner(
       'test',
       'this is a test cli',
-      onAnalyticsEvent: (event) {},
+      onAnalyticsEvent: (final event) {},
       messageOutput: const MessageOutput(),
     );
 
@@ -97,7 +97,7 @@ void main() {
       runner = BetterCommandRunner(
         'test',
         'this is a test cli',
-        onAnalyticsEvent: (event) => events.add(event),
+        onAnalyticsEvent: (final event) => events.add(event),
         messageOutput: const MessageOutput(),
       );
       assert(runner.analyticsEnabled());
@@ -110,7 +110,7 @@ void main() {
     test(
       'when running command with no-analytics flag then analytics is disabled.',
       () async {
-        var args = ['--no-${BetterCommandRunnerFlags.analytics}'];
+        final args = ['--no-${BetterCommandRunnerFlags.analytics}'];
         await runner.run(args);
 
         await flushEventQueue();
@@ -122,7 +122,7 @@ void main() {
     test(
       'when running invalid command then "invalid" analytics event is sent.',
       () async {
-        var args = ['this could be a command argument'];
+        final args = ['this could be a command argument'];
 
         try {
           await runner.run(args);
@@ -140,7 +140,7 @@ void main() {
     test(
       'when running with unknown command then "invalid" analytics event is sent.',
       () async {
-        var args = ['--unknown-command'];
+        final args = ['--unknown-command'];
 
         try {
           await runner.run(args);
@@ -210,7 +210,7 @@ void main() {
       runner = BetterCommandRunner(
         'test',
         'this is a test cli',
-        onAnalyticsEvent: (event) => events.add(event),
+        onAnalyticsEvent: (final event) => events.add(event),
         messageOutput: const MessageOutput(),
       )..addCommand(MockCommand());
       assert(runner.analyticsEnabled());
@@ -223,7 +223,7 @@ void main() {
     test(
       'when running with registered command then command name is sent,',
       () async {
-        var args = [MockCommand.commandName];
+        final args = [MockCommand.commandName];
 
         await runner.run(args);
 
@@ -237,7 +237,7 @@ void main() {
     test(
       'when running with registered command and option then command name is sent,',
       () async {
-        var args = [MockCommand.commandName, '--name', 'serverpod'];
+        final args = [MockCommand.commandName, '--name', 'serverpod'];
 
         await runner.run(args);
 
@@ -251,7 +251,7 @@ void main() {
     test(
       'when running with registered command but invalid option then "invalid" analytics event is sent,',
       () async {
-        var args = [MockCommand.commandName, '--name', 'invalid'];
+        final args = [MockCommand.commandName, '--name', 'invalid'];
 
         try {
           await runner.run(args);
@@ -275,7 +275,7 @@ void main() {
       runner = BetterCommandRunner(
         'test',
         'this is a test cli',
-        onAnalyticsEvent: (event) => events.add(event),
+        onAnalyticsEvent: (final event) => events.add(event),
         messageOutput: const MessageOutput(),
       )..addCommand(command);
       assert(runner.analyticsEnabled());
@@ -288,7 +288,7 @@ void main() {
     test(
       'when running with registered command that hangs then command name is sent',
       () async {
-        var args = [CompletableMockCommand.commandName];
+        final args = [CompletableMockCommand.commandName];
 
         unawaited(runner.run(args));
 
@@ -304,7 +304,11 @@ void main() {
     test(
       'when running with registered command that hangs and option then command name is sent,',
       () async {
-        var args = [CompletableMockCommand.commandName, '--name', 'serverpod'];
+        final args = [
+          CompletableMockCommand.commandName,
+          '--name',
+          'serverpod'
+        ];
 
         unawaited(runner.run(args));
 
@@ -320,10 +324,10 @@ void main() {
     test(
       'when running with registered command that hangs but invalid option then "invalid" analytics event is sent,',
       () async {
-        var args = [CompletableMockCommand.commandName, '--name', 'invalid'];
+        final args = [CompletableMockCommand.commandName, '--name', 'invalid'];
 
         unawaited(
-          runner.run(args).catchError((_) {
+          runner.run(args).catchError((final _) {
             // Ignore parse error
           }),
         );

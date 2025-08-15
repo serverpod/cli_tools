@@ -7,11 +7,11 @@ import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 
 MockClient createMockClient({
-  required String body,
-  required int status,
-  Duration responseDelay = const Duration(seconds: 0),
+  required final String body,
+  required final int status,
+  final Duration responseDelay = const Duration(seconds: 0),
 }) {
-  return MockClient((request) {
+  return MockClient((final request) {
     if (request.method != 'GET') throw NoSuchMethodError;
     return Future<http.Response>(() async {
       await Future.delayed(responseDelay);
@@ -29,8 +29,9 @@ void main() {
     'Empty body and not found status response when fetching latest version exception with message is thrown.',
     () async {
       // Issue: https://github.com/leoafarias/pub_api_client/issues/35
-      var httpClient = createMockClient(body: '', status: HttpStatus.notFound);
-      var pubApiClient = PubApiClient(httpClient: httpClient);
+      final httpClient =
+          createMockClient(body: '', status: HttpStatus.notFound);
+      final pubApiClient = PubApiClient(httpClient: httpClient);
 
       await expectLater(
         pubApiClient.tryFetchLatestStableVersion(
@@ -38,7 +39,7 @@ void main() {
         ),
         throwsA(
           isA<VersionFetchException>().having(
-            (e) => e.message,
+            (final e) => e.message,
             'message',
             contains('Failed to fetch latest version for'),
           ),
@@ -51,8 +52,9 @@ void main() {
     'Empty body and not found status response when fetching latest version then returns null.',
     () async {
       // Issue: https://github.com/leoafarias/pub_api_client/issues/35
-      var httpClient = createMockClient(body: '', status: HttpStatus.notFound);
-      var pubApiClient = PubApiClient(httpClient: httpClient);
+      final httpClient =
+          createMockClient(body: '', status: HttpStatus.notFound);
+      final pubApiClient = PubApiClient(httpClient: httpClient);
 
       await expectLater(
         pubApiClient.tryFetchLatestStableVersion(
@@ -60,7 +62,7 @@ void main() {
         ),
         throwsA(
           isA<VersionFetchException>().having(
-            (e) => e.message,
+            (final e) => e.message,
             'message',
             contains('Failed to fetch latest version for'),
           ),
@@ -72,14 +74,14 @@ void main() {
   test(
     'Timeout is reached when fetching latest version then throws version fetch exception.',
     () async {
-      var timeout = const Duration(milliseconds: 1);
-      var httpClient = createMockClient(
+      const timeout = Duration(milliseconds: 1);
+      final httpClient = createMockClient(
         body: '',
         status: HttpStatus.ok,
         responseDelay:
             timeout * 10, // Messaged is delayed longer than the timeout
       );
-      var pubApiClient = PubApiClient(
+      final pubApiClient = PubApiClient(
         httpClient: httpClient,
         requestTimeout: timeout,
       );
@@ -96,8 +98,8 @@ void main() {
   test(
     'Non stable version before stable version when fetching latest then returns first stable',
     () async {
-      var expectedVersion = Version(1, 2, 3);
-      var httpClient = createMockClient(
+      final expectedVersion = Version(1, 2, 3);
+      final httpClient = createMockClient(
         body: '''
 {
     "name": "${PubApiClientTestConstants.testPackageName}",
@@ -106,9 +108,9 @@ void main() {
 ''',
         status: HttpStatus.ok,
       );
-      var pubApiClient = PubApiClient(httpClient: httpClient);
+      final pubApiClient = PubApiClient(httpClient: httpClient);
 
-      var version = await pubApiClient.tryFetchLatestStableVersion(
+      final version = await pubApiClient.tryFetchLatestStableVersion(
         PubApiClientTestConstants.testPackageName,
       );
 
@@ -120,7 +122,7 @@ void main() {
   test(
     'Only non stable versions when fetching latest then returns null',
     () async {
-      var httpClient = createMockClient(
+      final httpClient = createMockClient(
         body: '''
 {
     "name": "${PubApiClientTestConstants.testPackageName}",
@@ -129,9 +131,9 @@ void main() {
 ''',
         status: HttpStatus.ok,
       );
-      var pubApiClient = PubApiClient(httpClient: httpClient);
+      final pubApiClient = PubApiClient(httpClient: httpClient);
 
-      var version = await pubApiClient.tryFetchLatestStableVersion(
+      final version = await pubApiClient.tryFetchLatestStableVersion(
         PubApiClientTestConstants.testPackageName,
       );
 
@@ -142,7 +144,7 @@ void main() {
   test(
     'Invalid version format when fetching latest from pub.dev then throws version parse exception.',
     () async {
-      var httpClient = createMockClient(
+      final httpClient = createMockClient(
         body: '''
 {
     "name": "${PubApiClientTestConstants.testPackageName}",
@@ -151,7 +153,7 @@ void main() {
 ''',
         status: HttpStatus.ok,
       );
-      var pubApiClient = PubApiClient(httpClient: httpClient);
+      final pubApiClient = PubApiClient(httpClient: httpClient);
 
       await expectLater(
         pubApiClient.tryFetchLatestStableVersion(

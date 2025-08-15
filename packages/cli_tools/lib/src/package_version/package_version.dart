@@ -19,18 +19,19 @@ abstract class PackageVersion {
   /// [PackageVersionConstants.badConnectionRetryTimeout] is enforced before
   /// attempting to fetch the latest version again.
   static Future<Version?> fetchLatestPackageVersion({
-    required Future<void> Function(PackageVersionData versionArtefact)
+    required final Future<void> Function(PackageVersionData versionArtefact)
         storePackageVersionData,
-    required Future<PackageVersionData?> Function() loadPackageVersionData,
-    required Future<Version?> Function() fetchLatestPackageVersion,
+    required final Future<PackageVersionData?> Function()
+        loadPackageVersionData,
+    required final Future<Version?> Function() fetchLatestPackageVersion,
   }) async {
-    var storedVersionData = await loadPackageVersionData();
+    final storedVersionData = await loadPackageVersionData();
 
     if (storedVersionData != null && _validVersion(storedVersionData)) {
       return storedVersionData.version;
     }
 
-    var latestPackageVersion = await fetchLatestPackageVersion();
+    final latestPackageVersion = await fetchLatestPackageVersion();
 
     await _storePubDevVersion(
       latestPackageVersion,
@@ -40,13 +41,13 @@ abstract class PackageVersion {
     return latestPackageVersion;
   }
 
-  static bool _validVersion(PackageVersionData versionData) {
+  static bool _validVersion(final PackageVersionData versionData) {
     return versionData.validUntil.isAfter(DateTime.now());
   }
 
   static Future<void> _storePubDevVersion(
-    Version? version, {
-    required Future<void> Function(PackageVersionData versionArtefact)
+    final Version? version, {
+    required final Future<void> Function(PackageVersionData versionArtefact)
         storePackageVersionData,
   }) async {
     PackageVersionData versionArtefact;
@@ -74,10 +75,10 @@ class PackageVersionData {
 
   PackageVersionData(this.version, this.validUntil);
 
-  factory PackageVersionData.fromJson(Map<String, dynamic> json) =>
+  factory PackageVersionData.fromJson(final Map<String, dynamic> json) =>
       PackageVersionData(
-        Version.parse(json['version']),
-        DateTime.fromMillisecondsSinceEpoch(json['valid_until']),
+        Version.parse(json['version'] as String),
+        DateTime.fromMillisecondsSinceEpoch(json['valid_until'] as int),
       );
 
   Map<String, dynamic> toJson() => {

@@ -1,11 +1,11 @@
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
-import 'exceptions.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
 import 'configuration.dart';
 import 'configuration_broker.dart';
+import 'exceptions.dart';
 import 'option_resolution.dart';
 import 'source_type.dart';
 
@@ -57,7 +57,7 @@ class OptionGroup {
   /// Throws an error if any definition is invalid as part of this group.
   ///
   /// Subclasses may override this method to perform specific validations.
-  void validateDefinitions(List<OptionDefinition> options) {}
+  void validateDefinitions(final List<OptionDefinition> options) {}
 
   /// Validates the values of the options in this group,
   /// returning a descriptive error message if the values are invalid.

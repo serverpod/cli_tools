@@ -1,6 +1,5 @@
-import 'package:test/test.dart';
-
 import 'package:config/config.dart';
+import 'package:test/test.dart';
 
 enum AnimalEnum {
   cat,

@@ -1,5 +1,5 @@
 name: cli_tools
-version: 0.7.0
+version: 0.7.1
 description: A collection of tools for building great command-line interfaces.
 repository: https://github.com/serverpod/cli_tools
 homepage: https://serverpod.dev
@@ -26,5 +26,5 @@ dependencies:
 
 dev_dependencies:
   serverpod_lints: '>=1.2.6'
-  test_descriptor: ^2.0.2
   test: ^1.24.0
+  test_descriptor: ^2.0.2

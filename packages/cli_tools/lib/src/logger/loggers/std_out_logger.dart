@@ -1,10 +1,11 @@
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:cli_tools/src/logger/logger.dart';
-import 'package:cli_tools/src/logger/helpers/ansi_style.dart';
-import 'package:cli_tools/src/logger/helpers/progress.dart';
 import 'package:super_string/super_string.dart';
+
+import '../helpers/ansi_style.dart';
+import '../helpers/progress.dart';
+import '../logger.dart';
 
 /// Logger that logs using the [Stdout] library.
 /// Errors and Warnings are printed on [stderr] and other messages are logged
@@ -12,7 +13,7 @@ import 'package:super_string/super_string.dart';
 class StdOutLogger extends Logger {
   static const int _defaultColumnWrap = 80;
 
-  static String _levelPrefix(LogLevel level) {
+  static String _levelPrefix(final LogLevel level) {
     return switch (level) {
       LogLevel.debug => 'DEBUG: ',
       LogLevel.info => '',
@@ -38,7 +39,7 @@ class StdOutLogger extends Logger {
   /// If null (the default), messages are written to [stdout] for all log levels.
   StdOutLogger(
     super.logLevel, {
-    Map<String, String>? replacements,
+    final Map<String, String>? replacements,
     this.logToStderrLevelThreshold,
   }) : _replacements = replacements;
 
@@ -47,39 +48,39 @@ class StdOutLogger extends Logger {
 
   @override
   void debug(
-    String message, {
-    bool newParagraph = false,
-    LogType type = TextLogType.normal,
+    final String message, {
+    final bool newParagraph = false,
+    final LogType type = TextLogType.normal,
   }) {
     log(message, LogLevel.debug, newParagraph: newParagraph, type: type);
   }
 
   @override
   void info(
-    String message, {
-    bool newParagraph = false,
-    LogType type = TextLogType.normal,
+    final String message, {
+    final bool newParagraph = false,
+    final LogType type = TextLogType.normal,
   }) {
     log(message, LogLevel.info, newParagraph: newParagraph, type: type);
   }
 
   @override
   void warning(
-    String message, {
-    bool newParagraph = false,
-    LogType type = TextLogType.normal,
+    final String message, {
+    final bool newParagraph = false,
+    final LogType type = TextLogType.normal,
   }) {
     log(message, LogLevel.warning, newParagraph: newParagraph, type: type);
   }
 
   @override
   void error(
-    String message, {
-    bool newParagraph = false,
-    StackTrace? stackTrace,
-    LogType type = TextLogType.normal,
+    final String message, {
+    final bool newParagraph = false,
+    final StackTrace? stackTrace,
+    final LogType type = TextLogType.normal,
   }) {
-    var msg =
+    final msg =
         stackTrace != null ? '$message\n${stackTrace.toString()}' : message;
 
     log(msg, LogLevel.error, newParagraph: newParagraph, type: type);
@@ -87,13 +88,13 @@ class StdOutLogger extends Logger {
 
   @override
   void log(
-    String message,
-    LogLevel level, {
-    bool newParagraph = false,
-    LogType type = TextLogType.normal,
+    final String message,
+    final LogLevel level, {
+    final bool newParagraph = false,
+    final LogType type = TextLogType.normal,
   }) {
     if (ansiSupported) {
-      var ansiMessage = switch (level) {
+      final ansiMessage = switch (level) {
         LogLevel.debug => AnsiStyle.darkGray.wrap(message),
         LogLevel.info => message,
         LogLevel.warning => AnsiStyle.yellow.wrap(message),
@@ -103,7 +104,7 @@ class StdOutLogger extends Logger {
 
       _log(ansiMessage, level, newParagraph, type);
     } else {
-      var prefix = _levelPrefix(level);
+      final prefix = _levelPrefix(level);
 
       _log(message, level, newParagraph, type, prefix: prefix);
     }
@@ -111,9 +112,9 @@ class StdOutLogger extends Logger {
 
   @override
   Future<bool> progress(
-    String message,
-    Future<bool> Function() runner, {
-    bool newParagraph = false,
+    final String message,
+    final Future<bool> Function() runner, {
+    final bool newParagraph = false,
   }) async {
     if (logLevel.index > LogLevel.info.index) {
       return await runner();
@@ -127,9 +128,9 @@ class StdOutLogger extends Logger {
       write('', LogLevel.info, newParagraph: false, newLine: true);
     }
 
-    var progress = Progress(message, stdout);
+    final progress = Progress(message, stdout);
     trackedAnimationInProgress = progress;
-    bool success = await runner();
+    final bool success = await runner();
     trackedAnimationInProgress = null;
     success ? progress.complete() : progress.fail();
     return success;
@@ -141,16 +142,16 @@ class StdOutLogger extends Logger {
     await stdout.flush();
   }
 
-  bool shouldLog(LogLevel logLevel) {
+  bool shouldLog(final LogLevel logLevel) {
     return logLevel.index >= this.logLevel.index;
   }
 
   void _log(
     String message,
-    LogLevel logLevel,
-    bool newParagraph,
-    LogType type, {
-    String prefix = '',
+    final LogLevel logLevel,
+    final bool newParagraph,
+    final LogType type, {
+    final String prefix = '',
   }) {
     if (message == '') return;
     if (!shouldLog(logLevel)) return;
@@ -201,21 +202,22 @@ class StdOutLogger extends Logger {
   @override
   void write(
     String message,
-    LogLevel logLevel, {
-    newParagraph = false,
-    newLine = true,
+    final LogLevel logLevel, {
+    final newParagraph = false,
+    final newLine = true,
   }) {
     message = switch (_replacements) {
       null => message,
-      Map<String, String> replacements => replacements.entries.fold(
+      final Map<String, String> replacements => replacements.entries.fold(
           message,
-          (String acc, entry) => acc.replaceAll(entry.key, entry.value),
+          (final String acc, final entry) =>
+              acc.replaceAll(entry.key, entry.value),
         ),
     };
 
     _stopAnimationInProgress();
-    var output = '${newParagraph ? '\n' : ''}$message${newLine ? '\n' : ''}';
-    var threshold = logToStderrLevelThreshold;
+    final output = '${newParagraph ? '\n' : ''}$message${newLine ? '\n' : ''}';
+    final threshold = logToStderrLevelThreshold;
     if (threshold != null && logLevel.index >= threshold.index) {
       stderr.write(output);
     } else {
@@ -236,11 +238,11 @@ class StdOutLogger extends Logger {
 }
 
 /// wrap text based on column width
-String _wrapText(String text, int columnWidth) {
-  var textLines = text.split('\n');
-  List<String> outLines = [];
+String _wrapText(final String text, final int columnWidth) {
+  final textLines = text.split('\n');
+  final List<String> outLines = [];
   for (var line in textLines) {
-    var leadingTrimChar = _tryGetLeadingTrimmableChar(line);
+    final leadingTrimChar = _tryGetLeadingTrimmableChar(line);
     // wordWrap(...) uses trim as part of its implementation which removes all
     // leading trimmable characters.
     // In order to preserve them we temporarily replace the first char with a
@@ -260,7 +262,7 @@ String _wrapText(String text, int columnWidth) {
   return outLines.join('\n');
 }
 
-String? _tryGetLeadingTrimmableChar(String text) {
+String? _tryGetLeadingTrimmableChar(final String text) {
   if (text.isNotEmpty && text.first.trim().isEmpty) {
     return text.first;
   }
@@ -278,23 +280,23 @@ String? _tryGetLeadingTrimmableChar(String text) {
 ///
 /// When [title] is provided, the box will have a title above it.
 String _formatAsBox({
-  required String message,
-  String? title,
-  required int wrapColumn,
+  required final String message,
+  final String? title,
+  required final int wrapColumn,
 }) {
   const int kPaddingLeftRight = 1;
   const int kEdges = 2;
 
-  var maxTextWidthPerLine = wrapColumn - kEdges - kPaddingLeftRight * 2;
-  var lines = _wrapText(message, maxTextWidthPerLine).split('\n');
-  var lineWidth = lines.map((String line) => line.length).toList();
-  var maxColumnSize = lineWidth.reduce(
-    (int currLen, int maxLen) => math.max(currLen, maxLen),
+  final maxTextWidthPerLine = wrapColumn - kEdges - kPaddingLeftRight * 2;
+  final lines = _wrapText(message, maxTextWidthPerLine).split('\n');
+  final lineWidth = lines.map((final String line) => line.length).toList();
+  final maxColumnSize = lineWidth.reduce(
+    (final int currLen, final int maxLen) => math.max(currLen, maxLen),
   );
-  var textWidth = math.min(maxColumnSize, maxTextWidthPerLine);
-  var textWithPaddingWidth = textWidth + kPaddingLeftRight * 2;
+  final textWidth = math.min(maxColumnSize, maxTextWidthPerLine);
+  final textWithPaddingWidth = textWidth + kPaddingLeftRight * 2;
 
-  var buffer = StringBuffer();
+  final buffer = StringBuffer();
 
   // Write `┌─ [title] ─┐`.
   buffer.write('┌');
@@ -313,7 +315,7 @@ String _formatAsBox({
     buffer.write('│');
     buffer.write(' ' * kPaddingLeftRight);
     buffer.write(lines[lineIdx]);
-    var remainingSpacesToEnd = textWidth - lineWidth[lineIdx];
+    final remainingSpacesToEnd = textWidth - lineWidth[lineIdx];
     buffer.write(' ' * (remainingSpacesToEnd + kPaddingLeftRight));
     buffer.write('│');
     buffer.write('\n');

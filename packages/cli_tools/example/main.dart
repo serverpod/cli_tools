@@ -1,8 +1,8 @@
 import 'package:cli_tools/cli_tools.dart';
 import 'package:config/config.dart';
 
-Future<int> main(List<String> args) async {
-  var commandRunner = BetterCommandRunner(
+Future<int> main(final List<String> args) async {
+  final commandRunner = BetterCommandRunner(
     'example',
     'Example CLI command',
     globalOptions: [
@@ -29,7 +29,7 @@ Future<int> main(List<String> args) async {
   } else {
     logLevel = LogLevel.info;
   }
-  var logger = StdOutLogger(logLevel);
+  final logger = StdOutLogger(logLevel);
 
   logger.info('An info message');
   logger.error('An error message');
@@ -97,12 +97,12 @@ class TimeSeriesCommand extends BetterCommand<TimeSeriesOption, void> {
   String get description => 'Generate a series of time stamps';
 
   @override
-  void runWithConfig(Configuration<TimeSeriesOption> commandConfig) {
+  void runWithConfig(final Configuration<TimeSeriesOption> commandConfig) {
     var start = DateTime.now();
-    var until = commandConfig.value(TimeSeriesOption.until);
+    final until = commandConfig.value(TimeSeriesOption.until);
 
     // exactly one of these options is set
-    var length = commandConfig.optionalValue(TimeSeriesOption.length);
+    final length = commandConfig.optionalValue(TimeSeriesOption.length);
     var interval = commandConfig.optionalValue(TimeSeriesOption.interval);
     interval ??= (until.difference(start) ~/ length!);
     if (interval < const Duration(milliseconds: 1)) {

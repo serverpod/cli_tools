@@ -21,7 +21,7 @@ import 'package:config/config.dart';
 ///                                            (defaults to "File: 'example/config.yaml'")
 /// -i, --interval=<integer[us|ms|s|m|h|d]>    The interval between the series elements
 /// ```
-Future<int> main(List<String> args) async {
+Future<int> main(final List<String> args) async {
   final Configuration<TimeSeriesOption> config;
   try {
     config = Configuration.resolve(
@@ -35,7 +35,7 @@ Future<int> main(List<String> args) async {
     return 1;
   }
 
-  var interval = config.optionalValue(TimeSeriesOption.interval);
+  final interval = config.optionalValue(TimeSeriesOption.interval);
   print('interval: $interval');
   return 0;
 }

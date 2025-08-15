@@ -17,7 +17,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:cli_tools/src/logger/helpers/ansi_style.dart';
+import 'ansi_style.dart';
 
 /// {@template progress_options}
 /// An object containing configuration for a [Progress] instance.
@@ -63,7 +63,7 @@ class Progress {
   Progress(
     this._message,
     this._stdout, {
-    ProgressOptions options = const ProgressOptions(),
+    final ProgressOptions options = const ProgressOptions(),
   })  : _stopwatch = Stopwatch(),
         _options = options {
     _stopwatch
@@ -75,9 +75,10 @@ class Progress {
     // Do not animate if the log level is lower than info since other logs
     // might interrupt the animation
     if (!_stdout.hasTerminal) {
-      var frames = _options.animation.frames;
-      var char = frames.isEmpty ? '' : frames.first;
-      var prefix = char.isEmpty ? char : '${AnsiStyle.lightGreen.wrap(char)} ';
+      final frames = _options.animation.frames;
+      final char = frames.isEmpty ? '' : frames.first;
+      final prefix =
+          char.isEmpty ? char : '${AnsiStyle.lightGreen.wrap(char)} ';
       _write('$prefix$_message...\n');
       return;
     }
@@ -104,7 +105,7 @@ class Progress {
   ///
   /// * [fail], to end the progress and mark it as failed.
   /// * [cancel], to cancel the progress entirely and remove the written line.
-  void complete([String? update]) {
+  void complete([final String? update]) {
     _stopwatch.stop();
     _write(
       '''$_clearLine${AnsiStyle.lightGreen.wrap('✓')} ${update ?? _message} $_time\n''',
@@ -118,7 +119,7 @@ class Progress {
   ///
   /// * [complete], to end the progress and mark it as a successful completion.
   /// * [cancel], to cancel the progress entirely and remove the written line.
-  void fail([String? update]) {
+  void fail([final String? update]) {
     _timer?.cancel();
     _write(
       '$_clearLine${AnsiStyle.red.wrap('✗')} ${update ?? _message} $_time\n',
@@ -127,7 +128,7 @@ class Progress {
   }
 
   /// Update the progress message.
-  void update(String update) {
+  void update(final String update) {
     if (_timer != null) _write(_clearLine);
     _message = update;
     _onTick(_timer);
@@ -150,24 +151,24 @@ class Progress {
         '\r'; // bring cursor to the start of the current line
   }
 
-  void _onTick(Timer? _) {
+  void _onTick(final Timer? _) {
     _index++;
-    var frames = _options.animation.frames;
-    var char = frames.isEmpty ? '' : frames[_index % frames.length];
-    var prefix = char.isEmpty ? char : '${AnsiStyle.lightGreen.wrap(char)} ';
+    final frames = _options.animation.frames;
+    final char = frames.isEmpty ? '' : frames[_index % frames.length];
+    final prefix = char.isEmpty ? char : '${AnsiStyle.lightGreen.wrap(char)} ';
 
     _write('$_clearLine$prefix$_message... $_time');
   }
 
-  void _write(String object) {
+  void _write(final String object) {
     _stdout.write(object);
   }
 
   String get _time {
-    var elapsedTime = _stopwatch.elapsed.inMilliseconds;
-    var displayInMilliseconds = elapsedTime < 100;
-    var time = displayInMilliseconds ? elapsedTime : elapsedTime / 1000;
-    var formattedTime =
+    final elapsedTime = _stopwatch.elapsed.inMilliseconds;
+    final displayInMilliseconds = elapsedTime < 100;
+    final time = displayInMilliseconds ? elapsedTime : elapsedTime / 1000;
+    final formattedTime =
         displayInMilliseconds ? '${time}ms' : '${time.toStringAsFixed(1)}s';
     return AnsiStyle.darkGray.wrap('($formattedTime)');
   }
