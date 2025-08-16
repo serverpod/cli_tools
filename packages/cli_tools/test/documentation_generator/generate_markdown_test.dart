@@ -69,7 +69,7 @@ class SpiceCommand extends BetterCommand<OptionDefinition<Object>, void> {
 
   @override
   FutureOr<void>? runWithConfig(
-    final Configuration<OptionDefinition> commandConfig,
+    final Configuration<OptionDefinition<Object>> commandConfig,
   ) {
     throw UnimplementedError();
   }
