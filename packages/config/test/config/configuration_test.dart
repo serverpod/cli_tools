@@ -12,11 +12,10 @@ void main() async {
     test('when preparing for parsing then throws exception', () async {
       expect(
         () => [projectIdOpt].prepareForParsing(parser),
-        throwsA(allOf(
-          isA<OptionDefinitionError>(),
-          (final e) => e.toString().contains(
-                "An argument option can't have an abbreviation but not a full name",
-              ),
+        throwsA(isA<OptionDefinitionError>().having(
+          (final e) => e.message,
+          'message',
+          "An argument option can't have an abbreviation but not a full name",
         )),
       );
     });
@@ -32,11 +31,10 @@ void main() async {
     test('when preparing for parsing then throws exception', () async {
       expect(
         () => [projectIdOpt].prepareForParsing(parser),
-        throwsA(allOf(
-          isA<OptionDefinitionError>(),
-          (final e) => e
-              .toString()
-              .contains("Mandatory options can't have default values"),
+        throwsA(isA<OptionDefinitionError>().having(
+          (final e) => e.message,
+          'message',
+          "Mandatory options can't have default values",
         )),
       );
     });
@@ -55,11 +53,10 @@ void main() async {
     test('when preparing for parsing then throws exception', () async {
       expect(
         () => [projectIdOpt].prepareForParsing(parser),
-        throwsA(allOf(
-          isA<OptionDefinitionError>(),
-          (final e) => e
-              .toString()
-              .contains("Mandatory options can't have default values"),
+        throwsA(isA<OptionDefinitionError>().having(
+          (final e) => e.message,
+          'message',
+          "Mandatory options can't have default values",
         )),
       );
     });
@@ -1625,7 +1622,7 @@ void main() async {
   });
 }
 
-enum _TestOption<V> implements OptionDefinition<V> {
+enum _TestOption<V extends Object> implements OptionDefinition<V> {
   stringOpt(
     StringOption(
       argName: 'string',

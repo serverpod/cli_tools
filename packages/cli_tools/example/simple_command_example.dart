@@ -14,7 +14,7 @@ import 'package:config/config.dart';
 /// INTERVAL=1s dart run example/simple_command_example.dart show
 /// ```
 Future<int> main(final List<String> args) async {
-  final commandRunner = BetterCommandRunner(
+  final commandRunner = BetterCommandRunner<OptionDefinition<Object>, void>(
     'example',
     'Example CLI command',
   );
@@ -29,7 +29,7 @@ Future<int> main(final List<String> args) async {
   return 0;
 }
 
-enum ShowOption<V> implements OptionDefinition<V> {
+enum ShowOption<V extends Object> implements OptionDefinition<V> {
   interval(DurationOption(
     argName: 'interval',
     argAbbrev: 'i',

@@ -1,7 +1,9 @@
+import 'package:config/config.dart' show OptionDefinition;
+
 import '../../better_command_runner.dart' show BetterCommandRunner;
 
 class CommandDocumentationGenerator {
-  final BetterCommandRunner commandRunner;
+  final BetterCommandRunner<OptionDefinition<Object>, void> commandRunner;
 
   CommandDocumentationGenerator(this.commandRunner);
 
