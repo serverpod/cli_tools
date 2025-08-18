@@ -90,7 +90,7 @@ that shows how to create a set of options for a particular command as an _enum_.
 ```dart
 import 'package:config/config.dart';
 
-enum LogOption<V> implements OptionDefinition<V> {
+enum LogOption<V extends Object> implements OptionDefinition<V> {
   limit(IntOption(
     argName: 'limit',
     helpText: 'The maximum number of log records to fetch.',

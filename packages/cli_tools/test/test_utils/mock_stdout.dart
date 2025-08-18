@@ -25,20 +25,20 @@ class MockStdout implements Stdout {
   }
 
   @override
-  Future addStream(final Stream<List<int>> stream) {
+  Future<dynamic> addStream(final Stream<List<int>> stream) {
     throw UnimplementedError();
   }
 
   @override
-  Future close() {
+  Future<dynamic> close() {
     return Future.value();
   }
 
   @override
-  Future get done => Future.value();
+  Future<dynamic> get done => Future.value();
 
   @override
-  Future flush() {
+  Future<dynamic> flush() {
     return Future.value();
   }
 
@@ -67,7 +67,7 @@ class MockStdout implements Stdout {
   }
 
   @override
-  void writeAll(final Iterable objects, [final String sep = '']) {
+  void writeAll(final Iterable<Object?> objects, [final String sep = '']) {
     _buffer.writeAll(objects, sep);
   }
 

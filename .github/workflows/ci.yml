@@ -10,51 +10,42 @@ on:
 
 jobs:
     dart_format:
-        name: Dart format
+        name: Dart format check
         strategy:
+            fail-fast: false
             matrix:
-                dart: [3.3, 3.6]
+                dart: [3.3, 3.9]
                 package: [cli_tools, config]
         runs-on: ubuntu-latest
+        defaults:
+          run:
+            working-directory: packages/${{ matrix.package }}
         steps:
             - uses: actions/checkout@v4
             - uses: dart-lang/setup-dart@v1.7.1
               with:
                 sdk: ${{ matrix.dart }}
-            - name: Verify formatting ${{ matrix.package }}
-              run: dart format --output=none --set-exit-if-changed .
-              working-directory: packages/${{ matrix.package }}
 
-    dart_analyze:
-        name: Dart Analyze
-        strategy:
-            matrix:
-                dart: [3.3, 3.6]
-                package: [cli_tools, config]
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
-            - uses: dart-lang/setup-dart@v1.7.1
-              with:
-                sdk: ${{ matrix.dart }}
-            - name: Dart get and analyze ${{ matrix.package }}
-              run: |
-                dart pub get
-                dart analyze --fatal-infos
-              working-directory: packages/${{ matrix.package }}
+            - run: dart pub get
+            - run: dart format --output=none --set-exit-if-changed .
 
-    dart_test:
-        name: Dart Test
+    dart_analyze_test:
+        name: Dart Analyze and Test
         strategy:
+            fail-fast: false
             matrix:
-                dart: [3.3, 3.6]
+                dart: [3.3, 3.9]
                 package: [cli_tools, config]
         runs-on: ubuntu-latest
+        defaults:
+          run:
+            working-directory: packages/${{ matrix.package }}
         steps:
             - uses: actions/checkout@v4
             - uses: dart-lang/setup-dart@v1.7.1
               with:
                 sdk: ${{ matrix.dart }}
-            - name: Dart test ${{ matrix.package }}
-              run: dart test
-              working-directory: packages/${{ matrix.package }}
+
+            - run: dart pub get
+            - run: dart analyze --fatal-infos
+            - run: dart test

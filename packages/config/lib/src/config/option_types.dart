@@ -161,7 +161,8 @@ class EnumOption<E extends Enum> extends ConfigOptionBase<E> {
 ///
 /// If the input is outside the specified limits
 /// the validation throws a [FormatException].
-class ComparableValueOption<V extends Comparable> extends ConfigOptionBase<V> {
+class ComparableValueOption<V extends Comparable<Object>>
+    extends ConfigOptionBase<V> {
   final V? min;
   final V? max;
 

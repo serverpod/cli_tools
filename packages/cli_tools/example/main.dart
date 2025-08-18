@@ -2,7 +2,7 @@ import 'package:cli_tools/cli_tools.dart';
 import 'package:config/config.dart';
 
 Future<int> main(final List<String> args) async {
-  final commandRunner = BetterCommandRunner(
+  final commandRunner = BetterCommandRunner<OptionDefinition<Object>, void>(
     'example',
     'Example CLI command',
     globalOptions: [
@@ -47,7 +47,7 @@ Future<int> main(final List<String> args) async {
 ///
 /// The enum approach is more distinct and type safe.
 /// The list approach is more dynamic and permits non-const initialization.
-enum TimeSeriesOption<V> implements OptionDefinition<V> {
+enum TimeSeriesOption<V extends Object> implements OptionDefinition<V> {
   until(DateTimeOption(
     argName: 'until',
     envName: 'SERIES_UNTIL', // can also be specified as environment variable

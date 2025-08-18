@@ -1,8 +1,9 @@
 import 'package:args/command_runner.dart';
 import 'package:cli_tools/better_command_runner.dart';
+import 'package:config/config.dart' show OptionDefinition;
 import 'package:test/test.dart';
 
-class MockCommand extends Command {
+class MockCommand extends Command<void> {
   static String commandName = 'mock-command';
 
   @override
@@ -28,8 +29,10 @@ class MockCommand extends Command {
 
 void main() {
   group('Given runner with registered command', () {
-    final runner = BetterCommandRunner('test', 'this is a test cli')
-      ..addCommand(MockCommand());
+    final runner = BetterCommandRunner<OptionDefinition<Object>, void>(
+      'test',
+      'this is a test cli',
+    )..addCommand(MockCommand());
 
     test(
       'when running with unknown command then UsageException is thrown.',

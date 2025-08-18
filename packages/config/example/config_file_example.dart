@@ -40,7 +40,7 @@ Future<int> main(final List<String> args) async {
   return 0;
 }
 
-enum TimeSeriesOption<V> implements OptionDefinition<V> {
+enum TimeSeriesOption<V extends Object> implements OptionDefinition<V> {
   configFile(FileOption(
     argName: 'config',
     envName: 'CONFIG_FILE',

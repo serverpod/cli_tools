@@ -159,7 +159,7 @@ class MockStdin implements Stdin {
   }
 
   @override
-  Future pipe(final StreamConsumer<List<int>> streamConsumer) {
+  Future<dynamic> pipe(final StreamConsumer<List<int>> streamConsumer) {
     throw UnimplementedError();
   }
 
