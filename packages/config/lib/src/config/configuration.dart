@@ -17,7 +17,7 @@ import 'source_type.dart';
 /// import 'dart:io' show Platform;
 /// import 'package:config/config.dart';
 ///
-/// enum MyAppOption<V extends Object> implements OptionDefinition<V> {
+/// enum MyAppOption<V> implements OptionDefinition<V> {
 ///   username(StringOption(
 ///     argName: 'username',
 ///     envName: 'USERNAME',
@@ -201,7 +201,7 @@ class Configuration<O extends OptionDefinition> {
   /// identified by name, position, or key.
   ///
   /// Returns `null` if the option is not found or is not set.
-  V? findValueOf<V extends Object>({
+  V? findValueOf<V>({
     final String? enumName,
     final String? argName,
     final int? argPos,
@@ -238,7 +238,7 @@ class Configuration<O extends OptionDefinition> {
   /// [StateError] is thrown. See also [optionalValue].
   ///
   /// Throws [ArgumentError] if the option is unknown.
-  V value<V extends Object>(final OptionDefinition<V> option) {
+  V value<V>(final OptionDefinition<V> option) {
     if (!(option.option.mandatory ||
         option.option.fromDefault != null ||
         option.option.defaultsTo != null)) {
@@ -257,7 +257,7 @@ class Configuration<O extends OptionDefinition> {
   /// Returns `null` if the option is not set.
   ///
   /// Throws [ArgumentError] if the option is unknown.
-  V? optionalValue<V extends Object>(final OptionDefinition<V> option) {
+  V? optionalValue<V>(final OptionDefinition<V> option) {
     final resolution = _getOptionResolution(option);
 
     return resolution.value as V?;
@@ -270,9 +270,7 @@ class Configuration<O extends OptionDefinition> {
     return resolution.source;
   }
 
-  OptionResolution _getOptionResolution<V extends Object>(
-    final OptionDefinition<V> option,
-  ) {
+  OptionResolution _getOptionResolution<V>(final OptionDefinition<V> option) {
     if (!_options.contains(option)) {
       throw ArgumentError(
           '${option.qualifiedString()} is not part of this configuration');

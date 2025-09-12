@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-// ignore_for_file: prefer_final_parameters, strict_raw_type
+// ignore_for_file: prefer_final_parameters
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
