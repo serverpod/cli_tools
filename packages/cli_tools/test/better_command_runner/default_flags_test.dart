@@ -1,10 +1,9 @@
 import 'package:cli_tools/better_command_runner.dart';
-import 'package:config/config.dart' show OptionDefinition;
 import 'package:test/test.dart';
 
 void main() {
   group('Given BetterCommandRunner runner with onAnalyticsEvent', () {
-    final runner = BetterCommandRunner<OptionDefinition<Object>, void>(
+    final runner = BetterCommandRunner(
       'test',
       'test description',
       onAnalyticsEvent: (final event) {},

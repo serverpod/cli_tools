@@ -5,7 +5,7 @@ import 'package:cli_tools/cli_tools.dart';
 import 'package:config/config.dart' show Configuration, OptionDefinition;
 import 'package:test/test.dart';
 
-class AddSpiceCommand extends Command<void> {
+class AddSpiceCommand extends Command {
   @override
   final String name = 'add';
 
@@ -21,7 +21,7 @@ class AddSpiceCommand extends Command<void> {
   void run() {}
 }
 
-class RemoveSpiceCommand extends Command<void> {
+class RemoveSpiceCommand extends Command {
   @override
   final String name = 'remove';
 
@@ -37,7 +37,7 @@ class RemoveSpiceCommand extends Command<void> {
   void run() {}
 }
 
-class AddVegetableCommand extends Command<void> {
+class AddVegetableCommand extends Command {
   @override
   final String name = 'add';
 
@@ -52,7 +52,7 @@ class AddVegetableCommand extends Command<void> {
   void run() {}
 }
 
-class SpiceCommand extends BetterCommand<OptionDefinition<Object>, void> {
+class SpiceCommand extends BetterCommand {
   @override
   final String name = 'spice';
 
@@ -68,14 +68,12 @@ class SpiceCommand extends BetterCommand<OptionDefinition<Object>, void> {
   void run() {}
 
   @override
-  FutureOr<void>? runWithConfig(
-    final Configuration<OptionDefinition<Object>> commandConfig,
-  ) {
+  FutureOr? runWithConfig(final Configuration<OptionDefinition> commandConfig) {
     throw UnimplementedError();
   }
 }
 
-class VegetableCommand extends BetterCommand<OptionDefinition<Object>, void> {
+class VegetableCommand extends BetterCommand {
   @override
   final String name = 'vegetable';
 
@@ -90,9 +88,7 @@ class VegetableCommand extends BetterCommand<OptionDefinition<Object>, void> {
   void run() {}
 
   @override
-  FutureOr<void>? runWithConfig(
-    final Configuration<OptionDefinition<Object>> commandConfig,
-  ) {
+  FutureOr? runWithConfig(final Configuration<OptionDefinition> commandConfig) {
     throw UnimplementedError();
   }
 }
@@ -102,12 +98,10 @@ void main() {
     late Map<String, String> output;
 
     setUpAll(() async {
-      final commandRunner = BetterCommandRunner<OptionDefinition<Object>, void>(
-        'cookcli',
-        'A cli to create wonderful dishes.',
-      )
-        ..addCommand(SpiceCommand())
-        ..addCommand(VegetableCommand());
+      final commandRunner =
+          BetterCommandRunner('cookcli', 'A cli to create wonderful dishes.')
+            ..addCommand(SpiceCommand())
+            ..addCommand(VegetableCommand());
       final generator = CommandDocumentationGenerator(commandRunner);
       output = generator.generateMarkdown();
     });

@@ -2,7 +2,7 @@ import 'package:cli_tools/cli_tools.dart';
 import 'package:config/config.dart';
 
 Future<int> main(final List<String> args) async {
-  final commandRunner = BetterCommandRunner<OptionDefinition<Object>, void>(
+  final commandRunner = BetterCommandRunner(
     'example',
     'Example CLI command',
     globalOptions: [
