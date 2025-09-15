@@ -5,6 +5,8 @@ import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:config/config.dart';
 
+import 'completion_command.dart';
+
 /// A function type for executing code before running a command.
 typedef OnBeforeRunCommand = Future<void> Function(BetterCommandRunner runner);
 
@@ -146,6 +148,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     final OnBeforeRunCommand? onBeforeRunCommand,
     final OnAnalyticsEvent? onAnalyticsEvent,
     final int? wrapTextColumn,
+    final bool experimentalCompletionCommand = false,
     final List<O>? globalOptions,
     final Map<String, String>? env,
   })  : _messageOutput = messageOutput,
@@ -170,7 +173,14 @@ class BetterCommandRunner<O extends OptionDefinition, T>
       );
     }
     prepareOptionsForParsing(_globalOptions, argParser);
+
+    if (experimentalCompletionCommand) {
+      addCommand(CompletionCommand());
+    }
   }
+
+  /// The global option definitions.
+  List<O> get globalOptions => _globalOptions;
 
   /// The [MessageOutput] for the command runner.
   /// It is also used for the commands unless they have their own.
