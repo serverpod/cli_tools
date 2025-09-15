@@ -44,7 +44,8 @@ class CompletionCommand<T> extends BetterCommand<CompletionOption, T> {
   String get description => 'Generate a command line completion specification';
 
   @override
-  Null runWithConfig(final Configuration<CompletionOption> commandConfig) {
+  Future<T> runWithConfig(
+      final Configuration<CompletionOption> commandConfig) async {
     final target = commandConfig.value(CompletionOption.target);
     final execName = commandConfig.optionalValue(CompletionOption.execName);
     final file = commandConfig.optionalValue(CompletionOption.file);
@@ -66,6 +67,12 @@ class CompletionCommand<T> extends BetterCommand<CompletionOption, T> {
         CompletelyYamlGenerator().generate(out, usage);
         break;
     }
+
+    if (file != null) {
+      await out.flush();
+      await out.close();
+    }
+    return null as T;
   }
 }
 
@@ -156,7 +163,7 @@ class CompletelyYamlGenerator implements UsageRepresentationGenerator {
     out.writeln('${usage.commandSequence.join(' ')}:');
 
     for (final subcommand in usage.subcommands) {
-      out.writeln('- ${subcommand.command}');
+      out.writeln('  - ${subcommand.command}');
     }
 
     _generateCompletelyForOptions(out, usage);
@@ -174,17 +181,17 @@ class CompletelyYamlGenerator implements UsageRepresentationGenerator {
     // options
     for (final option in usage.options) {
       if (option.option.argName != null) {
-        out.writeln('- --${option.option.argName}');
+        out.writeln('  - --${option.option.argName}');
 
         if (option.option case final FlagOption flagOption) {
           if (flagOption.negatable && !flagOption.hideNegatedUsage) {
-            out.writeln('- --no-${flagOption.argName}');
+            out.writeln('  - --no-${flagOption.argName}');
           }
         }
       }
 
       if (option.option.argAbbrev != null) {
-        out.writeln('- -${option.option.argAbbrev}');
+        out.writeln('  - -${option.option.argAbbrev}');
       }
 
       if (option.option.argPos == 0) {
@@ -216,7 +223,7 @@ class CompletelyYamlGenerator implements UsageRepresentationGenerator {
         out,
         commandSequence,
         option,
-        '--$argName',
+        '  --$argName',
       );
     }
     if (option.argAbbrev case final String argAbbrev) {
@@ -224,7 +231,7 @@ class CompletelyYamlGenerator implements UsageRepresentationGenerator {
         out,
         commandSequence,
         option,
-        '-$argAbbrev',
+        '  -$argAbbrev',
       );
     }
   }
@@ -267,7 +274,7 @@ class CompletelyYamlGenerator implements UsageRepresentationGenerator {
     final Iterable values,
   ) {
     for (final value in values) {
-      out.writeln('- $value');
+      out.writeln('  - $value');
     }
   }
 }
