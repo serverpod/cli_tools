@@ -253,13 +253,13 @@ class CompletelyYamlGenerator implements UsageRepresentationGenerator {
     final ConfigOptionBase option,
   ) {
     if (option.allowedValues case final List allowedValues) {
-      return allowedValues.map((final v) => '$v').toList();
+      return allowedValues.map(option.valueParser.format).toList();
     }
 
     switch (option.option) {
       case EnumOption():
         final enumParser = option.option.valueParser as EnumParser;
-        return enumParser.enumValues.map((final e) => e.name).toList();
+        return enumParser.enumValues.map(enumParser.format).toList();
       case FileOption():
         return ['<file>'];
       case DirOption():
