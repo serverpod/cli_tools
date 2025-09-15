@@ -16,7 +16,7 @@ enum BespokeGlobalOption<V extends Object> implements OptionDefinition<V> {
   final ConfigOptionBase<V> option;
 }
 
-class MockCommand extends BetterCommand<OptionDefinition<Object>, void> {
+class MockCommand extends BetterCommand {
   static String commandName = 'mock-command';
 
   MockCommand({super.messageOutput})
@@ -38,9 +38,7 @@ class MockCommand extends BetterCommand<OptionDefinition<Object>, void> {
   Future<void> run() async {}
 
   @override
-  FutureOr<void>? runWithConfig(
-    final Configuration<OptionDefinition<Object>> commandConfig,
-  ) {
+  FutureOr? runWithConfig(final Configuration<OptionDefinition> commandConfig) {
     throw UnimplementedError();
   }
 }
@@ -58,7 +56,7 @@ void main() {
     final betterCommand = MockCommand(
       messageOutput: messageOutput,
     );
-    final runner = BetterCommandRunner<OptionDefinition<Object>, void>(
+    final runner = BetterCommandRunner(
       'test',
       'test project',
       onAnalyticsEvent: (final e) => analyticsEvents.add(e),
@@ -99,7 +97,7 @@ void main() {
         'then help analytics is sent', () async {
       await runner.run(['--help']);
 
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+      await Future.delayed(const Duration(milliseconds: 100));
       expect(analyticsEvents, hasLength(1));
       expect(analyticsEvents.single, 'help');
     });
@@ -109,7 +107,7 @@ void main() {
         'then help analytics is sent', () async {
       await runner.run(['help']);
 
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+      await Future.delayed(const Duration(milliseconds: 100));
       expect(analyticsEvents, hasLength(1));
       expect(analyticsEvents.single, 'help');
     });
@@ -119,7 +117,7 @@ void main() {
         'then subcommand analytics is sent', () async {
       await runner.run([MockCommand.commandName]);
 
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+      await Future.delayed(const Duration(milliseconds: 100));
       expect(analyticsEvents, hasLength(1));
       expect(analyticsEvents.single, 'mock-command');
     });
@@ -129,7 +127,7 @@ void main() {
         'then invalid command analytics is sent', () async {
       await runner.run(['no-such-command']).catchError((final _) {});
 
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+      await Future.delayed(const Duration(milliseconds: 100));
       expect(analyticsEvents, hasLength(1));
       expect(analyticsEvents.single, 'invalid');
     });
@@ -140,7 +138,7 @@ void main() {
         'then subcommand analytics is not sent', () async {
       await runner.run([MockCommand.commandName, '--no-analytics']);
 
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+      await Future.delayed(const Duration(milliseconds: 100));
       expect(analyticsEvents, isEmpty);
     });
   });
@@ -157,7 +155,7 @@ void main() {
     final betterCommand = MockCommand(
       messageOutput: messageOutput,
     );
-    final runner = BetterCommandRunner<OptionDefinition<Object>, void>(
+    final runner = BetterCommandRunner(
       'test',
       'test project',
       onAnalyticsEvent: (final e) => analyticsEvents.add(e),
@@ -207,7 +205,7 @@ void main() {
     final betterCommand = MockCommand(
       messageOutput: messageOutput,
     );
-    final runner = BetterCommandRunner<OptionDefinition<Object>, void>(
+    final runner = BetterCommandRunner(
       'test',
       'test project',
       messageOutput: messageOutput,
@@ -256,7 +254,7 @@ void main() {
     final betterCommand = MockCommand(
       messageOutput: messageOutput,
     );
-    final runner = BetterCommandRunner<OptionDefinition<Object>, void>(
+    final runner = BetterCommandRunner(
       'test',
       'test project',
       globalOptions: BespokeGlobalOption.values,

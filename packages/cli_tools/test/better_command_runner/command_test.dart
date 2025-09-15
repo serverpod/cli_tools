@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:args/command_runner.dart';
 import 'package:cli_tools/better_command_runner.dart';
-import 'package:config/config.dart' show OptionDefinition;
 import 'package:test/test.dart';
 
 class MockCommand extends Command<void> {
@@ -34,7 +33,7 @@ class MockCommand extends Command<void> {
 }
 
 void main() {
-  late BetterCommandRunner<OptionDefinition<Object>, void> runner;
+  late BetterCommandRunner runner;
   late MockCommand mockCommand;
   group('Given runner with registered command', () {
     setUp(() {
