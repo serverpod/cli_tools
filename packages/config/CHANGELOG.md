@@ -1,3 +1,7 @@
+## 0.8.0-beta.1
+
+ - **REVERT**: Do not force strict generic types (#64).
+
 ## 0.8.0-beta.0
 
  - **BREAKING** **FIX**: Resolved raw generic type warnings (#62).
