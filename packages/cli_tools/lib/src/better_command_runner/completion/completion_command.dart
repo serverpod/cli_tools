@@ -3,8 +3,8 @@ import 'dart:io' show IOSink, stdout;
 import 'package:args/command_runner.dart' show Command;
 import 'package:config/config.dart';
 
-import 'better_command.dart';
-import 'better_command_runner.dart';
+import '../better_command.dart';
+import '../better_command_runner.dart';
 
 enum CompletionTarget {
   completely,
