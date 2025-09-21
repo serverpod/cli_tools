@@ -3,11 +3,13 @@ import 'dart:io' show IOSink, stdout;
 import 'package:config/config.dart';
 
 import '../better_command.dart';
+import 'carapace_completion.dart';
 import 'completely_generator.dart';
 import 'usage_representation.dart';
 
 enum CompletionTarget {
   completely,
+  carapace,
 }
 
 enum CompletionOption<V extends Object> implements OptionDefinition<V> {
@@ -15,7 +17,6 @@ enum CompletionOption<V extends Object> implements OptionDefinition<V> {
     enumParser: EnumParser(CompletionTarget.values),
     argName: 'target',
     argAbbrev: 't',
-    defaultsTo: CompletionTarget.completely,
   )),
   execName(StringOption(
     argName: 'exec-name',
@@ -65,6 +66,9 @@ class CompletionCommand<T> extends BetterCommand<CompletionOption, T> {
     switch (target) {
       case CompletionTarget.completely:
         CompletelyYamlGenerator().generate(out, usage);
+        break;
+      case CompletionTarget.carapace:
+        CarapaceYamlGenerator().generate(out, usage);
         break;
     }
 
