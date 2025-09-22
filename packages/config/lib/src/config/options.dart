@@ -615,10 +615,11 @@ class MultiParser<T> extends ValueParser<List<T>> {
 
 /// Multi-value configuration option.
 class MultiOption<T> extends ConfigOptionBase<List<T>> {
+  final MultiParser<T> multiParser;
   final List<T>? allowedElementValues;
 
   const MultiOption({
-    required final MultiParser<T> multiParser,
+    required this.multiParser,
     super.argName,
     super.argAliases,
     super.argAbbrev,
@@ -640,6 +641,13 @@ class MultiOption<T> extends ConfigOptionBase<List<T>> {
           valueParser: multiParser,
         );
 
+  /// [MultiOption] does not properly support [allowedValues],
+  /// use [allowedElementValues] instead.
+  @override
+  List<List<T>>? get allowedValues {
+    return super.allowedValues;
+  }
+
   @override
   void _addToArgParser(final ArgParser argParser) {
     final argName = this.argName;
@@ -647,7 +655,6 @@ class MultiOption<T> extends ConfigOptionBase<List<T>> {
       throw StateError("Can't add option without arg name to arg parser.");
     }
 
-    final multiParser = valueParser as MultiParser<T>;
     argParser.addMultiOption(
       argName,
       abbr: argAbbrev,
