@@ -17,6 +17,8 @@ enum CompletionOption<V extends Object> implements OptionDefinition<V> {
     enumParser: EnumParser(CompletionTarget.values),
     argName: 'target',
     argAbbrev: 't',
+    helpText: 'The target tool format',
+    mandatory: true,
   )),
   execName(StringOption(
     argName: 'exec-name',
