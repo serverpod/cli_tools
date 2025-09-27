@@ -1,7 +1,12 @@
-## Command line completion for scloud
+## Command line completion
 
-There is now an experimental feature to generate and install command line
-completion in bash for commands using `BetterCommandRunner`.
+`BetterCommandRunner` can generate and install command line completion
+in bash and some other shells for all its subcommands and options.
+
+As command developer you will need to install an additional tool that generates
+the completion shell script. Two tools are currently supported.
+
+The shell script needs to be installed by end users to enable completion.
 
 ### Enable experimental feature
 
@@ -12,6 +17,8 @@ with the flag `experimentalCompletionCommand` set to `true`.
 
 Carapace supports a lot of shells, including Bash, ZSH, Fish, Elvish,
 Powershell, Cmd, and more.
+However end users need to install the `carapace` tool as well as the generated
+script for the command.
 
 https://carapace.sh/
 
@@ -33,9 +40,12 @@ Note that the YAML file must have the same name as the command executable
 before the `.yaml` extension.
 
 ```sh
-my-command completion -f my-command.yaml -t carapace
-cp example.yaml "${UserConfigDir}/carapace/specs/"
+my-command completion generate -f my-command.yaml -t carapace
+cp my-command.yaml "${UserConfigDir}/carapace/specs/"
 ```
+
+If you need to specify a specific command name to use in the generated YAML
+file, use the `-e` option.
 
 > Note: ${UserConfigDir} refers to the platform-specific user configuration
 directory. On MacOS this is `~/Library/Application Support/` (even though many
@@ -69,11 +79,15 @@ location, even if the Yaml file is distributed with the command.
 
 ## Using the tool `completely`
 
+Completely supports Bash and ZSH. It's benefit is that it doesn't require the
+end user to install any tool besides the generated shell completion script.
+
 https://github.com/bashly-framework/completely
 
 ### Prerequisites
 
-This requires the tool `completely`, which also requires ruby to be installed.
+This requires the command developer to install the tool `completely`,
+which also requires ruby to be installed.
 
 ```sh
 gem install completely
@@ -86,24 +100,51 @@ brew install brew-gem
 brew gem install completely
 ```
 
-### Install completion for the command
+### Generate completion for the command
 
-When the `completely` tool is installed, run e.g:
+When the `completely` tool is installed, run commands similar to the following
+to generate the bash completion script for the command.
 
 ```sh
-my-command completion -f my-command.yaml -t completely
+my-command completion generate -f my-command.yaml -t completely
 completely generate my-command.yaml my-command.bash
+```
+
+To install the completions in the bash shell, run:
+
+```sh
 mkdir -p ~/.local/share/bash-completion/completions
 cp my-command.bash ~/.local/share/bash-completion/completions/
 ```
 
-This will write the completions script to `~/.local/share/bash-completion/completions/`,
-where bash picks it up automatically on start.
+Completions scripts in `~/.local/share/bash-completion/completions/`
+are automatically picked up by bash on start. Note that they must be named
+the same as the command, except for the `.bash` suffix.
 
 In order to update the completions in the current bash shell, run:
 
 ```sh
 exec bash
+```
+
+If the completions directory already exists, you can update the completion
+script with this one-liner which doesn't create the intermediate files.
+(This approach requires that your command does not generate any other output
+to `stdout` when run this way.)
+
+```sh
+my-command completion generate -t completely | completely generate - >~/.local/share/bash-completion/completions/my-command.bash
+```
+
+### ZSH
+
+If you are using Oh-My-Zsh, bash completions should already be enabled.
+Otherwise you should enable completion by adding this to your ~/.zshrc
+(if is it not already there):
+
+```sh
+autoload -Uz +X compinit && compinit
+autoload -Uz +X bashcompinit && bashcompinit
 ```
 
 ### Distribution
