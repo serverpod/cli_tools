@@ -62,19 +62,26 @@ void main() {
           '-h, --help',
           'Available commands:',
           'completion',
-          'Generate a command line completion specification',
+          'Command line completion commands',
         ]),
       );
     });
 
     test(
-        'when running subcommand "completion -t completely -f <file>" '
+        'when running subcommand "completion generate -t completely -f <file>" '
         'then a proper completely specification is written to the file',
         () async {
       await d.dir('test-dir').create();
       final filePath = p.join(d.sandbox, 'test-dir', 'test.yaml');
 
-      await runner.run(['completion', '-t', 'completely', '-f', filePath]);
+      await runner.run([
+        'completion',
+        'generate',
+        '-t',
+        'completely',
+        '-f',
+        filePath,
+      ]);
 
       final spec = d.file(
           filePath,
@@ -85,28 +92,29 @@ void main() {
             '  - -q',
             '  - --verbose',
             '  - -v',
-            'test completion*--target:',
+            'test completion generate*--target:',
             '  - completely',
             '  - carapace',
-            'test completion*-t:',
+            'test completion generate*-t:',
             '  - completely',
             '  - carapace',
-            'test completion*--file:',
+            'test completion generate*--file:',
             '  - <file>',
-            'test completion*-f:',
+            'test completion generate*-f:',
             '  - <file>',
           ]));
       await expectLater(spec.validate(), completes);
     });
 
     test(
-        'when running subcommand "completion -t completely -e other-exec-name -f <file>" '
+        'when running subcommand "completion generate -t completely -e other-exec-name -f <file>" '
         'then the completely specification contains other-exec-name', () async {
       await d.dir('test-dir').create();
       final filePath = p.join(d.sandbox, 'test-dir', 'test.yaml');
 
       await runner.run([
         'completion',
+        'generate',
         '-t',
         'completely',
         '-e',
@@ -124,28 +132,35 @@ void main() {
             '  - -q',
             '  - --verbose',
             '  - -v',
-            'other-exec-name completion*--target:',
+            'other-exec-name completion generate*--target:',
             '  - completely',
             '  - carapace',
-            'other-exec-name completion*-t:',
+            'other-exec-name completion generate*-t:',
             '  - completely',
             '  - carapace',
-            'other-exec-name completion*--file:',
+            'other-exec-name completion generate*--file:',
             '  - <file>',
-            'other-exec-name completion*-f:',
+            'other-exec-name completion generate*-f:',
             '  - <file>',
           ]));
       await expectLater(spec.validate(), completes);
     });
 
     test(
-        'when running subcommand "completion -t carapace -f <file>" '
+        'when running subcommand "completion generate -t carapace -f <file>" '
         'then a proper carapace specification is written to the file',
         () async {
       await d.dir('test-dir').create();
       final filePath = p.join(d.sandbox, 'test-dir', 'test.yaml');
 
-      await runner.run(['completion', '-t', 'carapace', '-f', filePath]);
+      await runner.run([
+        'completion',
+        'generate',
+        '-t',
+        'carapace',
+        '-f',
+        filePath,
+      ]);
 
       final spec = d.file(
           filePath,
@@ -170,13 +185,14 @@ void main() {
     });
 
     test(
-        'when running subcommand "completion -t carapace -e other-exec-name -f <file>" '
+        'when running subcommand "completion generate -t carapace -e other-exec-name -f <file>" '
         'then the carapace specification contains other-exec-name', () async {
       await d.dir('test-dir').create();
       final filePath = p.join(d.sandbox, 'test-dir', 'test.yaml');
 
       await runner.run([
         'completion',
+        'generate',
         '-t',
         'carapace',
         '-e',
