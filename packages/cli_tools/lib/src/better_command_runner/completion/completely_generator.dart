@@ -99,7 +99,7 @@ class CompletelyYamlGenerator implements UsageRepresentationGenerator {
         out,
         commandSequence,
         option,
-        '  --$argName',
+        '--$argName',
       );
     }
     if (option.argAbbrev case final String argAbbrev) {
@@ -107,7 +107,7 @@ class CompletelyYamlGenerator implements UsageRepresentationGenerator {
         out,
         commandSequence,
         option,
-        '  -$argAbbrev',
+        '-$argAbbrev',
       );
     }
   }
