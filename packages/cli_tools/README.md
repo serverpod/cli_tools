@@ -9,6 +9,12 @@ These tools were developed for the Serverpod CLI but can be used in any Dart pro
 
 The `config` library has been moved into its own package, published on pub.dev as [config](https://pub.dev/packages/config).
 
+## Command line completion
+
+`BetterCommandRunner` has support for command-line completion, which is currently
+an experimental feature and requires installing an additional tool. See:
+[README_completion.md](README_completion.md)
+
 ## Contributing to the Project
 
 We are happy to accept contributions. To contribute, please do the following:

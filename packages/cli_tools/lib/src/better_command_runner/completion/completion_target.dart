@@ -1,0 +1,4 @@
+enum CompletionTarget {
+  completely,
+  carapace,
+}
