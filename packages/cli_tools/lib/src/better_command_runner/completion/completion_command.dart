@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:config/config.dart';
 
 import '../better_command.dart';
+import 'completion_embed_command.dart';
 import 'completion_generate_command.dart';
 import 'completion_target.dart';
 
@@ -24,6 +25,7 @@ abstract final class CompletionOptions {
 class CompletionCommand<T> extends BetterCommand<OptionDefinition, T> {
   CompletionCommand() {
     addSubcommand(CompletionGenerateCommand());
+    addSubcommand(CompletionEmbedCommand());
   }
 
   @override
