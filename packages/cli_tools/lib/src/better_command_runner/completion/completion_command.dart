@@ -3,7 +3,7 @@ import 'dart:io' show IOSink, stdout;
 import 'package:config/config.dart';
 
 import '../better_command.dart';
-import 'carapace_completion.dart';
+import 'carapace_generator.dart';
 import 'completely_generator.dart';
 import 'usage_representation.dart';
 
