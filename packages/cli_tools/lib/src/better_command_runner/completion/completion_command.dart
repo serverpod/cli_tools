@@ -5,6 +5,7 @@ import 'package:config/config.dart';
 import '../better_command.dart';
 import 'completion_embed_command.dart';
 import 'completion_generate_command.dart';
+import 'completion_install_command.dart';
 import 'completion_target.dart';
 
 abstract final class CompletionOptions {
@@ -23,9 +24,16 @@ abstract final class CompletionOptions {
 }
 
 class CompletionCommand<T> extends BetterCommand<OptionDefinition, T> {
-  CompletionCommand() {
+  CompletionCommand({
+    final Iterable<CompletionScript>? embeddedCompletions,
+  }) {
     addSubcommand(CompletionGenerateCommand());
     addSubcommand(CompletionEmbedCommand());
+    if (embeddedCompletions != null) {
+      addSubcommand(CompletionInstallCommand(
+        embeddedCompletions: embeddedCompletions,
+      ));
+    }
   }
 
   @override
