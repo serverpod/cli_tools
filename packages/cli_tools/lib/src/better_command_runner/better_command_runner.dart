@@ -149,7 +149,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     final OnBeforeRunCommand? onBeforeRunCommand,
     final OnAnalyticsEvent? onAnalyticsEvent,
     final int? wrapTextColumn,
-    final bool experimentalCompletionCommand = false,
+    final bool enableCompletionCommand = false,
     final Iterable<CompletionScript>? embeddedCompletions,
     final List<O>? globalOptions,
     final Map<String, String>? env,
@@ -176,7 +176,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     }
     prepareOptionsForParsing(_globalOptions, argParser);
 
-    if (experimentalCompletionCommand) {
+    if (enableCompletionCommand) {
       addCommand(
         CompletionCommand<T>(embeddedCompletions: embeddedCompletions),
       );

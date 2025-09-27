@@ -5,7 +5,7 @@ import 'package:test_descriptor/test_descriptor.dart' as d;
 
 void main() {
   test(
-      'Given a BetterCommandRunner without enabling experimental completion feature'
+      'Given a BetterCommandRunner without enabling completion feature'
       ' when running base command with --help flag'
       ' then global usage does not include "completion" command', () async {
     final infos = <String>[];
@@ -29,9 +29,7 @@ void main() {
     );
   });
 
-  group(
-      'Given a BetterCommandRunner with experimental completion feature enabled',
-      () {
+  group('Given a BetterCommandRunner with completion feature enabled', () {
     final infos = <String>[];
     final messageOutput = MessageOutput(
       usageLogger: (final u) => infos.add(u),
@@ -41,7 +39,7 @@ void main() {
       'test',
       'test project',
       messageOutput: messageOutput,
-      experimentalCompletionCommand: true,
+      enableCompletionCommand: true,
     );
 
     setUp(() {
