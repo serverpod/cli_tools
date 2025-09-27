@@ -82,7 +82,10 @@ abstract class UsageRepresentation {
   ) {
     return options
         .where((final o) => !o.option.hide)
-        .where((final o) => o.option.argName != null || o.option.argPos != null)
+        .where((final o) =>
+            o.option.argName != null ||
+            o.option.argAbbrev != null ||
+            o.option.argPos != null)
         .toList();
   }
 }
