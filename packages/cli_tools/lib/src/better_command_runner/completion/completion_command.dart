@@ -14,6 +14,11 @@ abstract final class CompletionOptions {
     argName: 'target',
     argAbbrev: 't',
     helpText: 'The target tool format',
+    allowedHelp: {
+      'completely':
+          'Use the `completely` tool (https://github.com/bashly-framework/completely)',
+      'carapace': 'Use the `carapace` tool (https://carapace.sh/)',
+    },
     mandatory: true,
   );
   static const execNameOption = StringOption(
