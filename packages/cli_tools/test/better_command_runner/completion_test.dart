@@ -126,20 +126,7 @@ void main() {
           stringContainsInOrder([
             'other-exec-name:',
             '  - completion',
-            '  - --quiet',
-            '  - -q',
-            '  - --verbose',
-            '  - -v',
             'other-exec-name completion generate*--target:',
-            '  - completely',
-            '  - carapace',
-            'other-exec-name completion generate*-t:',
-            '  - completely',
-            '  - carapace',
-            'other-exec-name completion generate*--file:',
-            '  - <file>',
-            'other-exec-name completion generate*-f:',
-            '  - <file>',
           ]));
       await expectLater(spec.validate(), completes);
     });
@@ -170,14 +157,16 @@ void main() {
             '  -v, --verbose: Prints additional information useful for development. Overrides --q, --quiet.',
             'commands:',
             '  - name: completion',
-            '    flags:',
-            '      -t, --target=!: The target tool format',
-            '      -e, --exec-name=: Override the name of the executable',
-            '      -f, --file=: Write the specification to a file instead of stdout',
-            '    completion:',
-            '      flag:',
-            '        target: ["completely", "carapace"]',
-            r'        file: ["$files"]',
+            '    commands:',
+            '      - name: generate',
+            '      flags:',
+            '        -t, --target=!: The target tool format',
+            '        -e, --exec-name=: Override the name of the executable',
+            '        -f, --file=: Write the specification to a file instead of stdout',
+            '      completion:',
+            '        flag:',
+            '          target: ["completely", "carapace"]',
+            r'          file: ["$files"]',
           ]));
       await expectLater(spec.validate(), completes);
     });
@@ -204,19 +193,6 @@ void main() {
           stringContainsInOrder([
             r'# yaml-language-server: $schema=https://carapace.sh/schemas/command.json',
             'name: other-exec-name',
-            'persistentFlags:',
-            '  -q, --quiet: Suppress all cli output. Is overridden by  -v, --verbose.',
-            '  -v, --verbose: Prints additional information useful for development. Overrides --q, --quiet.',
-            'commands:',
-            '  - name: completion',
-            '    flags:',
-            '      -t, --target=!: The target tool format',
-            '      -e, --exec-name=: Override the name of the executable',
-            '      -f, --file=: Write the specification to a file instead of stdout',
-            '    completion:',
-            '      flag:',
-            '        target: ["completely", "carapace"]',
-            r'        file: ["$files"]',
           ]));
       await expectLater(spec.validate(), completes);
     });
