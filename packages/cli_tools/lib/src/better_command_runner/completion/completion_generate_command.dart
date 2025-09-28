@@ -1,8 +1,9 @@
-import 'dart:io' show IOSink, stdout;
+import 'dart:io' show IOSink, stdout, stderr;
 
 import 'package:config/config.dart';
 
 import '../better_command.dart';
+import '../better_command_runner.dart' show StandardGlobalOption;
 import 'carapace_generator.dart';
 import 'completely_generator.dart';
 import 'completion_command.dart' show CompletionOptions;
@@ -44,7 +45,7 @@ class CompletionGenerateCommand<T>
 
     final betterRunner = runner;
     if (betterRunner == null) {
-      throw Exception('BetterCommandRunner not set in the completion command');
+      throw StateError('BetterCommandRunner not set');
     }
 
     final usage = UsageRepresentation.compile(
@@ -66,6 +67,13 @@ class CompletionGenerateCommand<T>
     if (file != null) {
       await out.flush();
       await out.close();
+    }
+
+    if (betterRunner.globalConfiguration.findValueOf(
+            argName: StandardGlobalOption.verbose.option.argName) ==
+        true) {
+      final out = file == null ? ' to stdout' : ': ${file.path}';
+      stderr.writeln('Generated specification$out');
     }
     return null as T;
   }
