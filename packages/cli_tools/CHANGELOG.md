@@ -1,11 +1,7 @@
-## 0.8.0-beta.1
+## 0.8.0
 
- - **REVERT**: Do not force strict generic types (#64).
- - **FEAT**: Experimental command line completion support (#65).
-
-## 0.8.0-beta.0
-
- - **BREAKING** **FIX**: Resolved raw generic type warnings (#62).
+ - **FEAT**: Command line completion support (#65).
+ - **FIX**: Ensure tested up to Dart 3.9 (#62).
 
 ## 0.7.1
 
