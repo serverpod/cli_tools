@@ -1,10 +1,7 @@
-## 0.8.0-beta.1
+## 0.8.0
 
- - **REVERT**: Do not force strict generic types (#64).
-
-## 0.8.0-beta.0
-
- - **BREAKING** **FIX**: Resolved raw generic type warnings (#62).
+ - **FEAT**: multiParser getter in MultiOption (#67).
+ - **FIX**: Ensure tested up to Dart 3.9 (#62).
 
 ## 0.7.2
 
