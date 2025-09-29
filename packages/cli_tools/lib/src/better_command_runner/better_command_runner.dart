@@ -6,6 +6,7 @@ import 'package:args/command_runner.dart';
 import 'package:config/config.dart';
 
 import 'completion/completion_command.dart';
+import 'completion/completion_target.dart' show CompletionScript;
 
 /// A function type for executing code before running a command.
 typedef OnBeforeRunCommand = Future<void> Function(BetterCommandRunner runner);
@@ -148,7 +149,8 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     final OnBeforeRunCommand? onBeforeRunCommand,
     final OnAnalyticsEvent? onAnalyticsEvent,
     final int? wrapTextColumn,
-    final bool experimentalCompletionCommand = false,
+    final bool enableCompletionCommand = false,
+    final Iterable<CompletionScript>? embeddedCompletions,
     final List<O>? globalOptions,
     final Map<String, String>? env,
   })  : _messageOutput = messageOutput,
@@ -174,8 +176,10 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     }
     prepareOptionsForParsing(_globalOptions, argParser);
 
-    if (experimentalCompletionCommand) {
-      addCommand(CompletionCommand());
+    if (enableCompletionCommand) {
+      addCommand(
+        CompletionCommand<T>(embeddedCompletions: embeddedCompletions),
+      );
     }
   }
 
