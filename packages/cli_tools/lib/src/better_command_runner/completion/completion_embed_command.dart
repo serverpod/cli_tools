@@ -38,9 +38,8 @@ enum CompletionEmbedOption<V extends Object> implements OptionDefinition<V> {
   final ConfigOptionBase<V> option;
 }
 
-/// Finds the root directory above current script/executable containing a
-/// pubspec.yaml.
-/// Returns the current directory if no such parent directory is found.
+/// Finds the package root directory above current script/executable containing
+/// a pubspec.yaml. Returns null if no such directory is found.
 Directory? _findPackageRoot() {
   final String scriptDir = Platform.script.resolve('.').toFilePath();
 

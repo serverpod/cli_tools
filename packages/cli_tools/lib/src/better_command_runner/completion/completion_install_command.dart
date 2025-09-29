@@ -1,4 +1,4 @@
-import 'dart:io' show Platform, File, stderr;
+import 'dart:io' show Platform, File, stderr, Directory;
 
 import 'package:config/config.dart';
 import 'package:path/path.dart' as p;
@@ -58,7 +58,7 @@ class CompletionInstallCommand<T>
 
     final scriptContent = _embeddedCompletions[target];
     if (scriptContent == null) {
-      print('No embedded script found for target: $target');
+      stderr.writeln('No embedded script found for target: $target');
       throw ExitException.error();
     }
 
@@ -85,6 +85,7 @@ class CompletionInstallCommand<T>
         };
     final writeFilePath = p.join(writeDirPath, writeFileName);
 
+    await Directory(writeDirPath).create(recursive: true);
     final out = File(writeFilePath).openWrite();
     out.write(scriptContent);
     await out.flush();
@@ -105,7 +106,15 @@ class CompletionInstallCommand<T>
       return configHome;
     }
     if (Platform.isWindows) {
-      return '%APPDATA%';
+      final appData = Platform.environment['APPDATA'];
+      if (appData != null && appData.isNotEmpty) {
+        return appData;
+      }
+      final userProfile = Platform.environment['USERPROFILE'];
+      if (userProfile != null && userProfile.isNotEmpty) {
+        return p.join(userProfile, 'AppData', 'Roaming');
+      }
+      throw Exception('APPDATA environment variable is not set');
     } else if (Platform.isMacOS) {
       return '${_getHomeDir()}/Library/Application Support';
     } else if (Platform.isLinux) {

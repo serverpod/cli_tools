@@ -1,3 +1,5 @@
+import 'dart:io' show exitCode;
+
 import 'package:cli_tools/better_command_runner.dart';
 import 'package:config/config.dart';
 
@@ -32,7 +34,7 @@ import 'completion_script_completely.dart';
 /// dart example/command_completion_example.dart completion generate -t carapace -f example.yaml
 /// dart example/command_completion_example.dart completion embed -t carapace -f example.yaml -d example/
 /// ```
-Future<int> main(final List<String> args) async {
+Future<void> main(final List<String> args) async {
   final commandRunner = BetterCommandRunner(
     'example',
     'Example CLI command',
@@ -47,7 +49,6 @@ Future<int> main(final List<String> args) async {
     await commandRunner.run(args);
   } on UsageException catch (e) {
     print(e);
-    return 1;
+    exitCode = 1;
   }
-  return 0;
 }
