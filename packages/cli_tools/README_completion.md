@@ -8,10 +8,17 @@ the completion shell script. Two tools are currently supported.
 
 The shell script needs to be installed by end users to enable completion.
 
-### Enable experimental feature
+### Enable the feature
 
-Enable this experimental feature by constructing `BetterCommandRunner`
-with the flag `experimentalCompletionCommand` set to `true`.
+Enable this feature by constructing `BetterCommandRunner`
+with the flag `enableCompletionCommand` set to `true`.
+
+### Example implementation
+
+See a complete example command implementation that uses this feature in
+the `example` folder:
+[command_completion_example.dart](example/command_completion_example.dart)
+
 
 ## Using the tool `carapace`
 
@@ -71,10 +78,12 @@ For more information and installing in other shells, see:
 https://carapace-sh.github.io/carapace-bin/setup.html
 
 
-### Distribution
+### Installation
 
 End users will need to install `carapace` and copy the Yaml file to the proper
 location, even if the Yaml file is distributed with the command.
+
+See also [Distribution](#distribution) below.
 
 
 ## Using the tool `completely`
@@ -147,7 +156,95 @@ autoload -Uz +X compinit && compinit
 autoload -Uz +X bashcompinit && bashcompinit
 ```
 
-### Distribution
+### Installation
 
-For end users, the generated bash script can be distributed as a file for them
-to install directly in their `~/.local/share/bash-completion/completions/`.
+For end users, the generated bash script can be installed directly in their
+`~/.local/share/bash-completion/completions/`.
+
+
+## Distribution
+
+Two sub-commands are provided to help command developers to distribute the
+completion capability to their end users.
+
+### Embedding the completions scripts in the command package / executable
+
+The `completion embed` sub-command is intended for the command developer rather
+than the end users. It embeds a script in the command source code, so that
+it later can be installed by end users with `completion install`.
+
+Usage:
+
+```sh
+$ my-command completion embed --help
+Embed a command line completion script in the command source code
+
+Usage: example completion embed [arguments]
+-h, --help                  Print this usage information.
+-t, --target (mandatory)    The target tool format
+
+          [completely]      Use the `completely` tool (https://github.com/bashly-framework/completely)
+          [carapace]        Use the `carapace` tool (https://carapace.sh/)
+
+-f, --script-file           Read the script file to embed from a file instead of stdin
+-o, --output-file           The Dart file name to write ("-" for stdout)
+                            (defaults to "completion_script_<target>.dart")
+-d, --output-dir            Override the directory to write the Dart source file to
+                            (defaults to "Directory: '/Users/christer/dev/cli_tools/packages/cli_tools/lib/src'")
+```
+
+### For end-users: Installing the completion script
+
+End users run the install command:
+
+```sh
+$ my-command completion install --help
+Install a command line completion script
+
+Usage: example completion install [arguments]
+-h, --help                  Print this usage information.
+-t, --target (mandatory)    The target tool format
+
+          [completely]      Use the `completely` tool (https://github.com/bashly-framework/completely)
+          [carapace]        Use the `carapace` tool (https://carapace.sh/)
+
+-e, --exec-name             Override the name of the executable
+-d, --write-dir             Override the directory to write the script to
+```
+
+Examples:
+
+```sh
+my-command completion install -t completely
+```
+or
+```sh
+my-command completion install -t carapace
+source <(carapace example) # for bash; for others see https://carapace.sh/setup.html
+```
+
+### Generation examples:
+
+In order to regenerate the completion scripts, run these commands for each
+target.
+
+(Use the `embed` sub-command's `--output-dir` option to specify a different
+directory for the generated source files, `lib/src/` is the default.)
+
+Completely:
+```sh
+my-command completion generate -t completely | completely generate - example.bash
+my-command completion embed -t completely -f example.bash -d example/
+```
+
+Carapace:
+```sh
+my-command completion generate -t carapace -f example.yaml
+my-command completion embed -t carapace -f example.yaml -d example/
+```
+
+Or as one-liners:
+```sh
+my-command completion generate -t completely | completely generate - - | my-command completion embed -t completely
+my-command completion generate -t carapace | my-command completion embed -t carapace
+```
