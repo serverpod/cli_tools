@@ -819,15 +819,14 @@ void addOptionsToParser(
       grouplessOptions.add(opt);
     }
   }
-  final nOptionGroups = optionGroups.keys.length;
 
   // Helpers for consistent processing and validation
   const defaultFallbackGroupName = 'Option Group';
   void addOne(final OptionDefinition x) => x.option._addToArgParser(argParser);
   void addAll(final List<OptionDefinition> options) => options.forEach(addOne);
   bool isNotBlank(final String name) => name.trim().isNotEmpty;
-  String buildFallbackGroupName(final int groupCounter) =>
-      '$defaultFallbackGroupName${nOptionGroups > 1 ? " $groupCounter" : ""}';
+  String buildFallbackGroupName(final int counter) =>
+      '$defaultFallbackGroupName${optionGroups.length > 1 ? " $counter" : ""}';
 
   // Add all Groupless Options first (in order)
   addAll(grouplessOptions);
