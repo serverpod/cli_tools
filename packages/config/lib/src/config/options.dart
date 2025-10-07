@@ -804,9 +804,62 @@ void addOptionsToParser(
   final Iterable<OptionDefinition> argNameOpts,
   final ArgParser argParser,
 ) {
+  // Gather all necessary Option Group information
+  final optionGroups = <OptionGroup, List<OptionDefinition>>{}; // ordered map
+  final grouplessOptions = <OptionDefinition>[]; // ordered list
   for (final opt in argNameOpts) {
-    opt.option._addToArgParser(argParser);
+    final group = opt.option.group;
+    if (group != null) {
+      optionGroups.update(
+        group,
+        (final value) => [...value, opt],
+        ifAbsent: () => [opt],
+      );
+    } else {
+      grouplessOptions.add(opt);
+    }
   }
+  final nOptionGroups = optionGroups.keys.length;
+
+  // Helpers for consistent processing and validation
+  const defaultFallbackGroupName = 'Option Group';
+  void addOne(final OptionDefinition x) => x.option._addToArgParser(argParser);
+  void addAll(final List<OptionDefinition> options) => options.forEach(addOne);
+  bool isNotBlank(final String name) => name.trim().isNotEmpty;
+  String buildFallbackGroupName(int groupCounter) =>
+      '$defaultFallbackGroupName${nOptionGroups > 1 ? " $groupCounter" : ""}';
+
+  // Add all Groupless Options first (in order)
+  addAll(grouplessOptions);
+
+  // Add all Groups (in order) and their Options (in order)
+  var groupCounter = 0;
+  optionGroups.forEach((final group, final options) {
+    ++groupCounter;
+    var givenGroupName = group.name;
+    var fallbackGroupName = buildFallbackGroupName(groupCounter);
+
+    // IMPORTANT NOTE for this If-Block:
+    // - resolves some bug which fails newline padding in this particular case
+    // - the bug was probably bubbled down from the external Args Package
+    // - this code MUST BE REMOVED WHEN THIS BUG IS RESOLVED
+    // - when this block is removed, both the Group Names can be `final`.
+    //
+    // Unit Tests for Group Usage Text covers this case, so
+    // it shall serve as a reminder by failing when this bug gets patched.
+    if (grouplessOptions.isEmpty && groupCounter == 1) {
+      givenGroupName = '$givenGroupName\n';
+      fallbackGroupName = '$fallbackGroupName\n';
+    }
+
+    // Add the Group Name after handling potential Blank Names
+    argParser.addSeparator(
+      isNotBlank(givenGroupName) ? givenGroupName : fallbackGroupName,
+    );
+
+    // Add all the Grouped Options (in order)
+    addAll(options);
+  });
 }
 
 extension PrepareOptions on Iterable<OptionDefinition> {
