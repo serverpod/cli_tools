@@ -812,7 +812,7 @@ void addOptionsToParser(
     if (group != null) {
       optionGroups.update(
         group,
-        (final value) => [...value, opt],
+        (final options) => options..add(opt),
         ifAbsent: () => [opt],
       );
     } else {
