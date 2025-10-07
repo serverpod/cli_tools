@@ -826,7 +826,7 @@ void addOptionsToParser(
   void addOne(final OptionDefinition x) => x.option._addToArgParser(argParser);
   void addAll(final List<OptionDefinition> options) => options.forEach(addOne);
   bool isNotBlank(final String name) => name.trim().isNotEmpty;
-  String buildFallbackGroupName(int groupCounter) =>
+  String buildFallbackGroupName(final int groupCounter) =>
       '$defaultFallbackGroupName${nOptionGroups > 1 ? " $groupCounter" : ""}';
 
   // Add all Groupless Options first (in order)
