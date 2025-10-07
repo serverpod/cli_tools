@@ -847,7 +847,7 @@ void addOptionsToParser(
     //
     // Unit Tests for Group Usage Text covers this case, so
     // it shall serve as a reminder by failing when this bug gets patched.
-    if (grouplessOptions.isEmpty && groupCounter == 1) {
+    if (groupCounter == 1 && grouplessOptions.isEmpty) {
       givenGroupName = '$givenGroupName\n';
       fallbackGroupName = '$fallbackGroupName\n';
     }
