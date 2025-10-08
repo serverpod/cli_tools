@@ -804,6 +804,7 @@ void addOptionsToParser(
   final Iterable<OptionDefinition> argNameOpts,
   final ArgParser argParser, {
   final bool addGroupSeparators = false,
+  final String defaultFallbackGroupName = 'Option Group',
 }) {
   // Plain Option-addition without any Group Logic
   if (!addGroupSeparators) {
@@ -830,7 +831,6 @@ void addOptionsToParser(
   }
 
   // Helpers for consistent processing and validation
-  const defaultFallbackGroupName = 'Option Group';
   void addOne(final OptionDefinition x) => x.option._addToArgParser(argParser);
   void addAll(final List<OptionDefinition> options) => options.forEach(addOne);
   bool isNotBlank(final String name) => name.trim().isNotEmpty;
