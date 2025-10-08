@@ -722,7 +722,7 @@ void prepareOptionsForParsing(
   final ArgParser argParser,
 ) {
   final argNameOpts = validateOptions(options);
-  addOptionsToParser(argNameOpts, argParser);
+  addOptionsToParser(argNameOpts, argParser, addGroupSeparators: true);
 }
 
 Iterable<OptionDefinition> validateOptions(
@@ -802,8 +802,17 @@ Iterable<OptionDefinition> validateOptions(
 
 void addOptionsToParser(
   final Iterable<OptionDefinition> argNameOpts,
-  final ArgParser argParser,
-) {
+  final ArgParser argParser, {
+  final bool addGroupSeparators = false,
+}) {
+  // Plain Option-addition without any Group Logic
+  if (!addGroupSeparators) {
+    for (final opt in argNameOpts) {
+      opt.option._addToArgParser(argParser);
+    }
+    return;
+  }
+
   // Gather all necessary Option Group information
   final optionGroups = <OptionGroup, List<OptionDefinition>>{}; // ordered map
   final grouplessOptions = <OptionDefinition>[]; // ordered list
