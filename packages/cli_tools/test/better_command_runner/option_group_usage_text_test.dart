@@ -5,6 +5,7 @@ import 'package:test/test.dart';
 void main() {
   const mockCommandName = 'mock';
   const mockCommandDescription = 'This is a Mock CLI';
+  const mockHelpText = 'Mock Help Text.';
   const fallbackGroupName = 'Option Group';
   const blankNameExamples = <String>[
     '',
@@ -20,7 +21,7 @@ void main() {
   ];
   final nBlankNameExamples = blankNameExamples.length;
 
-  String buildSeparatorView(final String name) => '\n$name\n\n';
+  String buildSeparatorView(final String name) => '\n$name\n';
 
   String buildSuffix([final Object? suffix = '', final String prefix = '']) =>
       suffix != null && suffix != '' ? '$prefix${suffix.toString()}' : '';
@@ -34,6 +35,19 @@ void main() {
   String buildFallbackGroupName([final Object? suffix = '']) =>
       '$fallbackGroupName${buildSuffix(suffix, ' ')}';
 
+  OptionGroup buildMockGroup([final Object? suffix = '']) =>
+      OptionGroup(buildMockGroupName(suffix));
+
+  OptionDefinition buildMockOption(
+    final String name,
+    final OptionGroup? group,
+  ) =>
+      FlagOption(
+        argName: name,
+        group: group,
+        helpText: mockHelpText,
+      );
+
   group('All Group Names are properly padded with newlines', () {
     test(
       'in the presence of Groupless Options',
@@ -44,14 +58,9 @@ void main() {
             mockCommandDescription,
             globalOptions: <OptionDefinition>[
               for (var i = 0; i < 5; ++i)
-                FlagOption(
-                  argName: buildMockArgName(i),
-                  group: OptionGroup(buildMockGroupName(i)),
-                ),
+                buildMockOption(buildMockArgName(i), buildMockGroup(i)),
               for (var i = 5; i < 10; ++i)
-                FlagOption(
-                  argName: buildMockArgName(i),
-                ),
+                buildMockOption(buildMockArgName(i), null),
             ],
           ).usage,
           allOf([
@@ -70,10 +79,7 @@ void main() {
             mockCommandDescription,
             globalOptions: <OptionDefinition>[
               for (var i = 0; i < 5; ++i)
-                FlagOption(
-                  argName: buildMockArgName(i),
-                  group: OptionGroup(buildMockGroupName(i)),
-                ),
+                buildMockOption(buildMockArgName(i), buildMockGroup(i)),
             ],
           ).usage,
           allOf([
@@ -95,19 +101,18 @@ void main() {
             mockCommandDescription,
             globalOptions: <OptionDefinition>[
               for (var i = 0; i < nBlankNameExamples; ++i)
-                FlagOption(
-                  argName: buildMockArgName(i),
-                  group: OptionGroup(blankNameExamples[i]),
+                buildMockOption(
+                  buildMockArgName(i),
+                  OptionGroup(blankNameExamples[i]),
                 ),
               for (var i = nBlankNameExamples; i < nBlankNameExamples + 5; ++i)
-                FlagOption(
-                  argName: buildMockArgName(i),
-                ),
+                buildMockOption(buildMockArgName(i), null),
             ],
           ).usage,
           allOf([
             for (final blankName in blankNameExamples)
-              isNot(contains(buildSeparatorView(blankName))),
+              if (blankName != '' && blankName != '\n')
+                isNot(contains(buildSeparatorView(blankName))),
           ]),
         );
       },
@@ -121,15 +126,16 @@ void main() {
             mockCommandDescription,
             globalOptions: <OptionDefinition>[
               for (var i = 0; i < nBlankNameExamples; ++i)
-                FlagOption(
-                  argName: buildMockArgName(i),
-                  group: OptionGroup(blankNameExamples[i]),
+                buildMockOption(
+                  buildMockArgName(i),
+                  OptionGroup(blankNameExamples[i]),
                 ),
             ],
           ).usage,
           allOf([
             for (final blankName in blankNameExamples)
-              isNot(contains(buildSeparatorView(blankName))),
+              if (blankName != '' && blankName != '\n')
+                isNot(contains(buildSeparatorView(blankName))),
           ]),
         );
       },
@@ -146,14 +152,9 @@ void main() {
             mockCommandDescription,
             globalOptions: <OptionDefinition>[
               for (var i = 0; i < 5; ++i)
-                FlagOption(
-                  argName: buildMockArgName(i),
-                  group: OptionGroup(buildMockGroupName(i)),
-                ),
+                buildMockOption(buildMockArgName(i), buildMockGroup(i)),
               for (var i = 5; i < 10; ++i)
-                FlagOption(
-                  argName: buildMockArgName(i),
-                ),
+                buildMockOption(buildMockArgName(i), null),
             ],
           ).usage,
           allOf([
@@ -172,10 +173,7 @@ void main() {
             mockCommandDescription,
             globalOptions: <OptionDefinition>[
               for (var i = 0; i < 5; ++i)
-                FlagOption(
-                  argName: buildMockArgName(i),
-                  group: OptionGroup(buildMockGroupName(i)),
-                ),
+                buildMockOption(buildMockArgName(i), buildMockGroup(i)),
             ],
           ).usage,
           allOf([
@@ -196,22 +194,20 @@ void main() {
             mockCommandName,
             mockCommandDescription,
             globalOptions: <OptionDefinition>[
-              FlagOption(
-                argName: buildMockArgName(1),
-                group: OptionGroup(blankNameExamples.first),
+              buildMockOption(
+                buildMockArgName(1),
+                OptionGroup(blankNameExamples.first),
               ),
-              FlagOption(
-                argName: buildMockArgName(2),
-                group: OptionGroup(buildMockGroupName('XYZ')),
+              buildMockOption(
+                buildMockArgName(2),
+                OptionGroup(buildMockGroupName('XYZ')),
               ),
-              FlagOption(
-                argName: buildMockArgName(3),
-                group: OptionGroup(blankNameExamples.last),
+              buildMockOption(
+                buildMockArgName(3),
+                OptionGroup(blankNameExamples.last),
               ),
               for (var i = 100; i < 105; ++i)
-                FlagOption(
-                  argName: buildMockArgName(i),
-                ),
+                buildMockOption(buildMockArgName(i), null),
             ],
           ).usage,
           stringContainsInOrder([
@@ -230,17 +226,17 @@ void main() {
             mockCommandName,
             mockCommandDescription,
             globalOptions: <OptionDefinition>[
-              FlagOption(
-                argName: buildMockArgName(1),
-                group: OptionGroup(blankNameExamples.first),
+              buildMockOption(
+                buildMockArgName(1),
+                OptionGroup(blankNameExamples.first),
               ),
-              FlagOption(
-                argName: buildMockArgName(2),
-                group: OptionGroup(buildMockGroupName('XYZ')),
+              buildMockOption(
+                buildMockArgName(2),
+                OptionGroup(buildMockGroupName('XYZ')),
               ),
-              FlagOption(
-                argName: buildMockArgName(3),
-                group: OptionGroup(blankNameExamples.last),
+              buildMockOption(
+                buildMockArgName(3),
+                OptionGroup(blankNameExamples.last),
               ),
             ],
           ).usage,
@@ -262,22 +258,20 @@ void main() {
           mockCommandName,
           mockCommandDescription,
           globalOptions: <OptionDefinition>[
-            FlagOption(
-              argName: buildMockArgName(1),
-              group: OptionGroup(blankNameExamples.first),
+            buildMockOption(
+              buildMockArgName(1),
+              OptionGroup(blankNameExamples.first),
             ),
-            FlagOption(
-              argName: buildMockArgName(2),
-              group: OptionGroup(buildMockGroupName('XYZ')),
+            buildMockOption(
+              buildMockArgName(2),
+              OptionGroup(buildMockGroupName('XYZ')),
             ),
-            FlagOption(
-              argName: buildMockArgName(3),
-              group: OptionGroup(blankNameExamples.last),
+            buildMockOption(
+              buildMockArgName(3),
+              OptionGroup(blankNameExamples.last),
             ),
             for (var i = 100; i < 105; ++i)
-              FlagOption(
-                argName: buildMockArgName(i),
-              ),
+              buildMockOption(buildMockArgName(i), null),
           ],
         ).usage,
         stringContainsInOrder([
@@ -303,14 +297,12 @@ void main() {
           mockCommandDescription,
           globalOptions: <OptionDefinition>[
             for (var i = 0; i < 5; ++i)
-              FlagOption(
-                argName: buildMockArgName(++optionCount1),
-              ),
+              buildMockOption(buildMockArgName(++optionCount1), null),
             for (var i = 0; i < 3; ++i)
               for (var j = 0; j < 5; ++j)
-                FlagOption(
-                  argName: buildMockArgName(++optionCount1),
-                  group: OptionGroup(buildMockGroupName(i)),
+                buildMockOption(
+                  buildMockArgName(++optionCount1),
+                  OptionGroup(buildMockGroupName(i)),
                 ),
           ],
         ).usage,
@@ -337,14 +329,12 @@ void main() {
           mockCommandDescription,
           globalOptions: <OptionDefinition>[
             for (var i = 0; i < 5; ++i)
-              FlagOption(
-                argName: buildMockArgName(++optionCount),
-              ),
+              buildMockOption(buildMockArgName(++optionCount), null),
             for (var i = 0; i < 3; ++i)
               for (var j = 0; j < 5; ++j)
-                FlagOption(
-                  argName: buildMockArgName(++optionCount),
-                  group: OptionGroup(buildMockGroupName(++groupCount1)),
+                buildMockOption(
+                  buildMockArgName(++optionCount),
+                  buildMockGroup(++groupCount1),
                 ),
           ],
         ).usage,

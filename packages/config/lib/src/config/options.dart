@@ -844,21 +844,8 @@ void addOptionsToParser(
   var groupCounter = 0;
   optionGroups.forEach((final group, final options) {
     ++groupCounter;
-    var givenGroupName = group.name;
-    var fallbackGroupName = buildFallbackGroupName(groupCounter);
-
-    // IMPORTANT NOTE for this If-Block:
-    // - resolves some bug which fails newline padding in this particular case
-    // - the bug was probably bubbled down from the external Args Package
-    // - this code MUST BE REMOVED WHEN THIS BUG IS RESOLVED
-    // - when this block is removed, both the Group Names can be `final`.
-    //
-    // Unit Tests for Group Usage Text covers this case, so
-    // it shall serve as a reminder by failing when this bug gets patched.
-    if (groupCounter == 1 && grouplessOptions.isEmpty) {
-      givenGroupName = '$givenGroupName\n';
-      fallbackGroupName = '$fallbackGroupName\n';
-    }
+    final givenGroupName = group.name;
+    final fallbackGroupName = buildFallbackGroupName(groupCounter);
 
     // Add the Group Name after handling potential Blank Names
     argParser.addSeparator(
