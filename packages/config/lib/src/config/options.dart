@@ -813,9 +813,11 @@ void addOptionsToParser(
     return;
   }
 
+  // The following containers are ordered by default
+  final optionGroups = <OptionGroup, List<OptionDefinition>>{};
+  final grouplessOptions = <OptionDefinition>[];
+
   // Gather all necessary Option Group information
-  final optionGroups = <OptionGroup, List<OptionDefinition>>{}; // ordered map
-  final grouplessOptions = <OptionDefinition>[]; // ordered list
   for (final opt in argNameOpts) {
     final group = opt.option.group;
     if (group != null) {
