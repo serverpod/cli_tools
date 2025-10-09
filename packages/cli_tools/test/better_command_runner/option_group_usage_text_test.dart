@@ -197,6 +197,44 @@ void main() {
     );
   });
 
+  group('No automatic count-based Group Name when only one Group exists', () {
+    final anyBlankGroupName = blankNameExamples.first;
+    final grouplessOptions = <OptionDefinition>[
+      for (var i = 0; i < 5; ++i) buildMockOption(buildMockArgName(i)),
+    ];
+    final groupedOptions = <OptionDefinition>[
+      for (var i = 5; i < 10; ++i)
+        buildMockOption(
+          buildMockArgName(i),
+          OptionGroup(anyBlankGroupName),
+        ),
+    ];
+    final expectation = allOf([
+      for (final potentialSuffix in [1, 0, -1])
+        isNot(
+          contains(buildSeparatorView(buildFallbackGroupName(potentialSuffix))),
+        ),
+    ]);
+    test(
+      'in the presence of Groupless Options',
+      () {
+        expect(
+          buildRunner(grouplessOptions + groupedOptions).usage,
+          expectation,
+        );
+      },
+    );
+    test(
+      'in the absence of Groupless Options',
+      () {
+        expect(
+          buildRunner(groupedOptions).usage,
+          expectation,
+        );
+      },
+    );
+  });
+
   test(
     'All Groupless Options are shown before Grouped Options',
     () {
