@@ -41,7 +41,7 @@ abstract interface class OptionDefinition<V> {
 /// An option group allows grouping options together under a common name,
 /// and optionally provide option value validation on the group as a whole.
 ///
-/// [name] might be used as group header in usage information
+/// [name] shall be used as group header in usage information
 /// so it is recommended to format it appropriately, e.g. `File mode`.
 ///
 /// An [OptionGroup] is uniquely identified by its [name].
