@@ -197,4 +197,54 @@ void main() {
       );
     },
   );
+
+  test(
+    'Relative order of all Groups and Options is preserved',
+    () {
+      expect(
+        buildRunner(const <OptionDefinition>[
+          FlagOption(
+            argName: 'option-1',
+            group: null,
+            helpText: 'Help section for option-1.',
+          ),
+          FlagOption(
+            argName: 'option-2',
+            group: OptionGroup('Group 1'),
+            helpText: 'Help section for option-2.',
+          ),
+          FlagOption(
+            argName: 'option-3',
+            group: OptionGroup('Group 2'),
+            helpText: 'Help section for option-3.',
+          ),
+          FlagOption(
+            argName: 'option-4',
+            group: OptionGroup('Group 1'),
+            helpText: 'Help section for option-4.',
+          ),
+          FlagOption(
+            argName: 'option-5',
+            group: null,
+            helpText: 'Help section for option-5.',
+          ),
+          FlagOption(
+            argName: 'option-6',
+            group: OptionGroup('Group 2'),
+            helpText: 'Help section for option-6.',
+          ),
+        ]).usage,
+        stringContainsInOrder([
+          'option-1',
+          'option-5',
+          'Group 1',
+          'option-2',
+          'option-4',
+          'Group 2',
+          'option-3',
+          'option-6',
+        ]),
+      );
+    },
+  );
 }
