@@ -804,7 +804,6 @@ void addOptionsToParser(
   final Iterable<OptionDefinition> argNameOpts,
   final ArgParser argParser, {
   final bool addGroupSeparators = false,
-  final String defaultFallbackGroupName = 'Option Group',
 }) {
   // Plain Option-addition without any Group Logic
   if (!addGroupSeparators) {
@@ -833,26 +832,13 @@ void addOptionsToParser(
   // Helpers for consistent processing and validation
   void addOne(final OptionDefinition x) => x.option._addToArgParser(argParser);
   void addAll(final List<OptionDefinition> options) => options.forEach(addOne);
-  bool isNotBlank(final String name) => name.trim().isNotEmpty;
-  String buildFallbackGroupName(final int counter) =>
-      '$defaultFallbackGroupName${optionGroups.length > 1 ? " $counter" : ""}';
 
   // Add all Groupless Options first (in order)
   addAll(grouplessOptions);
 
   // Add all Groups (in order) and their Options (in order)
-  var groupCounter = 0;
   optionGroups.forEach((final group, final options) {
-    ++groupCounter;
-    final givenGroupName = group.name;
-    final fallbackGroupName = buildFallbackGroupName(groupCounter);
-
-    // Add the Group Name after handling potential Blank Names
-    argParser.addSeparator(
-      isNotBlank(givenGroupName) ? givenGroupName : fallbackGroupName,
-    );
-
-    // Add all the Grouped Options (in order)
+    argParser.addSeparator(group.name);
     addAll(options);
   });
 }

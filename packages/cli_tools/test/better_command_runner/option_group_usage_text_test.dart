@@ -6,19 +6,6 @@ void main() {
   const mockCommandName = 'mock';
   const mockCommandDescription = 'A mock CLI for Option Group Usage Text test.';
   const mockOptionHelpText = 'Help Text for this Mock Option.';
-  const defaultFallbackGroupName = 'Option Group';
-  const blankNameExamples = <String>[
-    '',
-    ' ',
-    '  ',
-    '   ',
-    '\n',
-    '\n\n',
-    '\n\n\n',
-    '\t',
-    '\t\t',
-    '\t\t\t',
-  ];
 
   String buildSeparatorView(final String name) => '\n\n$name\n';
 
@@ -30,9 +17,6 @@ void main() {
 
   String buildMockGroupName([final Object? suffix = '']) =>
       'Mock Group${buildSuffix(suffix, ' ')}';
-
-  String buildFallbackGroupName([final Object? suffix = '']) =>
-      '$defaultFallbackGroupName${buildSuffix(suffix, ' ')}';
 
   OptionGroup buildMockGroup([final Object? suffix = '']) =>
       OptionGroup(buildMockGroupName(suffix));
@@ -54,7 +38,7 @@ void main() {
         globalOptions: options,
       );
 
-  group('Non-Blank Group Names are rendered as-is', () {
+  group('Group Names are rendered as-is', () {
     final grouplessOptions = <OptionDefinition>[
       for (var i = 0; i < 5; ++i) buildMockOption(buildMockArgName(i)),
     ];
@@ -96,124 +80,6 @@ void main() {
     final expectation = allOf([
       for (var i = 5; i < 10; ++i)
         contains(buildSeparatorView(buildMockGroupName(i))),
-    ]);
-    test(
-      'in the presence of Groupless Options',
-      () {
-        expect(
-          buildRunner(grouplessOptions + groupedOptions).usage,
-          expectation,
-        );
-      },
-    );
-    test(
-      'in the absence of Groupless Options',
-      () {
-        expect(
-          buildRunner(groupedOptions).usage,
-          expectation,
-        );
-      },
-    );
-  });
-
-  group('Blank Group Names are not rendered as-is', () {
-    final nBlankNameExamples = blankNameExamples.length;
-    final groupedOptions = <OptionDefinition>[
-      for (var i = 0; i < nBlankNameExamples; ++i)
-        buildMockOption(
-          buildMockArgName(i),
-          OptionGroup(blankNameExamples[i]),
-        ),
-    ];
-    final grouplessOptions = <OptionDefinition>[
-      for (var i = nBlankNameExamples; i < nBlankNameExamples + 5; ++i)
-        buildMockOption(buildMockArgName(i)),
-    ];
-    final expectation = allOf([
-      for (final blankName in blankNameExamples)
-        isNot(contains(buildSeparatorView(blankName))),
-    ]);
-    test(
-      'in the presence of Groupless Options',
-      () {
-        expect(
-          buildRunner(grouplessOptions + groupedOptions).usage,
-          expectation,
-        );
-      },
-    );
-    test(
-      'in the absence of Groupless Options',
-      () {
-        expect(
-          buildRunner(groupedOptions).usage,
-          expectation,
-        );
-      },
-    );
-  });
-
-  group('Blank Group Names get a count-based default Group Name', () {
-    final grouplessOptions = <OptionDefinition>[
-      for (var i = 0; i < 5; ++i) buildMockOption(buildMockArgName(i)),
-    ];
-    final groupedOptions = <OptionDefinition>[
-      buildMockOption(
-        buildMockArgName('a'),
-        OptionGroup(blankNameExamples.first),
-      ),
-      buildMockOption(
-        buildMockArgName('b'),
-        OptionGroup(buildMockGroupName('XYZ')),
-      ),
-      buildMockOption(
-        buildMockArgName('c'),
-        OptionGroup(blankNameExamples.last),
-      ),
-    ];
-    final expectation = stringContainsInOrder([
-      buildSeparatorView(buildFallbackGroupName(1)),
-      buildSeparatorView(buildMockGroupName('XYZ')),
-      buildSeparatorView(buildFallbackGroupName(3)),
-    ]);
-    test(
-      'in the presence of Groupless Options',
-      () {
-        expect(
-          buildRunner(grouplessOptions + groupedOptions).usage,
-          expectation,
-        );
-      },
-    );
-    test(
-      'in the absence of Groupless Options',
-      () {
-        expect(
-          buildRunner(groupedOptions).usage,
-          expectation,
-        );
-      },
-    );
-  });
-
-  group('No automatic count-based Group Name when only one Group exists', () {
-    final anyBlankGroupName = blankNameExamples.first;
-    final grouplessOptions = <OptionDefinition>[
-      for (var i = 0; i < 5; ++i) buildMockOption(buildMockArgName(i)),
-    ];
-    final groupedOptions = <OptionDefinition>[
-      for (var i = 5; i < 10; ++i)
-        buildMockOption(
-          buildMockArgName(i),
-          OptionGroup(anyBlankGroupName),
-        ),
-    ];
-    final expectation = allOf([
-      for (final potentialSuffix in [1, 0, -1])
-        isNot(
-          contains(buildSeparatorView(buildFallbackGroupName(potentialSuffix))),
-        ),
     ]);
     test(
       'in the presence of Groupless Options',
