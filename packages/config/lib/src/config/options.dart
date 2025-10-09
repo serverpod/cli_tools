@@ -805,11 +805,13 @@ void addOptionsToParser(
   final ArgParser argParser, {
   final bool addGroupSeparators = false,
 }) {
+  // Helpers for consistent processing
+  void addOne(final OptionDefinition o) => o.option._addToArgParser(argParser);
+  void addAll(final Iterable<OptionDefinition> o) => o.forEach(addOne);
+
   // Plain Option-addition without any Group Logic
   if (!addGroupSeparators) {
-    for (final opt in argNameOpts) {
-      opt.option._addToArgParser(argParser);
-    }
+    addAll(argNameOpts);
     return;
   }
 
@@ -830,10 +832,6 @@ void addOptionsToParser(
       grouplessOptions.add(opt);
     }
   }
-
-  // Helpers for consistent processing and validation
-  void addOne(final OptionDefinition x) => x.option._addToArgParser(argParser);
-  void addAll(final List<OptionDefinition> options) => options.forEach(addOne);
 
   // Add all Groupless Options first (in order)
   addAll(grouplessOptions);
