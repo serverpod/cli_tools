@@ -4,9 +4,9 @@ import 'package:test/test.dart';
 
 void main() {
   const mockCommandName = 'mock';
-  const mockCommandDescription = 'This is a Mock CLI';
-  const mockHelpText = 'Mock Help Text.';
-  const fallbackGroupName = 'Option Group';
+  const mockCommandDescription = 'A mock CLI for Option Group Usage Text test.';
+  const mockOptionHelpText = 'Help Text for this Mock Option.';
+  const defaultFallbackGroupName = 'Option Group';
   const blankNameExamples = <String>[
     '',
     ' ',
@@ -19,9 +19,8 @@ void main() {
     '\t\t',
     '\t\t\t',
   ];
-  final nBlankNameExamples = blankNameExamples.length;
 
-  String buildSeparatorView(final String name) => '\n$name\n';
+  String buildSeparatorView(final String name) => '\n\n$name\n';
 
   String buildSuffix([final Object? suffix = '', final String prefix = '']) =>
       suffix != null && suffix != '' ? '$prefix${suffix.toString()}' : '';
@@ -33,40 +32,45 @@ void main() {
       'Mock Group${buildSuffix(suffix, ' ')}';
 
   String buildFallbackGroupName([final Object? suffix = '']) =>
-      '$fallbackGroupName${buildSuffix(suffix, ' ')}';
+      '$defaultFallbackGroupName${buildSuffix(suffix, ' ')}';
 
   OptionGroup buildMockGroup([final Object? suffix = '']) =>
       OptionGroup(buildMockGroupName(suffix));
 
   OptionDefinition buildMockOption(
-    final String name,
+    final String name, [
     final OptionGroup? group,
-  ) =>
+  ]) =>
       FlagOption(
         argName: name,
         group: group,
-        helpText: mockHelpText,
+        helpText: mockOptionHelpText,
       );
 
-  group('All Group Names are properly padded with newlines', () {
+  BetterCommandRunner buildRunner(final List<OptionDefinition> options) =>
+      BetterCommandRunner(
+        mockCommandName,
+        mockCommandDescription,
+        globalOptions: options,
+      );
+
+  group('Non-Blank Group Names are rendered as-is', () {
+    final grouplessOptions = <OptionDefinition>[
+      for (var i = 0; i < 5; ++i) buildMockOption(buildMockArgName(i)),
+    ];
+    final groupedOptions = <OptionDefinition>[
+      for (var i = 5; i < 10; ++i)
+        buildMockOption(buildMockArgName(i), buildMockGroup(i)),
+    ];
+    final expectation = allOf([
+      for (var i = 5; i < 10; ++i) contains(buildMockGroupName(i)),
+    ]);
     test(
       'in the presence of Groupless Options',
       () {
         expect(
-          BetterCommandRunner(
-            mockCommandName,
-            mockCommandDescription,
-            globalOptions: <OptionDefinition>[
-              for (var i = 0; i < 5; ++i)
-                buildMockOption(buildMockArgName(i), buildMockGroup(i)),
-              for (var i = 5; i < 10; ++i)
-                buildMockOption(buildMockArgName(i), null),
-            ],
-          ).usage,
-          allOf([
-            for (var i = 0; i < 5; ++i)
-              contains(buildSeparatorView(buildMockGroupName(i))),
-          ]),
+          buildRunner(grouplessOptions + groupedOptions).usage,
+          expectation,
         );
       },
     );
@@ -74,46 +78,68 @@ void main() {
       'in the absence of Groupless Options',
       () {
         expect(
-          BetterCommandRunner(
-            mockCommandName,
-            mockCommandDescription,
-            globalOptions: <OptionDefinition>[
-              for (var i = 0; i < 5; ++i)
-                buildMockOption(buildMockArgName(i), buildMockGroup(i)),
-            ],
-          ).usage,
-          allOf([
-            for (var i = 0; i < 5; ++i)
-              contains(buildSeparatorView(buildMockGroupName(i))),
-          ]),
+          buildRunner(groupedOptions).usage,
+          expectation,
+        );
+      },
+    );
+  });
+
+  group('Group Names are properly padded with newlines', () {
+    final grouplessOptions = <OptionDefinition>[
+      for (var i = 0; i < 5; ++i) buildMockOption(buildMockArgName(i)),
+    ];
+    final groupedOptions = <OptionDefinition>[
+      for (var i = 5; i < 10; ++i)
+        buildMockOption(buildMockArgName(i), buildMockGroup(i)),
+    ];
+    final expectation = allOf([
+      for (var i = 5; i < 10; ++i)
+        contains(buildSeparatorView(buildMockGroupName(i))),
+    ]);
+    test(
+      'in the presence of Groupless Options',
+      () {
+        expect(
+          buildRunner(grouplessOptions + groupedOptions).usage,
+          expectation,
+        );
+      },
+    );
+    test(
+      'in the absence of Groupless Options',
+      () {
+        expect(
+          buildRunner(groupedOptions).usage,
+          expectation,
         );
       },
     );
   });
 
   group('Blank Group Names are not rendered as-is', () {
+    final nBlankNameExamples = blankNameExamples.length;
+    final groupedOptions = <OptionDefinition>[
+      for (var i = 0; i < nBlankNameExamples; ++i)
+        buildMockOption(
+          buildMockArgName(i),
+          OptionGroup(blankNameExamples[i]),
+        ),
+    ];
+    final grouplessOptions = <OptionDefinition>[
+      for (var i = nBlankNameExamples; i < nBlankNameExamples + 5; ++i)
+        buildMockOption(buildMockArgName(i)),
+    ];
+    final expectation = allOf([
+      for (final blankName in blankNameExamples)
+        isNot(contains(buildSeparatorView(blankName))),
+    ]);
     test(
       'in the presence of Groupless Options',
       () {
         expect(
-          BetterCommandRunner(
-            mockCommandName,
-            mockCommandDescription,
-            globalOptions: <OptionDefinition>[
-              for (var i = 0; i < nBlankNameExamples; ++i)
-                buildMockOption(
-                  buildMockArgName(i),
-                  OptionGroup(blankNameExamples[i]),
-                ),
-              for (var i = nBlankNameExamples; i < nBlankNameExamples + 5; ++i)
-                buildMockOption(buildMockArgName(i), null),
-            ],
-          ).usage,
-          allOf([
-            for (final blankName in blankNameExamples)
-              if (blankName != '' && blankName != '\n')
-                isNot(contains(buildSeparatorView(blankName))),
-          ]),
+          buildRunner(grouplessOptions + groupedOptions).usage,
+          expectation,
         );
       },
     );
@@ -121,100 +147,42 @@ void main() {
       'in the absence of Groupless Options',
       () {
         expect(
-          BetterCommandRunner(
-            mockCommandName,
-            mockCommandDescription,
-            globalOptions: <OptionDefinition>[
-              for (var i = 0; i < nBlankNameExamples; ++i)
-                buildMockOption(
-                  buildMockArgName(i),
-                  OptionGroup(blankNameExamples[i]),
-                ),
-            ],
-          ).usage,
-          allOf([
-            for (final blankName in blankNameExamples)
-              if (blankName != '' && blankName != '\n')
-                isNot(contains(buildSeparatorView(blankName))),
-          ]),
-        );
-      },
-    );
-  });
-
-  group('Non-Blank Group Names are rendered as-is', () {
-    test(
-      'in the presence of Groupless Options',
-      () {
-        expect(
-          BetterCommandRunner(
-            mockCommandName,
-            mockCommandDescription,
-            globalOptions: <OptionDefinition>[
-              for (var i = 0; i < 5; ++i)
-                buildMockOption(buildMockArgName(i), buildMockGroup(i)),
-              for (var i = 5; i < 10; ++i)
-                buildMockOption(buildMockArgName(i), null),
-            ],
-          ).usage,
-          allOf([
-            for (var i = 0; i < 5; ++i)
-              contains(buildSeparatorView(buildMockGroupName(i))),
-          ]),
-        );
-      },
-    );
-    test(
-      'in the absence of Groupless Options',
-      () {
-        expect(
-          BetterCommandRunner(
-            mockCommandName,
-            mockCommandDescription,
-            globalOptions: <OptionDefinition>[
-              for (var i = 0; i < 5; ++i)
-                buildMockOption(buildMockArgName(i), buildMockGroup(i)),
-            ],
-          ).usage,
-          allOf([
-            for (var i = 0; i < 5; ++i)
-              contains(buildSeparatorView(buildMockGroupName(i))),
-          ]),
+          buildRunner(groupedOptions).usage,
+          expectation,
         );
       },
     );
   });
 
   group('Blank Group Names get a count-based default Group Name', () {
+    final grouplessOptions = <OptionDefinition>[
+      for (var i = 0; i < 5; ++i) buildMockOption(buildMockArgName(i)),
+    ];
+    final groupedOptions = <OptionDefinition>[
+      buildMockOption(
+        buildMockArgName('a'),
+        OptionGroup(blankNameExamples.first),
+      ),
+      buildMockOption(
+        buildMockArgName('b'),
+        OptionGroup(buildMockGroupName('XYZ')),
+      ),
+      buildMockOption(
+        buildMockArgName('c'),
+        OptionGroup(blankNameExamples.last),
+      ),
+    ];
+    final expectation = stringContainsInOrder([
+      buildSeparatorView(buildFallbackGroupName(1)),
+      buildSeparatorView(buildMockGroupName('XYZ')),
+      buildSeparatorView(buildFallbackGroupName(3)),
+    ]);
     test(
       'in the presence of Groupless Options',
       () {
         expect(
-          BetterCommandRunner(
-            mockCommandName,
-            mockCommandDescription,
-            globalOptions: <OptionDefinition>[
-              buildMockOption(
-                buildMockArgName(1),
-                OptionGroup(blankNameExamples.first),
-              ),
-              buildMockOption(
-                buildMockArgName(2),
-                OptionGroup(buildMockGroupName('XYZ')),
-              ),
-              buildMockOption(
-                buildMockArgName(3),
-                OptionGroup(blankNameExamples.last),
-              ),
-              for (var i = 100; i < 105; ++i)
-                buildMockOption(buildMockArgName(i), null),
-            ],
-          ).usage,
-          stringContainsInOrder([
-            buildSeparatorView(buildFallbackGroupName(1)),
-            buildSeparatorView(buildMockGroupName('XYZ')),
-            buildSeparatorView(buildFallbackGroupName(3)),
-          ]),
+          buildRunner(grouplessOptions + groupedOptions).usage,
+          expectation,
         );
       },
     );
@@ -222,29 +190,8 @@ void main() {
       'in the absence of Groupless Options',
       () {
         expect(
-          BetterCommandRunner(
-            mockCommandName,
-            mockCommandDescription,
-            globalOptions: <OptionDefinition>[
-              buildMockOption(
-                buildMockArgName(1),
-                OptionGroup(blankNameExamples.first),
-              ),
-              buildMockOption(
-                buildMockArgName(2),
-                OptionGroup(buildMockGroupName('XYZ')),
-              ),
-              buildMockOption(
-                buildMockArgName(3),
-                OptionGroup(blankNameExamples.last),
-              ),
-            ],
-          ).usage,
-          stringContainsInOrder([
-            buildSeparatorView(buildFallbackGroupName(1)),
-            buildSeparatorView(buildMockGroupName('XYZ')),
-            buildSeparatorView(buildFallbackGroupName(3)),
-          ]),
+          buildRunner(groupedOptions).usage,
+          expectation,
         );
       },
     );
@@ -253,35 +200,29 @@ void main() {
   test(
     'All Groupless Options are shown before Grouped Options',
     () {
+      final groupedOptions = <OptionDefinition>[
+        for (var i = 0; i < 5; ++i)
+          buildMockOption(buildMockArgName(i), buildMockGroup(i)),
+      ];
+      final grouplessOptions = <OptionDefinition>[
+        for (var i = 5; i < 10; ++i) buildMockOption(buildMockArgName(i)),
+      ];
+      final expectation = stringContainsInOrder([
+        '\n',
+        for (var i = 5; i < 10; ++i) ...[
+          buildMockArgName(i),
+          '\n',
+        ],
+        '\n',
+        for (var i = 0; i < 5; ++i) ...[
+          buildMockArgName(i),
+          '\n',
+        ],
+        '\n',
+      ]);
       expect(
-        BetterCommandRunner(
-          mockCommandName,
-          mockCommandDescription,
-          globalOptions: <OptionDefinition>[
-            buildMockOption(
-              buildMockArgName(1),
-              OptionGroup(blankNameExamples.first),
-            ),
-            buildMockOption(
-              buildMockArgName(2),
-              OptionGroup(buildMockGroupName('XYZ')),
-            ),
-            buildMockOption(
-              buildMockArgName(3),
-              OptionGroup(blankNameExamples.last),
-            ),
-            for (var i = 100; i < 105; ++i)
-              buildMockOption(buildMockArgName(i), null),
-          ],
-        ).usage,
-        stringContainsInOrder([
-          '\n',
-          for (var i = 100; i < 105; ++i) buildMockArgName(i),
-          '\n',
-          buildSeparatorView(buildFallbackGroupName(1)),
-          buildSeparatorView(buildMockGroupName('XYZ')),
-          buildSeparatorView(buildFallbackGroupName(3)),
-        ]),
+        buildRunner(groupedOptions + grouplessOptions).usage,
+        expectation,
       );
     },
   );
@@ -289,30 +230,37 @@ void main() {
   test(
     'Relative order of all Options within a Group is preserved',
     () {
-      var optionCount1 = 0;
-      var optionCount2 = 0;
-      expect(
-        BetterCommandRunner(
-          mockCommandName,
-          mockCommandDescription,
-          globalOptions: <OptionDefinition>[
-            for (var i = 0; i < 5; ++i)
-              buildMockOption(buildMockArgName(++optionCount1), null),
-            for (var i = 0; i < 3; ++i)
-              for (var j = 0; j < 5; ++j)
-                buildMockOption(
-                  buildMockArgName(++optionCount1),
-                  OptionGroup(buildMockGroupName(i)),
-                ),
+      var testOptionCount = 0;
+      final grouplessOptions = <OptionDefinition>[
+        for (var i = 0; i < 5; ++i)
+          buildMockOption(buildMockArgName(++testOptionCount)),
+      ];
+      final groupedOptions = <OptionDefinition>[
+        for (var i = 0; i < 3; ++i)
+          for (var j = 0; j < 5; ++j)
+            buildMockOption(
+              buildMockArgName(++testOptionCount),
+              buildMockGroup(i),
+            ),
+      ];
+      var expectationOptionCount = 0;
+      final expectation = stringContainsInOrder([
+        '\n',
+        for (var i = 0; i < 5; ++i) ...[
+          buildMockArgName(++expectationOptionCount),
+          '\n',
+        ],
+        '\n',
+        for (var i = 0; i < 3; ++i)
+          for (var j = 0; j < 5; ++j) ...[
+            buildMockArgName(++expectationOptionCount),
+            '\n',
           ],
-        ).usage,
-        stringContainsInOrder([
-          '\n',
-          for (var i = 0; i < 5; ++i) buildMockArgName(++optionCount2),
-          '\n',
-          for (var i = 0; i < 3; ++i)
-            for (var j = 0; j < 5; ++j) buildMockArgName(++optionCount2),
-        ]),
+        '\n',
+      ]);
+      expect(
+        buildRunner(grouplessOptions + groupedOptions).usage,
+        expectation,
       );
     },
   );
@@ -321,27 +269,27 @@ void main() {
     'Relative order of all Groups is preserved',
     () {
       var optionCount = 0;
-      var groupCount1 = 0;
-      var groupCount2 = 0;
+      var testGroupCount = 0;
+      final grouplessOptions = <OptionDefinition>[
+        for (var i = 0; i < 5; ++i)
+          buildMockOption(buildMockArgName(++optionCount)),
+      ];
+      final groupedOptions = <OptionDefinition>[
+        for (var i = 0; i < 3; ++i)
+          for (var j = 0; j < 5; ++j)
+            buildMockOption(
+              buildMockArgName(++optionCount),
+              buildMockGroup(++testGroupCount),
+            ),
+      ];
+      var expectationGroupCount = 0;
+      final expectation = stringContainsInOrder([
+        for (var i = 0; i < testGroupCount; ++i)
+          buildSeparatorView(buildMockGroupName(++expectationGroupCount)),
+      ]);
       expect(
-        BetterCommandRunner(
-          mockCommandName,
-          mockCommandDescription,
-          globalOptions: <OptionDefinition>[
-            for (var i = 0; i < 5; ++i)
-              buildMockOption(buildMockArgName(++optionCount), null),
-            for (var i = 0; i < 3; ++i)
-              for (var j = 0; j < 5; ++j)
-                buildMockOption(
-                  buildMockArgName(++optionCount),
-                  buildMockGroup(++groupCount1),
-                ),
-          ],
-        ).usage,
-        stringContainsInOrder([
-          for (var i = 0; i < groupCount1; ++i)
-            buildSeparatorView(buildMockGroupName(++groupCount2)),
-        ]),
+        buildRunner(grouplessOptions + groupedOptions).usage,
+        expectation,
       );
     },
   );
