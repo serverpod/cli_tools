@@ -31,6 +31,17 @@ void main() {
         helpText: mockOptionHelpText,
       );
 
+  OptionDefinition buildHiddenMockOption(
+    final String name, [
+    final OptionGroup? group,
+  ]) =>
+      FlagOption(
+        argName: name,
+        group: group,
+        hide: true,
+        helpText: mockOptionHelpText,
+      );
+
   BetterCommandRunner buildRunner(final List<OptionDefinition> options) =>
       BetterCommandRunner(
         mockCommandName,
@@ -38,7 +49,7 @@ void main() {
         globalOptions: options,
       );
 
-  group('Group Names are rendered as-is', () {
+  group('Group Names (of visible Groups) are rendered as-is', () {
     final grouplessOptions = <OptionDefinition>[
       for (var i = 0; i < 5; ++i) buildMockOption(buildMockArgName(i)),
     ];
@@ -63,6 +74,54 @@ void main() {
       () {
         expect(
           buildRunner(groupedOptions).usage,
+          expectation,
+        );
+      },
+    );
+  });
+
+  group('Group Names (of invisible Groups) are hidden', () {
+    var testOptionCount = 0;
+    var testGroupCount = 0;
+    final grouplessOptions = <OptionDefinition>[
+      for (var i = 0; i < 5; ++i)
+        buildMockOption(buildMockArgName(++testOptionCount)),
+    ];
+    final groupedOptions = <OptionDefinition>[
+      for (var i = 0; i < 5; ++i)
+        buildMockOption(
+          buildMockArgName(++testOptionCount),
+          buildMockGroup(++testGroupCount),
+        ),
+    ];
+    final hiddenGroups = <OptionDefinition>[
+      for (var i = 0; i < 5; ++i)
+        buildHiddenMockOption(
+          buildMockArgName(++testOptionCount),
+          buildMockGroup(++testGroupCount),
+        ),
+    ];
+    var expectationGroupCount = 0;
+    final expectation = allOf([
+      for (var i = 0; i < 5; ++i)
+        contains(buildMockGroupName(++expectationGroupCount)),
+      for (var i = 0; i < 5; ++i)
+        isNot(contains(buildMockGroupName(++expectationGroupCount))),
+    ]);
+    test(
+      'in the presence of Groupless Options',
+      () {
+        expect(
+          buildRunner(grouplessOptions + groupedOptions + hiddenGroups).usage,
+          expectation,
+        );
+      },
+    );
+    test(
+      'in the absence of Groupless Options',
+      () {
+        expect(
+          buildRunner(groupedOptions + hiddenGroups).usage,
           expectation,
         );
       },
@@ -199,7 +258,7 @@ void main() {
   );
 
   test(
-    'Relative order of all Groups and Options is preserved',
+    'Relative order of jumbled Groups and Options is preserved',
     () {
       expect(
         buildRunner(const <OptionDefinition>[
