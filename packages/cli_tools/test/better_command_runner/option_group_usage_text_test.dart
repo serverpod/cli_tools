@@ -36,6 +36,9 @@ void main() {
         globalOptions: options,
       );
 
+  int howManyMatches(final String pattern, final String target) =>
+      RegExp(pattern).allMatches(target).length;
+
   group('Group Names (of visible Groups) are rendered as-is', () {
     final grouplessOptions = <OptionDefinition>[
       for (var i = 0; i < 5; ++i) buildMockOption(buildMockArgName(i), null),
@@ -148,6 +151,53 @@ void main() {
     );
   });
 
+  group('Only one Separator per unique Group Name', () {
+    final grouplessOptions = <OptionDefinition>[
+      for (var i = 0; i < 5; ++i) buildMockOption(buildMockArgName(i), null),
+    ];
+    final groupedOptions = <OptionDefinition>[
+      for (var i = 5; i < 10; ++i)
+        buildMockOption(buildMockArgName(i), buildMockGroupName('A')),
+      for (var i = 10; i < 15; ++i)
+        buildMockOption(buildMockArgName(i), buildMockGroupName('B')),
+      for (var i = 15; i < 20; ++i)
+        buildMockOption(buildMockArgName(i), buildMockGroupName('A')),
+    ];
+    void checkExpectation(final String usage) {
+      expect(
+        usage,
+        stringContainsInOrder([
+          buildSeparatorView(buildMockGroupName('A')),
+          for (var i = 5; i < 10; ++i) buildMockArgName(i),
+          for (var i = 15; i < 20; ++i) buildMockArgName(i),
+          buildSeparatorView(buildMockGroupName('B')),
+          for (var i = 10; i < 15; ++i) buildMockArgName(i),
+        ]),
+      );
+      expect(
+        howManyMatches(buildSeparatorView(buildMockGroupName('A')), usage),
+        equals(1),
+      );
+      expect(
+        howManyMatches(buildSeparatorView(buildMockGroupName('B')), usage),
+        equals(1),
+      );
+    }
+
+    test(
+      'in the presence of Groupless Options',
+      () {
+        checkExpectation(buildRunner(grouplessOptions + groupedOptions).usage);
+      },
+    );
+    test(
+      'in the absence of Groupless Options',
+      () {
+        checkExpectation(buildRunner(groupedOptions).usage);
+      },
+    );
+  });
+
   test(
     'All Groupless Options are shown before Grouped Options',
     () {
@@ -248,20 +298,21 @@ void main() {
   test(
     'Combined Behavior check (Groupless Options, Grouped Options, Hidden Groups)',
     () {
+      final usage = buildRunner(<OptionDefinition>[
+        buildMockOption('option-1', null),
+        buildMockOption('option-2', 'Group 1'),
+        buildMockOption('option-3', 'Group 2'),
+        buildMockOption('option-4', 'Group 1'),
+        buildMockOption('option-5', null),
+        buildMockOption('option-6', 'Group 2'),
+        buildMockOption('option-7', 'Group 3', hide: true),
+        buildMockOption('option-8', 'Group 4', hide: true),
+        buildMockOption('option-9', 'Group 4', hide: true),
+        buildMockOption('option-10', 'Group 5', hide: true),
+        buildMockOption('option-11', 'Group 5'),
+      ]).usage;
       expect(
-        buildRunner(<OptionDefinition>[
-          buildMockOption('option-1', null),
-          buildMockOption('option-2', 'Group 1'),
-          buildMockOption('option-3', 'Group 2'),
-          buildMockOption('option-4', 'Group 1'),
-          buildMockOption('option-5', null),
-          buildMockOption('option-6', 'Group 2'),
-          buildMockOption('option-7', 'Group 3', hide: true),
-          buildMockOption('option-8', 'Group 4', hide: true),
-          buildMockOption('option-9', 'Group 4', hide: true),
-          buildMockOption('option-10', 'Group 5', hide: true),
-          buildMockOption('option-11', 'Group 5'),
-        ]).usage,
+        usage,
         allOf([
           stringContainsInOrder([
             'option-1',
@@ -283,6 +334,9 @@ void main() {
           isNot(contains('option-10')),
         ]),
       );
+      expect(howManyMatches('Group 1', usage), equals(1));
+      expect(howManyMatches('Group 2', usage), equals(1));
+      expect(howManyMatches('Group 5', usage), equals(1));
     },
   );
 }
