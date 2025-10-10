@@ -805,7 +805,7 @@ void addOptionsToParser(
   final ArgParser argParser, {
   final bool addGroupSeparators = false,
 }) {
-  // Plain Option-addition without any Group Separator Logic
+  // Plain Option-addition WITHOUT any Group Separator Logic
   if (!addGroupSeparators) {
     for (final o in argNameOpts) {
       o.option._addToArgParser(argParser);
@@ -839,9 +839,13 @@ void addOptionsToParser(
     o.option._addToArgParser(argParser);
   }
 
-  // Add all EXPLICIT Groups (in order) and their Options (in order)
+  // Add all EXPLICIT Groups (in order)
   optionGroups.forEach((final group, final groupedOptions) {
-    argParser.addSeparator(group.name);
+    // Add the Group Name Separator only if it has at least one Visible Option
+    if (groupedOptions.any((final o) => !o.option.hide)) {
+      argParser.addSeparator(group.name);
+    }
+    // Add all Options WITHIN this Group (in order)
     for (final o in groupedOptions) {
       o.option._addToArgParser(argParser);
     }
