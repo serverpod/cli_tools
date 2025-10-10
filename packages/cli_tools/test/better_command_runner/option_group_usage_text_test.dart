@@ -258,7 +258,7 @@ void main() {
   );
 
   test(
-    'Relative order of jumbled Groups and Options is preserved',
+    'Combined Behavior check (Groupless Options, Grouped Options, Hidden Groups)',
     () {
       expect(
         buildRunner(const <OptionDefinition>[
@@ -292,16 +292,56 @@ void main() {
             group: OptionGroup('Group 2'),
             helpText: 'Help section for option-6.',
           ),
+          FlagOption(
+            argName: 'option-7',
+            group: OptionGroup('Group 3'),
+            hide: true,
+            helpText: 'Help section for option-7.',
+          ),
+          FlagOption(
+            argName: 'option-8',
+            group: OptionGroup('Group 4'),
+            hide: true,
+            helpText: 'Help section for option-8.',
+          ),
+          FlagOption(
+            argName: 'option-9',
+            group: OptionGroup('Group 4'),
+            hide: true,
+            helpText: 'Help section for option-9.',
+          ),
+          FlagOption(
+            argName: 'option-10',
+            group: OptionGroup('Group 5'),
+            hide: true,
+            helpText: 'Help section for option-10.',
+          ),
+          FlagOption(
+            argName: 'option-11',
+            group: OptionGroup('Group 5'),
+            hide: false,
+            helpText: 'Help section for option-11.',
+          ),
         ]).usage,
-        stringContainsInOrder([
-          'option-1',
-          'option-5',
-          'Group 1',
-          'option-2',
-          'option-4',
-          'Group 2',
-          'option-3',
-          'option-6',
+        allOf([
+          stringContainsInOrder([
+            'option-1',
+            'option-5',
+            'Group 1',
+            'option-2',
+            'option-4',
+            'Group 2',
+            'option-3',
+            'option-6',
+            'Group 5',
+            'option-11',
+          ]),
+          isNot(contains('Group 3')),
+          isNot(contains('option-7')),
+          isNot(contains('Group 4')),
+          isNot(contains('option-8')),
+          isNot(contains('option-9')),
+          isNot(contains('option-10')),
         ]),
       );
     },
