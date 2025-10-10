@@ -805,7 +805,7 @@ void addOptionsToParser(
   final ArgParser argParser, {
   final bool addGroupSeparators = false,
 }) {
-  // Plain Option-addition WITHOUT any Group Separator Logic
+  // plain option-addition without any group separator logic
   if (!addGroupSeparators) {
     for (final o in argNameOpts) {
       o.option._addToArgParser(argParser);
@@ -813,14 +813,14 @@ void addOptionsToParser(
     return;
   }
 
-  // The following containers are ordered by default i.e.
+  // the following containers are ordered by default i.e.
   // preserves insertion-order:
   // - Map  : https://stackoverflow.com/q/79786585/10251345
   // - List : https://api.dart.dev/dart-core/List-class.html
   final optionGroups = <OptionGroup, List<OptionDefinition>>{};
   final grouplessOptions = <OptionDefinition>[];
 
-  // Gather all necessary Option Group information
+  // gather all necessary option-group information
   for (final opt in argNameOpts) {
     final group = opt.option.group;
     if (group != null) {
@@ -834,18 +834,18 @@ void addOptionsToParser(
     }
   }
 
-  // Add all Groupless Options FIRST (in order)
+  // add all groupless-options first (in order)
   for (final o in grouplessOptions) {
     o.option._addToArgParser(argParser);
   }
 
-  // Add all EXPLICIT Groups (in order)
+  // add all explicit groups (in order)
   optionGroups.forEach((final group, final groupedOptions) {
-    // Add the Group Name Separator only if it has at least one Visible Option
+    // add the group-name-separator only if it has at least one visible option
     if (groupedOptions.any((final o) => !o.option.hide)) {
       argParser.addSeparator(group.name);
     }
-    // Add all Options WITHIN this Group (in order)
+    // add all options within this group (in order)
     for (final o in groupedOptions) {
       o.option._addToArgParser(argParser);
     }
