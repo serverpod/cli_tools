@@ -800,6 +800,19 @@ Iterable<OptionDefinition> validateOptions(
   return argNameOpts.values;
 }
 
+/// Adds [argNameOpts] to [argParser].
+///
+/// When [addGroupSeparators] is `true`,
+/// - options are grouped by [OptionGroup] and a
+/// - separator with the group name is inserted
+/// - before each group that has at least one visible option.
+/// - Note:
+///     - groupless options are added first in their original order
+///     - relative order of all options within a group is preserved
+///     - relative order of all groups is preserved
+///
+/// By default,
+/// [addGroupSeparators] is `false` to ensure backwards compatibility.
 void addOptionsToParser(
   final Iterable<OptionDefinition> argNameOpts,
   final ArgParser argParser, {
