@@ -805,17 +805,18 @@ void addOptionsToParser(
   final ArgParser argParser, {
   final bool addGroupSeparators = false,
 }) {
-  // Helpers for consistent processing
-  void addOne(final OptionDefinition o) => o.option._addToArgParser(argParser);
-  void addAll(final Iterable<OptionDefinition> o) => o.forEach(addOne);
-
-  // Plain Option-addition without any Group Logic
+  // Plain Option-addition without any Group Separator Logic
   if (!addGroupSeparators) {
-    addAll(argNameOpts);
+    for (final o in argNameOpts) {
+      o.option._addToArgParser(argParser);
+    }
     return;
   }
 
-  // The following containers are ordered by default
+  // The following containers are ordered by default i.e.
+  // preserves insertion-order:
+  // - Map  : https://stackoverflow.com/q/79786585/10251345
+  // - List : https://api.dart.dev/dart-core/List-class.html
   final optionGroups = <OptionGroup, List<OptionDefinition>>{};
   final grouplessOptions = <OptionDefinition>[];
 
@@ -833,13 +834,17 @@ void addOptionsToParser(
     }
   }
 
-  // Add all Groupless Options first (in order)
-  addAll(grouplessOptions);
+  // Add all Groupless Options FIRST (in order)
+  for (final o in grouplessOptions) {
+    o.option._addToArgParser(argParser);
+  }
 
-  // Add all Groups (in order) and their Options (in order)
-  optionGroups.forEach((final group, final options) {
+  // Add all EXPLICIT Groups (in order) and their Options (in order)
+  optionGroups.forEach((final group, final groupedOptions) {
     argParser.addSeparator(group.name);
-    addAll(options);
+    for (final o in groupedOptions) {
+      o.option._addToArgParser(argParser);
+    }
   });
 }
 
