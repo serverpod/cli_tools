@@ -5,7 +5,6 @@ import 'package:test/test.dart';
 void main() {
   const mockCommandName = 'mock';
   const mockCommandDescription = 'A mock CLI for Option Group Usage Text test.';
-  const mockOptionHelpText = 'Help Text for this Mock Option.';
 
   String buildSeparatorView(final String name) => '\n\n$name\n';
 
@@ -18,28 +17,16 @@ void main() {
   String buildMockGroupName([final Object? suffix = '']) =>
       'Mock Group${buildSuffix(suffix, ' ')}';
 
-  OptionGroup buildMockGroup([final Object? suffix = '']) =>
-      OptionGroup(buildMockGroupName(suffix));
-
   OptionDefinition buildMockOption(
-    final String name, [
-    final OptionGroup? group,
-  ]) =>
+    final String argName,
+    final String? groupName, {
+    final bool hide = false,
+  }) =>
       FlagOption(
-        argName: name,
-        group: group,
-        helpText: mockOptionHelpText,
-      );
-
-  OptionDefinition buildHiddenMockOption(
-    final String name, [
-    final OptionGroup? group,
-  ]) =>
-      FlagOption(
-        argName: name,
-        group: group,
-        hide: true,
-        helpText: mockOptionHelpText,
+        argName: argName,
+        hide: hide,
+        group: groupName != null ? OptionGroup(groupName) : null,
+        helpText: 'Help section for $argName.',
       );
 
   BetterCommandRunner buildRunner(final List<OptionDefinition> options) =>
@@ -51,11 +38,11 @@ void main() {
 
   group('Group Names (of visible Groups) are rendered as-is', () {
     final grouplessOptions = <OptionDefinition>[
-      for (var i = 0; i < 5; ++i) buildMockOption(buildMockArgName(i)),
+      for (var i = 0; i < 5; ++i) buildMockOption(buildMockArgName(i), null),
     ];
     final groupedOptions = <OptionDefinition>[
       for (var i = 5; i < 10; ++i)
-        buildMockOption(buildMockArgName(i), buildMockGroup(i)),
+        buildMockOption(buildMockArgName(i), buildMockGroupName(i)),
     ];
     final expectation = allOf([
       for (var i = 5; i < 10; ++i) contains(buildMockGroupName(i)),
@@ -85,20 +72,21 @@ void main() {
     var testGroupCount = 0;
     final grouplessOptions = <OptionDefinition>[
       for (var i = 0; i < 5; ++i)
-        buildMockOption(buildMockArgName(++testOptionCount)),
+        buildMockOption(buildMockArgName(++testOptionCount), null),
     ];
     final groupedOptions = <OptionDefinition>[
       for (var i = 0; i < 5; ++i)
         buildMockOption(
           buildMockArgName(++testOptionCount),
-          buildMockGroup(++testGroupCount),
+          buildMockGroupName(++testGroupCount),
         ),
     ];
     final hiddenGroups = <OptionDefinition>[
       for (var i = 0; i < 5; ++i)
-        buildHiddenMockOption(
+        buildMockOption(
           buildMockArgName(++testOptionCount),
-          buildMockGroup(++testGroupCount),
+          buildMockGroupName(++testGroupCount),
+          hide: true,
         ),
     ];
     var expectationGroupCount = 0;
@@ -130,11 +118,11 @@ void main() {
 
   group('Group Names are properly padded with newlines', () {
     final grouplessOptions = <OptionDefinition>[
-      for (var i = 0; i < 5; ++i) buildMockOption(buildMockArgName(i)),
+      for (var i = 0; i < 5; ++i) buildMockOption(buildMockArgName(i), null),
     ];
     final groupedOptions = <OptionDefinition>[
       for (var i = 5; i < 10; ++i)
-        buildMockOption(buildMockArgName(i), buildMockGroup(i)),
+        buildMockOption(buildMockArgName(i), buildMockGroupName(i)),
     ];
     final expectation = allOf([
       for (var i = 5; i < 10; ++i)
@@ -165,10 +153,10 @@ void main() {
     () {
       final groupedOptions = <OptionDefinition>[
         for (var i = 0; i < 5; ++i)
-          buildMockOption(buildMockArgName(i), buildMockGroup(i)),
+          buildMockOption(buildMockArgName(i), buildMockGroupName(i)),
       ];
       final grouplessOptions = <OptionDefinition>[
-        for (var i = 5; i < 10; ++i) buildMockOption(buildMockArgName(i)),
+        for (var i = 5; i < 10; ++i) buildMockOption(buildMockArgName(i), null),
       ];
       final expectation = stringContainsInOrder([
         '\n',
@@ -196,14 +184,14 @@ void main() {
       var testOptionCount = 0;
       final grouplessOptions = <OptionDefinition>[
         for (var i = 0; i < 5; ++i)
-          buildMockOption(buildMockArgName(++testOptionCount)),
+          buildMockOption(buildMockArgName(++testOptionCount), null),
       ];
       final groupedOptions = <OptionDefinition>[
         for (var i = 0; i < 3; ++i)
           for (var j = 0; j < 5; ++j)
             buildMockOption(
               buildMockArgName(++testOptionCount),
-              buildMockGroup(i),
+              buildMockGroupName(i),
             ),
       ];
       var expectationOptionCount = 0;
@@ -235,14 +223,14 @@ void main() {
       var testGroupCount = 0;
       final grouplessOptions = <OptionDefinition>[
         for (var i = 0; i < 5; ++i)
-          buildMockOption(buildMockArgName(++optionCount)),
+          buildMockOption(buildMockArgName(++optionCount), null),
       ];
       final groupedOptions = <OptionDefinition>[
         for (var i = 0; i < 3; ++i)
           for (var j = 0; j < 5; ++j)
             buildMockOption(
               buildMockArgName(++optionCount),
-              buildMockGroup(++testGroupCount),
+              buildMockGroupName(++testGroupCount),
             ),
       ];
       var expectationGroupCount = 0;
@@ -261,67 +249,18 @@ void main() {
     'Combined Behavior check (Groupless Options, Grouped Options, Hidden Groups)',
     () {
       expect(
-        buildRunner(const <OptionDefinition>[
-          FlagOption(
-            argName: 'option-1',
-            group: null,
-            helpText: 'Help section for option-1.',
-          ),
-          FlagOption(
-            argName: 'option-2',
-            group: OptionGroup('Group 1'),
-            helpText: 'Help section for option-2.',
-          ),
-          FlagOption(
-            argName: 'option-3',
-            group: OptionGroup('Group 2'),
-            helpText: 'Help section for option-3.',
-          ),
-          FlagOption(
-            argName: 'option-4',
-            group: OptionGroup('Group 1'),
-            helpText: 'Help section for option-4.',
-          ),
-          FlagOption(
-            argName: 'option-5',
-            group: null,
-            helpText: 'Help section for option-5.',
-          ),
-          FlagOption(
-            argName: 'option-6',
-            group: OptionGroup('Group 2'),
-            helpText: 'Help section for option-6.',
-          ),
-          FlagOption(
-            argName: 'option-7',
-            group: OptionGroup('Group 3'),
-            hide: true,
-            helpText: 'Help section for option-7.',
-          ),
-          FlagOption(
-            argName: 'option-8',
-            group: OptionGroup('Group 4'),
-            hide: true,
-            helpText: 'Help section for option-8.',
-          ),
-          FlagOption(
-            argName: 'option-9',
-            group: OptionGroup('Group 4'),
-            hide: true,
-            helpText: 'Help section for option-9.',
-          ),
-          FlagOption(
-            argName: 'option-10',
-            group: OptionGroup('Group 5'),
-            hide: true,
-            helpText: 'Help section for option-10.',
-          ),
-          FlagOption(
-            argName: 'option-11',
-            group: OptionGroup('Group 5'),
-            hide: false,
-            helpText: 'Help section for option-11.',
-          ),
+        buildRunner(<OptionDefinition>[
+          buildMockOption('option-1', null),
+          buildMockOption('option-2', 'Group 1'),
+          buildMockOption('option-3', 'Group 2'),
+          buildMockOption('option-4', 'Group 1'),
+          buildMockOption('option-5', null),
+          buildMockOption('option-6', 'Group 2'),
+          buildMockOption('option-7', 'Group 3', hide: true),
+          buildMockOption('option-8', 'Group 4', hide: true),
+          buildMockOption('option-9', 'Group 4', hide: true),
+          buildMockOption('option-10', 'Group 5', hide: true),
+          buildMockOption('option-11', 'Group 5'),
         ]).usage,
         allOf([
           stringContainsInOrder([
