@@ -1,5 +1,5 @@
 import 'exceptions.dart';
-import 'option_resolution.dart';
+import 'option_resolution_data.dart';
 import 'options.dart';
 
 enum MutuallyExclusiveMode {
@@ -49,7 +49,7 @@ class MutuallyExclusive extends OptionGroup {
 
   @override
   String? validateValues(
-    final Map<OptionDefinition, OptionResolution> optionResolutions,
+    final Map<OptionDefinition, OptionResolutionData> optionResolutions,
   ) {
     final allowDefaults = mode == MutuallyExclusiveMode.allowDefaults;
     final providedCount = optionResolutions.values
