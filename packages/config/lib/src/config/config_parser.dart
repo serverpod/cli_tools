@@ -210,7 +210,7 @@ class ConfigParser implements ArgParser {
   void _addOption(final OptionDefinition opt) {
     _optionDefinitions.add(opt);
     // added continuously to the parser so separators are placed correctly:
-    addOptionsToParser([opt], _parser);
+    addOptionsToParser([opt], _parser, addGroupSeparators: false);
   }
 
   @override

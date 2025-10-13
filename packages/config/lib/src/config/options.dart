@@ -41,7 +41,7 @@ abstract interface class OptionDefinition<V> {
 /// An option group allows grouping options together under a common name,
 /// and optionally provide option value validation on the group as a whole.
 ///
-/// [name] might be used as group header in usage information
+/// [name] shall be used as group header in usage information
 /// so it is recommended to format it appropriately, e.g. `File mode`.
 ///
 /// An [OptionGroup] is uniquely identified by its [name].
@@ -722,7 +722,7 @@ void prepareOptionsForParsing(
   final ArgParser argParser,
 ) {
   final argNameOpts = validateOptions(options);
-  addOptionsToParser(argNameOpts, argParser);
+  addOptionsToParser(argNameOpts, argParser, addGroupSeparators: true);
 }
 
 Iterable<OptionDefinition> validateOptions(
@@ -800,13 +800,69 @@ Iterable<OptionDefinition> validateOptions(
   return argNameOpts.values;
 }
 
+/// Adds [argNameOpts] to [argParser].
+///
+/// When [addGroupSeparators] is `true`,
+/// - options are grouped by [OptionGroup] and a
+/// - separator with the group name is inserted
+/// - before each group that has at least one visible option.
+/// - Note:
+///     - groupless options are added first in their original order
+///     - relative order of all options within a group is preserved
+///     - relative order of all groups is preserved
+///
+/// By default,
+/// [addGroupSeparators] is `false` to ensure backwards compatibility.
 void addOptionsToParser(
   final Iterable<OptionDefinition> argNameOpts,
-  final ArgParser argParser,
-) {
-  for (final opt in argNameOpts) {
-    opt.option._addToArgParser(argParser);
+  final ArgParser argParser, {
+  final bool addGroupSeparators = false,
+}) {
+  // plain option-addition without any group separator logic
+  if (!addGroupSeparators) {
+    for (final o in argNameOpts) {
+      o.option._addToArgParser(argParser);
+    }
+    return;
   }
+
+  // the following containers are ordered by default i.e.
+  // preserves insertion-order:
+  // - Map  : https://stackoverflow.com/q/79786585/10251345
+  // - List : https://api.dart.dev/dart-core/List-class.html
+  final optionGroups = <OptionGroup, List<OptionDefinition>>{};
+  final grouplessOptions = <OptionDefinition>[];
+
+  // gather all necessary option-group information
+  for (final opt in argNameOpts) {
+    final group = opt.option.group;
+    if (group != null) {
+      optionGroups.update(
+        group,
+        (final options) => options..add(opt),
+        ifAbsent: () => [opt],
+      );
+    } else {
+      grouplessOptions.add(opt);
+    }
+  }
+
+  // add all groupless-options first (in order)
+  for (final o in grouplessOptions) {
+    o.option._addToArgParser(argParser);
+  }
+
+  // add all explicit groups (in order)
+  optionGroups.forEach((final group, final groupedOptions) {
+    // add the group-name-separator only if it has at least one visible option
+    if (groupedOptions.any((final o) => !o.option.hide)) {
+      argParser.addSeparator(group.name);
+    }
+    // add all options within this group (in order)
+    for (final o in groupedOptions) {
+      o.option._addToArgParser(argParser);
+    }
+  });
 }
 
 extension PrepareOptions on Iterable<OptionDefinition> {
