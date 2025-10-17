@@ -1,20 +1,20 @@
 import 'source_type.dart';
 
-/// Provides significant metadata about an Option once it is resolved.
+/// Provides significant metadata about an option once it is resolved.
 base mixin OptionResolutionData<V> {
-  /// The resolved value of this Option.
+  /// The resolved value of the option.
   V? get value;
 
-  /// The source from where this Option has been resolved.
+  /// The source from where the option has been resolved.
   ValueSourceType get source;
 
-  /// A string representation of this Option's value.
+  /// The string value of the option.
   String? get stringValue;
 
-  /// An Error that may have been encountered during Option Resolution.
+  /// Error message, if any, apropos of option resolution.
   String? get error;
 
-  /// Whether there was an error during resolving this Option.
+  /// Whether there was an error during resolving the option.
   bool get hasError => error != null;
 
   /// Whether the option has a proper value (without errors).
