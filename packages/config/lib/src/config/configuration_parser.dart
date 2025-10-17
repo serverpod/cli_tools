@@ -29,15 +29,14 @@ abstract final class ConfigurationParser {
   }
 
   /// Parses a configuration from a file.
-  static ConfigurationSource fromFile(
-    final String filePath,
-  ) {
-    if (filePath.endsWith('.json')) {
+  static ConfigurationSource fromFile(final String filePath) {
+    final check = filePath.toLowerCase();
+    if (check.endsWith('.json')) {
       return fromString(
         _loadFile(filePath),
         format: ConfigEncoding.json,
       );
-    } else if (filePath.endsWith('.yaml') || filePath.endsWith('.yml')) {
+    } else if (check.endsWith('.yaml') || check.endsWith('.yml')) {
       return fromString(
         _loadFile(filePath),
         format: ConfigEncoding.yaml,
