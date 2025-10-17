@@ -29,6 +29,14 @@ abstract final class ConfigurationParser {
   }
 
   /// Parses a configuration from a file.
+  ///
+  /// It is expected that the caller ensures [filePath]:
+  /// - exists in the File System,
+  ///   otherwise throws [ArgumentError]
+  /// - extension is in {".json", ".yaml", ".yml"} (case-insensitive),
+  ///   otherwise throws [UnsupportedError]
+  ///
+  /// Throws a [FormatException] if the file content is invalid.
   static ConfigurationSource fromFile(final String filePath) {
     final check = filePath.toLowerCase();
     if (check.endsWith('.json')) {
