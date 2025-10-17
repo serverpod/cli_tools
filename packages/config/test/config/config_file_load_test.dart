@@ -84,8 +84,8 @@ void _verifyMockFileExtensions() {
             0, (final prev, final curr) => prev + pow(2, curr.length)),
     'YAML extension samples must be mathematically sound.',
   );
-  print('Unique JSON extensions for testing: $jsonExtensionSamplesCount');
-  print('Unique YAML extensions for testing: $yamlExtensionSamplesCount');
+  // print('Unique JSON extensions for testing: $jsonExtensionSamplesCount');
+  // print('Unique YAML extensions for testing: $yamlExtensionSamplesCount');
 }
 
 String _buildFilepath(
