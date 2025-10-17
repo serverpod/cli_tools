@@ -100,11 +100,11 @@ void _prepareMockFiles() {
     for (final fact in _Fact.values) {
       for (final fileExtension in _mockExtensions[fileFormat]!) {
         File(_buildFilepath(fileFormat, fact, fileExtension))
-          ..createSync(recursive: true, exclusive: true)
+          ..createSync(recursive: true, exclusive: false)
           ..writeAsStringSync(_mockContent[fileFormat]![fact]!);
       }
       File(_buildFilepath(fileFormat, fact, _anUnsupportedExtension))
-        ..createSync(recursive: true, exclusive: true)
+        ..createSync(recursive: true, exclusive: false)
         ..writeAsStringSync(_mockContent[fileFormat]![fact]!);
     }
   });
