@@ -71,7 +71,7 @@ void _verifyMockFileExtensions() {
     jsonExtensionSamplesCount ==
         _AllowedFile.extensions[_AllowedFile.json]!.fold<num>(
             0, (final prev, final curr) => prev + pow(2, curr.length)),
-    'JSON extesion samples must be mathematically sound.',
+    'JSON extension samples must be mathematically sound.',
   );
   assert(
     yamlExtensionSamplesCount ==
@@ -82,7 +82,7 @@ void _verifyMockFileExtensions() {
     yamlExtensionSamplesCount ==
         _AllowedFile.extensions[_AllowedFile.yaml]!.fold<num>(
             0, (final prev, final curr) => prev + pow(2, curr.length)),
-    'YAML extesion samples must be mathematically sound.',
+    'YAML extension samples must be mathematically sound.',
   );
   print('Unique JSON extensions for testing: $jsonExtensionSamplesCount');
   print('Unique YAML extensions for testing: $yamlExtensionSamplesCount');
