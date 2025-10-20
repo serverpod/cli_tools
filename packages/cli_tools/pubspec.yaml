@@ -17,7 +17,7 @@ environment:
 dependencies:
   args: ^2.7.0
   ci: ^0.1.0
-  config: ^0.8.1
+  config: ^0.8.2
   http: '>=0.13.0 <2.0.0'
   path: ^1.8.2
   pub_api_client: '>=2.4.0 <4.0.0'
