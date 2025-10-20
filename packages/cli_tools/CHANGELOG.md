@@ -1,3 +1,8 @@
+## 0.8.1
+
+ - **FIX**(cli_tools): Enclose option help in quotes.
+ - **FEAT**: Support for Option Group Name (#71).
+
 ## 0.8.0
 
  - **FEAT**: Command line completion support (#65).
