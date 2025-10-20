@@ -1,3 +1,7 @@
+## 0.8.2
+
+ - **FIX**: Enclose option help in quotes (#77).
+
 ## 0.8.0
 
  - **FEAT**: Command line completion support (#65).
