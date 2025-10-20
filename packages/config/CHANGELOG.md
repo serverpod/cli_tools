@@ -1,4 +1,4 @@
-## 0.8.1
+## 0.8.2
 
  - **FEAT**: Support for Option Group Name (#71).
 
