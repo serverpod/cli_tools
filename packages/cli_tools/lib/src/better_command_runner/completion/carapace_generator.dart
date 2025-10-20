@@ -122,7 +122,6 @@ class CarapaceYamlGenerator implements UsageRepresentationGenerator {
 
     if (option case final FlagOption flagOption) {
       if (flagOption.negatable && !flagOption.hideNegatedUsage) {
-        final optionHelp = _formatYamlStringValue(option.helpText ?? '');
         _writeWithIndent(
           out,
           '--no-${option.argName}$attributes: $optionHelp',
@@ -195,8 +194,12 @@ class CarapaceYamlGenerator implements UsageRepresentationGenerator {
   }
 
   static String _formatYamlStringValue(final String value) {
-    // escape special characters
-    final str = value.replaceAll(r'\', r'\\').replaceAll(r'"', r'\"');
+    final str = value
+        .replaceAll(r'\', r'\\')
+        .replaceAll(r'"', r'\"')
+        .replaceAll('\n', r'\n')
+        .replaceAll('\t', r'\t')
+        .replaceAll('\r', r'\r');
     return '"$str"';
   }
 }
