@@ -113,17 +113,19 @@ class CarapaceYamlGenerator implements UsageRepresentationGenerator {
       attributes += '!';
     }
 
+    final optionHelp = _formatYamlStringValue(option.helpText ?? '');
     _writeWithIndent(
       out,
-      '${names.join(', ')}$attributes: ${option.helpText ?? ''}',
+      '${names.join(', ')}$attributes: $optionHelp',
       indentLevel,
     );
 
     if (option case final FlagOption flagOption) {
       if (flagOption.negatable && !flagOption.hideNegatedUsage) {
+        final optionHelp = _formatYamlStringValue(option.helpText ?? '');
         _writeWithIndent(
           out,
-          '--no-${option.argName}$attributes: ${option.helpText ?? ''}',
+          '--no-${option.argName}$attributes: $optionHelp',
           indentLevel,
         );
       }
@@ -190,5 +192,11 @@ class CarapaceYamlGenerator implements UsageRepresentationGenerator {
       default:
         return [];
     }
+  }
+
+  static String _formatYamlStringValue(final String value) {
+    // escape special characters
+    final str = value.replaceAll(r'\', r'\\').replaceAll(r'"', r'\"');
+    return '"$str"';
   }
 }
