@@ -38,13 +38,15 @@ abstract final class ConfigurationParser {
   ///
   /// Throws a [FormatException] if the file content is invalid.
   static ConfigurationSource fromFile(final String filePath) {
-    final check = filePath.toLowerCase();
-    if (check.endsWith('.json')) {
+    final lowercaseFilePath = filePath.toLowerCase();
+    if (lowercaseFilePath.endsWith('.json')) {
       return fromString(
         _loadFile(filePath),
         format: ConfigEncoding.json,
       );
-    } else if (check.endsWith('.yaml') || check.endsWith('.yml')) {
+    }
+    if (lowercaseFilePath.endsWith('.yaml') ||
+        lowercaseFilePath.endsWith('.yml')) {
       return fromString(
         _loadFile(filePath),
         format: ConfigEncoding.yaml,
