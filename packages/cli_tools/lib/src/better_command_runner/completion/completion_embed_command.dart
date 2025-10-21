@@ -10,7 +10,7 @@ import '../better_command_runner.dart' show StandardGlobalOption;
 import 'completion_command.dart' show CompletionOptions;
 
 enum CompletionEmbedOption<V extends Object> implements OptionDefinition<V> {
-  target(CompletionOptions.targetOption),
+  tool(CompletionOptions.toolOption),
   scriptFileName(StringOption(
     argName: 'script-file',
     argAbbrev: 'f',
@@ -22,7 +22,7 @@ enum CompletionEmbedOption<V extends Object> implements OptionDefinition<V> {
     helpText: 'The Dart file name to write ("-" for stdout)',
     fromCustom: _outputSourceFileName,
     customValidator: _validateSourceFileName,
-    defaultsTo: 'completion_script_<target>.dart',
+    defaultsTo: 'completion_script_<tool>.dart',
   )),
   outDir(DirOption(
     argName: 'output-dir',
@@ -62,8 +62,8 @@ Directory _defaultWriteDir() {
 }
 
 String _outputSourceFileName(final Configuration cfg) {
-  final target = cfg.value(CompletionEmbedOption.target);
-  return 'completion_script_${target.name}.dart';
+  final tool = cfg.value(CompletionEmbedOption.tool);
+  return 'completion_script_${tool.name}.dart';
 }
 
 void _validateSourceFileName(final String value) {
@@ -95,7 +95,7 @@ class CompletionEmbedCommand<T>
   @override
   Future<T> runWithConfig(
       final Configuration<CompletionEmbedOption> commandConfig) async {
-    final target = commandConfig.value(CompletionEmbedOption.target);
+    final tool = commandConfig.value(CompletionEmbedOption.tool);
     final scriptFileName =
         commandConfig.optionalValue(CompletionEmbedOption.scriptFileName);
     final writeFile = commandConfig.value(CompletionEmbedOption.outFileName);
@@ -113,15 +113,15 @@ class CompletionEmbedCommand<T>
 /// This file is auto-generated.
 library;
 
-import 'package:cli_tools/better_command_runner.dart' show CompletionTarget;
+import 'package:cli_tools/better_command_runner.dart' show CompletionTool;
 
 const String _completionScript = r'''
 $scriptContent
 ''';
 
-/// Embedded script for command line completion for `${target.name}`.
-const completionScript${target.name.capitalize()} = (
-  target: $target,
+/// Embedded script for command line completion for `${tool.name}`.
+const completionScript${tool.name.capitalize()} = (
+  tool: $tool,
   script: _completionScript,
 );
 """;

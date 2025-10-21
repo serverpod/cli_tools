@@ -90,7 +90,7 @@ void main() {
             '  - -q',
             '  - --verbose',
             '  - -v',
-            'test completion generate*--target:',
+            'test completion generate*--tool:',
             '  - completely',
             '  - carapace',
             'test completion generate*-t:',
@@ -126,7 +126,7 @@ void main() {
           stringContainsInOrder([
             'other-exec-name:',
             '  - completion',
-            'other-exec-name completion generate*--target:',
+            'other-exec-name completion generate*--tool:',
           ]));
       await expectLater(spec.validate(), completes);
     });
@@ -160,12 +160,12 @@ void main() {
             '    commands:',
             '      - name: generate',
             '      flags:',
-            '        -t, --target=!: "The target tool format"',
+            '        -t, --tool=!: "The completion tool to target"',
             '        -e, --exec-name=: "Override the name of the executable"',
             '        -f, --file=: "Write the specification to a file instead of stdout"',
             '      completion:',
             '        flag:',
-            '          target: ["completely", "carapace"]',
+            '          tool: ["completely", "carapace"]',
             r'          file: ["$files"]',
           ]));
       await expectLater(spec.validate(), completes);
@@ -232,7 +232,7 @@ _example_completions_filter() {
           stringContainsInOrder([
             '/// This file is auto-generated.',
             'library;',
-            "import 'package:cli_tools/better_command_runner.dart' show CompletionTarget;",
+            "import 'package:cli_tools/better_command_runner.dart' show CompletionTool;",
             'const String _completionScript = r',
             r'''
 # example completion                                       -*- shell-script -*-
@@ -247,7 +247,7 @@ _example_completions_filter() {
             r'''
 /// Embedded script for command line completion for `completely`.
 const completionScriptCompletely = (
-  target: CompletionTarget.completely,
+  tool: CompletionTool.completely,
   script: _completionScript,
 );
 ''',
@@ -287,7 +287,7 @@ persistentFlags:
           stringContainsInOrder([
             '/// This file is auto-generated.',
             'library;',
-            "import 'package:cli_tools/better_command_runner.dart' show CompletionTarget;",
+            "import 'package:cli_tools/better_command_runner.dart' show CompletionTool;",
             'const String _completionScript = r',
             r'''
 # yaml-language-server: $schema=https://carapace.sh/schemas/command.json
@@ -299,7 +299,7 @@ persistentFlags:
             r'''
 /// Embedded script for command line completion for `carapace`.
 const completionScriptCarapace = (
-  target: CompletionTarget.carapace,
+  tool: CompletionTool.carapace,
   script: _completionScript,
 );
 ''',
@@ -334,11 +334,11 @@ persistentFlags:
   -v, --verbose: Prints additional information useful for development. Overrides --q, --quiet.
 ''';
     const completionScriptCompletely = (
-      target: CompletionTarget.completely,
+      tool: CompletionTool.completely,
       script: completelyCompletionScript,
     );
     const completionScriptCarapace = (
-      target: CompletionTarget.carapace,
+      tool: CompletionTool.carapace,
       script: carapaceCompletionScript,
     );
 

@@ -7,10 +7,10 @@ import '../better_command.dart';
 import '../better_command_runner.dart' show StandardGlobalOption;
 import '../exit_exception.dart';
 import 'completion_command.dart' show CompletionOptions;
-import 'completion_target.dart';
+import 'completion_tool.dart';
 
 enum CompletionInstallOption<V extends Object> implements OptionDefinition<V> {
-  target(CompletionOptions.targetOption),
+  tool(CompletionOptions.toolOption),
   execName(CompletionOptions.execNameOption),
   writeDir(DirOption(
     argName: 'write-dir',
@@ -27,12 +27,12 @@ enum CompletionInstallOption<V extends Object> implements OptionDefinition<V> {
 
 class CompletionInstallCommand<T>
     extends BetterCommand<CompletionInstallOption, T> {
-  final Map<CompletionTarget, String> _embeddedCompletions;
+  final Map<CompletionTool, String> _embeddedCompletions;
 
   CompletionInstallCommand({
     required final Iterable<CompletionScript> embeddedCompletions,
   })  : _embeddedCompletions = Map.fromEntries(embeddedCompletions.map(
-          (final e) => MapEntry(e.target, e.script),
+          (final e) => MapEntry(e.tool, e.script),
         )),
         super(options: CompletionInstallOption.values);
 
@@ -45,7 +45,7 @@ class CompletionInstallCommand<T>
   @override
   Future<T> runWithConfig(
       final Configuration<CompletionInstallOption> commandConfig) async {
-    final target = commandConfig.value(CompletionInstallOption.target);
+    final tool = commandConfig.value(CompletionInstallOption.tool);
     final execName =
         commandConfig.optionalValue(CompletionInstallOption.execName);
     final writeDir =
@@ -56,28 +56,28 @@ class CompletionInstallCommand<T>
       throw StateError('BetterCommandRunner not set');
     }
 
-    final scriptContent = _embeddedCompletions[target];
+    final scriptContent = _embeddedCompletions[tool];
     if (scriptContent == null) {
-      stderr.writeln('No embedded script found for target: $target');
+      stderr.writeln('No embedded script found for tool "$tool"');
       throw ExitException.error();
     }
 
     final executableName = execName ?? betterRunner.executableName;
 
-    final writeFileName = switch (target) {
-      CompletionTarget.completely => '$executableName.bash',
-      CompletionTarget.carapace => '$executableName.yaml',
+    final writeFileName = switch (tool) {
+      CompletionTool.completely => '$executableName.bash',
+      CompletionTool.carapace => '$executableName.yaml',
     };
     final writeDirPath = writeDir?.path ??
-        switch (target) {
-          CompletionTarget.completely => p.join(
+        switch (tool) {
+          CompletionTool.completely => p.join(
               _getHomeDir(),
               '.local',
               'share',
               'bash-completion',
               'completions',
             ),
-          CompletionTarget.carapace => p.join(
+          CompletionTool.carapace => p.join(
               _getUserConfigDir(),
               'carapace',
               'specs',

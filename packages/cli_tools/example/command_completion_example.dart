@@ -19,7 +19,7 @@ import 'completion_script_completely.dart';
 /// ```
 ///
 /// In order to regenerate the completion scripts, run these commands for each
-/// target.
+/// tool target.
 ///
 /// See also [README_completion.md].
 ///

@@ -6,14 +6,14 @@ import '../better_command.dart';
 import 'completion_embed_command.dart';
 import 'completion_generate_command.dart';
 import 'completion_install_command.dart';
-import 'completion_target.dart';
+import 'completion_tool.dart';
 
 abstract final class CompletionOptions {
-  static const targetOption = EnumOption(
-    enumParser: EnumParser(CompletionTarget.values),
-    argName: 'target',
+  static const toolOption = EnumOption(
+    enumParser: EnumParser(CompletionTool.values),
+    argName: 'tool',
     argAbbrev: 't',
-    helpText: 'The target tool format',
+    helpText: 'The completion tool to target',
     allowedHelp: {
       'completely':
           'Use the `completely` tool (https://github.com/bashly-framework/completely)',
