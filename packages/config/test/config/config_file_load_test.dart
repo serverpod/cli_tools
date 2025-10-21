@@ -1,5 +1,4 @@
 import 'dart:io' show File;
-import 'dart:math' show pow;
 
 import 'package:config/config.dart' show ConfigurationParser;
 import 'package:test/test.dart';
@@ -8,15 +7,7 @@ void main() => _runTests();
 
 enum _Fact { correct, wrong }
 
-enum _AllowedFile {
-  json,
-  yaml;
-
-  static const extensions = {
-    json: {'json'},
-    yaml: {'yaml', 'yml'}
-  };
-}
+enum _AllowedFile { json, yaml }
 
 const _mockContent = {
   _AllowedFile.json: {
@@ -43,50 +34,57 @@ const _mockFilenames = {
   },
 };
 
-const _anUnsupportedExtension = 'txt';
-
-final _mockExtensions = {
+const _mockExtensions = {
   _AllowedFile.json: [
-    for (final fileExtension in _AllowedFile.extensions[_AllowedFile.json]!)
-      ..._generateCaseInsensitive(fileExtension)
+    'json',
+    'jsoN',
+    'jsOn',
+    'jsON',
+    'jSon',
+    'jSoN',
+    'jSOn',
+    'jSON',
+    'Json',
+    'JsoN',
+    'JsOn',
+    'JsON',
+    'JSon',
+    'JSoN',
+    'JSOn',
+    'JSON',
   ],
   _AllowedFile.yaml: [
-    for (final fileExtension in _AllowedFile.extensions[_AllowedFile.yaml]!)
-      ..._generateCaseInsensitive(fileExtension)
+    'yaml',
+    'yamL',
+    'yaMl',
+    'yaML',
+    'yAml',
+    'yAmL',
+    'yAMl',
+    'yAML',
+    'Yaml',
+    'YamL',
+    'YaMl',
+    'YaML',
+    'YAml',
+    'YAmL',
+    'YAMl',
+    'YAML',
+    'yml',
+    'ymL',
+    'yMl',
+    'yML',
+    'Yml',
+    'YmL',
+    'YMl',
+    'YML',
   ],
 };
 
+const _anUnsupportedExtension = 'txt';
+
 final _mockDir = './test_tmp_${DateTime.now().millisecondsSinceEpoch}';
 final _aNonExistentFilename = 'xyz_${DateTime.now().millisecondsSinceEpoch}';
-
-void _verifyMockFileExtensions() {
-  final jsonExtensionSamplesCount = _mockExtensions[_AllowedFile.json]!.length;
-  final yamlExtensionSamplesCount = _mockExtensions[_AllowedFile.yaml]!.length;
-  assert(
-    jsonExtensionSamplesCount ==
-        Set<String>.from(_mockExtensions[_AllowedFile.json]!).length,
-    'JSON extension samples must be unique.',
-  );
-  assert(
-    jsonExtensionSamplesCount ==
-        _AllowedFile.extensions[_AllowedFile.json]!.fold<num>(
-            0, (final prev, final curr) => prev + pow(2, curr.length)),
-    'JSON extension samples must be mathematically sound.',
-  );
-  assert(
-    yamlExtensionSamplesCount ==
-        Set<String>.from(_mockExtensions[_AllowedFile.yaml]!).length,
-    'YAML extension samples must be unique.',
-  );
-  assert(
-    yamlExtensionSamplesCount ==
-        _AllowedFile.extensions[_AllowedFile.yaml]!.fold<num>(
-            0, (final prev, final curr) => prev + pow(2, curr.length)),
-    'YAML extension samples must be mathematically sound.',
-  );
-  // print('Unique JSON extensions for testing: $jsonExtensionSamplesCount');
-  // print('Unique YAML extensions for testing: $yamlExtensionSamplesCount');
-}
 
 String _buildFilepath(
   final _AllowedFile format,
@@ -112,45 +110,9 @@ void _prepareMockFiles() {
 
 void _cleanupMockFiles() => File(_mockDir).deleteSync(recursive: true);
 
-String? _toggleCase(final String ch) {
-  if (ch.length != 1) {
-    throw ArgumentError;
-  }
-  final uppercaseCh = ch.toUpperCase();
-  final lowercaseCh = ch.toLowerCase();
-  if (ch == uppercaseCh && ch == lowercaseCh) {
-    return null;
-  }
-  return ch == uppercaseCh ? lowercaseCh : uppercaseCh;
-}
-
-Iterable<String> _generateCaseInsensitive(final String input) sync* {
-  if (input.isEmpty) {
-    yield '';
-    return;
-  }
-  final chOriginalCase = input[0];
-  final chToggledCase = _toggleCase(chOriginalCase);
-  if (input.length == 1) {
-    yield* [chOriginalCase, if (chToggledCase != null) chToggledCase];
-    return;
-  }
-  for (final recursiveSample in _generateCaseInsensitive(input.substring(1))) {
-    yield* [
-      '$chOriginalCase$recursiveSample',
-      if (chToggledCase != null) '$chToggledCase$recursiveSample'
-    ];
-  }
-}
-
 void _runTests() {
-  setUpAll(() {
-    _verifyMockFileExtensions();
-    _prepareMockFiles();
-  });
-  tearDownAll(() {
-    _cleanupMockFiles();
-  });
+  setUpAll(() => _prepareMockFiles());
+  tearDownAll(() => _cleanupMockFiles());
 
   group('JSON files', () {
     test('with correct file content and correct extension', () {
