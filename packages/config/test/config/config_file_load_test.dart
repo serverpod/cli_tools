@@ -54,6 +54,14 @@ const _mockExtensions = {
     'JSON',
   ],
   _AllowedFile.yaml: [
+    'yml',
+    'ymL',
+    'yMl',
+    'yML',
+    'Yml',
+    'YmL',
+    'YMl',
+    'YML',
     'yaml',
     'yamL',
     'yaMl',
@@ -70,14 +78,6 @@ const _mockExtensions = {
     'YAmL',
     'YAMl',
     'YAML',
-    'yml',
-    'ymL',
-    'yMl',
-    'yML',
-    'Yml',
-    'YmL',
-    'YMl',
-    'YML',
   ],
 };
 
@@ -87,8 +87,8 @@ final _mockDir = './test_tmp_${DateTime.now().millisecondsSinceEpoch}';
 final _aNonExistentFilename = 'xyz_${DateTime.now().millisecondsSinceEpoch}';
 
 String _buildFilepath(
-  final _AllowedFile format,
   final _Fact fact,
+  final _AllowedFile format,
   final String extension,
 ) =>
     '$_mockDir/${_mockFilenames[format]![fact]!}.$extension';
@@ -97,11 +97,11 @@ void _prepareMockFiles() {
   _mockFilenames.forEach((final fileFormat, final namesMap) {
     for (final fact in _Fact.values) {
       for (final fileExtension in _mockExtensions[fileFormat]!) {
-        File(_buildFilepath(fileFormat, fact, fileExtension))
+        File(_buildFilepath(fact, fileFormat, fileExtension))
           ..createSync(recursive: true, exclusive: false)
           ..writeAsStringSync(_mockContent[fileFormat]![fact]!);
       }
-      File(_buildFilepath(fileFormat, fact, _anUnsupportedExtension))
+      File(_buildFilepath(fact, fileFormat, _anUnsupportedExtension))
         ..createSync(recursive: true, exclusive: false)
         ..writeAsStringSync(_mockContent[fileFormat]![fact]!);
     }
@@ -114,126 +114,162 @@ void _runTests() {
   setUpAll(() => _prepareMockFiles());
   tearDownAll(() => _cleanupMockFiles());
 
-  group('JSON files', () {
-    test('with correct file content and correct extension', () {
-      for (final fileExtension in _mockExtensions[_AllowedFile.json]!) {
-        expect(
-          ConfigurationParser.fromFile(_buildFilepath(
-            _AllowedFile.json,
-            _Fact.correct,
-            fileExtension,
-          )).valueOrNull(_mockKey),
-          equals(_mockVal),
-        );
-      }
+  group('Given correct file content', () {
+    group('with a supported file extension', () {
+      group('when loading a JSON file', () {
+        test('then it is parsed successfully', () {
+          for (final jsonExtension in _mockExtensions[_AllowedFile.json]!) {
+            expect(
+              ConfigurationParser.fromFile(_buildFilepath(
+                _Fact.correct,
+                _AllowedFile.json,
+                jsonExtension,
+              )).valueOrNull(_mockKey),
+              equals(_mockVal),
+            );
+          }
+        });
+      });
+      group('when loading a YAML file', () {
+        test('then it is parsed successfully', () {
+          for (final yamlExtension in _mockExtensions[_AllowedFile.yaml]!) {
+            expect(
+              ConfigurationParser.fromFile(_buildFilepath(
+                _Fact.correct,
+                _AllowedFile.yaml,
+                yamlExtension,
+              )).valueOrNull(_mockKey),
+              equals(_mockVal),
+            );
+          }
+        });
+      });
     });
-    test('with correct file content but wrong extension', () {
-      expect(
-        () => ConfigurationParser.fromFile(_buildFilepath(
-          _AllowedFile.json,
-          _Fact.correct,
-          _anUnsupportedExtension,
-        )),
-        throwsUnsupportedError,
-      );
-    });
-    test('with wrong file content but correct extension', () {
-      for (final fileExtension in _mockExtensions[_AllowedFile.json]!) {
-        expect(
-          () => ConfigurationParser.fromFile(_buildFilepath(
-            _AllowedFile.json,
-            _Fact.wrong,
-            fileExtension,
-          )),
-          throwsFormatException,
-        );
-      }
-    });
-    test('with wrong file content and wrong extension', () {
-      expect(
-        () => ConfigurationParser.fromFile(_buildFilepath(
-          _AllowedFile.json,
-          _Fact.wrong,
-          _anUnsupportedExtension,
-        )),
-        throwsUnsupportedError,
-      );
-    });
-  });
-
-  group('YAML files', () {
-    test('with correct file content and correct extension', () {
-      for (final fileExtension in _mockExtensions[_AllowedFile.yaml]!) {
-        expect(
-          ConfigurationParser.fromFile(_buildFilepath(
-            _AllowedFile.yaml,
-            _Fact.correct,
-            fileExtension,
-          )).valueOrNull(_mockKey),
-          equals(_mockVal),
-        );
-      }
-    });
-    test('with correct file content but wrong extension', () {
-      expect(
-        () => ConfigurationParser.fromFile(_buildFilepath(
-          _AllowedFile.yaml,
-          _Fact.correct,
-          _anUnsupportedExtension,
-        )),
-        throwsUnsupportedError,
-      );
-    });
-    test('with wrong file content but correct extension', () {
-      for (final fileExtension in _mockExtensions[_AllowedFile.yaml]!) {
-        expect(
-          () => ConfigurationParser.fromFile(_buildFilepath(
-            _AllowedFile.yaml,
-            _Fact.wrong,
-            fileExtension,
-          )),
-          throwsFormatException,
-        );
-      }
-    });
-    test('with wrong file content and wrong extension', () {
-      expect(
-        () => ConfigurationParser.fromFile(_buildFilepath(
-          _AllowedFile.yaml,
-          _Fact.wrong,
-          _anUnsupportedExtension,
-        )),
-        throwsUnsupportedError,
-      );
+    group('with an unsupported file extension', () {
+      group('when loading a JSON file', () {
+        test('then it reports an Unsupported Error', () {
+          expect(
+            () => ConfigurationParser.fromFile(_buildFilepath(
+              _Fact.correct,
+              _AllowedFile.json,
+              _anUnsupportedExtension,
+            )),
+            throwsUnsupportedError,
+          );
+        });
+      });
+      group('when loading a YAML file', () {
+        test('then it reports an Unsupported Error', () {
+          expect(
+            () => ConfigurationParser.fromFile(_buildFilepath(
+              _Fact.correct,
+              _AllowedFile.yaml,
+              _anUnsupportedExtension,
+            )),
+            throwsUnsupportedError,
+          );
+        });
+      });
     });
   });
 
-  group('Non-existent file', () {
-    test('of ".json" type', () {
-      expect(
-        () => ConfigurationParser.fromFile('$_aNonExistentFilename.json'),
-        throwsArgumentError,
-      );
+  group('Given wrong file content', () {
+    group('with a supported file extension', () {
+      group('when loading a JSON file', () {
+        test('then it reports a Format Exception', () {
+          for (final jsonExtension in _mockExtensions[_AllowedFile.json]!) {
+            expect(
+              () => ConfigurationParser.fromFile(_buildFilepath(
+                _Fact.wrong,
+                _AllowedFile.json,
+                jsonExtension,
+              )),
+              throwsFormatException,
+            );
+          }
+        });
+      });
+      group('when loading a YAML file', () {
+        test('then it reports a Format Exception', () {
+          for (final yamlExtension in _mockExtensions[_AllowedFile.yaml]!) {
+            expect(
+              () => ConfigurationParser.fromFile(_buildFilepath(
+                _Fact.wrong,
+                _AllowedFile.yaml,
+                yamlExtension,
+              )),
+              throwsFormatException,
+            );
+          }
+        });
+      });
     });
-    test('of ".yaml" type', () {
-      expect(
-        () => ConfigurationParser.fromFile('$_aNonExistentFilename.yaml'),
-        throwsArgumentError,
-      );
+    group('with an unsupported file extension', () {
+      group('when loading a JSON file', () {
+        test('then it reports an Unsupported Error', () {
+          expect(
+            () => ConfigurationParser.fromFile(_buildFilepath(
+              _Fact.wrong,
+              _AllowedFile.json,
+              _anUnsupportedExtension,
+            )),
+            throwsUnsupportedError,
+          );
+        });
+      });
+      group('when loading a YAML file', () {
+        test('then it reports an Unsupported Error', () {
+          expect(
+            () => ConfigurationParser.fromFile(_buildFilepath(
+              _Fact.wrong,
+              _AllowedFile.yaml,
+              _anUnsupportedExtension,
+            )),
+            throwsUnsupportedError,
+          );
+        });
+      });
     });
-    test('of ".yml" type', () {
-      expect(
-        () => ConfigurationParser.fromFile('$_aNonExistentFilename.yml'),
-        throwsArgumentError,
-      );
+  });
+
+  group('Given a non-existent file', () {
+    group('with a supported file extension', () {
+      group('when attempting to load a JSON file', () {
+        test('then it reports an Argument Error', () {
+          for (final jsonExtension in _mockExtensions[_AllowedFile.json]!) {
+            expect(
+              () => ConfigurationParser.fromFile(
+                '$_aNonExistentFilename.$jsonExtension',
+              ),
+              throwsArgumentError,
+            );
+          }
+        });
+      });
+      group('when attempting to load a YAML file', () {
+        test('then it reports an Argument Error', () {
+          for (final yamlExtension in _mockExtensions[_AllowedFile.yaml]!) {
+            expect(
+              () => ConfigurationParser.fromFile(
+                '$_aNonExistentFilename.$yamlExtension',
+              ),
+              throwsArgumentError,
+            );
+          }
+        });
+      });
     });
-    test('of unsupported type', () {
-      expect(
-        () => ConfigurationParser.fromFile(
-          '$_aNonExistentFilename.$_anUnsupportedExtension',
-        ),
-        throwsUnsupportedError,
-      );
+    group('with an unsupported file extension', () {
+      group('when attempting to load any file', () {
+        test('then it reports an Unsupported Error', () {
+          expect(
+            () => ConfigurationParser.fromFile(
+              '$_aNonExistentFilename.$_anUnsupportedExtension',
+            ),
+            throwsUnsupportedError,
+          );
+        });
+      });
     });
   });
 }
