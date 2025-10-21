@@ -29,15 +29,24 @@ abstract final class ConfigurationParser {
   }
 
   /// Parses a configuration from a file.
-  static ConfigurationSource fromFile(
-    final String filePath,
-  ) {
-    if (filePath.endsWith('.json')) {
+  ///
+  /// It is expected that the caller ensures [filePath]:
+  /// - exists in the File System,
+  ///   otherwise throws [ArgumentError]
+  /// - extension is in {".json", ".yaml", ".yml"} (case-insensitive),
+  ///   otherwise throws [UnsupportedError]
+  ///
+  /// Throws a [FormatException] if the file content is invalid.
+  static ConfigurationSource fromFile(final String filePath) {
+    final lowercaseFilePath = filePath.toLowerCase();
+    if (lowercaseFilePath.endsWith('.json')) {
       return fromString(
         _loadFile(filePath),
         format: ConfigEncoding.json,
       );
-    } else if (filePath.endsWith('.yaml') || filePath.endsWith('.yml')) {
+    }
+    if (lowercaseFilePath.endsWith('.yaml') ||
+        lowercaseFilePath.endsWith('.yml')) {
       return fromString(
         _loadFile(filePath),
         format: ConfigEncoding.yaml,
