@@ -1,5 +1,7 @@
 import '../../better_command_runner.dart' show BetterCommandRunner;
 
+@Deprecated(
+    'This is highly use case specific and will be removed from this package in the future.')
 class CommandDocumentationGenerator {
   final BetterCommandRunner commandRunner;
 
