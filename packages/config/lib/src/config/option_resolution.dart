@@ -1,11 +1,7 @@
+import 'option_resolution_data.dart';
 import 'source_type.dart';
 
-final class OptionResolution<V> {
-  final String? stringValue;
-  final V? value;
-  final String? error;
-  final ValueSourceType source;
-
+final class OptionResolution<V> with OptionResolutionData<V> {
   const OptionResolution._({
     required this.source,
     this.stringValue,
@@ -44,12 +40,15 @@ final class OptionResolution<V> {
         error: error,
       );
 
-  /// Whether the option has a proper value (without errors).
-  bool get hasValue => source != ValueSourceType.noValue && error == null;
+  @override
+  final String? stringValue;
 
-  /// Whether the option has a value that was specified explicitly (not default).
-  bool get isSpecified => hasValue && source != ValueSourceType.defaultValue;
+  @override
+  final V? value;
 
-  /// Whether the option has the default value.
-  bool get isDefault => hasValue && source == ValueSourceType.defaultValue;
+  @override
+  final String? error;
+
+  @override
+  final ValueSourceType source;
 }

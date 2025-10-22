@@ -7,6 +7,7 @@ import 'configuration.dart';
 import 'configuration_broker.dart';
 import 'exceptions.dart';
 import 'option_resolution.dart';
+import 'option_resolution_data.dart';
 import 'source_type.dart';
 
 /// Common interface to enable same treatment for [ConfigOptionBase]
@@ -64,7 +65,7 @@ class OptionGroup {
   ///
   /// Subclasses may override this method to perform specific validations.
   String? validateValues(
-    final Map<OptionDefinition, OptionResolution> optionResolutions,
+    final Map<OptionDefinition, OptionResolutionData> optionResolutions,
   ) {
     return null;
   }
