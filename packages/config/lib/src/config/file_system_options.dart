@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
+import 'package:path/path.dart' as p;
 
 import 'options.dart';
 
@@ -16,6 +17,12 @@ class DirParser extends ValueParser<Directory> {
   @override
   Directory parse(final String value) {
     return Directory(value);
+  }
+
+  @override
+  String format(final Directory value) {
+    final path = value.path;
+    return path.endsWith(p.separator) ? path : '$path${p.separator}';
   }
 }
 
@@ -80,6 +87,11 @@ class FileParser extends ValueParser<File> {
   @override
   File parse(final String value) {
     return File(value);
+  }
+
+  @override
+  String format(final File value) {
+    return value.path;
   }
 }
 
