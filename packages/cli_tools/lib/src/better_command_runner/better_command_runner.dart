@@ -6,7 +6,7 @@ import 'package:args/command_runner.dart';
 import 'package:config/config.dart';
 
 import 'completion/completion_command.dart';
-import 'completion/completion_target.dart' show CompletionScript;
+import 'completion/completion_tool.dart' show CompletionScript;
 
 /// A function type for executing code before running a command.
 typedef OnBeforeRunCommand = Future<void> Function(BetterCommandRunner runner);

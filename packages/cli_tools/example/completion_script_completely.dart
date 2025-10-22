@@ -1,7 +1,7 @@
 /// This file is auto-generated.
 library;
 
-import 'package:cli_tools/better_command_runner.dart' show CompletionTarget;
+import 'package:cli_tools/better_command_runner.dart' show CompletionTool;
 
 const String _completionScript = r'''
 # example completion                                       -*- shell-script -*-
@@ -60,15 +60,7 @@ _example_completions() {
       while read -r; do COMPREPLY+=("$REPLY"); done < <(compgen -A directory -- "$cur")
       ;;
 
-    'completion embed'*'--output-dir')
-      while read -r; do COMPREPLY+=("$REPLY"); done < <(compgen -A directory -- "$cur")
-      ;;
-
-    'completion generate'*'--target')
-      while read -r; do COMPREPLY+=("$REPLY"); done < <(compgen -W "$(_example_completions_filter "completely carapace")" -- "$cur")
-      ;;
-
-    'completion install'*'--target')
+    'completion generate'*'--tool')
       while read -r; do COMPREPLY+=("$REPLY"); done < <(compgen -W "$(_example_completions_filter "completely carapace")" -- "$cur")
       ;;
 
@@ -76,7 +68,7 @@ _example_completions() {
       while read -r; do COMPREPLY+=("$REPLY"); done < <(compgen -A file -- "$cur")
       ;;
 
-    'completion embed'*'--target')
+    'completion install'*'--tool')
       while read -r; do COMPREPLY+=("$REPLY"); done < <(compgen -W "$(_example_completions_filter "completely carapace")" -- "$cur")
       ;;
 
@@ -88,36 +80,24 @@ _example_completions() {
       while read -r; do COMPREPLY+=("$REPLY"); done < <(compgen -A file -- "$cur")
       ;;
 
-    'completion install'*'-d')
-      while read -r; do COMPREPLY+=("$REPLY"); done < <(compgen -A directory -- "$cur")
-      ;;
-
     'completion install'*'-t')
       while read -r; do COMPREPLY+=("$REPLY"); done < <(compgen -W "$(_example_completions_filter "completely carapace")" -- "$cur")
       ;;
 
-    'completion embed'*'-t')
-      while read -r; do COMPREPLY+=("$REPLY"); done < <(compgen -W "$(_example_completions_filter "completely carapace")" -- "$cur")
-      ;;
-
-    'completion embed'*'-d')
+    'completion install'*'-d')
       while read -r; do COMPREPLY+=("$REPLY"); done < <(compgen -A directory -- "$cur")
       ;;
 
     'completion generate'*)
-      while read -r; do COMPREPLY+=("$REPLY"); done < <(compgen -W "$(_example_completions_filter "--quiet -q --verbose -v --target -t --exec-name -e --file -f")" -- "$cur")
+      while read -r; do COMPREPLY+=("$REPLY"); done < <(compgen -W "$(_example_completions_filter "--quiet -q --verbose -v --tool -t --exec-name -e --file -f")" -- "$cur")
       ;;
 
     'completion install'*)
-      while read -r; do COMPREPLY+=("$REPLY"); done < <(compgen -W "$(_example_completions_filter "--quiet -q --verbose -v --target -t --exec-name -e --write-dir -d")" -- "$cur")
-      ;;
-
-    'completion embed'*)
-      while read -r; do COMPREPLY+=("$REPLY"); done < <(compgen -W "$(_example_completions_filter "--quiet -q --verbose -v --target -t --script-file -f --output-file -o --output-dir -d")" -- "$cur")
+      while read -r; do COMPREPLY+=("$REPLY"); done < <(compgen -W "$(_example_completions_filter "--quiet -q --verbose -v --tool -t --exec-name -e --write-dir -d")" -- "$cur")
       ;;
 
     'completion'*)
-      while read -r; do COMPREPLY+=("$REPLY"); done < <(compgen -W "$(_example_completions_filter "generate embed install --quiet -q --verbose -v")" -- "$cur")
+      while read -r; do COMPREPLY+=("$REPLY"); done < <(compgen -W "$(_example_completions_filter "generate install --quiet -q --verbose -v")" -- "$cur")
       ;;
 
     *)
@@ -134,6 +114,6 @@ _example_completions() {
 
 /// Embedded script for command line completion for `completely`.
 const completionScriptCompletely = (
-  target: CompletionTarget.completely,
+  tool: CompletionTool.completely,
   script: _completionScript,
 );

@@ -7,11 +7,11 @@ import '../better_command_runner.dart' show StandardGlobalOption;
 import 'carapace_generator.dart';
 import 'completely_generator.dart';
 import 'completion_command.dart' show CompletionOptions;
-import 'completion_target.dart';
+import 'completion_tool.dart';
 import 'usage_representation.dart';
 
 enum CompletionGenerateOption<V extends Object> implements OptionDefinition<V> {
-  target(CompletionOptions.targetOption),
+  tool(CompletionOptions.toolOption),
   execName(CompletionOptions.execNameOption),
   file(FileOption(
     argName: 'file',
@@ -38,7 +38,7 @@ class CompletionGenerateCommand<T>
   @override
   Future<T> runWithConfig(
       final Configuration<CompletionGenerateOption> commandConfig) async {
-    final target = commandConfig.value(CompletionGenerateOption.target);
+    final tool = commandConfig.value(CompletionGenerateOption.tool);
     final execName =
         commandConfig.optionalValue(CompletionGenerateOption.execName);
     final file = commandConfig.optionalValue(CompletionGenerateOption.file);
@@ -55,11 +55,11 @@ class CompletionGenerateCommand<T>
 
     final IOSink out = file?.openWrite() ?? stdout;
 
-    switch (target) {
-      case CompletionTarget.completely:
+    switch (tool) {
+      case CompletionTool.completely:
         CompletelyYamlGenerator().generate(out, usage);
         break;
-      case CompletionTarget.carapace:
+      case CompletionTool.carapace:
         CarapaceYamlGenerator().generate(out, usage);
         break;
     }
