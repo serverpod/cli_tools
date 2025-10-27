@@ -15,18 +15,26 @@ abstract interface class Analytics {
 
 /// Analytics service for MixPanel.
 class MixPanelAnalytics implements Analytics {
+  static const _defaultEndpoint = 'https://api.mixpanel.com/track';
+  static const _defaultTimeout = Duration(seconds: 2);
+
   final String _uniqueUserId;
-  final String _endpoint = 'https://api.mixpanel.com/track';
+  final String _endpoint;
   final String _projectToken;
   final String _version;
+  final Duration _timeout;
 
   MixPanelAnalytics({
     required final String uniqueUserId,
     required final String projectToken,
     required final String version,
+    final String endpoint = _defaultEndpoint,
+    final Duration timeout = _defaultTimeout,
   })  : _uniqueUserId = uniqueUserId,
         _projectToken = projectToken,
-        _version = version;
+        _version = version,
+        _endpoint = endpoint,
+        _timeout = timeout;
 
   @override
   void cleanUp() {}
@@ -69,7 +77,7 @@ class MixPanelAnalytics implements Analytics {
           'Accept': 'text/plain',
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-      ).timeout(const Duration(seconds: 2));
+      ).timeout(_timeout);
     } catch (e) {
       return;
     }
