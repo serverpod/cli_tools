@@ -84,8 +84,7 @@ abstract base class LocalStorageManager {
   }
 
   /// Tries to fetch and deserialize a json file from the local storage.
-  /// If the file does not exist or if an error occurs during reading or
-  /// deserialization, null will be returned.
+  /// If the file does not exist null will be returned.
   ///
   /// [fileName] The name of the file to fetch.
   /// [localStoragePath] The path to the local storage directory.
