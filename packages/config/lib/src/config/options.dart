@@ -3,7 +3,7 @@ import 'package:args/command_runner.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
-import 'configuration.dart';
+import 'configuration.dart' show Configuration;
 import 'configuration_broker.dart';
 import 'exceptions.dart';
 import 'option_resolution.dart';

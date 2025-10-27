@@ -251,7 +251,7 @@ class IntOption extends ComparableValueOption<int> {
 ///
 /// This implementation is more forgiving than [DateTime.parse].
 /// In addition to the standard T and space separators between
-/// date and time it also allows [-_/:t].
+/// date and time it also allows \[-_/:t\].
 class DateTimeParser extends ValueParser<DateTime> {
   const DateTimeParser();
 
