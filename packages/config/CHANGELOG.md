@@ -1,3 +1,8 @@
+## 0.8.3
+
+ - **FIX**(config): Improved doc comments & value formatting of options (#82).
+ - **FIX**(config): Validation Logic for Configuration File Extension (#76).
+
 ## 0.8.2
 
  - **FEAT**: Support for Option Group Name (#71).

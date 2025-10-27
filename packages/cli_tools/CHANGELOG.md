@@ -1,3 +1,11 @@
+## 0.9.0
+
+> Note: This release has breaking changes.
+
+ - **REFACTOR**(cli_tools): Deprecated CommandDocumentationGenerator (#81).
+ - **FEAT**(cli_tools): Enable override of analytics API URL (#85).
+ - **BREAKING** **REFACTOR**(cli_tools): Renamed 'target' option to 'tool' (#83).
+
 ## 0.8.2
 
  - **FIX**: Enclose option help in quotes (#77).
