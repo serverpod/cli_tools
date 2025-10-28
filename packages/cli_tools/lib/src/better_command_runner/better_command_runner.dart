@@ -66,7 +66,8 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   final MessageOutput? _messageOutput;
   final SetLogLevel? _setLogLevel;
   final OnBeforeRunCommand? _onBeforeRunCommand;
-  OnAnalyticsEvent? _onAnalyticsEvent;
+  final OnAnalyticsEvent? _onAnalyticsEvent;
+  bool _analyticsEnabled;
 
   /// The environment variables used for configuration resolution.
   final Map<String, String> envVariables;
@@ -157,6 +158,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
         _setLogLevel = setLogLevel,
         _onBeforeRunCommand = onBeforeRunCommand,
         _onAnalyticsEvent = onAnalyticsEvent,
+        _analyticsEnabled = onAnalyticsEvent != null,
         envVariables = env ?? Platform.environment,
         super(
           usageLineLength: wrapTextColumn,
@@ -167,7 +169,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
       _globalOptions = <O>[
         StandardGlobalOption.quiet as O,
         StandardGlobalOption.verbose as O,
-        if (_onAnalyticsEvent != null) StandardGlobalOption.analytics as O,
+        if (this.onAnalyticsEvent != null) StandardGlobalOption.analytics as O,
       ];
     } else {
       throw ArgumentError(
@@ -198,7 +200,50 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   }
 
   /// Checks if analytics is enabled.
-  bool analyticsEnabled() => _onAnalyticsEvent != null;
+  /// Note that the return value may change after the [run] method has started.
+  /// Can be overridden.
+  bool analyticsEnabled() => _analyticsEnabled;
+
+  /// Gets the [onAnalyticsEvent] callback, if set.
+  OnAnalyticsEvent? get onAnalyticsEvent => _onAnalyticsEvent;
+
+  /// Sends an analytics event, provided the analytics are enabled.
+  /// Invoked from BetterCommandRunner upon command execution
+  /// with the event name, or command name if applicable.
+  /// Can be overridden to customize the event sending behavior.
+  void sendAnalyticsEvent(final String event) {
+    if (analyticsEnabled()) {
+      try {
+        onAnalyticsEvent?.call(event);
+      } catch (_) {
+        // Silently ignore analytics sending errors to not disrupt the main flow
+      }
+    }
+  }
+
+  /// Determines the analytics settings based on configuration / settings.
+  /// Called from [run] before any analytics events are sent and before any
+  /// command is run.
+  ///
+  /// [globalConfiguration] is set before this method is called.
+  ///
+  /// By default it checks whether the [onAnalyticsEvent] callback is set
+  /// and the `--analytics` option.
+  /// Subclasses can override this method to customize the behavior,
+  /// e.g. to ask the user for permission.
+  Future<bool> determineAnalyticsSettings() async {
+    if (onAnalyticsEvent == null) {
+      return false;
+    }
+
+    if (globalConfiguration.findValueOf(
+            argName: BetterCommandRunnerFlags.analytics) ==
+        false) {
+      return false;
+    }
+
+    return true;
+  }
 
   /// Parses [args] and invokes [Command.run] on the chosen command.
   ///
@@ -211,11 +256,13 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   /// the global configuration is set, see [globalConfiguration].
   @override
   Future<T?> run(final Iterable<String> args) {
-    return Future.sync(() {
+    return Future.sync(() async {
       final argResults = parse(args);
       globalConfiguration = resolveConfiguration(argResults);
 
       try {
+        _analyticsEnabled = await determineAnalyticsSettings();
+
         if (globalConfiguration.errors.isNotEmpty) {
           final buffer = StringBuffer();
           final errors = globalConfiguration.errors.map(formatConfigError);
@@ -224,7 +271,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
         }
       } on UsageException catch (e) {
         messageOutput?.logUsageException(e);
-        _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.invalid);
+        sendAnalyticsEvent(BetterCommandRunnerAnalyticsEvents.invalid);
         rethrow;
       }
 
@@ -239,7 +286,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
       return super.parse(args);
     } on UsageException catch (e) {
       messageOutput?.logUsageException(e);
-      _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.invalid);
+      sendAnalyticsEvent(BetterCommandRunnerAnalyticsEvents.invalid);
       rethrow;
     }
   }
@@ -268,21 +315,15 @@ class BetterCommandRunner<O extends OptionDefinition, T>
       commandName: topLevelResults.command?.name,
     );
 
-    if (globalConfiguration.findValueOf(
-            argName: BetterCommandRunnerFlags.analytics) ==
-        false) {
-      _onAnalyticsEvent = null;
-    }
-
     unawaited(
-      Future(() async {
+      Future.sync(() {
         final command = topLevelResults.command;
         if (command != null) {
           // Command name can only be null for top level results.
           // But since we are taking the name of a command from the top level
           // results there should always be a name specified.
           assert(command.name != null, 'Command name should never be null.');
-          _onAnalyticsEvent?.call(
+          sendAnalyticsEvent(
             command.name ?? BetterCommandRunnerAnalyticsEvents.invalid,
           );
           return;
@@ -297,7 +338,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
         // so the try/catch statement can't be fully compensated for handled here.
         final noUnexpectedArgs = topLevelResults.rest.isEmpty;
         if (noUnexpectedArgs) {
-          _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.help);
+          sendAnalyticsEvent(BetterCommandRunnerAnalyticsEvents.help);
         }
       }),
     );
@@ -308,7 +349,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
       return await super.runCommand(topLevelResults);
     } on UsageException catch (e) {
       messageOutput?.logUsageException(e);
-      _onAnalyticsEvent?.call(BetterCommandRunnerAnalyticsEvents.invalid);
+      sendAnalyticsEvent(BetterCommandRunnerAnalyticsEvents.invalid);
       rethrow;
     }
   }
