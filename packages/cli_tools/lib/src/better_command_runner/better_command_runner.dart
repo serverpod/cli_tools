@@ -213,7 +213,11 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   /// Can be overridden to customize the event sending behavior.
   void sendAnalyticsEvent(final String event) {
     if (analyticsEnabled()) {
-      onAnalyticsEvent?.call(event);
+      try {
+        onAnalyticsEvent?.call(event);
+      } catch (_) {
+        // Silently ignore analytics sending errors to not disrupt the main flow
+      }
     }
   }
 
