@@ -1,3 +1,7 @@
+## 0.9.1
+
+ - **FEAT**(cli_tools): Make the analytics behavior customizable (#87).
+
 ## 0.9.0
 
 > Note: This release has breaking changes.
