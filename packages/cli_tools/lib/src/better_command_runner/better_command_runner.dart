@@ -169,7 +169,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
       _globalOptions = <O>[
         StandardGlobalOption.quiet as O,
         StandardGlobalOption.verbose as O,
-        if (_onAnalyticsEvent != null) StandardGlobalOption.analytics as O,
+        if (this.onAnalyticsEvent != null) StandardGlobalOption.analytics as O,
       ];
     } else {
       throw ArgumentError(
@@ -204,13 +204,16 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   /// Can be overridden.
   bool analyticsEnabled() => _analyticsEnabled;
 
+  /// Gets the [onAnalyticsEvent] callback, if set.
+  OnAnalyticsEvent? get onAnalyticsEvent => _onAnalyticsEvent;
+
   /// Sends an analytics event, provided the analytics are enabled.
   /// Invoked from BetterCommandRunner upon command execution
   /// with the event name, or command name if applicable.
   /// Can be overridden to customize the event sending behavior.
   void sendAnalyticsEvent(final String event) {
     if (analyticsEnabled()) {
-      _onAnalyticsEvent?.call(event);
+      onAnalyticsEvent?.call(event);
     }
   }
 
@@ -225,7 +228,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   /// Subclasses can override this method to customize the behavior,
   /// e.g. to ask the user for permission.
   Future<bool> determineAnalyticsSettings() async {
-    if (_onAnalyticsEvent == null) {
+    if (onAnalyticsEvent == null) {
       return false;
     }
 
