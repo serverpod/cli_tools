@@ -8,6 +8,7 @@ export 'exceptions.dart';
 export 'file_system_options.dart';
 export 'multi_config_source.dart';
 export 'option_groups.dart';
+export 'option_resolution.dart';
 export 'option_types.dart';
 export 'options.dart';
 export 'output_formatting.dart' show formatConfigError;

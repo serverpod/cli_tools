@@ -7,6 +7,7 @@ import 'configuration.dart' show Configuration;
 import 'configuration_broker.dart';
 import 'exceptions.dart';
 import 'option_resolution.dart';
+import 'option_resolution_impl.dart';
 import 'source_type.dart';
 
 /// Common interface to enable same treatment for [ConfigOptionBase]
@@ -325,14 +326,14 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
   /// Returns the result with the resolved value or error.
   ///
   /// This method is intended for internal use.
-  OptionResolution<V> resolveValue(
+  OptionResolutionImpl<V> resolveValue(
     final Configuration cfg, {
     final ArgResults? args,
     final Iterator<String>? posArgs,
     final Map<String, String>? env,
     final ConfigurationBroker? configBroker,
   }) {
-    OptionResolution<V> res;
+    OptionResolutionImpl<V> res;
     try {
       res = _doResolve(
         cfg,
@@ -342,7 +343,7 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
         configBroker: configBroker,
       );
     } on Exception catch (e) {
-      return OptionResolution.error(
+      return OptionResolutionImpl.error(
         'Failed to resolve ${option.qualifiedString()}: $e',
       );
     }
@@ -371,14 +372,14 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
     return res;
   }
 
-  OptionResolution<V> _doResolve(
+  OptionResolutionImpl<V> _doResolve(
     final Configuration cfg, {
     final ArgResults? args,
     final Iterator<String>? posArgs,
     final Map<String, String>? env,
     final ConfigurationBroker? configBroker,
   }) {
-    OptionResolution<V>? result;
+    OptionResolutionImpl<V>? result;
 
     result = _resolveNamedArg(args);
     if (result != null) return result;
@@ -398,42 +399,42 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
     result = _resolveDefaultValue();
     if (result != null) return result;
 
-    return const OptionResolution.noValue();
+    return const OptionResolutionImpl.noValue();
   }
 
-  OptionResolution<V>? _resolveNamedArg(final ArgResults? args) {
+  OptionResolutionImpl<V>? _resolveNamedArg(final ArgResults? args) {
     final argOptName = argName;
     if (argOptName == null || args == null || !args.wasParsed(argOptName)) {
       return null;
     }
-    return OptionResolution(
+    return OptionResolutionImpl(
       stringValue: args.option(argOptName),
       source: ValueSourceType.arg,
     );
   }
 
-  OptionResolution<V>? _resolvePosArg(final Iterator<String>? posArgs) {
+  OptionResolutionImpl<V>? _resolvePosArg(final Iterator<String>? posArgs) {
     final argOptPos = argPos;
     if (argOptPos == null || posArgs == null) return null;
     if (!posArgs.moveNext()) return null;
-    return OptionResolution(
+    return OptionResolutionImpl(
       stringValue: posArgs.current,
       source: ValueSourceType.arg,
     );
   }
 
-  OptionResolution<V>? _resolveEnvVar(final Map<String, String>? env) {
+  OptionResolutionImpl<V>? _resolveEnvVar(final Map<String, String>? env) {
     final envVarName = envName;
     if (envVarName == null || env == null || !env.containsKey(envVarName)) {
       return null;
     }
-    return OptionResolution(
+    return OptionResolutionImpl(
       stringValue: env[envVarName],
       source: ValueSourceType.envVar,
     );
   }
 
-  OptionResolution<V>? _resolveConfigValue(
+  OptionResolutionImpl<V>? _resolveConfigValue(
     final Configuration cfg,
     final ConfigurationBroker? configBroker,
   ) {
@@ -442,36 +443,36 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
     final value = configBroker.valueOrNull(key, cfg);
     if (value == null) return null;
     if (value is String) {
-      return OptionResolution(
+      return OptionResolutionImpl(
         stringValue: value,
         source: ValueSourceType.config,
       );
     }
     if (value is V) {
-      return OptionResolution(
+      return OptionResolutionImpl(
         value: value as V,
         source: ValueSourceType.config,
       );
     }
-    return OptionResolution.error(
+    return OptionResolutionImpl.error(
       '${option.qualifiedString()} value $value '
       'is of type ${value.runtimeType}, not $V.',
     );
   }
 
-  OptionResolution<V>? _resolveCustomValue(final Configuration cfg) {
+  OptionResolutionImpl<V>? _resolveCustomValue(final Configuration cfg) {
     final value = fromCustom?.call(cfg);
     if (value == null) return null;
-    return OptionResolution(
+    return OptionResolutionImpl(
       value: value,
       source: ValueSourceType.custom,
     );
   }
 
-  OptionResolution<V>? _resolveDefaultValue() {
+  OptionResolutionImpl<V>? _resolveDefaultValue() {
     final value = fromDefault?.call() ?? defaultsTo;
     if (value == null) return null;
-    return OptionResolution(
+    return OptionResolutionImpl(
       value: value,
       source: ValueSourceType.defaultValue,
     );
@@ -567,12 +568,12 @@ class FlagOption extends ConfigOptionBase<bool> {
   }
 
   @override
-  OptionResolution<bool>? _resolveNamedArg(final ArgResults? args) {
+  OptionResolutionImpl<bool>? _resolveNamedArg(final ArgResults? args) {
     final argOptName = argName;
     if (argOptName == null || args == null || !args.wasParsed(argOptName)) {
       return null;
     }
-    return OptionResolution(
+    return OptionResolutionImpl(
       value: args.flag(argOptName),
       source: ValueSourceType.arg,
     );
@@ -670,13 +671,13 @@ class MultiOption<T> extends ConfigOptionBase<List<T>> {
   }
 
   @override
-  OptionResolution<List<T>>? _resolveNamedArg(final ArgResults? args) {
+  OptionResolutionImpl<List<T>>? _resolveNamedArg(final ArgResults? args) {
     final argOptName = argName;
     if (argOptName == null || args == null || !args.wasParsed(argOptName)) {
       return null;
     }
     final multiParser = valueParser as MultiParser<T>;
-    return OptionResolution(
+    return OptionResolutionImpl(
       value: args
           .multiOption(argOptName)
           .map(multiParser.elementParser.parse)
