@@ -326,6 +326,7 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
   /// Returns the result with the resolved value or error.
   ///
   /// This method is intended for internal use.
+  @internal
   OptionResolutionImpl<V> resolveValue(
     final Configuration cfg, {
     final ArgResults? args,
@@ -481,6 +482,7 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
   /// Returns an error message if the value is invalid, or null if valid.
   ///
   /// This method is intended for internal use.
+  @internal
   String? validateOptionValue(final V? value) {
     if (value == null && mandatory) {
       return '${qualifiedString()} is mandatory';
