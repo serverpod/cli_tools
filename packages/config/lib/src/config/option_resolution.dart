@@ -8,13 +8,13 @@ abstract class OptionResolution<V> {
   /// or if there was an error.
   V? get value;
 
-  /// The error message if the option was not succesfully resolved.
+  /// The error message if the option was not successfully resolved.
   String? get error;
 
   /// The source type of the option's value.
   ValueSourceType get source;
 
-  /// Whether the option was not succesfully resolved.
+  /// Whether the option was not successfully resolved.
   bool get hasError => error != null;
 
   /// Whether the option has a proper value (without errors).
