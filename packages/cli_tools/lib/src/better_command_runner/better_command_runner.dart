@@ -48,6 +48,32 @@ typedef SetLogLevel = void Function({
 /// A function type for tracking events.
 typedef OnAnalyticsEvent = void Function(String event);
 
+/// A dummy to replicate the usage-text of upstream private `HelpCommand`
+final class _HelpCommandDummy extends Command {
+  _HelpCommandDummy({required this.runner});
+
+  static const label = 'help';
+
+  static const Null exitCode = null;
+
+  @override
+  final name = _HelpCommandDummy.label;
+
+  @override
+  final BetterCommandRunner runner;
+
+  @override
+  String get description =>
+      'Display help information for ${runner.executableName}.';
+
+  @override
+  String get invocation => '${runner.executableName} $name [command]';
+
+  @override
+  Never run() => throw StateError(
+      'This class is meant to only obtain the Usage Text for `$name` command');
+}
+
 /// An extension of [CommandRunner] with additional features.
 ///
 /// This class extends the [CommandRunner] class from the `args` package and adds
@@ -72,7 +98,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   /// The environment variables used for configuration resolution.
   final Map<String, String> envVariables;
 
-  /// The gloabl option definitions.
+  /// The global option definitions.
   late final List<O> _globalOptions;
 
   Configuration<O>? _globalConfiguration;
@@ -346,6 +372,10 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     await _onBeforeRunCommand?.call(this);
 
     try {
+      if (_isHelpUsageRequested(topLevelResults)) {
+        messageOutput?.logUsage(_HelpCommandDummy(runner: this).usage);
+        return _HelpCommandDummy.exitCode;
+      }
       return await super.runCommand(topLevelResults);
     } on UsageException catch (e) {
       messageOutput?.logUsageException(e);
@@ -365,6 +395,31 @@ class BetterCommandRunner<O extends OptionDefinition, T>
       env: envVariables,
       ignoreUnexpectedPositionalArgs: true,
     );
+  }
+
+  static bool _isHelpUsageRequested(final ArgResults topLevelResults) {
+    final topLevelCommand = topLevelResults.command;
+    if (topLevelCommand == null) {
+      return false;
+    }
+    final topLevelCommandName = topLevelCommand.name;
+    if (topLevelCommandName != _HelpCommandDummy.label) {
+      return false;
+    }
+    final helpCommand = topLevelCommand;
+    // check whether it's allowed to get the usage-text for `help`
+    if (!helpCommand.options.contains(_HelpCommandDummy.label)) {
+      throw StateError('Upstream `package:args` has a breaking change');
+    }
+    // case: `mock help -h`
+    if (helpCommand.flag(_HelpCommandDummy.label)) {
+      return true;
+    }
+    // case: `mock help help`
+    if ((helpCommand.arguments.contains(_HelpCommandDummy.label))) {
+      return true;
+    }
+    return false;
   }
 
   static CommandRunnerLogLevel _determineLogLevel(final Configuration config) {
