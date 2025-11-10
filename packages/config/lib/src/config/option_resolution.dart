@@ -1,51 +1,24 @@
 import 'source_type.dart';
 
-final class OptionResolution<V> {
-  final String? stringValue;
-  final V? value;
-  final String? error;
-  final ValueSourceType source;
+/// Describes the resolution of a configuration option.
+abstract class OptionResolution<V> {
+  const OptionResolution();
 
-  const OptionResolution._({
-    required this.source,
-    this.stringValue,
-    this.value,
-    this.error,
-  });
+  /// The resolved value of the option, or null if there was no value
+  /// or if there was an error.
+  V? get value;
 
-  const OptionResolution({
-    required this.source,
-    this.stringValue,
-    this.value,
-  }) : error = null;
+  /// The error message if the option was not successfully resolved.
+  String? get error;
 
-  const OptionResolution.noValue()
-      : source = ValueSourceType.noValue,
-        stringValue = null,
-        value = null,
-        error = null;
+  /// The source type of the option's value.
+  ValueSourceType get source;
 
-  const OptionResolution.error(this.error)
-      : source = ValueSourceType.noValue,
-        stringValue = null,
-        value = null;
-
-  OptionResolution<V> copyWithValue(final V newValue) => OptionResolution._(
-        source: source,
-        stringValue: stringValue,
-        value: newValue,
-        error: error,
-      );
-
-  OptionResolution<V> copyWithError(final String error) => OptionResolution._(
-        source: source,
-        stringValue: stringValue,
-        value: value,
-        error: error,
-      );
+  /// Whether the option was not successfully resolved.
+  bool get hasError => error != null;
 
   /// Whether the option has a proper value (without errors).
-  bool get hasValue => source != ValueSourceType.noValue && error == null;
+  bool get hasValue => source != ValueSourceType.noValue && !hasError;
 
   /// Whether the option has a value that was specified explicitly (not default).
   bool get isSpecified => hasValue && source != ValueSourceType.defaultValue;

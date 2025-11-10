@@ -4,7 +4,7 @@ import 'package:collection/collection.dart';
 
 import 'configuration_broker.dart';
 import 'exceptions.dart';
-import 'option_resolution.dart';
+import 'option_resolution_impl.dart';
 import 'options.dart';
 import 'output_formatting.dart';
 import 'source_type.dart';
@@ -43,7 +43,7 @@ import 'source_type.dart';
 /// ```
 class Configuration<O extends OptionDefinition> {
   final List<O> _options;
-  final Map<O, OptionResolution> _config;
+  final Map<O, OptionResolutionImpl> _config;
   final List<String> _errors;
 
   /// Creates a configuration with the provided option values.
@@ -86,7 +86,7 @@ class Configuration<O extends OptionDefinition> {
     final Map<O, Object?>? presetValues,
     final bool ignoreUnexpectedPositionalArgs = false,
   })  : _options = List<O>.from(options),
-        _config = <O, OptionResolution>{},
+        _config = <O, OptionResolutionImpl>{},
         _errors = <String>[] {
     if (argResults == null && args != null) {
       argResults = _prepareArgResults(args);
@@ -118,7 +118,7 @@ class Configuration<O extends OptionDefinition> {
     final Map<O, Object?>? presetValues,
     final bool ignoreUnexpectedPositionalArgs = false,
   })  : _options = List<O>.from(options),
-        _config = <O, OptionResolution>{},
+        _config = <O, OptionResolutionImpl>{},
         _errors = <String>[] {
     if (argResults == null && args != null) {
       argResults = _prepareArgResults(args);
@@ -148,7 +148,8 @@ class Configuration<O extends OptionDefinition> {
     } on FormatException catch (e) {
       _errors.add(e.message);
       for (final o in _options) {
-        _config[o] = const OptionResolution.error('Previous ArgParser error');
+        _config[o] =
+            const OptionResolutionImpl.error('Previous ArgParser error');
       }
       return null;
     }
@@ -270,7 +271,9 @@ class Configuration<O extends OptionDefinition> {
     return resolution.source;
   }
 
-  OptionResolution _getOptionResolution<V>(final OptionDefinition<V> option) {
+  OptionResolutionImpl _getOptionResolution<V>(
+    final OptionDefinition<V> option,
+  ) {
     if (!_options.contains(option)) {
       throw ArgumentError(
           '${option.qualifiedString()} is not part of this configuration');
@@ -302,10 +305,10 @@ class Configuration<O extends OptionDefinition> {
     final orderedOpts = _options.sorted((final a, final b) =>
         (a.option.argPos ?? -1).compareTo(b.option.argPos ?? -1));
 
-    final optionGroups = <OptionGroup, Map<O, OptionResolution>>{};
+    final optionGroups = <OptionGroup, Map<O, OptionResolutionImpl>>{};
 
     for (final opt in orderedOpts) {
-      OptionResolution resolution;
+      OptionResolutionImpl resolution;
       try {
         if (presetValues != null && presetValues.containsKey(opt)) {
           resolution = _resolvePresetValue(opt, presetValues[opt]);
@@ -336,7 +339,7 @@ class Configuration<O extends OptionDefinition> {
         // Represents an option resolution that depends on another option
         // whose resolution failed, so this resolution fails in turn.
         // Not adding to _errors to avoid double reporting.
-        resolution = OptionResolution.error(e.message);
+        resolution = OptionResolutionImpl.error(e.message);
       }
 
       _config[opt] = resolution;
@@ -351,13 +354,13 @@ class Configuration<O extends OptionDefinition> {
     }
   }
 
-  OptionResolution _resolvePresetValue(
+  OptionResolutionImpl _resolvePresetValue(
     final O option,
     final Object? value,
   ) {
     final resolution = value == null
-        ? const OptionResolution.noValue()
-        : OptionResolution(value: value, source: ValueSourceType.preset);
+        ? const OptionResolutionImpl.noValue()
+        : OptionResolutionImpl(value: value, source: ValueSourceType.preset);
 
     final error = option.option.validateOptionValue(value);
     if (error != null) return resolution.copyWithError(error);
@@ -365,7 +368,7 @@ class Configuration<O extends OptionDefinition> {
   }
 
   void _validateGroups(
-    final Map<OptionGroup, Map<O, OptionResolution>> optionGroups,
+    final Map<OptionGroup, Map<O, OptionResolutionImpl>> optionGroups,
   ) {
     optionGroups.forEach((final group, final optionResolutions) {
       final error = group.validateValues(optionResolutions);
