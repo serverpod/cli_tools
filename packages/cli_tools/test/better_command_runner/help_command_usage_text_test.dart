@@ -106,8 +106,8 @@ void _testsForInvalidHelpUsageRequests(final List<String> args) {
   group('when $args is received', () {
     final betterRunnerOutput = StringBuffer();
     final upstreamRunnerOutput = StringBuffer();
-    late final UsageException? betterRunnerException;
-    late final UsageException? upstreamRunnerException;
+    UsageException? betterRunnerException;
+    UsageException? upstreamRunnerException;
     setUpAll(() async {
       try {
         await runZoned(
