@@ -372,7 +372,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     await _onBeforeRunCommand?.call(this);
 
     try {
-      if (_isHelpUsageRequested(topLevelResults)) {
+      if (_isUsageOfHelpCommandRequested(topLevelResults)) {
         messageOutput?.logUsage(_HelpCommandDummy(runner: this).usage);
         return _HelpCommandDummy.exitCode;
       }
@@ -397,13 +397,13 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     );
   }
 
-  static bool _isHelpUsageRequested(final ArgResults topLevelResults) {
+  static bool _isUsageOfHelpCommandRequested(final ArgResults topLevelResults) {
+    // check whether Help Command is chosen
     final topLevelCommand = topLevelResults.command;
     if (topLevelCommand == null) {
       return false;
     }
-    final topLevelCommandName = topLevelCommand.name;
-    if (topLevelCommandName != _HelpCommandDummy.label) {
+    if (topLevelCommand.name != _HelpCommandDummy.label) {
       return false;
     }
     final helpCommand = topLevelCommand;
@@ -419,6 +419,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     if ((helpCommand.arguments.contains(_HelpCommandDummy.label))) {
       return true;
     }
+    // aside: more cases may be added if necessary in future
     return false;
   }
 
