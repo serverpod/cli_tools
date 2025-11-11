@@ -398,7 +398,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   }
 
   static bool _isUsageOfHelpCommandRequested(final ArgResults topLevelResults) {
-    // check whether Help Command is chosen
+    // check whether `help` command is chosen
     final topLevelCommand = topLevelResults.command;
     if (topLevelCommand == null) {
       return false;
@@ -409,7 +409,11 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     final helpCommand = topLevelCommand;
     // check whether it's allowed to get the usage-text for `help`
     if (!helpCommand.options.contains(_HelpCommandDummy.label)) {
-      throw StateError('Upstream `package:args` has a breaking change');
+      // rare scenario (if upstream `package:args` has a breaking change)
+      // fortunately, corresponding test-cases shall fail as it
+      // - tests the current behavior (e.g. args = ['help', '-h'])
+      // - notifies the publisher(s) of this breaking change
+      return false;
     }
     // case: `mock help -h`
     if (helpCommand.flag(_HelpCommandDummy.label)) {
