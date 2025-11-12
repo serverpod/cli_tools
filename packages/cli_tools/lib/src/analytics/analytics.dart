@@ -19,22 +19,43 @@ class MixPanelAnalytics implements Analytics {
   static const _defaultTimeout = Duration(seconds: 2);
 
   final String _uniqueUserId;
-  final String _endpoint;
   final String _projectToken;
   final String _version;
+
+  final Uri _endpoint;
   final Duration _timeout;
 
   MixPanelAnalytics({
     required final String uniqueUserId,
     required final String projectToken,
     required final String version,
-    final String endpoint = _defaultEndpoint,
+    final String? endpoint,
     final Duration timeout = _defaultTimeout,
+    final bool disableIpTracking = false,
   })  : _uniqueUserId = uniqueUserId,
         _projectToken = projectToken,
         _version = version,
-        _endpoint = endpoint,
+        _endpoint = _buildEndpoint(
+          endpoint ?? _defaultEndpoint,
+          disableIpTracking,
+        ),
         _timeout = timeout;
+
+  static Uri _buildEndpoint(
+    final String baseEndpoint,
+    final bool disableIpTracking,
+  ) {
+    final uri = Uri.parse(baseEndpoint);
+    final ipValue = disableIpTracking ? '0' : '1';
+
+    final updatedUri = uri.replace(
+      queryParameters: {
+        ...uri.queryParameters,
+        'ip': ipValue,
+      },
+    );
+    return updatedUri;
+  }
 
   @override
   void cleanUp() {}
@@ -71,7 +92,7 @@ class MixPanelAnalytics implements Analytics {
   Future<void> _quietPost(final String payload) async {
     try {
       await http.post(
-        Uri.parse(_endpoint),
+        _endpoint,
         body: 'data=$payload',
         headers: {
           'Accept': 'text/plain',
