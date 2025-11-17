@@ -8,6 +8,8 @@ import 'package:config/config.dart';
 import 'completion/completion_command.dart';
 import 'completion/completion_tool.dart' show CompletionScript;
 
+import 'help_command_workaround.dart' show HelpCommandWorkaround;
+
 /// A function type for executing code before running a command.
 typedef OnBeforeRunCommand = Future<void> Function(BetterCommandRunner runner);
 
@@ -47,32 +49,6 @@ typedef SetLogLevel = void Function({
 
 /// A function type for tracking events.
 typedef OnAnalyticsEvent = void Function(String event);
-
-/// A dummy to replicate the usage-text of upstream private `HelpCommand`
-final class _HelpCommandDummy extends Command {
-  _HelpCommandDummy({required this.runner});
-
-  static const label = 'help';
-
-  static const Null exitCode = null;
-
-  @override
-  final name = _HelpCommandDummy.label;
-
-  @override
-  final BetterCommandRunner runner;
-
-  @override
-  String get description =>
-      'Display help information for ${runner.executableName}.';
-
-  @override
-  String get invocation => '${runner.executableName} $name [command]';
-
-  @override
-  Never run() => throw StateError(
-      'This class is meant to only obtain the Usage Text for `$name` command');
-}
 
 /// An extension of [CommandRunner] with additional features.
 ///
@@ -372,10 +348,13 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     await _onBeforeRunCommand?.call(this);
 
     try {
-      if (_isUsageOfHelpCommandRequested(topLevelResults)) {
-        messageOutput?.logUsage(_HelpCommandDummy(runner: this).usage);
-        return _HelpCommandDummy.exitCode;
+      // an edge case regarding `help -h`
+      final helpProxy = HelpCommandWorkaround(runner: this);
+      if (helpProxy.isUsageOfHelpCommandRequested(topLevelResults)) {
+        messageOutput?.logUsage(helpProxy.usage);
+        return null;
       }
+      // normal cases
       return await super.runCommand(topLevelResults);
     } on UsageException catch (e) {
       messageOutput?.logUsageException(e);
@@ -395,36 +374,6 @@ class BetterCommandRunner<O extends OptionDefinition, T>
       env: envVariables,
       ignoreUnexpectedPositionalArgs: true,
     );
-  }
-
-  static bool _isUsageOfHelpCommandRequested(final ArgResults topLevelResults) {
-    // check whether `help` command is chosen
-    final topLevelCommand = topLevelResults.command;
-    if (topLevelCommand == null) {
-      return false;
-    }
-    if (topLevelCommand.name != _HelpCommandDummy.label) {
-      return false;
-    }
-    final helpCommand = topLevelCommand;
-    // check whether it's allowed to get the usage-text for `help`
-    if (!helpCommand.options.contains(_HelpCommandDummy.label)) {
-      // rare scenario (if upstream `package:args` has a breaking change)
-      // fortunately, corresponding test-cases shall fail as it
-      // - tests the current behavior (e.g. args = ['help', '-h'])
-      // - notifies the publisher(s) of this breaking change
-      return false;
-    }
-    // case: `mock help -h`
-    if (helpCommand.flag(_HelpCommandDummy.label)) {
-      return true;
-    }
-    // case: `mock help help`
-    if ((helpCommand.arguments.contains(_HelpCommandDummy.label))) {
-      return true;
-    }
-    // aside: more cases may be added if necessary in future
-    return false;
   }
 
   static CommandRunnerLogLevel _determineLogLevel(final Configuration config) {
