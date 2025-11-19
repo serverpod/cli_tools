@@ -8,6 +8,8 @@ import 'package:config/config.dart';
 import 'completion/completion_command.dart';
 import 'completion/completion_tool.dart' show CompletionScript;
 
+import 'help_command_workaround.dart' show HelpCommandWorkaround;
+
 /// A function type for executing code before running a command.
 typedef OnBeforeRunCommand = Future<void> Function(BetterCommandRunner runner);
 
@@ -72,7 +74,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   /// The environment variables used for configuration resolution.
   final Map<String, String> envVariables;
 
-  /// The gloabl option definitions.
+  /// The global option definitions.
   late final List<O> _globalOptions;
 
   Configuration<O>? _globalConfiguration;
@@ -346,6 +348,13 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     await _onBeforeRunCommand?.call(this);
 
     try {
+      // an edge case regarding `help -h`
+      final helpProxy = HelpCommandWorkaround(runner: this);
+      if (helpProxy.isUsageOfHelpCommandRequested(topLevelResults)) {
+        messageOutput?.logUsage(helpProxy.usage);
+        return null;
+      }
+      // normal cases
       return await super.runCommand(topLevelResults);
     } on UsageException catch (e) {
       messageOutput?.logUsageException(e);
