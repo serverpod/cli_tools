@@ -246,6 +246,12 @@ class IntOption extends ComparableValueOption<int> {
   }) : super(valueParser: const IntParser());
 }
 
+/// Converts a source string value to the chosen `num` type `T`.
+///
+/// Throws a [FormatException] with an appropriate message
+/// if the value cannot be parsed.
+///
+/// **Note**: `NumParser<Never>.parse` always throws an [UnsupportedError].
 class NumParser<T extends num> extends ValueParser<T> {
   const NumParser();
 
@@ -254,13 +260,18 @@ class NumParser<T extends num> extends ValueParser<T> {
     if (T == double) return double.parse(value) as T;
     if (T == int) return int.parse(value) as T;
     if (T == num) return num.parse(value) as T;
-    throw UnsupportedError('Dart does not consider $T as a Type of num');
+    throw UnsupportedError('NumParser<Never> never parses anything.');
   }
 }
 
 /// Number (int/double/num) value configuration option.
 ///
 /// Supports minimum and maximum range checking.
+///
+/// **Note**:
+/// * Usage of `NumOption<Never>` is unreasonable and not supported
+/// * Reference for usage of `num`:
+/// https://dart.dev/resources/language/number-representation
 class NumOption<T extends num> extends ComparableValueOption<T> {
   const NumOption({
     super.argName,
@@ -287,7 +298,9 @@ class NumOption<T extends num> extends ComparableValueOption<T> {
               ? const NumParser<double>()
               : T == int
                   ? const NumParser<int>()
-                  : const NumParser<num>()) as NumParser<T>,
+                  : T == num
+                      ? const NumParser<num>()
+                      : const NumParser<Never>()) as NumParser<T>,
         );
 }
 

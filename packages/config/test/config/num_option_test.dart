@@ -92,8 +92,8 @@ void main() {
       });
     });
   });
-  group('Given a NumOption', () {
-    const numOpt = NumOption(argName: 'num', mandatory: true);
+  group('Given a NumOption<num>', () {
+    const numOpt = NumOption<num>(argName: 'num', mandatory: true);
     group('when a fractional number is passed', () {
       final config = Configuration.resolveNoExcept(
         options: [numOpt],
@@ -139,6 +139,22 @@ void main() {
       );
       test('then it is not parsed successfully', () {
         expect(config.errors, isNotEmpty);
+      });
+    });
+  });
+  group('Given a NumOption<Never>', () {
+    const numOpt = NumOption<Never>(argName: 'num', mandatory: true);
+    group('when any value is passed', () {
+      test('then it reports an UnsupportedError', () {
+        for (final val in ['123.45', '12345', '12i+345j']) {
+          expect(
+            () => Configuration.resolveNoExcept(
+              options: [numOpt],
+              args: ['--num', val],
+            ),
+            throwsUnsupportedError,
+          );
+        }
       });
     });
   });
