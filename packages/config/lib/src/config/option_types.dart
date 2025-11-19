@@ -193,11 +193,11 @@ class ComparableValueOption<V extends Comparable> extends ConfigOptionBase<V> {
   void validateValue(final V value) {
     super.validateValue(value);
 
-    final mininum = min;
-    if (mininum != null && value.compareTo(mininum) < 0) {
+    final minimum = min;
+    if (minimum != null && value.compareTo(minimum) < 0) {
       throw FormatException(
         '${valueParser.format(value)} is below the minimum '
-        '(${valueParser.format(mininum)})',
+        '(${valueParser.format(minimum)})',
       );
     }
     final maximum = max;
@@ -244,6 +244,64 @@ class IntOption extends ComparableValueOption<int> {
     super.min,
     super.max,
   }) : super(valueParser: const IntParser());
+}
+
+/// Converts a source string value to the chosen `num` type `T`.
+///
+/// Throws a [FormatException] with an appropriate message
+/// if the value cannot be parsed.
+///
+/// **Note**: `NumParser<Never>.parse` always throws an [UnsupportedError].
+class NumParser<T extends num> extends ValueParser<T> {
+  const NumParser();
+
+  @override
+  T parse(final String value) {
+    if (T == double) return double.parse(value) as T;
+    if (T == int) return int.parse(value) as T;
+    if (T == num) return num.parse(value) as T;
+    throw UnsupportedError('NumParser<Never> never parses anything.');
+  }
+}
+
+/// Number (int/double/num) value configuration option.
+///
+/// Supports minimum and maximum range checking.
+///
+/// **Note**:
+/// * Usage of `NumOption<Never>` is unreasonable and not supported
+/// * Reference for usage of `num`:
+/// https://dart.dev/resources/language/number-representation
+class NumOption<T extends num> extends ComparableValueOption<T> {
+  const NumOption({
+    super.argName,
+    super.argAliases,
+    super.argAbbrev,
+    super.argPos,
+    super.envName,
+    super.configKey,
+    super.fromCustom,
+    super.fromDefault,
+    super.defaultsTo,
+    super.helpText,
+    super.valueHelp = 'number',
+    super.allowedHelp,
+    super.group,
+    super.allowedValues,
+    super.customValidator,
+    super.mandatory,
+    super.hide,
+    super.min,
+    super.max,
+  }) : super(
+          valueParser: (T == double
+              ? const NumParser<double>()
+              : T == int
+                  ? const NumParser<int>()
+                  : T == num
+                      ? const NumParser<num>()
+                      : const NumParser<Never>()) as NumParser<T>,
+        );
 }
 
 /// Parses a date string into a [DateTime] object.
