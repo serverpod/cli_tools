@@ -16,6 +16,7 @@ environment:
 
 dependencies:
   args: ^2.7.0
+  async: ^2.10.0
   ci: ^0.1.0
   config: ^0.8.3
   http: '>=0.13.0 <2.0.0'
