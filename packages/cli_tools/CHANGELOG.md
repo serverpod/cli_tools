@@ -1,3 +1,7 @@
+## 0.10.0
+
+ - **FEAT**(cli_tools): Add execute helper function to run shell commands (#90).
+
 ## 0.9.1
 
  - **FEAT**(cli_tools): Make the analytics behavior customizable (#87).
