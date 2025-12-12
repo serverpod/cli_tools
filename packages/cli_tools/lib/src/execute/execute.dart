@@ -1,23 +1,35 @@
 import 'dart:io';
+import 'dart:io' as io;
 
 import 'package:async/async.dart';
 
-/// Executes a command in a child process shell and returns the exit code.
+/// Executes a [command] in a child process shell and returns the exit code. The
+/// [command] can include arguements, fx: `echo "Hello world!"`.
 ///
-/// Child stdout/stderr will be forwarded to the parent process. Parent signals
-/// (SIGINT & SIGTERM) will be forwarded to the child.
+/// Child stdout/stderr will be forwarded to the parent process. It will use the
+/// parents defaults for [stdin]/[stdout] unless overriden with alternative
+/// [IOSink]s.
+///
+/// Parent signals (SIGINT & SIGTERM) will be forwarded to the child, while
+/// [command] is running
 ///
 /// If you pass a [stdin] stream then it will be consumed and forwarded to the
 /// child. If you plan on listening to stdin again later, make sure to convert
 /// it from a single subscription stream first.
 ///
 /// You can specify what [workingDirectory] the child process should be spawned
-/// in.
+/// in. It will default to [Directory.current].
 Future<int> execute(
   final String command, {
   final Stream<List<int>>? stdin,
-  final Directory? workingDirectory,
+  IOSink? stdout,
+  IOSink? stderr,
+  Directory? workingDirectory,
 }) async {
+  stdout ??= io.stdout;
+  stderr ??= io.stderr;
+  workingDirectory ??= Directory.current;
+
   final shell = Platform.isWindows ? 'cmd' : 'bash';
   final shellArg = Platform.isWindows ? '/c' : '-c';
 
@@ -27,7 +39,7 @@ Future<int> execute(
   final process = await Process.start(
     shell,
     [shellArg, command],
-    workingDirectory: workingDirectory?.path,
+    workingDirectory: workingDirectory.path,
   );
 
   // Forward signals to child process
