@@ -1,13 +1,15 @@
 import 'dart:io';
-import 'dart:io' as io;
+import 'dart:io' as io; // to distinguish stdout from io.stdout, etc.
 
 import 'package:async/async.dart';
 
-/// Executes a [command] in a child process shell and returns the exit code. The
-/// [command] can include arguements, fx: `echo "Hello world!"`.
+/// Executes a [command] in a child process shell and returns the exit code.
+///
+/// The [command] is a shell command line that can include arguments, e.g.,
+/// `echo "Hello world!"`.
 ///
 /// Child stdout/stderr will be forwarded to the parent process. It will use the
-/// parents defaults for [stdin]/[stdout] unless overriden with alternative
+/// parent's defaults for [stdin]/[stdout] unless overridden with alternative
 /// [IOSink]s.
 ///
 /// Parent signals (SIGINT & SIGTERM) will be forwarded to the child, while
