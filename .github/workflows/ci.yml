@@ -1,51 +1,59 @@
 name: CLI Tools CI
 
 on:
-    push:
-        branches:
-            - main
-    pull_request:
-        branches:
-            - main
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-    dart_format:
-        name: Dart format check
-        strategy:
-            fail-fast: false
-            matrix:
-                dart: [3.3, 3.9]
-                package: [cli_tools, config]
-        runs-on: ubuntu-latest
-        defaults:
-          run:
-            working-directory: packages/${{ matrix.package }}
-        steps:
-            - uses: actions/checkout@v4
-            - uses: dart-lang/setup-dart@v1.7.1
-              with:
-                sdk: ${{ matrix.dart }}
+  dart_format:
+    name: Dart format check
+    strategy:
+      fail-fast: false
+      matrix:
+        dart: [3.3, 3.9]
+        package: [cli_tools, config]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/${{ matrix.package }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1.7.1
+        with:
+          sdk: ${{ matrix.dart }}
 
-            - run: dart pub get
-            - run: dart format --output=none --set-exit-if-changed .
+      - run: dart pub get
+      - run: dart format --output=none --set-exit-if-changed .
 
-    dart_analyze_test:
-        name: Dart Analyze and Test
-        strategy:
-            fail-fast: false
-            matrix:
-                dart: [3.3, 3.9]
-                package: [cli_tools, config]
-        runs-on: ubuntu-latest
-        defaults:
-          run:
-            working-directory: packages/${{ matrix.package }}
-        steps:
-            - uses: actions/checkout@v4
-            - uses: dart-lang/setup-dart@v1.7.1
-              with:
-                sdk: ${{ matrix.dart }}
+  dart_analyze_test:
+    name: Dart Analyze and Test
+    strategy:
+      fail-fast: false
+      matrix:
+        dart: [3.3, 3.9]
+        package: [cli_tools, config]
+        platform: [ubuntu-latest]
+        include:
+          - package: cli_tools
+            platform: windows-latest
+            dart: 3.3
+          - package: cli_tools
+            platform: macos-latest
+            dart: 3.3
+    runs-on: ${{ matrix.platform }}
+    defaults:
+      run:
+        working-directory: packages/${{ matrix.package }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1.7.1
+        with:
+          sdk: ${{ matrix.dart }}
 
-            - run: dart pub get
-            - run: dart analyze --fatal-infos
-            - run: dart test
+      - run: dart pub get
+      - run: dart analyze --fatal-infos
+      - run: dart test

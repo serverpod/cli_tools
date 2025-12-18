@@ -26,7 +26,7 @@ class MockStdout implements Stdout {
 
   @override
   Future addStream(final Stream<List<int>> stream) {
-    throw UnimplementedError();
+    return stream.forEach(add);
   }
 
   @override
