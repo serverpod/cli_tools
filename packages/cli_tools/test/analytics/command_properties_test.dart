@@ -71,12 +71,7 @@ void main() {
       'when running with option value '
       'then value is masked in properties and full command',
       () {
-        final args = [
-          CreateCommand.commandName,
-          '--mini',
-          '--name',
-          'secret'
-        ];
+        final args = [CreateCommand.commandName, '--mini', '--name', 'secret'];
         final results = runner.parse(args);
 
         final properties = buildCommandPropertiesForAnalytics(
@@ -149,13 +144,7 @@ void main() {
       'when running with repeated multi options '
       'then each value is masked',
       () {
-        final args = [
-          CreateCommand.commandName,
-          '--tag',
-          'a',
-          '--tag',
-          'b'
-        ];
+        final args = [CreateCommand.commandName, '--tag', 'a', '--tag', 'b'];
         final results = runner.parse(args);
 
         final properties = buildCommandPropertiesForAnalytics(
