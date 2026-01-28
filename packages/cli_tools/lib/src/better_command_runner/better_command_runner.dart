@@ -221,8 +221,6 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     final String event, [
     final Map<String, dynamic> properties = const {},
   ]) {
-    print('sendAnalyticsEvent: $event properties: $properties');
-
     if (analyticsEnabled()) {
       try {
         onAnalyticsEvent?.call(event, properties);
