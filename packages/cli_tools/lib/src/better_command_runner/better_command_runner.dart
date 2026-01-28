@@ -5,6 +5,7 @@ import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:config/config.dart';
 
+import '../analytics/command_properties.dart';
 import 'completion/completion_command.dart';
 import 'completion/completion_tool.dart' show CompletionScript;
 
@@ -48,7 +49,10 @@ typedef SetLogLevel = void Function({
 });
 
 /// A function type for tracking events.
-typedef OnAnalyticsEvent = void Function(String event);
+typedef OnAnalyticsEvent = void Function(
+  String event,
+  Map<String, dynamic> properties,
+);
 
 /// An extension of [CommandRunner] with additional features.
 ///
@@ -213,10 +217,13 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   /// Invoked from BetterCommandRunner upon command execution
   /// with the event name, or command name if applicable.
   /// Can be overridden to customize the event sending behavior.
-  void sendAnalyticsEvent(final String event) {
+  void sendAnalyticsEvent(
+    final String event, [
+    final Map<String, dynamic> properties = const {},
+  ]) {
     if (analyticsEnabled()) {
       try {
-        onAnalyticsEvent?.call(event);
+        onAnalyticsEvent?.call(event, properties);
       } catch (_) {
         // Silently ignore analytics sending errors to not disrupt the main flow
       }
@@ -326,7 +333,12 @@ class BetterCommandRunner<O extends OptionDefinition, T>
           // results there should always be a name specified.
           assert(command.name != null, 'Command name should never be null.');
           sendAnalyticsEvent(
-            command.name ?? BetterCommandRunnerAnalyticsEvents.invalid,
+            command.name!,
+            buildCommandPropertiesForAnalytics(
+              topLevelResults: topLevelResults,
+              argParser: argParser,
+              commands: commands,
+            ),
           );
           return;
         }
