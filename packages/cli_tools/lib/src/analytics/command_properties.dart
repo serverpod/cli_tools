@@ -111,15 +111,10 @@ class _CommandPropertiesBuilder {
     final withoutPrefix = arg.substring(2);
     final equalIndex = withoutPrefix.indexOf('=');
     if (equalIndex != -1) {
-      final name = withoutPrefix.substring(0, equalIndex);
-      final handled = _handleOption(
-        name: name,
+      _handleInlineOption(
+        name: withoutPrefix.substring(0, equalIndex),
         isNegated: false,
-        hasInlineValue: true,
       );
-      if (handled) {
-        _addMasked();
-      }
       return;
     }
 
@@ -143,14 +138,7 @@ class _CommandPropertiesBuilder {
         _addMasked();
         return;
       }
-      final handled = _handleOption(
-        name: name,
-        isNegated: false,
-        hasInlineValue: true,
-      );
-      if (handled) {
-        _addMasked();
-      }
+      _handleInlineOption(name: name, isNegated: false);
       return;
     }
 
@@ -192,6 +180,20 @@ class _CommandPropertiesBuilder {
 
   void _addMasked() {
     _tokens.add(_maskedValue);
+  }
+
+  void _handleInlineOption({
+    required final String name,
+    required final bool isNegated,
+  }) {
+    final handled = _handleOption(
+      name: name,
+      isNegated: isNegated,
+      hasInlineValue: true,
+    );
+    if (handled) {
+      _addMasked();
+    }
   }
 
   String? _optionNameForAbbreviation(final String abbreviation) {
