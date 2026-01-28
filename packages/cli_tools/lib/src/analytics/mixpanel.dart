@@ -88,12 +88,4 @@ class MixPanelAnalytics implements Analytics {
       return;
     }
   }
-
-  @override
-  void identify({
-    final String? email,
-    final Map<String, dynamic>? properties,
-  }) {
-    // Identify events are ignored for MixPanel.
-  }
 }

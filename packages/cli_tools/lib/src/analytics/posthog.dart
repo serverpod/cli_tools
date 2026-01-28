@@ -56,24 +56,6 @@ class PostHogAnalytics implements Analytics {
     _quietPost(eventData);
   }
 
-  @override
-  void identify({
-    final String? email,
-    final Map<String, dynamic>? properties,
-  }) {
-    final identifyData = {
-      'api_key': _projectApiKey,
-      'event': '\$identify',
-      'distinct_id': _uniqueUserId,
-      '\$set': {
-        if (email != null) 'email': email,
-        ...?properties,
-      },
-    };
-
-    _quietPost(identifyData);
-  }
-
   Future<void> _quietPost(final Map<String, dynamic> eventData) async {
     try {
       await http

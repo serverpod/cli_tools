@@ -8,12 +8,6 @@ abstract interface class Analytics {
     required final String event,
     final Map<String, dynamic> properties = const {},
   });
-
-  /// Identifies a user with additional properties (e.g., email).
-  void identify({
-    final String? email,
-    final Map<String, dynamic>? properties,
-  });
 }
 
 class CompoundAnalytics implements Analytics {
@@ -36,19 +30,6 @@ class CompoundAnalytics implements Analytics {
     for (final provider in providers) {
       provider.track(
         event: event,
-        properties: properties,
-      );
-    }
-  }
-
-  @override
-  void identify({
-    final String? email,
-    final Map<String, dynamic>? properties,
-  }) {
-    for (final provider in providers) {
-      provider.identify(
-        email: email,
         properties: properties,
       );
     }
