@@ -200,8 +200,9 @@ void _addOptions({
     if (value is bool) {
       properties['flag_$optionName'] = value;
     } else if (value != null) {
-      properties['option_$optionName'] =
-          value is List ? List.filled(value.length, maskedValue) : maskedValue;
+      properties['option_$optionName'] = value is List
+          ? List.filled(value.length, maskedValue)
+          : maskedValue;
     }
   }
 }
