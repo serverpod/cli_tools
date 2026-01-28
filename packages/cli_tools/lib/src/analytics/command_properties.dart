@@ -9,14 +9,27 @@ Map<String, dynamic> buildCommandPropertiesForAnalytics({
   const maskedValue = 'xxx';
   final properties = <String, dynamic>{};
 
+  // Collect explicitly-provided options/flags and mask any values.
+  void addOptions(final ArgResults results) {
+    for (final optionName in results.options) {
+      if (!results.wasParsed(optionName)) {
+        continue;
+      }
+      final value = results[optionName];
+      if (value is bool) {
+        properties['flag_$optionName'] = value;
+      } else if (value != null) {
+        properties['option_$optionName'] = value is List
+            ? List.filled(value.length, maskedValue)
+            : maskedValue;
+      }
+    }
+  }
+
   for (ArgResults? current = topLevelResults;
       current != null;
       current = current.command) {
-    _addOptions(
-      results: current,
-      properties: properties,
-      maskedValue: maskedValue,
-    );
+    addOptions(current);
   }
 
   // Reconstruct the command in user input order, masking values.
@@ -42,14 +55,57 @@ String _buildFullCommandForAnalytics({
   var afterDoubleDash = false;
   var expectingValue = false;
 
+  // Use a consistent placeholder for any sensitive tokens.
+  void addMasked() {
+    tokens.add(maskedValue);
+  }
+
+  String? optionNameForAbbreviation(
+    final ArgParser parser,
+    final String abbreviation,
+  ) {
+    final option = parser.findByAbbreviation(abbreviation);
+    if (option == null) {
+      return null;
+    }
+    for (final entry in parser.options.entries) {
+      if (entry.value == option) {
+        return entry.key;
+      }
+    }
+    return null;
+  }
+
+  // Normalizes option tokens and tracks whether a value is expected next.
+  bool handleOption(
+    final String name, {
+    required final bool isNegated,
+    final bool hasInlineValue = false,
+  }) {
+    final option = currentParser.options[name];
+    if (option == null) {
+      addMasked();
+      return false;
+    }
+    if (option.isFlag) {
+      tokens.add(isNegated ? '--no-$name' : '--$name');
+      return true;
+    }
+    tokens.add('--$name');
+    if (!hasInlineValue) {
+      expectingValue = true;
+    }
+    return true;
+  }
+
   for (final arg in arguments) {
     if (afterDoubleDash) {
-      _addMasked(tokens, maskedValue);
+      addMasked();
       continue;
     }
 
     if (expectingValue) {
-      _addMasked(tokens, maskedValue);
+      addMasked();
       expectingValue = false;
       continue;
     }
@@ -66,41 +122,19 @@ String _buildFullCommandForAnalytics({
       final equalIndex = withoutPrefix.indexOf('=');
       if (equalIndex != -1) {
         final name = withoutPrefix.substring(0, equalIndex);
-        if (_handleOption(
-          name: name,
-          currentParser: currentParser,
-          tokens: tokens,
-          maskedValue: maskedValue,
-          isNegated: false,
-          hasInlineValue: true,
-          expectingValueSetter: (final value) => expectingValue = value,
-        )) {
-          _addMasked(tokens, maskedValue);
+        if (handleOption(name, isNegated: false, hasInlineValue: true)) {
+          addMasked();
         }
         continue;
       }
 
       if (withoutPrefix.startsWith('no-')) {
         final name = withoutPrefix.substring(3);
-        _handleOption(
-          name: name,
-          currentParser: currentParser,
-          tokens: tokens,
-          maskedValue: maskedValue,
-          isNegated: true,
-          expectingValueSetter: (final value) => expectingValue = value,
-        );
+        handleOption(name, isNegated: true);
         continue;
       }
 
-      _handleOption(
-        name: withoutPrefix,
-        currentParser: currentParser,
-        tokens: tokens,
-        maskedValue: maskedValue,
-        isNegated: false,
-        expectingValueSetter: (final value) => expectingValue = value,
-      );
+      handleOption(withoutPrefix, isNegated: false);
       continue;
     }
 
@@ -110,52 +144,37 @@ String _buildFullCommandForAnalytics({
       final equalIndex = withoutPrefix.indexOf('=');
       if (equalIndex != -1) {
         final abbreviation = withoutPrefix.substring(0, equalIndex);
-        final name = _optionNameForAbbreviation(currentParser, abbreviation);
+        final name = optionNameForAbbreviation(currentParser, abbreviation);
         if (name == null) {
-          _addMasked(tokens, maskedValue);
+          addMasked();
           continue;
         }
-        if (_handleOption(
-          name: name,
-          currentParser: currentParser,
-          tokens: tokens,
-          maskedValue: maskedValue,
-          isNegated: false,
-          hasInlineValue: true,
-          expectingValueSetter: (final value) => expectingValue = value,
-        )) {
-          _addMasked(tokens, maskedValue);
+        if (handleOption(name, isNegated: false, hasInlineValue: true)) {
+          addMasked();
         }
         continue;
       }
 
       if (withoutPrefix.length == 1) {
-        final name = _optionNameForAbbreviation(currentParser, withoutPrefix);
+        final name = optionNameForAbbreviation(currentParser, withoutPrefix);
         if (name == null) {
-          _addMasked(tokens, maskedValue);
+          addMasked();
           continue;
         }
-        _handleOption(
-          name: name,
-          currentParser: currentParser,
-          tokens: tokens,
-          maskedValue: maskedValue,
-          isNegated: false,
-          expectingValueSetter: (final value) => expectingValue = value,
-        );
+        handleOption(name, isNegated: false);
         continue;
       }
 
       for (var i = 0; i < withoutPrefix.length; i++) {
         final abbreviation = withoutPrefix[i];
-        final name = _optionNameForAbbreviation(currentParser, abbreviation);
+        final name = optionNameForAbbreviation(currentParser, abbreviation);
         if (name == null) {
-          _addMasked(tokens, maskedValue);
+          addMasked();
           break;
         }
         final option = currentParser.options[name];
         if (option == null) {
-          _addMasked(tokens, maskedValue);
+          addMasked();
           break;
         }
         if (option.isFlag) {
@@ -164,7 +183,7 @@ String _buildFullCommandForAnalytics({
         }
         tokens.add('--$name');
         if (i < withoutPrefix.length - 1) {
-          _addMasked(tokens, maskedValue);
+          addMasked();
         } else {
           expectingValue = true;
         }
@@ -181,73 +200,8 @@ String _buildFullCommandForAnalytics({
       continue;
     }
 
-    _addMasked(tokens, maskedValue);
+    addMasked();
   }
 
   return tokens.join(' ');
-}
-
-void _addOptions({
-  required final ArgResults results,
-  required final Map<String, dynamic> properties,
-  required final String maskedValue,
-}) {
-  for (final optionName in results.options) {
-    if (!results.wasParsed(optionName)) {
-      continue;
-    }
-    final value = results[optionName];
-    if (value is bool) {
-      properties['flag_$optionName'] = value;
-    } else if (value != null) {
-      properties['option_$optionName'] = value is List
-          ? List.filled(value.length, maskedValue)
-          : maskedValue;
-    }
-  }
-}
-
-void _addMasked(final List<String> tokens, final String maskedValue) {
-  tokens.add(maskedValue);
-}
-
-String? _optionNameForAbbreviation(
-  final ArgParser parser,
-  final String abbreviation,
-) {
-  final option = parser.findByAbbreviation(abbreviation);
-  if (option == null) {
-    return null;
-  }
-  for (final entry in parser.options.entries) {
-    if (entry.value == option) {
-      return entry.key;
-    }
-  }
-  return null;
-}
-
-bool _handleOption({
-  required final String name,
-  required final ArgParser currentParser,
-  required final List<String> tokens,
-  required final String maskedValue,
-  required final bool isNegated,
-  required final void Function(bool) expectingValueSetter,
-  final bool hasInlineValue = false,
-}) {
-  final option = currentParser.options[name];
-  if (option == null) {
-    _addMasked(tokens, maskedValue);
-    return false;
-  }
-  if (option.isFlag) {
-    tokens.add(isNegated ? '--no-$name' : '--$name');
-    return true;
-  }
-  tokens.add('--$name');
-  if (!hasInlineValue) {
-    expectingValueSetter(true);
-  }
-  return true;
 }
