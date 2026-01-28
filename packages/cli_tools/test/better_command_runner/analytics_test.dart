@@ -78,7 +78,7 @@ void main() {
     final runner = BetterCommandRunner(
       'test',
       'this is a test cli',
-      onAnalyticsEvent: (final event) {},
+      onAnalyticsEvent: (final event, final properties) {},
       messageOutput: const MessageOutput(),
     );
 
@@ -97,7 +97,7 @@ void main() {
       runner = BetterCommandRunner(
         'test',
         'this is a test cli',
-        onAnalyticsEvent: (final event) => events.add(event),
+        onAnalyticsEvent: (final event, final _) => events.add(event),
         messageOutput: const MessageOutput(),
       );
       assert(runner.analyticsEnabled());
@@ -210,7 +210,7 @@ void main() {
       runner = BetterCommandRunner(
         'test',
         'this is a test cli',
-        onAnalyticsEvent: (final event) => events.add(event),
+        onAnalyticsEvent: (final event, final _) => events.add(event),
         messageOutput: const MessageOutput(),
       )..addCommand(MockCommand());
       assert(runner.analyticsEnabled());
@@ -275,7 +275,7 @@ void main() {
       runner = BetterCommandRunner(
         'test',
         'this is a test cli',
-        onAnalyticsEvent: (final event) => events.add(event),
+        onAnalyticsEvent: (final event, final _) => events.add(event),
         messageOutput: const MessageOutput(),
       )..addCommand(command);
       assert(runner.analyticsEnabled());
