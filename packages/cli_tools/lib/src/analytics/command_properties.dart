@@ -27,9 +27,9 @@ class _CommandPropertiesBuilder {
   final Map<String, Command> commands;
   final Map<String, dynamic> _properties = <String, dynamic>{};
 
-  late List<String> _tokens;
-  late ArgParser _currentParser;
-  late Map<String, Command> _currentCommands;
+  final List<String> _tokens = <String>[];
+  late ArgParser _currentParser = argParser;
+  late Map<String, Command> _currentCommands = commands;
   var _afterDoubleDash = false;
   var _expectingValue = false;
 
@@ -64,8 +64,6 @@ class _CommandPropertiesBuilder {
   }
 
   String _buildFullCommand() {
-    _resetCommandState();
-
     for (final arg in topLevelResults.arguments) {
       if (_afterDoubleDash) {
         _addMasked();
@@ -106,14 +104,6 @@ class _CommandPropertiesBuilder {
     }
 
     return _tokens.join(' ');
-  }
-
-  void _resetCommandState() {
-    _tokens = <String>[];
-    _currentParser = argParser;
-    _currentCommands = commands;
-    _afterDoubleDash = false;
-    _expectingValue = false;
   }
 
   void _handleLongOption(final String arg) {
