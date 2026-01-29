@@ -1,3 +1,7 @@
+## 0.8.4
+
+ - **FIX**(config): Created a public OptionResolution interface (#91).
+
 ## 0.8.3
 
  - **FIX**(config): Improved doc comments & value formatting of options (#82).
