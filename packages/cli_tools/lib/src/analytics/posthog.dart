@@ -11,10 +11,12 @@ import 'helpers.dart';
 class PostHogAnalytics implements Analytics {
   static const _defaultHost = 'https://eu.i.posthog.com';
   static const _defaultTimeout = Duration(seconds: 2);
+  static const _defaultLibName = 'cli_tools';
 
   final String _uniqueUserId;
   final String _projectApiKey;
   final String _version;
+  final String _libName;
 
   final Uri _endpoint;
   final Duration _timeout;
@@ -25,11 +27,13 @@ class PostHogAnalytics implements Analytics {
     required final String version,
     final String? host,
     final Duration timeout = _defaultTimeout,
+    final String libName = _defaultLibName,
   })  : _uniqueUserId = uniqueUserId,
         _projectApiKey = projectApiKey,
         _version = version,
         _endpoint = Uri.parse('${host ?? _defaultHost}/capture/'),
-        _timeout = timeout;
+        _timeout = timeout,
+        _libName = libName;
 
   @override
   void cleanUp() {}
@@ -44,7 +48,7 @@ class PostHogAnalytics implements Analytics {
       'event': event,
       'distinct_id': _uniqueUserId,
       'properties': {
-        '\$lib': 'cli_tools',
+        '\$lib': _libName,
         '\$lib_version': _version,
         'platform': getPlatformString(),
         'dart_version': Platform.version,
