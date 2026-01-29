@@ -1,3 +1,8 @@
+## 0.11.0
+
+ - **FEAT**: Make library name configurable in PostHog analytics. (#101).
+ - **BREAKING** **FEAT**: Adds support for PostHog analytics. (#100).
+
 ## 0.10.0
 
  - **FEAT**(cli_tools): Add execute helper function to run shell commands (#90).
