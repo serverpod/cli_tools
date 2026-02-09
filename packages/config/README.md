@@ -35,7 +35,7 @@ The main features are:
   - A group can specify mutually exclusive options.
   - A group can be mandatory in that at least one of its options is set.
 
-- Tracability - the information on an option's value source is retained.
+- Traceability - the information on an option's value source is retained.
 
 - The error handling is consistent, in contrast to the args package.
   - Fail-fast, all validation is performed up-front.
@@ -211,7 +211,7 @@ The configuration library resolves each option value in a specific order, with e
 5. **Default values**
    - A default value guarantees that an option has a value
    - Const values are specified using `defaultsTo`
-   - Non-const values are specifed with a callback using `fromDefault`
+   - Non-const values are specified with a callback using `fromDefault`
 
 This order ensures that:
 - Command-line arguments always take precedence, allowing users to override any other settings
@@ -239,6 +239,7 @@ The library provides a rich set of typed options out of the box. All option type
 | String | `StringOption` | None | String values |
 | Boolean | `FlagOption` | `negatable` | Whether the flag can be negated |
 | Integer | `IntOption` | `min`<br>`max` | Minimum allowed value<br>Maximum allowed value |
+| Num | `NumOption<T>` | `T`: {`int`,`double`,`num`}<br>`min`<br>`max` | Static type of parsed value<br>Minimum allowed value<br>Maximum allowed value |
 | DateTime | `DateTimeOption` | `min`<br>`max` | Minimum allowed date/time<br>Maximum allowed date/time |
 | Duration | `DurationOption` | `min`<br>`max` | Minimum allowed duration<br>Maximum allowed duration |
 | Any Enum | `EnumOption<E>` | None | Typed enum values |
