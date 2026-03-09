@@ -94,13 +94,7 @@ class StdOutLogger extends Logger {
     final LogType type = TextLogType.normal,
   }) {
     if (ansiSupported) {
-      final ansiMessage = switch (level) {
-        LogLevel.debug => AnsiStyle.darkGray.wrap(message),
-        LogLevel.info => message,
-        LogLevel.warning => AnsiStyle.yellow.wrap(message),
-        LogLevel.error => AnsiStyle.red.wrap(message),
-        LogLevel.nothing => message,
-      };
+      final ansiMessage = _styleByLevel(message, level);
 
       _log(ansiMessage, level, newParagraph, type);
     } else {
