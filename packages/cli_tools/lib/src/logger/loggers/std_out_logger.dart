@@ -159,9 +159,12 @@ class StdOutLogger extends Logger {
     if (type is BoxLogType) {
       message = _formatAsBox(
         wrapColumn: wrapTextColumn ?? _defaultColumnWrap,
-        message: message,
+        message: _stripAnsiCodes(message),
         title: type.title,
       );
+      if (ansiSupported) {
+        message = _styleByLevel(message, logLevel);
+      }
     } else if (type is TextLogType) {
       switch (type.style) {
         case TextLogStyle.command:
@@ -235,6 +238,21 @@ class StdOutLogger extends Logger {
 
     trackedAnimationInProgress = null;
   }
+}
+
+String _styleByLevel(final String message, final LogLevel level) {
+  return switch (level) {
+    LogLevel.debug => AnsiStyle.darkGray.wrap(message),
+    LogLevel.info => message,
+    LogLevel.warning => AnsiStyle.yellow.wrap(message),
+    LogLevel.error => AnsiStyle.red.wrap(message),
+    LogLevel.nothing => message,
+  };
+}
+
+String _stripAnsiCodes(final String input) {
+  final ansiRegex = RegExp(r'\x1B\[[0-9;]*m');
+  return input.replaceAll(ansiRegex, '');
 }
 
 /// wrap text based on column width
