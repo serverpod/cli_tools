@@ -154,7 +154,7 @@ class StdOutLogger extends Logger {
       message = _formatAsBox(
         wrapColumn: wrapTextColumn ?? _defaultColumnWrap,
         message: _stripAnsiCodes(message),
-        title: type.title,
+        title: type.title != null ? _stripAnsiCodes(type.title!) : null,
       );
       if (ansiSupported) {
         message = _styleByLevel(message, logLevel);
