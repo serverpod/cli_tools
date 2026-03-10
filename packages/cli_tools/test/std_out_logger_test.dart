@@ -176,6 +176,27 @@ void main() {
       );
       expect(stderr.output, '');
     });
+
+    test(
+        'when logging boxed text containing non-SGR ANSI sequences '
+        'then control sequences are stripped before width calculation',
+        () async {
+      final (:stdout, :stderr, :stdin) = await collectOutput(
+        () => logger.warning(
+          '\x1B]8;;https://example.com\x07click\x1B]8;;\x07',
+          type: BoxLogType(title: '\x1B[2Kwarn\x1B[0G'),
+        ),
+      );
+
+      expect(stdout.output.contains('\x1B'), isFalse);
+      expect(
+        stdout.output,
+        '┌─ warn ─┐\n'
+        '│ click │\n'
+        '└───────┘\n',
+      );
+      expect(stderr.output, '');
+    });
   });
 }
 

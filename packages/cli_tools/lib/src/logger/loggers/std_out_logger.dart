@@ -245,7 +245,13 @@ String _styleByLevel(final String message, final LogLevel level) {
 }
 
 String _stripAnsiCodes(final String input) {
-  final ansiRegex = RegExp(r'\x1B\[[0-9;]*m');
+  // Matches ANSI/VT escape sequences including:
+  // - C1 control chars introduced by ESC
+  // - CSI sequences (ESC [ ... final-byte)
+  // - OSC sequences (ESC ] ... BEL or ESC \\)
+  final ansiRegex = RegExp(
+    r'\x1B(?:\][^\x07\x1B]*(?:\x07|\x1B\\)|\[[0-?]*[ -/]*[@-~]|[@-Z\\-_])',
+  );
   return input.replaceAll(ansiRegex, '');
 }
 
