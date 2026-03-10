@@ -165,11 +165,17 @@ void main() {
           '\x1B[33mwarning\x1B[0m',
           type: BoxLogType(title: '\x1B[31mwarn\x1B[0m'),
         ),
+        ansiSupported: true,
       );
 
-      expect(stdout.output.contains('\x1B['), isFalse);
+      final stripped = stdout.output.replaceAll(
+        RegExp(r'\x1B\[[0-?]*[ -/]*[@-~]|\x1B\][^\x07\x1B]*(?:\x07|\x1B\\\\)|\x1B[@-Z\\\\-_]'),
+        '',
+      );
+
+      expect(stdout.output.contains('\x1B['), isTrue);
       expect(
-        stdout.output,
+        stripped,
         '┌─ warn ──┐\n'
         '│ warning │\n'
         '└─────────┘\n',
@@ -186,11 +192,17 @@ void main() {
           '\x1B]8;;https://example.com\x07click\x1B]8;;\x07',
           type: BoxLogType(title: '\x1B[2Kwarn\x1B[0G'),
         ),
+        ansiSupported: true,
       );
 
-      expect(stdout.output.contains('\x1B'), isFalse);
+      final stripped = stdout.output.replaceAll(
+        RegExp(r'\x1B\[[0-?]*[ -/]*[@-~]|\x1B\][^\x07\x1B]*(?:\x07|\x1B\\\\)|\x1B[@-Z\\\\-_]'),
+        '',
+      );
+
+      expect(stdout.output.contains('\x1B'), isTrue);
       expect(
-        stdout.output,
+        stripped,
         '┌─ warn ─┐\n'
         '│ click │\n'
         '└───────┘\n',

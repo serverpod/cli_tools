@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 
 class MockStdout implements Stdout {
+  MockStdout({this.ansiSupported = false});
+
+  final bool ansiSupported;
   final _buffer = StringBuffer();
 
   @override
@@ -49,7 +52,7 @@ class MockStdout implements Stdout {
   IOSink get nonBlocking => throw UnimplementedError();
 
   @override
-  bool get supportsAnsiEscapes => false;
+  bool get supportsAnsiEscapes => ansiSupported;
 
   @override
   int get terminalColumns => 80;

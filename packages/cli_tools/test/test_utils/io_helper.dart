@@ -9,8 +9,9 @@ Future<({MockStdout stdout, MockStdout stderr, MockStdin stdin})>
   final FutureOr<T> Function() runner, {
   final List<String> stdinLines = const [],
   final List<int> keyInputs = const [],
+  final bool ansiSupported = false,
 }) async {
-  final standardOut = MockStdout();
+  final standardOut = MockStdout(ansiSupported: ansiSupported);
   final standardError = MockStdout();
   final standardIn = MockStdin(textInputs: stdinLines, keyInputs: keyInputs);
 
