@@ -12,7 +12,7 @@ Future<({MockStdout stdout, MockStdout stderr, MockStdin stdin})>
   final bool ansiSupported = false,
 }) async {
   final standardOut = MockStdout(ansiSupported: ansiSupported);
-  final standardError = MockStdout();
+  final standardError = MockStdout(ansiSupported: ansiSupported);
   final standardIn = MockStdin(textInputs: stdinLines, keyInputs: keyInputs);
 
   await IOOverrides.runZoned(

@@ -6,6 +6,13 @@ import 'package:test/test.dart';
 
 import 'test_utils/io_helper.dart';
 
+
+final _ansiRegex = RegExp(
+  r'\x1B\[[0-?]*[ -/]*[@-~]|\x1B\][^\x07\x1B]*(?:\x07|\x1B\\\\)|\x1B[@-Z\\\\-_]',
+);
+
+String _stripAnsi(final String input) => input.replaceAll(_ansiRegex, '');
+
 void main() {
   group('Given a StdOutLogger with default settings', () {
     final logger = StdOutLogger(LogLevel.debug);
@@ -168,10 +175,7 @@ void main() {
         ansiSupported: true,
       );
 
-      final stripped = stdout.output.replaceAll(
-        RegExp(r'\x1B\[[0-?]*[ -/]*[@-~]|\x1B\][^\x07\x1B]*(?:\x07|\x1B\\\\)|\x1B[@-Z\\\\-_]'),
-        '',
-      );
+      final stripped = _stripAnsi(stdout.output);
 
       expect(stdout.output.contains('\x1B['), isTrue);
       expect(
@@ -195,10 +199,7 @@ void main() {
         ansiSupported: true,
       );
 
-      final stripped = stdout.output.replaceAll(
-        RegExp(r'\x1B\[[0-?]*[ -/]*[@-~]|\x1B\][^\x07\x1B]*(?:\x07|\x1B\\\\)|\x1B[@-Z\\\\-_]'),
-        '',
-      );
+      final stripped = _stripAnsi(stdout.output);
 
       expect(stdout.output.contains('\x1B'), isTrue);
       expect(
