@@ -94,13 +94,7 @@ class StdOutLogger extends Logger {
     final LogType type = TextLogType.normal,
   }) {
     if (ansiSupported) {
-      final ansiMessage = switch (level) {
-        LogLevel.debug => AnsiStyle.darkGray.wrap(message),
-        LogLevel.info => message,
-        LogLevel.warning => AnsiStyle.yellow.wrap(message),
-        LogLevel.error => AnsiStyle.red.wrap(message),
-        LogLevel.nothing => message,
-      };
+      final ansiMessage = _styleByLevel(message, level);
 
       _log(ansiMessage, level, newParagraph, type);
     } else {
@@ -159,9 +153,12 @@ class StdOutLogger extends Logger {
     if (type is BoxLogType) {
       message = _formatAsBox(
         wrapColumn: wrapTextColumn ?? _defaultColumnWrap,
-        message: message,
-        title: type.title,
+        message: _stripAnsiCodes(message),
+        title: type.title != null ? _stripAnsiCodes(type.title!) : null,
       );
+      if (ansiSupported) {
+        message = _styleByLevel(message, logLevel);
+      }
     } else if (type is TextLogType) {
       switch (type.style) {
         case TextLogStyle.command:
@@ -235,6 +232,27 @@ class StdOutLogger extends Logger {
 
     trackedAnimationInProgress = null;
   }
+}
+
+String _styleByLevel(final String message, final LogLevel level) {
+  return switch (level) {
+    LogLevel.debug => AnsiStyle.darkGray.wrap(message),
+    LogLevel.info => message,
+    LogLevel.warning => AnsiStyle.yellow.wrap(message),
+    LogLevel.error => AnsiStyle.red.wrap(message),
+    LogLevel.nothing => message,
+  };
+}
+
+String _stripAnsiCodes(final String input) {
+  // Matches ANSI/VT escape sequences including:
+  // - C1 control chars introduced by ESC
+  // - CSI sequences (ESC [ ... final-byte)
+  // - OSC sequences (ESC ] ... BEL or ESC \\)
+  final ansiRegex = RegExp(
+    r'\x1B(?:\][^\x07\x1B]*(?:\x07|\x1B\\)|\[[0-?]*[ -/]*[@-~]|[@-Z\\-_])',
+  );
+  return input.replaceAll(ansiRegex, '');
 }
 
 /// wrap text based on column width

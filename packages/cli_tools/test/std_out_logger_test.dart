@@ -6,6 +6,13 @@ import 'package:test/test.dart';
 
 import 'test_utils/io_helper.dart';
 
+
+final _ansiRegex = RegExp(
+  r'\x1B\[[0-?]*[ -/]*[@-~]|\x1B\][^\x07\x1B]*(?:\x07|\x1B\\\\)|\x1B[@-Z\\\\-_]',
+);
+
+String _stripAnsi(final String input) => input.replaceAll(_ansiRegex, '');
+
 void main() {
   group('Given a StdOutLogger with default settings', () {
     final logger = StdOutLogger(LogLevel.debug);
@@ -137,4 +144,72 @@ void main() {
       expect(stderr.output, 'ERROR: error message\n');
     });
   });
+
+  group('Given a StdOutLogger logging BoxLogType messages', () {
+    final logger = StdOutLogger(LogLevel.debug);
+
+    test(
+        'when logging boxed plain text '
+        'then it renders the expected box framing', () async {
+      final (:stdout, :stderr, :stdin) = await collectOutput(
+        () => logger.info('hello world', type: BoxLogType(title: 'title')),
+      );
+
+      expect(
+        stdout.output,
+        '┌─ title ─────┐\n'
+        '│ hello world │\n'
+        '└─────────────┘\n',
+      );
+      expect(stderr.output, '');
+    });
+
+    test(
+        'when logging boxed ANSI-styled text '
+        'then ANSI codes are stripped before width calculation', () async {
+      final (:stdout, :stderr, :stdin) = await collectOutput(
+        () => logger.warning(
+          '\x1B[33mwarning\x1B[0m',
+          type: BoxLogType(title: '\x1B[31mwarn\x1B[0m'),
+        ),
+        ansiSupported: true,
+      );
+
+      final stripped = _stripAnsi(stdout.output);
+
+      expect(stdout.output.contains('\x1B['), isTrue);
+      expect(
+        stripped,
+        '┌─ warn ──┐\n'
+        '│ warning │\n'
+        '└─────────┘\n',
+      );
+      expect(stderr.output, '');
+    });
+
+    test(
+        'when logging boxed text containing non-SGR ANSI sequences '
+        'then control sequences are stripped before width calculation',
+        () async {
+      final (:stdout, :stderr, :stdin) = await collectOutput(
+        () => logger.warning(
+          '\x1B]8;;https://example.com\x07click\x1B]8;;\x07',
+          type: BoxLogType(title: '\x1B[2Kwarn\x1B[0G'),
+        ),
+        ansiSupported: true,
+      );
+
+      final stripped = _stripAnsi(stdout.output);
+
+      expect(stdout.output.contains('\x1B'), isTrue);
+      expect(
+        stripped,
+        '┌─ warn ─┐\n'
+        '│ click │\n'
+        '└───────┘\n',
+      );
+      expect(stderr.output, '');
+    });
+  });
 }
+
