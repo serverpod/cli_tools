@@ -137,4 +137,45 @@ void main() {
       expect(stderr.output, 'ERROR: error message\n');
     });
   });
+
+  group('Given a StdOutLogger logging BoxLogType messages', () {
+    final logger = StdOutLogger(LogLevel.debug);
+
+    test(
+        'when logging boxed plain text '
+        'then it renders the expected box framing', () async {
+      final (:stdout, :stderr, :stdin) = await collectOutput(
+        () => logger.info('hello world', type: BoxLogType(title: 'title')),
+      );
+
+      expect(
+        stdout.output,
+        '┌─ title ─────┐\n'
+        '│ hello world │\n'
+        '└─────────────┘\n',
+      );
+      expect(stderr.output, '');
+    });
+
+    test(
+        'when logging boxed ANSI-styled text '
+        'then ANSI codes are stripped before width calculation', () async {
+      final (:stdout, :stderr, :stdin) = await collectOutput(
+        () => logger.warning(
+          '\x1B[33mwarning\x1B[0m',
+          type: BoxLogType(title: '\x1B[31mwarn\x1B[0m'),
+        ),
+      );
+
+      expect(stdout.output.contains('\x1B['), isFalse);
+      expect(
+        stdout.output,
+        '┌─ warn ──┐\n'
+        '│ warning │\n'
+        '└─────────┘\n',
+      );
+      expect(stderr.output, '');
+    });
+  });
 }
+
