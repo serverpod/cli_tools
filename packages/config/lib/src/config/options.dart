@@ -53,7 +53,7 @@ class OptionGroup {
 
   /// Validates the configuration option definitions as a group.
   ///
-  /// This method is called by [prepareOptionsForParsing] to validate
+  /// This method is called by [validateOptions] to validate
   /// the configuration option definitions as a group.
   /// Throws an error if any definition is invalid as part of this group.
   ///
@@ -281,7 +281,7 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
 
   /// Validates the configuration option definition.
   ///
-  /// This method is called by [prepareOptionsForParsing] to validate
+  /// This method is called by [validateOptions] to validate
   /// the configuration option definition.
   /// Throws an error if the definition is invalid.
   ///
@@ -763,6 +763,12 @@ void prepareOptionsForParsing(
   addOptionsToParser(argNameOpts, argParser, addGroupSeparators: true);
 }
 
+/// Validates a set of options.
+///
+/// Throws an [OptionDefinitionError] if the options are invalid.
+///
+/// Returns an iterable of the options that are specifyable with an argument
+/// name on the command line.
 Iterable<OptionDefinition> validateOptions(
   final Iterable<OptionDefinition> options,
 ) {
@@ -907,6 +913,9 @@ extension PrepareOptions on Iterable<OptionDefinition> {
   /// Validates and prepares these options for the provided argument parser.
   void prepareForParsing(final ArgParser argParser) =>
       prepareOptionsForParsing(this, argParser);
+
+  /// Validates these options.
+  void validate() => validateOptions(this);
 
   /// Returns the usage help text for these options.
   String get usage {
