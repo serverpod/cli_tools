@@ -923,4 +923,26 @@ extension PrepareOptions on Iterable<OptionDefinition> {
     prepareForParsing(parser);
     return parser.usage;
   }
+
+  /// Returns the option definition for the given enum name,
+  /// or any provided argument name, position,
+  /// environment variable name, or configuration key.
+  /// The first one that matches is returned, or null if none match.
+  ///
+  /// The recommended practice is to define options as enums and identify them by the enum name.
+  OptionDefinition? findOption({
+    final String? enumName,
+    final String? argName,
+    final int? argPos,
+    final String? envName,
+    final String? configKey,
+  }) {
+    return firstWhereOrNull((final o) {
+      return (enumName != null && o is Enum && (o as Enum).name == enumName) ||
+          (argName != null && o.option.argName == argName) ||
+          (argPos != null && o.option.argPos == argPos) ||
+          (envName != null && o.option.envName == envName) ||
+          (configKey != null && o.option.configKey == configKey);
+    });
+  }
 }
