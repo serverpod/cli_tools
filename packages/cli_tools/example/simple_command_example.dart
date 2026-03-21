@@ -56,7 +56,8 @@ class ShowCommand extends BetterCommand<ShowOption, void> {
   String get description => 'Show the configured interval';
 
   @override
-  void runWithConfig(final Configuration<ShowOption> commandConfig) {
+  void run(final RunContext<ShowOption> runContext) {
+    final commandConfig = runContext.commandConfig;
     final interval = commandConfig.value(ShowOption.interval);
     print('interval: $interval');
   }

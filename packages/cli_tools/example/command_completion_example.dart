@@ -1,7 +1,6 @@
 import 'dart:io' show exitCode;
 
 import 'package:cli_tools/better_command_runner.dart';
-import 'package:config/config.dart';
 
 import 'completion_script_carapace.dart';
 import 'completion_script_completely.dart';
