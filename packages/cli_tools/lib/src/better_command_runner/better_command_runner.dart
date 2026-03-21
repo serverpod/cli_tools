@@ -1,15 +1,19 @@
-import 'dart:async';
+import 'dart:async' show unawaited;
+import 'dart:collection' show UnmodifiableMapView;
 import 'dart:io' show Platform;
 
 import 'package:args/args.dart';
-import 'package:args/command_runner.dart';
 import 'package:config/config.dart';
 
 import '../analytics/command_properties.dart';
+import 'better_command.dart';
 import 'completion/completion_command.dart';
 import 'completion/completion_tool.dart' show CompletionScript;
 
+import 'help_command.dart';
 import 'help_command_workaround.dart' show HelpCommandWorkaround;
+import 'similarity_search.dart';
+import 'usage.dart';
 
 /// A function type for executing code before running a command.
 typedef OnBeforeRunCommand = Future<void> Function(BetterCommandRunner runner);
@@ -54,20 +58,180 @@ typedef OnAnalyticsEvent = void Function(
   Map<String, dynamic> properties,
 );
 
-/// An extension of [CommandRunner] with additional features.
-///
-/// This class extends the [CommandRunner] class from the `args` package and adds
-/// additional functionality such as logging, setting log levels, tracking events,
+/// An improved alternative to [CommandRunner] from the `args` package, with
+/// additional features such as logging, setting log levels, tracking events,
 /// and handling analytics.
+///
+/// The type argument `T` represents the type returned by [BetterCommand.resolveAndRun] and
+/// [CommandRunner.run]; it can be ommitted if you're not using the return
+/// values.
 ///
 /// The [BetterCommandRunner] class uses the config library to provide
 /// a more enhanced command line interface for running commands and handling
 /// command line arguments, environment variables, and configuration.
-class BetterCommandRunner<O extends OptionDefinition, T>
-    extends CommandRunner<T> {
+class BetterCommandRunner<O extends OptionDefinition, T> {
   /// Process exit code value for command not found -
   /// The specified command was not found or couldn't be located.
   static const int exitCodeCommandNotFound = 127;
+
+  /// The name of the executable being run.
+  ///
+  /// Used for error reporting and [usage].
+  final String executableName;
+
+  /// A short description of this executable.
+  final String description;
+
+  /// A single-line template for how to invoke this executable.
+  ///
+  /// Defaults to `"$executableName <command> arguments`". Subclasses can
+  /// override this for a more specific template.
+  String get invocation => '$executableName <command> [arguments]';
+
+  /// Generates a string displaying usage information for the executable.
+  ///
+  /// This includes usage for the global arguments as well as a list of
+  /// top-level commands.
+  String get usage =>
+      wrapText('$description\n\n',
+          length: _argParser.usageLineLength, hangingIndent: null) +
+      _usageWithoutDescription;
+
+  /// An optional footer for [usage].
+  ///
+  /// If a subclass overrides this to return a string, it will automatically be
+  /// added to the end of [usage].
+  String? get usageFooter => null;
+
+  /// Returns [usage] with [description] removed from the beginning.
+  String get _usageWithoutDescription {
+    const usagePrefix = 'Usage:';
+    final buffer = StringBuffer();
+    buffer.writeln(
+      '$usagePrefix ${wrapText(invocation, length: _argParser.usageLineLength, hangingIndent: usagePrefix.length)}\n',
+    );
+    buffer.writeln(wrapText('Global options:',
+        length: _argParser.usageLineLength, hangingIndent: null));
+    buffer.writeln('${_argParser.usage}\n');
+    buffer.writeln(
+      '${getCommandUsage(_commands, lineLength: _argParser.usageLineLength)}\n',
+    );
+    buffer.write(wrapText(
+        'Run "$executableName help <command>" for more information about a '
+        'command.',
+        length: _argParser.usageLineLength,
+        hangingIndent: null));
+    if (usageFooter != null) {
+      buffer.write(
+          '\n${wrapText(usageFooter!, length: _argParser.usageLineLength, hangingIndent: null)}');
+    }
+    return buffer.toString();
+  }
+
+  /// An unmodifiable view of all top-level commands defined for this runner.
+  Map<String, BetterCommand<OptionDefinition, T>> get commands =>
+      UnmodifiableMapView(_commands);
+  final _commands = <String, BetterCommand<OptionDefinition, T>>{};
+
+  /// The top-level argument parser.
+  ///
+  /// Global options should be registered with this parser.
+  /// Commands should be registered with [addCommand] rather than directly on the parser.
+  ArgParser get argParser => _argParser;
+  final ArgParser _argParser;
+
+  /// The maximum edit distance allowed when suggesting possible intended
+  /// commands.
+  ///
+  /// Set to `0` in order to disable suggestions, defaults to `2`.
+  final int suggestionDistanceLimit;
+
+  /// Throws a [UsageException] with [message].
+  Never usageException(final String message) =>
+      throw UsageException(message, _usageWithoutDescription);
+
+  /// Adds [BetterCommand] as a top-level command to this runner.
+  void addCommand(final BetterCommand<OptionDefinition, T> command) {
+    final names = [command.name, ...command.aliases];
+    for (final name in names) {
+      _commands[name] = command;
+      _argParser.addCommand(name, command.argParser);
+    }
+    command.setRunner(this);
+  }
+
+  /// Runs the command specified by [topLevelResults].
+  ///
+  /// This returns the return value of [BetterCommand.resolveAndRun].
+  Future<T?> _originalRunCommand(
+    final Configuration<O> globalConfiguration,
+    final ArgResults topLevelResults,
+    final Map<String, String> env,
+  ) async {
+    var argResults = topLevelResults;
+    var commands = _commands;
+    BetterCommand? command;
+    var commandString = executableName;
+
+    while (commands.isNotEmpty) {
+      if (argResults.command == null) {
+        if (argResults.rest.isEmpty) {
+          if (command == null) {
+            // No top-level command was chosen.
+            printUsage();
+            return null;
+          }
+
+          command.usageException('Missing subcommand for "$commandString".');
+        } else {
+          final requested = argResults.rest[0];
+
+          // Build up a help message containing similar commands, if found.
+          final similarCommands =
+              similarCommandsText(requested, commands.values);
+
+          if (command == null) {
+            usageException(
+                'Could not find a command named "$requested".$similarCommands');
+          }
+
+          command.usageException('Could not find a subcommand named '
+              '"$requested" for "$commandString".$similarCommands');
+        }
+      }
+
+      // Step into the command.
+      argResults = argResults.command!;
+      command = commands[argResults.name]!;
+      commands = command.subcommands
+          as Map<String, BetterCommand<OptionDefinition, T>>;
+      commandString += ' ${argResults.name}';
+
+      if (argResults.options.contains('help') && argResults.flag('help')) {
+        command.printUsage();
+        return null;
+      }
+    }
+
+    if (topLevelResults.flag('help')) {
+      command!.printUsage();
+      return null;
+    }
+
+    // Make sure there aren't unexpected arguments.
+    if (!command!.takesArguments && argResults.rest.isNotEmpty) {
+      command.usageException(
+          'Command "${argResults.name}" does not take any arguments.');
+    }
+
+    return (await command.resolveAndRun(
+        globalConfiguration: globalConfiguration,
+        topLevelResults: topLevelResults,
+        commandResults: argResults,
+        env: env)) as T?;
+  }
+
+  //-------------------------------------------------------------------
 
   final MessageOutput? _messageOutput;
   final SetLogLevel? _setLogLevel;
@@ -75,28 +239,8 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   final OnAnalyticsEvent? _onAnalyticsEvent;
   bool _analyticsEnabled;
 
-  /// The environment variables used for configuration resolution.
-  final Map<String, String> envVariables;
-
   /// The global option definitions.
   late final List<O> _globalOptions;
-
-  Configuration<O>? _globalConfiguration;
-
-  /// The current global configuration.
-  Configuration<O> get globalConfiguration {
-    final globalConfig = _globalConfiguration;
-    if (globalConfig == null) {
-      throw StateError('Global configuration is not initialized');
-    }
-    return globalConfig;
-  }
-
-  /// Sets the global configuration, by default called by [parse].
-  /// It must be set before [runCommand] is called.
-  set globalConfiguration(final Configuration<O> configuration) {
-    _globalConfiguration = configuration;
-  }
 
   /// Creates a new instance of [BetterCommandRunner].
   ///
@@ -147,9 +291,9 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   /// }
   /// ```
   BetterCommandRunner(
-    super.executableName,
-    super.description, {
-    super.suggestionDistanceLimit,
+    this.executableName,
+    this.description, {
+    this.suggestionDistanceLimit = 2,
     final MessageOutput? messageOutput =
         const MessageOutput(usageLogger: print),
     final SetLogLevel? setLogLevel,
@@ -159,16 +303,16 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     final bool enableCompletionCommand = false,
     final Iterable<CompletionScript>? embeddedCompletions,
     final List<O>? globalOptions,
-    final Map<String, String>? env,
-  })  : _messageOutput = messageOutput,
+  })  : _argParser = ArgParser(usageLineLength: wrapTextColumn),
+        _messageOutput = messageOutput,
         _setLogLevel = setLogLevel,
         _onBeforeRunCommand = onBeforeRunCommand,
         _onAnalyticsEvent = onAnalyticsEvent,
-        _analyticsEnabled = onAnalyticsEvent != null,
-        envVariables = env ?? Platform.environment,
-        super(
-          usageLineLength: wrapTextColumn,
-        ) {
+        _analyticsEnabled = onAnalyticsEvent != null {
+    _argParser.addFlag('help',
+        abbr: 'h', negatable: false, help: 'Print this usage information.');
+    addCommand(HelpCommand<T>());
+
     if (globalOptions != null) {
       _globalOptions = globalOptions;
     } else if (O == OptionDefinition || O == StandardGlobalOption) {
@@ -182,7 +326,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
         'globalOptions not provided and O is not assignable from StandardGlobalOption: $O',
       );
     }
-    prepareOptionsForParsing(_globalOptions, argParser);
+    prepareOptionsForParsing(_globalOptions, _argParser);
 
     if (enableCompletionCommand) {
       addCommand(
@@ -199,7 +343,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   MessageOutput? get messageOutput => _messageOutput;
 
   /// Adds a list of commands to the command runner.
-  void addCommands(final List<Command<T>> commands) {
+  void addCommands(final List<BetterCommand<OptionDefinition, T>> commands) {
     for (final command in commands) {
       addCommand(command);
     }
@@ -234,13 +378,12 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   /// Called from [run] before any analytics events are sent and before any
   /// command is run.
   ///
-  /// [globalConfiguration] is set before this method is called.
-  ///
   /// By default it checks whether the [onAnalyticsEvent] callback is set
   /// and the `--analytics` option.
   /// Subclasses can override this method to customize the behavior,
   /// e.g. to ask the user for permission.
-  Future<bool> determineAnalyticsSettings() async {
+  Future<bool> determineAnalyticsSettings(
+      final Configuration<O> globalConfiguration) async {
     if (onAnalyticsEvent == null) {
       return false;
     }
@@ -254,27 +397,29 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     return true;
   }
 
-  /// Parses [args] and invokes [Command.run] on the chosen command.
+  /// Parses [args] and [env] and invokes [BetterCommand.resolveAndRun] on the
+  /// chosen command.
   ///
   /// This always returns a [Future] in case the command is asynchronous. The
   /// [Future] will throw a [UsageException] if [args] was invalid.
   ///
-  /// This overrides the [CommandRunner.run] method in order to resolve the
-  /// global configuration before invoking [runCommand].
+  /// This resolves the global configuration before invoking [runCommand].
   /// If this method is overridden, the overriding method must ensure that
   /// the global configuration is set, see [globalConfiguration].
-  @override
-  Future<T?> run(final Iterable<String> args) {
+  Future<T?> run(final Iterable<String> args,
+      {final Map<String, String>? env}) {
+    final envVars = env ?? Platform.environment;
+
     return Future.sync(() async {
       final argResults = parse(args);
-      globalConfiguration = resolveConfiguration(argResults);
+      final globalConfig = resolveConfiguration(argResults, envVars);
 
       try {
-        _analyticsEnabled = await determineAnalyticsSettings();
+        _analyticsEnabled = await determineAnalyticsSettings(globalConfig);
 
-        if (globalConfiguration.errors.isNotEmpty) {
+        if (globalConfig.errors.isNotEmpty) {
           final buffer = StringBuffer();
-          final errors = globalConfiguration.errors.map(formatConfigError);
+          final errors = globalConfig.errors.map(formatConfigError);
           buffer.writeAll(errors, '\n');
           usageException(buffer.toString());
         }
@@ -284,15 +429,39 @@ class BetterCommandRunner<O extends OptionDefinition, T>
         rethrow;
       }
 
-      return runCommand(argResults);
+      return runCommand(
+          globalConfiguration: globalConfig,
+          topLevelResults: argResults,
+          env: envVars);
     });
   }
 
+  /// Parses [args] and returns the result, converting an [ArgParserException]
+  /// to a [UsageException].
+  ArgResults _argParserParse(final Iterable<String> args) {
+    try {
+      return _argParser.parse(args);
+    } on ArgParserException catch (error) {
+      if (error.commands.isEmpty) usageException(error.message);
+
+      var command = commands[error.commands.first]!;
+      for (final commandName in error.commands.skip(1)) {
+        command = command.subcommands[commandName]!;
+      }
+
+      command.usageException(error.message);
+    }
+  }
+
   /// Parses the command line arguments and returns the result.
-  @override
+  ///
+  /// Throws a [UsageException] if the arguments are invalid.
+  ///
+  /// This is notionally a protected method. It may be overridden or called from
+  /// subclasses, but it shouldn't be called externally.
   ArgResults parse(final Iterable<String> args) {
     try {
-      return super.parse(args);
+      return _argParserParse(args);
     } on UsageException catch (e) {
       messageOutput?.logUsageException(e);
       sendAnalyticsEvent(BetterCommandRunnerAnalyticsEvents.invalid);
@@ -300,14 +469,15 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     }
   }
 
-  @override
+  /// Prints the usage information for this runner.
+  ///
+  /// This is called internally by [run] and can be overridden by subclasses to
+  /// control how output is displayed or integrate with a logging system.
   void printUsage() {
     messageOutput?.logUsage(usage);
   }
 
   /// Runs the command specified by [topLevelResults].
-  ///
-  /// [globalConfiguration] is set before this method is called.
   ///
   /// This is notionally a protected method. It may be overridden or called from
   /// subclasses, but it shouldn't be called externally.
@@ -316,9 +486,11 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   /// command in a block. For example, you might handle the `--verbose` flag
   /// here to enable verbose logging before running the command.
   ///
-  /// This returns the return value of [Command.run].
-  @override
-  Future<T?> runCommand(final ArgResults topLevelResults) async {
+  /// This returns the return value of [BetterCommand.resolveAndRun].
+  Future<T?> runCommand(
+      {required final Configuration<O> globalConfiguration,
+      required final ArgResults topLevelResults,
+      required final Map<String, String> env}) async {
     _setLogLevel?.call(
       parsedLogLevel: _determineLogLevel(globalConfiguration),
       commandName: topLevelResults.command?.name,
@@ -336,7 +508,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
             command.name!,
             buildCommandPropertiesForAnalytics(
               topLevelResults: topLevelResults,
-              argParser: argParser,
+              argParser: _argParser,
               commands: commands,
             ),
           );
@@ -367,7 +539,8 @@ class BetterCommandRunner<O extends OptionDefinition, T>
         return null;
       }
       // normal cases
-      return await super.runCommand(topLevelResults);
+      return await _originalRunCommand(
+          globalConfiguration, topLevelResults, env);
     } on UsageException catch (e) {
       messageOutput?.logUsageException(e);
       sendAnalyticsEvent(BetterCommandRunnerAnalyticsEvents.invalid);
@@ -379,11 +552,12 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   ///
   /// This method can be overridden to change the configuration resolution
   /// behavior.
-  Configuration<O> resolveConfiguration(final ArgResults? argResults) {
+  Configuration<O> resolveConfiguration(
+      final ArgResults argResults, final Map<String, String> env) {
     return Configuration.resolveNoExcept(
       options: _globalOptions,
       argResults: argResults,
-      env: envVariables,
+      env: env,
       ignoreUnexpectedPositionalArgs: true,
     );
   }
