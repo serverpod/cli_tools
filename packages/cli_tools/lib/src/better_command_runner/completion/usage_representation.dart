@@ -1,6 +1,5 @@
 import 'dart:io' show IOSink;
 
-import 'package:args/command_runner.dart' show Command;
 import 'package:config/config.dart';
 
 import '../better_command.dart';
@@ -54,7 +53,7 @@ abstract class UsageRepresentation {
 
   static CommandUsage _generateForCommand(
     final List<String> commandSequence,
-    final Iterable<Command> subcommands,
+    final Iterable<BetterCommand> subcommands,
     final List<OptionDefinition> persistentOptions,
     final List<OptionDefinition> options,
   ) {

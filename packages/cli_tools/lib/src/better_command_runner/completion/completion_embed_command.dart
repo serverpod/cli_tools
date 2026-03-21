@@ -93,8 +93,8 @@ class CompletionEmbedCommand<T>
   bool get hidden => true;
 
   @override
-  Future<T> runWithConfig(
-      final Configuration<CompletionEmbedOption> commandConfig) async {
+  Future<T> run(final RunContext<CompletionEmbedOption> runContext) async {
+    final commandConfig = runContext.commandConfig;
     final tool = commandConfig.value(CompletionEmbedOption.tool);
     final scriptFileName =
         commandConfig.optionalValue(CompletionEmbedOption.scriptFileName);
@@ -138,7 +138,7 @@ const completionScript${tool.name.capitalize()} = (
       await out.close();
     }
 
-    if (runner?.globalConfiguration.findValueOf(
+    if (runContext.globalConfig.findValueOf(
             argName: StandardGlobalOption.verbose.option.argName) ==
         true) {
       final out =

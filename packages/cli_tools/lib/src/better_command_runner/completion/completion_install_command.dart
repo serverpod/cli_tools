@@ -43,8 +43,8 @@ class CompletionInstallCommand<T>
   String get description => 'Install a command line completion script';
 
   @override
-  Future<T> runWithConfig(
-      final Configuration<CompletionInstallOption> commandConfig) async {
+  Future<T> run(final RunContext<CompletionInstallOption> runContext) async {
+    final commandConfig = runContext.commandConfig;
     final tool = commandConfig.value(CompletionInstallOption.tool);
     final execName =
         commandConfig.optionalValue(CompletionInstallOption.execName);
@@ -91,7 +91,7 @@ class CompletionInstallCommand<T>
     await out.flush();
     await out.close();
 
-    if (betterRunner.globalConfiguration.findValueOf(
+    if (runContext.globalConfig.findValueOf(
             argName: StandardGlobalOption.verbose.option.argName) ==
         true) {
       stderr.writeln('Installed script: $writeFilePath');

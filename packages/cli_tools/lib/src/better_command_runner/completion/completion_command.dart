@@ -48,7 +48,7 @@ class CompletionCommand<T> extends BetterCommand<OptionDefinition, T> {
   String get description => 'Command line completion commands';
 
   @override
-  FutureOr<T>? runWithConfig(final Configuration commandConfig) {
+  FutureOr<T>? run(final RunContext runContext) {
     return null;
   }
 }

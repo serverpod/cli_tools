@@ -36,8 +36,8 @@ class CompletionGenerateCommand<T>
   String get description => 'Generate a command line completion specification';
 
   @override
-  Future<T> runWithConfig(
-      final Configuration<CompletionGenerateOption> commandConfig) async {
+  Future<T> run(final RunContext<CompletionGenerateOption> runContext) async {
+    final commandConfig = runContext.commandConfig;
     final tool = commandConfig.value(CompletionGenerateOption.tool);
     final execName =
         commandConfig.optionalValue(CompletionGenerateOption.execName);
@@ -69,7 +69,7 @@ class CompletionGenerateCommand<T>
       await out.close();
     }
 
-    if (betterRunner.globalConfiguration.findValueOf(
+    if (runContext.globalConfig.findValueOf(
             argName: StandardGlobalOption.verbose.option.argName) ==
         true) {
       final out = file == null ? ' to stdout' : ': ${file.path}';
