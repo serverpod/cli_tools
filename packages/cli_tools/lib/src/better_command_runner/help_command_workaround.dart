@@ -1,11 +1,13 @@
 import 'package:args/args.dart' show ArgResults;
-import 'package:args/command_runner.dart' show Command, CommandRunner;
+
+import 'better_command.dart';
+import 'better_command_runner.dart';
 
 /// A dummy to replicate the usage-text of upstream private `HelpCommand`.
 ///
 /// It is intended to be used for an internal patch only and is
 /// intentionally not part of the public API of this package.
-final class HelpCommandWorkaround extends Command {
+final class HelpCommandWorkaround extends BetterCommand {
   HelpCommandWorkaround({required this.runner});
 
   /// Checks whether the main command seeks the
@@ -46,7 +48,7 @@ final class HelpCommandWorkaround extends Command {
   }
 
   @override
-  final CommandRunner runner;
+  final BetterCommandRunner runner;
 
   @override
   final name = 'help';
@@ -59,6 +61,6 @@ final class HelpCommandWorkaround extends Command {
   String get invocation => '${runner.executableName} $name [command]';
 
   @override
-  Never run() => throw UnimplementedError(
+  Never run(final RunContext runContext) => throw UnimplementedError(
       'This class is meant to only obtain the Usage Text for `$name` command');
 }
