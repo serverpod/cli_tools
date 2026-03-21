@@ -1,5 +1,4 @@
 import 'package:args/args.dart';
-import 'package:args/command_runner.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
@@ -9,6 +8,7 @@ import 'exceptions.dart';
 import 'option_resolution.dart';
 import 'option_resolution_impl.dart';
 import 'source_type.dart';
+import 'usage_exception.dart';
 
 /// Common interface to enable same treatment for [ConfigOptionBase]
 /// and option enums.

@@ -13,3 +13,4 @@ export 'option_types.dart';
 export 'options.dart';
 export 'output_formatting.dart' show formatConfigError;
 export 'source_type.dart';
+export 'usage_exception.dart';

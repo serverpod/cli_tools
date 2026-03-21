@@ -1,5 +1,4 @@
 import 'package:args/args.dart';
-import 'package:args/command_runner.dart';
 import 'package:collection/collection.dart';
 
 import 'configuration_broker.dart';
@@ -8,6 +7,7 @@ import 'option_resolution_impl.dart';
 import 'options.dart';
 import 'output_formatting.dart';
 import 'source_type.dart';
+import 'usage_exception.dart';
 
 /// A configuration object that holds the values for a set of configuration options.
 ///
