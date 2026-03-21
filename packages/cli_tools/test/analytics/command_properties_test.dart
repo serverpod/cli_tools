@@ -1,8 +1,13 @@
-import 'package:args/command_runner.dart';
+import 'dart:async' show FutureOr;
+
+import 'package:cli_tools/better_command_runner.dart'
+    show BetterCommand, BetterCommandRunner, RunContext;
 import 'package:cli_tools/src/analytics/command_properties.dart';
+import 'package:config/config.dart'
+    show StringOption, FlagOption, MultiStringOption;
 import 'package:test/test.dart';
 
-class TemplateCommand extends Command<void> {
+class TemplateCommand extends BetterCommand {
   static const commandName = 'template';
 
   @override
@@ -11,15 +16,16 @@ class TemplateCommand extends Command<void> {
   @override
   String get name => commandName;
 
-  TemplateCommand() {
-    argParser.addOption('path', abbr: 'p');
-  }
+  TemplateCommand()
+      : super(options: const [StringOption(argName: 'path', argAbbrev: 'p')]);
 
   @override
-  void run() {}
+  FutureOr? run(final RunContext runContext) {
+    return null;
+  }
 }
 
-class CreateCommand extends Command<void> {
+class CreateCommand extends BetterCommand {
   static const commandName = 'create';
 
   @override
@@ -28,24 +34,28 @@ class CreateCommand extends Command<void> {
   @override
   String get name => commandName;
 
-  CreateCommand() {
-    argParser.addFlag('mini', abbr: 'm', negatable: false);
-    argParser.addFlag('force', abbr: 'f', defaultsTo: true);
-    argParser.addOption('name', abbr: 'n');
-    argParser.addMultiOption('tag', abbr: 't');
+  CreateCommand()
+      : super(options: const [
+          FlagOption(argName: 'mini', argAbbrev: 'm', negatable: false),
+          FlagOption(argName: 'force', argAbbrev: 'f', defaultsTo: true),
+          StringOption(argName: 'name', argAbbrev: 'n'),
+          MultiStringOption(argName: 'tag', argAbbrev: 't')
+        ]) {
     addSubcommand(TemplateCommand());
   }
 
   @override
-  void run() {}
+  FutureOr? run(final RunContext runContext) {
+    return null;
+  }
 }
 
 void main() {
   group('Given command properties builder', () {
-    late CommandRunner<void> runner;
+    late BetterCommandRunner runner;
 
     setUp(() {
-      runner = CommandRunner<void>('tool', 'test cli')
+      runner = BetterCommandRunner('tool', 'test cli')
         ..addCommand(CreateCommand());
     });
 

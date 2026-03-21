@@ -2,12 +2,10 @@
 
 import 'dart:async';
 
-import 'package:args/command_runner.dart';
 import 'package:cli_tools/cli_tools.dart';
-import 'package:config/config.dart' show Configuration, OptionDefinition;
 import 'package:test/test.dart';
 
-class AddSpiceCommand extends Command {
+class AddSpiceCommand extends BetterCommand {
   @override
   final String name = 'add';
 
@@ -20,10 +18,12 @@ class AddSpiceCommand extends Command {
   }
 
   @override
-  void run() {}
+  FutureOr? run(final RunContext runContext) {
+    return null;
+  }
 }
 
-class RemoveSpiceCommand extends Command {
+class RemoveSpiceCommand extends BetterCommand {
   @override
   final String name = 'remove';
 
@@ -36,10 +36,12 @@ class RemoveSpiceCommand extends Command {
   }
 
   @override
-  void run() {}
+  FutureOr? run(final RunContext runContext) {
+    return null;
+  }
 }
 
-class AddVegetableCommand extends Command {
+class AddVegetableCommand extends BetterCommand {
   @override
   final String name = 'add';
 
@@ -51,7 +53,9 @@ class AddVegetableCommand extends Command {
   }
 
   @override
-  void run() {}
+  FutureOr? run(final RunContext runContext) {
+    return null;
+  }
 }
 
 class SpiceCommand extends BetterCommand {
@@ -67,10 +71,7 @@ class SpiceCommand extends BetterCommand {
   }
 
   @override
-  void run() {}
-
-  @override
-  FutureOr? runWithConfig(final Configuration<OptionDefinition> commandConfig) {
+  FutureOr? run(final RunContext runContext) {
     throw UnimplementedError();
   }
 }
@@ -87,10 +88,7 @@ class VegetableCommand extends BetterCommand {
   }
 
   @override
-  void run() {}
-
-  @override
-  FutureOr? runWithConfig(final Configuration<OptionDefinition> commandConfig) {
+  FutureOr? run(final RunContext runContext) {
     throw UnimplementedError();
   }
 }

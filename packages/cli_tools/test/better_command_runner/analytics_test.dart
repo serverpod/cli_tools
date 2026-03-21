@@ -1,33 +1,36 @@
 import 'dart:async';
 
-import 'package:args/command_runner.dart';
 import 'package:cli_tools/better_command_runner.dart';
+import 'package:config/config.dart' show StringOption;
 import 'package:test/test.dart';
 
 import '../test_utils/test_utils.dart' show flushEventQueue;
 
-class MockCommand extends Command {
+class MockCommand extends BetterCommand {
   static String commandName = 'mock-command';
 
   @override
   String get description => 'Mock command used for testing';
 
   @override
-  void run() {}
+  FutureOr<void>? run(final RunContext runContext) {
+    return null;
+  }
 
   @override
   String get name => commandName;
 
-  MockCommand() {
-    argParser.addOption(
-      'name',
-      defaultsTo: 'serverpod',
-      allowed: <String>['serverpod'],
-    );
-  }
+  MockCommand()
+      : super(options: [
+          const StringOption(
+            argName: 'name',
+            defaultsTo: 'serverpod',
+            allowedValues: ['serverpod'],
+          )
+        ]);
 }
 
-class CompletableMockCommand extends Command {
+class CompletableMockCommand extends BetterCommand {
   static String commandName = 'completable-mock-command';
 
   @override
@@ -36,20 +39,21 @@ class CompletableMockCommand extends Command {
   Completer<void> completer = Completer<void>();
 
   @override
-  void run() async {
+  FutureOr<void>? run(final RunContext runContext) async {
     await completer.future;
   }
 
   @override
   String get name => commandName;
 
-  CompletableMockCommand() {
-    argParser.addOption(
-      'name',
-      defaultsTo: 'serverpod',
-      allowed: <String>['serverpod'],
-    );
-  }
+  CompletableMockCommand()
+      : super(options: [
+          const StringOption(
+            argName: 'name',
+            defaultsTo: 'serverpod',
+            allowedValues: ['serverpod'],
+          )
+        ]);
 }
 
 void main() {
@@ -69,7 +73,12 @@ void main() {
     test(
       'when checking available flags then analytics flag is not present.',
       () {
-        expect(runner.argParser.options.keys, isNot(contains('analytics')));
+        expect(
+            runner.globalOptions.where(
+              (final option) =>
+                  option.option.argName == BetterCommandRunnerFlags.analytics,
+            ),
+            isEmpty);
       },
     );
   });
@@ -87,7 +96,12 @@ void main() {
     });
 
     test('when checking available flags then analytics is defined.', () {
-      expect(runner.argParser.options.keys, contains('analytics'));
+      expect(
+          runner.globalOptions.where(
+            (final option) =>
+                option.option.argName == BetterCommandRunnerFlags.analytics,
+          ),
+          isNotEmpty);
     });
   });
 

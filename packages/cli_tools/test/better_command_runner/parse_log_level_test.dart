@@ -1,15 +1,18 @@
-import 'package:args/command_runner.dart';
+import 'dart:async' show FutureOr;
+
 import 'package:cli_tools/better_command_runner.dart';
 import 'package:test/test.dart';
 
-class MockCommand extends Command {
+class MockCommand extends BetterCommand {
   static String commandName = 'mock-command';
 
   @override
   String get description => 'Mock command used for testing';
 
   @override
-  void run() {}
+  FutureOr? run(final RunContext runContext) {
+    return null;
+  }
 
   @override
   String get name => commandName;

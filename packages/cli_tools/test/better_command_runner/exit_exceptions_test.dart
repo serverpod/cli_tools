@@ -1,26 +1,29 @@
-import 'package:args/command_runner.dart';
-import 'package:cli_tools/better_command_runner.dart';
+import 'dart:async' show FutureOr;
+
+import 'package:cli_tools/better_command_runner.dart'
+    show BetterCommand, BetterCommandRunner, UsageException, RunContext;
+import 'package:config/config.dart' show StringOption;
 import 'package:test/test.dart';
 
-class MockCommand extends Command {
+class MockCommand extends BetterCommand {
   static String commandName = 'mock-command';
 
   @override
   String get description => 'Mock command used for testing';
 
   @override
-  void run() {}
-
-  MockCommand() {
-    argParser.addOption(
-      'name',
-      // To make an option truly mandatory, you need to set mandatory to true.
-      // and also define a callback.
-      mandatory: true,
-      callback: (final name) {},
-      allowed: <String>['serverpod'],
-    );
+  FutureOr? run(final RunContext runContext) {
+    return null;
   }
+
+  MockCommand()
+      : super(options: [
+          const StringOption(
+            argName: 'name',
+            mandatory: true,
+            allowedValues: ['serverpod'],
+          )
+        ]);
 
   @override
   String get name => commandName;

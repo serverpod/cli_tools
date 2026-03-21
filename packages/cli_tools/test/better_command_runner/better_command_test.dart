@@ -35,11 +35,8 @@ class MockCommand extends BetterCommand {
   String get name => commandName;
 
   @override
-  Future<void> run() async {}
-
-  @override
-  FutureOr? runWithConfig(final Configuration<OptionDefinition> commandConfig) {
-    throw UnimplementedError();
+  FutureOr? run(final RunContext runContext) {
+    return null;
   }
 }
 

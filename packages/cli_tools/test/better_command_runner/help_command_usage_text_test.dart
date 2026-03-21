@@ -1,8 +1,7 @@
 import 'dart:async' show ZoneSpecification, runZoned;
 
-import 'package:args/command_runner.dart' show CommandRunner, UsageException;
 import 'package:cli_tools/better_command_runner.dart'
-    show BetterCommandRunner, MessageOutput;
+    show BetterCommandRunner, MessageOutput, UsageException;
 import 'package:test/test.dart';
 
 void main() => _runTests();
@@ -13,7 +12,7 @@ const _moMockText = 'SUCCESS: `MessageOutput.usageLogger`';
 const _moExceptionText = 'SUCCESS: `MessageOutput.usageExceptionLogger`';
 const _invalidOption = '-z';
 
-CommandRunner _buildUpstreamRunner() => CommandRunner(
+BetterCommandRunner _buildUpstreamRunner() => BetterCommandRunner(
       _exeName,
       _exeDescription,
     );

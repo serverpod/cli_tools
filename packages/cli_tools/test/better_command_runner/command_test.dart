@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:args/command_runner.dart';
 import 'package:cli_tools/better_command_runner.dart';
+import 'package:config/config.dart' show StringOption;
 import 'package:test/test.dart';
 
-class MockCommand extends Command<void> {
+class MockCommand extends BetterCommand {
   void Function()? onRun;
   static String commandName = 'mock-command';
   List<String> trackedOptions = [];
@@ -14,22 +14,24 @@ class MockCommand extends Command<void> {
   String get description => 'Mock command used for testing';
 
   @override
-  void run() {
+  FutureOr? run(final RunContext runContext) {
+    final commandConfig = runContext.commandConfig;
     onRun?.call();
-    trackedOptions.add(argResults!['name'] as String);
+    trackedOptions.add(commandConfig.findValueOf(argName: 'name') as String);
     numberOfRuns++;
   }
 
   @override
   String get name => commandName;
 
-  MockCommand({this.onRun}) {
-    argParser.addOption(
-      'name',
-      defaultsTo: 'serverpod',
-      allowed: <String>['serverpod', 'stockholm'],
-    );
-  }
+  MockCommand({this.onRun})
+      : super(options: [
+          const StringOption(
+            argName: 'name',
+            defaultsTo: 'serverpod',
+            allowedValues: ['serverpod', 'stockholm'],
+          )
+        ]);
 }
 
 void main() {
