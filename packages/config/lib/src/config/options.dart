@@ -294,6 +294,16 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
           "An argument option can't have an abbreviation but not a full name");
     }
 
+    if (argName?.contains('=') == true || argAbbrev?.contains('=') == true) {
+      throw OptionDefinitionError(
+          this, "An argument option name / abbreviation can't contain '='");
+    }
+    if (argName?.startsWith('-') == true ||
+        argAbbrev?.startsWith('-') == true) {
+      throw OptionDefinitionError(
+          this, "An argument option name / abbreviation can't start with '-'");
+    }
+
     if ((fromDefault != null || defaultsTo != null) && mandatory) {
       throw OptionDefinitionError(
           this, "Mandatory options can't have default values");
