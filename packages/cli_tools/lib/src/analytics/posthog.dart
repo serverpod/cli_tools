@@ -8,7 +8,7 @@ import 'analytics.dart';
 import 'helpers.dart';
 
 /// Analytics service for PostHog.
-class PostHogAnalytics implements Analytics {
+class PostHogAnalytics extends Analytics {
   static const _defaultHost = 'https://eu.i.posthog.com';
   static const _defaultTimeout = Duration(seconds: 2);
   static const _defaultLibName = 'cli_tools';
@@ -36,10 +36,7 @@ class PostHogAnalytics implements Analytics {
         _libName = libName;
 
   @override
-  void cleanUp() {}
-
-  @override
-  void track({
+  Future<void> sendEvent({
     required final String event,
     final Map<String, dynamic> properties = const {},
   }) {
@@ -57,20 +54,12 @@ class PostHogAnalytics implements Analytics {
       },
     };
 
-    _quietPost(eventData);
-  }
-
-  Future<void> _quietPost(final Map<String, dynamic> eventData) async {
-    try {
-      await http
-          .post(
-            _endpoint,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(eventData),
-          )
-          .timeout(_timeout);
-    } catch (e) {
-      return;
-    }
+    return http
+        .post(
+          _endpoint,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(eventData),
+        )
+        .timeout(_timeout);
   }
 }
