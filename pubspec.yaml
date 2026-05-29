@@ -5,6 +5,10 @@ repository: https://github.com/serverpod/cli_tools
 homepage: https://serverpod.dev
 issue_tracker: https://github.com/serverpod/cli_tools/issues
 
+workspace:
+  - packages/config
+  - packages/cli_tools
+
 topics:
   - cli
   - tools
@@ -13,8 +17,28 @@ topics:
   - yaml
 
 environment:
-  sdk: ">=3.3.0 <4.0.0"
+  sdk: ^3.6.0
 
 dev_dependencies:
-  melos: '>=6.3.3 <7.1.0'
+  melos: '>=6.3.3 <8.0.0'
   serverpod_lints: '>=2.7.0'
+
+melos:
+  ide:
+    intellij:
+      enabled: false
+
+  command:
+    version:
+      workspaceChangelog: false
+
+  scripts:
+    analyze:
+      description: "Run dart analyze"
+      run: dart analyze --fatal-infos
+  
+    test:
+      description: "Run all tests"
+      run: dart test
+      exec:
+        concurrency: 1
