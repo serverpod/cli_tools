@@ -5,6 +5,10 @@ repository: https://github.com/serverpod/cli_tools
 homepage: https://serverpod.dev
 issue_tracker: https://github.com/serverpod/cli_tools/issues
 
+workspace:
+  - packages/config
+  - packages/cli_tools
+
 topics:
   - cli
   - tools

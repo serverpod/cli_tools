@@ -12,6 +12,8 @@ topics:
   - configuration
   - yaml
 
+resolution: workspace
+
 environment:
   sdk: ^3.6.0
 
