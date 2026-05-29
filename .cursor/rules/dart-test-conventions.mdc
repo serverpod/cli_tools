@@ -1,0 +1,93 @@
+---
+description: Given-when-then naming and structure for Dart tests in this repo
+globs: packages/**/test/**/*_test.dart
+alwaysApply: false
+---
+
+# Dart test conventions (Given – when – then)
+
+Use the **Given – when – then** pattern for test names and structure.
+This matches existing tests such as `std_out_logger_test.dart`, `progress_test.dart`, and `configuration_test.dart`.
+
+## Structure
+
+| Part | Role | Where it lives |
+|------|------|----------------|
+| **Given** | Preconditions and shared setup | Top-level `group('Given …')` |
+| **when** | The action or trigger | Nested `group('when …')` and/or start of `test` name |
+| **then** | Expected outcome | End of `test` name; verified with `expect` in the body |
+
+Prefer **nested groups** when several tests share the same Given or when:
+
+```dart
+group('Given a StdOutLogger with info log level', () {
+  final logger = StdOutLogger(LogLevel.info);
+
+  group('when calling progressStream', () {
+    test(
+        'when stream has a single event '
+        'then the event is returned and progress is marked successful',
+        () async {
+      // arrange/act in body, assert with expect
+    });
+  });
+});
+```
+
+When a parent `group` already states **when**, child tests may use only **then**.
+
+Prefer to have multiple **then** tests for multiple outcome verifications,
+there should be one test method per expected outcome condition.
+This means that for each **then** test, there should only be one or very few
+expect calls, which are directly related to the same outcome verification:
+
+```dart
+group('when running with no command', () {
+  setUp(() async => await runner.run([]));
+
+  test('then usage message is logged to info.', () async {
+    expect(infos, hasLength(1));
+    expect(infos[0], contains('usage'));
+  });
+
+  test('then error message is logged to errors.', () async {
+    expect(errors, hasLength(1));
+    expect(errors[0], contains('erroneous usage'));
+  });
+
+  test('then no warning message is logged', () async {
+    expect(errors, isEmpty);
+  });
+});
+```
+
+For isolated cases without shared setup, put the full pattern in one test name:
+
+```dart
+test(
+    'Given confirm prompt'
+    ' when providing valid input "yes"'
+    ' then should return true', () async {
+  // ...
+});
+```
+
+## Naming rules
+
+- Start Given groups with `Given …` (e.g. `Given a StdOutLogger with default settings`).
+- Use lowercase **when** and **then** in names.
+- Describe behaviour, not implementation (e.g. `then progress is marked failed`, not `then fail() is called`).
+- Split long names across adjacent string literals; do not use one unreadable line.
+
+## Test body
+
+- Put shared fixtures, loggers, and runners in the **Given** group scope.
+- Run the action under test inside the test body (or in a **when** group's `setUp`).
+- Use `expect` / `expectLater` for **then** assertions only—do not restate expectations in the name alone.
+- For stdout/stderr tests, use `collectOutput` from `test_utils/io_helper.dart`.
+
+## Examples to follow
+
+- `packages/cli_tools/test/std_out_logger_test.dart` — Given group + `when … then …` tests
+- `packages/cli_tools/test/logger/progress_test.dart` — nested Given / when groups
+- `packages/config/test/config/configuration_test.dart` — nested Given / when / then groups

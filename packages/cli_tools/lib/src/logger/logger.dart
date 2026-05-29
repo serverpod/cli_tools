@@ -48,8 +48,8 @@ abstract class Logger {
     final LogType type,
   });
 
-  /// Display a progress message on [LogLevel.info] while running [runner]
-  /// function.
+  /// Display a progress spinner and message on [LogLevel.info] while running
+  /// [runner] function.
   ///
   /// Uses return value from [runner] to print set progress success status.
   /// Returns return value from [runner].
@@ -57,6 +57,26 @@ abstract class Logger {
     final String message,
     final Future<bool> Function() runner, {
     final bool newParagraph,
+  });
+
+  /// Display a progress spinner and a stream of messages on [LogLevel.info].
+  /// When the stream is ended, the progress spinner is completed, with a
+  /// failure status if the stream ends with an error.
+  ///
+  /// First [initialMessage] is displayed, then the message is updated with each
+  /// event. A custom [toMessage] can be provided to convert each event to an
+  /// appropriate message. If not provided, [toString] is called on the event.
+  ///
+  /// For streams with a single event this method behaves like [progress].
+  ///
+  /// Returns the last event from the stream.
+  /// If the stream ends with an error, that error is rethrown.
+  /// If the stream is empty, [StateError] is thrown.
+  Future<T> progressStream<T>(
+    final String initialMessage,
+    final Stream<T> stream, {
+    final String Function(T)? toMessage,
+    final bool newParagraph = false,
   });
 
   /// Directly write a [message] to the output.

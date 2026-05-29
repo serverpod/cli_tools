@@ -116,24 +116,54 @@ class StdOutLogger extends Logger {
     final Future<bool> Function() runner, {
     final bool newParagraph = false,
   }) async {
+    return await progressStream(
+      message,
+      Stream.fromFuture(runner()),
+      toMessage: (final _) => message,
+      newParagraph: newParagraph,
+    );
+  }
+
+  @override
+  Future<T> progressStream<T>(
+    final String initialMessage,
+    final Stream<T> stream, {
+    final String Function(T)? toMessage,
+    final bool newParagraph = false,
+  }) async {
     if (logLevel.index > LogLevel.info.index) {
-      return await runner();
+      return stream.last;
     }
 
     _stopAnimationInProgress();
 
-    // Write an empty line before the progress message if a new paragraph is
-    // requested.
+    // First write an empty line if a new paragraph is requested.
     if (newParagraph) {
       write('', LogLevel.info, newParagraph: false, newLine: true);
     }
 
-    final progress = Progress(message, stdout);
+    final progress = Progress(initialMessage, stdout);
     trackedAnimationInProgress = progress;
-    final bool success = await runner();
-    trackedAnimationInProgress = null;
-    success ? progress.complete() : progress.fail();
-    return success;
+    try {
+      bool hasEvent = false;
+      T? finalEvent;
+      await for (final event in stream) {
+        hasEvent = true;
+        finalEvent = event;
+        final message = toMessage?.call(event) ?? event.toString();
+        progress.update(message);
+      }
+      if (!hasEvent || finalEvent is! T) {
+        throw StateError('No events in stream');
+      }
+      progress.complete();
+      return finalEvent;
+    } catch (error) {
+      progress.fail();
+      rethrow;
+    } finally {
+      trackedAnimationInProgress = null;
+    }
   }
 
   @override

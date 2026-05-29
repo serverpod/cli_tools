@@ -61,6 +61,16 @@ class VoidLogger extends Logger {
   }
 
   @override
+  Future<T> progressStream<T>(
+    final String initialMessage,
+    final Stream<T> stream, {
+    final String Function(T)? toMessage,
+    final bool newParagraph = false,
+  }) {
+    return stream.last;
+  }
+
+  @override
   void write(
     final String message,
     final LogLevel logLevel, {
