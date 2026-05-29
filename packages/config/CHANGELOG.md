@@ -1,3 +1,7 @@
+## 0.9.0
+
+ - Bumped minimum Dart SDK version to 3.6
+
 ## 0.8.4
 
  - **FIX**(config): Created a public OptionResolution interface (#91).
