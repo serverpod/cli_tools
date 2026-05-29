@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dart: [3.3, 3.9]
+        dart: [3.6, 3.9]
         package: [cli_tools, config]
     runs-on: ubuntu-latest
     defaults:
@@ -34,16 +34,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dart: [3.3, 3.9]
+        dart: [3.6, 3.9]
         package: [cli_tools, config]
         platform: [ubuntu-latest]
         include:
           - package: cli_tools
             platform: windows-latest
-            dart: 3.3
+            dart: 3.6
           - package: cli_tools
             platform: macos-latest
-            dart: 3.3
+            dart: 3.6
     runs-on: ${{ matrix.platform }}
     defaults:
       run:

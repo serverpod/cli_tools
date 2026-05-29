@@ -13,7 +13,7 @@ topics:
   - yaml
 
 environment:
-  sdk: ">=3.3.0 <4.0.0"
+  sdk: ^3.6.0
 
 dev_dependencies:
   melos: '>=6.3.3 <7.1.0'
