@@ -8,7 +8,7 @@ import 'analytics.dart';
 import 'helpers.dart';
 
 /// Analytics service for MixPanel.
-class MixPanelAnalytics implements Analytics {
+class MixPanelAnalytics extends Analytics {
   static const _defaultEndpoint = 'https://api.mixpanel.com/track';
   static const _defaultTimeout = Duration(seconds: 2);
 
@@ -52,10 +52,7 @@ class MixPanelAnalytics implements Analytics {
   }
 
   @override
-  void cleanUp() {}
-
-  @override
-  void track({
+  Future<void> sendEvent({
     required final String event,
     final Map<String, dynamic> properties = const {},
   }) {
@@ -71,21 +68,13 @@ class MixPanelAnalytics implements Analytics {
       },
     });
 
-    _quietPost(payload);
-  }
-
-  Future<void> _quietPost(final String payload) async {
-    try {
-      await http.post(
-        _endpoint,
-        body: 'data=$payload',
-        headers: {
-          'Accept': 'text/plain',
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      ).timeout(_timeout);
-    } catch (e) {
-      return;
-    }
+    return http.post(
+      _endpoint,
+      body: 'data=$payload',
+      headers: {
+        'Accept': 'text/plain',
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    ).timeout(_timeout);
   }
 }
