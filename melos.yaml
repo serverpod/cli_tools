@@ -1,3 +1,4 @@
+# This file is used for melos 6.3.3, but deprecated for users of melos 7.x.
 name: cli_tools_repo
 
 packages:
