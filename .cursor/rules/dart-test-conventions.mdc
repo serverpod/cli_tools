@@ -52,7 +52,7 @@ group('when running with no command', () {
 
   test('then error message is logged to errors.', () async {
     expect(errors, hasLength(1));
-    expect(errors[0], contains('erronous usage'));
+    expect(errors[0], contains('erroneous usage'));
   });
 
   test('then no warning message is logged', () async {

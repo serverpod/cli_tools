@@ -145,13 +145,15 @@ class StdOutLogger extends Logger {
     final progress = Progress(initialMessage, stdout);
     trackedAnimationInProgress = progress;
     try {
+      bool hasEvent = false;
       T? finalEvent;
       await for (final event in stream) {
+        hasEvent = true;
         finalEvent = event;
         final message = toMessage?.call(event) ?? event.toString();
         progress.update(message);
       }
-      if (finalEvent is! T) {
+      if (!hasEvent || finalEvent is! T) {
         throw StateError('No events in stream');
       }
       progress.complete();
