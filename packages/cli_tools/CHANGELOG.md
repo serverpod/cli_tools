@@ -1,3 +1,9 @@
+## 0.12.0
+
+ - Bumped minimum Dart SDK version to 3.6
+
+ - **FEAT**(cli_tools): Added Logger.progressStream method  ([#108](https://github.com/serverpod/cli_tools/issues/108)). ([fac111a3](https://github.com/serverpod/cli_tools/commit/fac111a3f4583e2856fc399496a029d501b9821c))
+
 ## 0.11.0
 
  - **FEAT**: Make library name configurable in PostHog analytics. (#101).
