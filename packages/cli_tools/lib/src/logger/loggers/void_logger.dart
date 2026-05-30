@@ -65,9 +65,14 @@ class VoidLogger extends Logger {
     final String initialMessage,
     final Stream<T> stream, {
     final String Function(T)? toMessage,
+    final bool Function(T)? isSuccess,
     final bool newParagraph = false,
-  }) {
-    return stream.last;
+  }) async {
+    try {
+      return await stream.last;
+    } on StateError catch (_) {
+      throw StateError('No events in stream');
+    }
   }
 
   @override
