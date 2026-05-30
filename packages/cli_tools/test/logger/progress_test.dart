@@ -26,6 +26,23 @@ void main() {
       });
 
       test(
+          'when runner completes unsuccessfully '
+          'then runner result is returned and progress is marked unsuccessful',
+          () async {
+        bool? result;
+
+        final (:stdout, :stderr, :stdin) = await collectOutput(() async {
+          result = await logger.progress('Working', () async => false);
+        });
+
+        expect(result, isFalse);
+        expect(stdout.output, contains('Working'));
+        expect(stdout.output, contains('✗'));
+        expect(stderr.output, isEmpty);
+        expect(logger.trackedAnimationInProgress, isNull);
+      });
+
+      test(
           'when runner throws an exception '
           'then progress is marked failed and the exception is rethrown',
           () async {
@@ -123,6 +140,46 @@ void main() {
         expect(stdout.output, contains('deploy'));
         expect(stdout.output, contains('✓'));
         expect(stdout.output, isNot(contains('✗')));
+        expect(logger.trackedAnimationInProgress, isNull);
+      });
+
+      test(
+          'when stream completes and result is successful '
+          'then progress is marked successful', () async {
+        final (:stdout, :stderr, :stdin) = await collectOutput(() async {
+          await logger.progressStream(
+            'Deploying',
+            Stream.fromIterable(['build', 'deploy']),
+            toMessage: (final phase) => phase,
+            isSuccess: (final phase) => phase == 'deploy',
+          );
+        });
+
+        print(stdout.output);
+        expect(stdout.output, contains('Deploying'));
+        expect(stdout.output, contains('deploy'));
+        expect(stdout.output, contains('✓'));
+        expect(stdout.output, isNot(contains('✗')));
+        expect(logger.trackedAnimationInProgress, isNull);
+      });
+
+      test(
+          'when stream completes but result is not successful '
+          'then progress is marked unsuccessful', () async {
+        final (:stdout, :stderr, :stdin) = await collectOutput(() async {
+          await logger.progressStream(
+            'Deploying',
+            Stream.fromIterable(['build', 'deploy']),
+            toMessage: (final phase) => phase,
+            isSuccess: (final phase) => phase == 'some-other-phase',
+          );
+        });
+
+        print(stdout.output);
+        expect(stdout.output, contains('Deploying'));
+        expect(stdout.output, contains('deploy'));
+        expect(stdout.output, contains('✗'));
+        expect(stdout.output, isNot(contains('✓')));
         expect(logger.trackedAnimationInProgress, isNull);
       });
 

@@ -120,6 +120,7 @@ class StdOutLogger extends Logger {
       message,
       Stream.fromFuture(runner()),
       toMessage: (final _) => message,
+      isSuccess: (final result) => result,
       newParagraph: newParagraph,
     );
   }
@@ -129,6 +130,7 @@ class StdOutLogger extends Logger {
     final String initialMessage,
     final Stream<T> stream, {
     final String Function(T)? toMessage,
+    final bool Function(T)? isSuccess,
     final bool newParagraph = false,
   }) async {
     if (logLevel.index > LogLevel.info.index) {
@@ -156,7 +158,8 @@ class StdOutLogger extends Logger {
       if (!hasEvent || finalEvent is! T) {
         throw StateError('No events in stream');
       }
-      progress.complete();
+      final success = isSuccess?.call(finalEvent) ?? true;
+      success ? progress.complete() : progress.fail();
       return finalEvent;
     } catch (error) {
       progress.fail();

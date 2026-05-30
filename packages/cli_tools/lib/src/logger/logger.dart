@@ -51,7 +51,7 @@ abstract class Logger {
   /// Display a progress spinner and message on [LogLevel.info] while running
   /// [runner] function.
   ///
-  /// Uses return value from [runner] to print set progress success status.
+  /// Uses the return value from [runner] to print success or failure status.
   /// Returns return value from [runner].
   Future<bool> progress(
     final String message,
@@ -67,6 +67,10 @@ abstract class Logger {
   /// event. A custom [toMessage] can be provided to convert each event to an
   /// appropriate message. If not provided, [toString] is called on the event.
   ///
+  /// If [isSuccess] is provided, it is used to determine if the progress should
+  /// be marked as successful or failed. If not provided, the progress is marked
+  /// as successful if the stream ends without an error.
+  ///
   /// For streams with a single event this method behaves like [progress].
   ///
   /// Returns the last event from the stream.
@@ -76,6 +80,7 @@ abstract class Logger {
     final String initialMessage,
     final Stream<T> stream, {
     final String Function(T)? toMessage,
+    final bool Function(T)? isSuccess,
     final bool newParagraph = false,
   });
 

@@ -65,6 +65,7 @@ class VoidLogger extends Logger {
     final String initialMessage,
     final Stream<T> stream, {
     final String Function(T)? toMessage,
+    final bool Function(T)? isSuccess,
     final bool newParagraph = false,
   }) async {
     try {
