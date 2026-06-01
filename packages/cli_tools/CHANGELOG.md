@@ -1,6 +1,8 @@
 ## 0.13.0
 
  - **BREAKING** **FEAT**(cli_tools): Adds a `flush` method to the `Analytics` base class to ensure all analytics events are sent before the program exits ([#107](https://github.com/serverpod/cli_tools/issues/107)). ([87b037e2](https://github.com/serverpod/cli_tools/commit/87b037e2b8172252e399cb103d103054ede64267))
+ - FIX(cli_tools): Make VoidLogger.progressStream throw same exception as StdOutLogger does on empty stream. ([861fe7f0](https://github.com/serverpod/cli_tools/commit/861fe7f025e973fb510d24f9750c8246eb25926e))
+ - FIX(cli_tools): Fixed regression in progress spinner on unsuccessful runner. ([861fe7f0](https://github.com/serverpod/cli_tools/commit/861fe7f025e973fb510d24f9750c8246eb25926e))
 
 ## 0.12.0
 
