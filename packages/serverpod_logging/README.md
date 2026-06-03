@@ -2,4 +2,4 @@
 
 # Serverpod Logging
 
-This package contains tools for bridging loggin between Serverpod framework and tooling.
+This package contains tools for bridging logging between Serverpod framework and tooling.
