@@ -1,3 +1,7 @@
+## 0.13.1
+
+ - **FEAT**(cli_tools): Make progress display more configurable ([#113](https://github.com/serverpod/cli_tools/issues/113)). ([8df886e5](https://github.com/serverpod/cli_tools/commit/8df886e59db5f59bc0ab8780803e1a977adf4017))
+
 ## 0.13.0
 
  - **BREAKING** **FEAT**(cli_tools): Adds a `flush` method to the `Analytics` base class to ensure all analytics events are sent before the program exits ([#107](https://github.com/serverpod/cli_tools/issues/107)). ([87b037e2](https://github.com/serverpod/cli_tools/commit/87b037e2b8172252e399cb103d103054ede64267))
