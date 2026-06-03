@@ -24,10 +24,14 @@ import 'ansi_style.dart';
 /// {@endtemplate}
 class ProgressOptions {
   /// {@macro progress_options}
-  const ProgressOptions({this.animation = const ProgressAnimation()});
+  const ProgressOptions(
+      {this.animation = const ProgressAnimation(), this.ellipsis = '...'});
 
   /// The progress animation configuration.
   final ProgressAnimation animation;
+
+  /// The ellipsis to append to the progress message while in progress.
+  final String ellipsis;
 }
 
 /// {@template progress_animation}
@@ -79,7 +83,7 @@ class Progress {
       final char = frames.isEmpty ? '' : frames.first;
       final prefix =
           char.isEmpty ? char : '${AnsiStyle.lightGreen.wrap(char)} ';
-      _write('$prefix$_message...\n');
+      _write('$prefix$_message${_options.ellipsis}\n');
       return;
     }
 
@@ -157,7 +161,7 @@ class Progress {
     final char = frames.isEmpty ? '' : frames[_index % frames.length];
     final prefix = char.isEmpty ? char : '${AnsiStyle.lightGreen.wrap(char)} ';
 
-    _write('$_clearLine$prefix$_message... $_time');
+    _write('$_clearLine$prefix$_message${_options.ellipsis} $_time');
   }
 
   void _write(final String object) {

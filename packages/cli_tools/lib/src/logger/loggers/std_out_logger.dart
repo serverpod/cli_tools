@@ -118,7 +118,7 @@ class StdOutLogger extends Logger {
     final bool newParagraph = false,
   }) async {
     return await progressStream(
-      message,
+      '$message...',
       Stream.fromFuture(runner()),
       toMessage: (final r) => r ? successMessage ?? message : message,
       isSuccess: (final result) => result,
@@ -145,7 +145,8 @@ class StdOutLogger extends Logger {
       write('', LogLevel.info, newParagraph: false, newLine: true);
     }
 
-    final progress = Progress(initialMessage, stdout);
+    final progress = Progress(initialMessage, stdout,
+        options: const ProgressOptions(ellipsis: ''));
     trackedAnimationInProgress = progress;
     try {
       bool hasEvent = false;
