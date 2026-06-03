@@ -51,11 +51,14 @@ abstract class Logger {
   /// Display a progress spinner and message on [LogLevel.info] while running
   /// [runner] function.
   ///
+  /// Upon success, change the message to the [successMessage] if provided.
+  ///
   /// Uses the return value from [runner] to print success or failure status.
-  /// Returns return value from [runner].
+  /// Returns the return value from [runner].
   Future<bool> progress(
     final String message,
     final Future<bool> Function() runner, {
+    final String? successMessage,
     final bool newParagraph,
   });
 

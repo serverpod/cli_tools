@@ -114,12 +114,13 @@ class StdOutLogger extends Logger {
   Future<bool> progress(
     final String message,
     final Future<bool> Function() runner, {
+    final String? successMessage,
     final bool newParagraph = false,
   }) async {
     return await progressStream(
       message,
       Stream.fromFuture(runner()),
-      toMessage: (final _) => message,
+      toMessage: (final r) => r ? successMessage ?? message : message,
       isSuccess: (final result) => result,
       newParagraph: newParagraph,
     );
