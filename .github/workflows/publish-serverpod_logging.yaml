@@ -1,0 +1,16 @@
+name: Publish serverpod_logging package
+
+on:
+    push:
+        tags:
+            # Matches tags like serverpod_logging-v1.2.3 and serverpod_logging-v1.2.3-pre.1
+            - 'serverpod_logging-v[0-9]+.[0-9]+.[0-9]+'
+            - 'serverpod_logging-v[0-9]+.[0-9]+.[0-9]+-*'
+
+jobs:
+    publish:
+        permissions:
+            id-token: write
+        uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+        with:
+          working-directory: packages/serverpod_logging
