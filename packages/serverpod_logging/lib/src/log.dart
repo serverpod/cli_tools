@@ -157,10 +157,7 @@ extension LogScoping on Log {
     await _writer.openScope(scope);
     final stopwatch = Stopwatch()..start();
     try {
-      final result = await runZoned(
-        runner,
-        zoneValues: {_logScopeKey: scope},
-      );
+      final result = await runZoned(runner, zoneValues: {_logScopeKey: scope});
       await _writer.closeScope(
         scope,
         success: isSuccess?.call(result) ?? (result is bool ? result : true),
