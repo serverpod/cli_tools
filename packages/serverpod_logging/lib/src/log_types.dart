@@ -50,11 +50,8 @@ class LogScope {
   });
 
   /// Creates a root scope for a process.
-  factory LogScope.root(String label) => LogScope(
-    id: 'root',
-    label: label,
-    startTime: DateTime.now(),
-  );
+  factory LogScope.root(String label) =>
+      LogScope(id: 'root', label: label, startTime: DateTime.now());
 
   /// Creates a child scope under this scope.
   LogScope child({
@@ -131,21 +128,25 @@ abstract class LogWriter {
 
 /// A [LogWriter] that fans out to multiple child writers.
 class MultiLogWriter extends LogWriter {
-  final List<LogWriter> _writers;
+  List<LogWriter> _writers;
 
-  /// Creates a [MultiLogWriter] that fans out to [_writers]. The list is
-  /// held by reference and may be mutated via [add] / [remove].
-  MultiLogWriter(this._writers);
+  /// Creates a [MultiLogWriter] that fans out to [writers].
+  MultiLogWriter(List<LogWriter> writers) : _writers = List.of(writers);
 
   /// Appends [writer] to the chain. Useful when a writer can only be
   /// constructed after the chain has already been built (e.g. a writer
   /// that needs a database session that doesn't exist yet at startup).
-  void add(LogWriter writer) => _writers.add(writer);
+  void add(LogWriter writer) => [..._writers, writer];
 
   /// Removes [writer] from the chain, if present. Counterpart to [add];
   /// used when the chain needs to be reconfigured after construction
   /// (e.g. swapping a console writer once config has been loaded).
-  bool remove(LogWriter writer) => _writers.remove(writer);
+  bool remove(LogWriter writer) {
+    final copy = List.of(_writers);
+    final removed = copy.remove(writer);
+    _writers = copy;
+    return removed;
+  }
 
   @override
   Future<void> log(LogEntry entry) => _writers.map((w) => w.log(entry)).wait;
