@@ -9,6 +9,7 @@ environment:
   sdk: ^3.10.3
 
 dependencies: 
+  cli_tools: ^0.13.1
   meta: ^1.15.0
 
 dev_dependencies:
