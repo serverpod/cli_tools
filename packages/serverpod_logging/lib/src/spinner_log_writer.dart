@@ -18,8 +18,12 @@ String formatElapsed(Duration d) {
 
 /// State for a single in-progress scope with a braille spinner.
 class ActiveScope {
+  ActiveScope._(this.scope, this.stopwatch);
+
   /// Tracks [scope] and starts a stopwatch for its elapsed-time display.
-  ActiveScope(this.scope) : stopwatch = Stopwatch()..start();
+  factory ActiveScope(LogScope scope) {
+    return ActiveScope._(scope, Stopwatch()..start());
+  }
 
   /// The scope being rendered.
   final LogScope scope;
@@ -27,6 +31,12 @@ class ActiveScope {
   /// Measures how long the scope has been open; read by the spinner
   /// formatter to display elapsed time next to the label.
   final Stopwatch stopwatch;
+
+  /// Creates a copy of this [ActiveScope] with an optionally replaced
+  /// [scope].
+  ActiveScope copyWith({LogScope? scope}) {
+    return ActiveScope._(scope ?? this.scope, stopwatch);
+  }
 }
 
 /// A [LogWriter] base class that manages braille progress spinners.
@@ -84,6 +94,20 @@ abstract class SpinnerLogWriter extends LogWriter {
       scopeStack.add(ActiveScope(scope));
       _drawSpinner();
       _startTimer();
+    } else {
+      stdout.writeln(formatScopeStart(scope));
+    }
+  }
+
+  @override
+  Future<void> updateScope(LogScope scope) async {
+    if (isInteractiveTerminal) {
+      final index = scopeStack.indexWhere((e) => e.scope.id == scope.id);
+      if (index != -1) {
+        final updatedScope = scopeStack[index].copyWith(scope: scope);
+        scopeStack[index] = updatedScope;
+        _drawSpinner();
+      }
     } else {
       stdout.writeln(formatScopeStart(scope));
     }

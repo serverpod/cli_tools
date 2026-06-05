@@ -65,6 +65,17 @@ class LogScope {
     parent: this,
     metadata: metadata,
   );
+
+  /// Creates a copy of this [LogScope] with an optionally replaced [label].
+  LogScope copyWith({String? label}) {
+    return LogScope(
+      id: id,
+      label: label ?? this.label,
+      startTime: startTime,
+      parent: parent,
+      metadata: metadata,
+    );
+  }
 }
 
 /// A single log entry. Always belongs to a [LogScope].
@@ -113,6 +124,9 @@ abstract class LogWriter {
   /// Begins a scoped operation.
   Future<void> openScope(LogScope scope);
 
+  /// Updates a scoped operation.
+  Future<void> updateScope(LogScope scope);
+
   /// Ends a scoped operation.
   Future<void> closeScope(
     LogScope scope, {
@@ -154,6 +168,10 @@ class MultiLogWriter extends LogWriter {
   @override
   Future<void> openScope(LogScope scope) =>
       _writers.map((w) => w.openScope(scope)).wait;
+
+  @override
+  Future<void> updateScope(LogScope scope) =>
+      _writers.map((w) => w.updateScope(scope)).wait;
 
   @override
   Future<void> closeScope(

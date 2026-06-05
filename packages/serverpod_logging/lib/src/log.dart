@@ -5,6 +5,9 @@ import 'log_types.dart';
 /// Symbol used to store the current [LogScope] in Zone values.
 const Symbol _logScopeKey = #_logScope;
 
+/// Symbol used to store the current [LogWriter] in Zone values.
+const Symbol _logWriterKey = #_logWriter;
+
 final _stopwatch = Stopwatch()..start();
 int _scopeCounter = 0;
 String _newScopeId(String label) =>
@@ -39,6 +42,9 @@ class Log {
   /// Creates a [Log] that forwards to [_writer]. Messages below [logLevel]
   /// are dropped before the [LogEntryFactory] runs.
   Log(this._writer, {this.logLevel = LogLevel.info});
+
+  /// The current writer from the Zone.
+  LogWriter? get currentWriter => Zone.current[_logWriterKey] as LogWriter?;
 
   /// The current scope from the Zone, or a synthetic root if none.
   LogScope get currentScope =>
@@ -145,19 +151,46 @@ extension LogScoping on Log {
   /// - Otherwise, the scope closes with `success: true`.
   Future<T> progress<T>(
     String label,
-    FutureOr<T> Function() runner, {
+    Future<T> Function() runner, {
     Map<String, Object?>? metadata,
     bool Function(T result)? isSuccess,
   }) async {
+    return await progressStream(
+      label,
+      Stream.fromFuture(runner()),
+      isSuccess: isSuccess,
+      metadata: metadata,
+    );
+  }
+
+  /// Opens a new scope, consumes [stream] updating the scope label on each
+  /// event via [toMessage], then closes the scope.
+  ///
+  /// Success signal:
+  /// - If [stream] emits an error event, the scope closes with `success: false`.
+  /// - Else if [isSuccess] is provided, its return value is used.
+  /// - Else if [T] is `bool`, the returned value is used directly.
+  /// - Otherwise, the scope closes with `success: true`.
+  Future<T> progressStream<T>(
+    String initialMessage,
+    Stream<T> stream, {
+    String Function(T)? toMessage,
+    bool Function(T)? isSuccess,
+    Map<String, Object?>? metadata,
+  }) async {
     final scope = currentScope.child(
-      id: _newScopeId(label),
-      label: label,
+      id: _newScopeId(initialMessage),
+      label: initialMessage,
       metadata: metadata,
     );
     await _writer.openScope(scope);
     final stopwatch = Stopwatch()..start();
     try {
-      final result = await runZoned(runner, zoneValues: {_logScopeKey: scope});
+      final result = await runZoned(
+        () => _consumeStream(stream, toMessage: toMessage),
+        zoneValues: {_logScopeKey: scope, _logWriterKey: _writer},
+      );
+
       await _writer.closeScope(
         scope,
         success: isSuccess?.call(result) ?? (result is bool ? result : true),
@@ -174,5 +207,27 @@ extension LogScoping on Log {
       );
       rethrow;
     }
+  }
+
+  /// Iterates [stream] to completion, updating the current scope's label
+  /// with [toMessage] on each event. Returns the last event, or throws a
+  /// [StateError] if the stream is empty.
+  Future<T> _consumeStream<T>(
+    Stream<T> stream, {
+    String Function(T)? toMessage,
+  }) async {
+    bool hasEvent = false;
+    T? finalEvent;
+    await for (final event in stream) {
+      hasEvent = true;
+      finalEvent = event;
+      final message = toMessage?.call(event) ?? event.toString();
+      await currentWriter?.updateScope(currentScope.copyWith(label: message));
+    }
+    if (!hasEvent || finalEvent is! T) {
+      throw StateError('No events in stream');
+    }
+
+    return finalEvent;
   }
 }

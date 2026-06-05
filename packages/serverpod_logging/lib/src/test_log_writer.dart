@@ -38,6 +38,9 @@ class TestLogWriter extends LogWriter {
   /// Scopes opened via [openScope], in call order.
   final List<LogScope> openedScopes = [];
 
+  /// Scopes updated via [updateScope], in call order.
+  final List<LogScope> updatedScopes = [];
+
   /// Scopes closed via [closeScope], in call order, with their close-time
   /// success/error details.
   final List<ClosedScope> closedScopes = [];
@@ -47,6 +50,9 @@ class TestLogWriter extends LogWriter {
 
   @override
   Future<void> openScope(LogScope scope) async => openedScopes.add(scope);
+
+  @override
+  Future<void> updateScope(LogScope scope) async => updatedScopes.add(scope);
 
   @override
   Future<void> closeScope(
