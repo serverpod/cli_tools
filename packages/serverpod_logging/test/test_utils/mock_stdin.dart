@@ -11,8 +11,8 @@ class MockStdin implements Stdin {
   MockStdin({
     final List<String> textInputs = const [],
     final List<int> keyInputs = const [],
-  })  : _textInputs = textInputs,
-        _keyInputs = keyInputs;
+  }) : _textInputs = textInputs,
+       _keyInputs = keyInputs;
 
   @override
   bool get echoMode => false;
@@ -243,7 +243,8 @@ class MockStdin implements Stdin {
 
   @override
   Stream<S> transform<S>(
-      final StreamTransformer<List<int>, S> streamTransformer) {
+    final StreamTransformer<List<int>, S> streamTransformer,
+  ) {
     throw UnimplementedError();
   }
 

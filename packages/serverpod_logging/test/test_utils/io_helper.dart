@@ -5,7 +5,7 @@ import 'mock_stdin.dart';
 import 'mock_stdout.dart';
 
 Future<({MockStdout stdout, MockStdout stderr, MockStdin stdin})>
-    collectOutput<T>(
+collectOutput<T>(
   final FutureOr<T> Function() runner, {
   final List<String> stdinLines = const [],
   final List<int> keyInputs = const [],
