@@ -255,4 +255,117 @@ projectId:123
       );
     });
   });
+
+  group(
+      'Given a MultiDomainConfigBroker with an option that has multiple configKeys',
+      () {
+    const yamlContentOpt = StringOption(
+      argName: 'yaml-content',
+    );
+    const jsonContentOpt = StringOption(
+      argName: 'json-content',
+    );
+    const projectIdOpt = StringOption(
+      configKeys: [
+        'yamlOption:/project/projectId',
+        'jsonOption:/project/projectId',
+      ],
+    );
+    final options = [
+      yamlContentOpt,
+      jsonContentOpt,
+      projectIdOpt,
+    ];
+
+    late ConfigurationBroker configSource;
+
+    setUp(() {
+      configSource = MultiDomainConfigBroker.prefix({
+        'yamlOption': OptionContentConfigProvider(
+          contentOption: yamlContentOpt,
+          format: ConfigEncoding.yaml,
+        ),
+        'jsonOption': OptionContentConfigProvider(
+          contentOption: jsonContentOpt,
+          format: ConfigEncoding.json,
+        ),
+      });
+    });
+
+    test(
+        'when both domains have a value '
+        'then the first config key is used', () async {
+      final config = Configuration.resolveNoExcept(
+        options: options,
+        args: [
+          '--yaml-content',
+          '''
+project:
+  projectId: 'yaml-id'
+''',
+          '--json-content',
+          '''
+{
+  "project": {
+    "projectId": "json-id"
+  }
+}
+''',
+        ],
+        configBroker: configSource,
+      );
+
+      expect(config.errors, isEmpty);
+      expect(config.optionalValue(projectIdOpt), equals('yaml-id'));
+    });
+
+    test(
+        'when only the second domain has a value '
+        'then the second config key is used', () async {
+      final config = Configuration.resolveNoExcept(
+        options: options,
+        args: [
+          '--json-content',
+          '''
+{
+  "project": {
+    "projectId": "json-id"
+  }
+}
+''',
+        ],
+        configBroker: configSource,
+      );
+
+      expect(config.errors, isEmpty);
+      expect(config.optionalValue(projectIdOpt), equals('json-id'));
+    });
+
+    test(
+        'when neither domain has a value '
+        'then the option has no value', () async {
+      final config = Configuration.resolveNoExcept(
+        options: options,
+        args: [
+          '--yaml-content',
+          '''
+project:
+  name: demo
+''',
+          '--json-content',
+          '''
+{
+  "project": {
+    "name": "demo"
+  }
+}
+''',
+        ],
+        configBroker: configSource,
+      );
+
+      expect(config.errors, isEmpty);
+      expect(config.optionalValue(projectIdOpt), isNull);
+    });
+  });
 }

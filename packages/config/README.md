@@ -200,7 +200,8 @@ The configuration library resolves each option value in a specific order, with e
 
 3. **Configuration files**
    - Values from configuration files (e.g. YAML/JSON)
-   - Lookup key is specified using `configKey`
+   - Lookup key is specified using `configKey` or `configKeys`
+     (multiple keys are tried in order of precedence)
 
 4. **Custom value providers**
    - Values from custom callbacks
@@ -349,6 +350,20 @@ YAML file and the JSON pointer syntax is used.
   ));
 ```
 
+An option can look up values from multiple configuration sources by specifying
+`configKeys` in order of precedence. The first key that yields a value is used:
+
+```dart
+  dir(DirOption(
+    argName: 'dir',
+    configKeys: ['local:/dir', 'settings:/my_dir'],
+    helpText: 'the local directory',
+  )),
+```
+
+`configKey` can still be used for a single source. If both are specified,
+`configKey` is tried first, then each key in `configKeys`.
+
 See the full example in [example/config_file_example.dart](example/config_file_example.dart).
 
 ### Multiple configuration sources
@@ -356,7 +371,7 @@ See the full example in [example/config_file_example.dart](example/config_file_e
 By using the `MultiDomainConfigBroker`, configuration sources
 from multiple providers can be used, called configuration *domains*.
 
-They are distinguished by the format used in the configKey,
+They are distinguished by the format used in the config key,
 which needs to specify a so-called *qualified key* -
 qualifying the key with the domain it is found in.
 

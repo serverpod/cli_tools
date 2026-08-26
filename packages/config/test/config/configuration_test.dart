@@ -267,6 +267,128 @@ void main() async {
     });
   });
 
+  group('Given a configuration option with multiple configKeys', () {
+    const projectIdOpt = StringOption(
+      configKeys: ['primary:/projectId', 'fallback:/projectId'],
+    );
+
+    test('then lookupConfigKeys lists the keys in order', () async {
+      expect(
+        projectIdOpt.allConfigKeys,
+        equals(['primary:/projectId', 'fallback:/projectId']),
+      );
+    });
+
+    test('then qualifiedString mentions all keys', () async {
+      expect(
+        projectIdOpt.qualifiedString(),
+        equals(
+          'configuration keys `primary:/projectId`, `fallback:/projectId`',
+        ),
+      );
+    });
+
+    test('when both keys have values then the first key is used', () async {
+      final config = Configuration.resolveNoExcept(
+        options: [projectIdOpt],
+        configBroker: _TestConfigBroker({
+          'primary:/projectId': 'primaryValue',
+          'fallback:/projectId': 'fallbackValue',
+        }),
+      );
+      expect(config.optionalValue(projectIdOpt), equals('primaryValue'));
+    });
+
+    test(
+        'when only the second key has a value '
+        'then the second key is used', () async {
+      final config = Configuration.resolveNoExcept(
+        options: [projectIdOpt],
+        configBroker: _TestConfigBroker({
+          'fallback:/projectId': 'fallbackValue',
+        }),
+      );
+      expect(config.optionalValue(projectIdOpt), equals('fallbackValue'));
+    });
+
+    test('when neither key has a value then the option has no value', () async {
+      final config = Configuration.resolveNoExcept(
+        options: [projectIdOpt],
+        configBroker: _TestConfigBroker({}),
+      );
+      expect(config.optionalValue(projectIdOpt), isNull);
+    });
+
+    test(
+        'when finding the option via the first config key '
+        'then it succeeds', () async {
+      final config = Configuration.resolveNoExcept(
+        options: [projectIdOpt],
+        configBroker: _TestConfigBroker({
+          'primary:/projectId': 'primaryValue',
+        }),
+      );
+      expect(
+        config.findValueOf(configKey: 'primary:/projectId'),
+        equals('primaryValue'),
+      );
+    });
+
+    test(
+        'when finding the option via the second config key '
+        'then it succeeds', () async {
+      final config = Configuration.resolveNoExcept(
+        options: [projectIdOpt],
+        configBroker: _TestConfigBroker({
+          'fallback:/projectId': 'fallbackValue',
+        }),
+      );
+      expect(
+        config.findValueOf(configKey: 'fallback:/projectId'),
+        equals('fallbackValue'),
+      );
+    });
+  });
+
+  group('Given a configuration option with both configKey and configKeys', () {
+    const projectIdOpt = StringOption(
+      configKey: 'primary:/projectId',
+      configKeys: ['fallback:/projectId'],
+    );
+
+    test('then lookupConfigKeys starts with configKey', () async {
+      expect(
+        projectIdOpt.allConfigKeys,
+        equals(['primary:/projectId', 'fallback:/projectId']),
+      );
+    });
+
+    test(
+        'when configKey has a value '
+        'then it takes precedence over configKeys', () async {
+      final config = Configuration.resolveNoExcept(
+        options: [projectIdOpt],
+        configBroker: _TestConfigBroker({
+          'primary:/projectId': 'primaryValue',
+          'fallback:/projectId': 'fallbackValue',
+        }),
+      );
+      expect(config.optionalValue(projectIdOpt), equals('primaryValue'));
+    });
+
+    test(
+        'when configKey is missing '
+        'then configKeys are tried in order', () async {
+      final config = Configuration.resolveNoExcept(
+        options: [projectIdOpt],
+        configBroker: _TestConfigBroker({
+          'fallback:/projectId': 'fallbackValue',
+        }),
+      );
+      expect(config.optionalValue(projectIdOpt), equals('fallbackValue'));
+    });
+  });
+
   group('Given a configuration flag option', () {
     const verboseFlag = FlagOption(
       argName: 'verbose',

@@ -194,7 +194,7 @@ class Configuration<O extends OptionDefinition> {
           (argName != null && o.option.argName == argName) ||
           (argPos != null && o.option.argPos == argPos) ||
           (envName != null && o.option.envName == envName) ||
-          (configKey != null && o.option.configKey == configKey);
+          (configKey != null && o.option.allConfigKeys.contains(configKey));
     });
   }
 
