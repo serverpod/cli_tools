@@ -351,7 +351,8 @@ YAML file and the JSON pointer syntax is used.
 ```
 
 An option can look up values from multiple configuration sources by specifying
-`configKeys` in order of precedence. The first key that yields a value is used:
+`configKeys` in order of precedence.
+The first key that yields a value is used:
 
 ```dart
   dir(DirOption(
