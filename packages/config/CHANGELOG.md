@@ -1,3 +1,7 @@
+## 0.9.1
+
+ - **FEAT**(config): Support multiple configuration sources for an option (#127).
+
 ## 0.9.0
 
  - Bumped minimum Dart SDK version to 3.6

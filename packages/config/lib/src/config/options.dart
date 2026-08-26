@@ -108,7 +108,8 @@ abstract class ValueParser<V> {
 /// 1. Named command line argument
 /// 2. Positional command line argument
 /// 3. Environment variable
-/// 4. By lookup key in configuration sources (such as files)
+/// 4. By lookup key in configuration sources (such as files).
+///    If multiple keys are specified, they are tried in order.
 /// 5. A custom callback function
 /// 6. Default value
 ///
@@ -185,7 +186,19 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
   final String? argAbbrev;
   final int? argPos;
   final String? envName;
+
+  /// A single configuration source lookup key.
+  ///
+  /// For multiple sources, use [configKeys] instead, or specify both:
+  /// [configKey] is tried first, then each key in [configKeys].
   final String? configKey;
+
+  /// Configuration source lookup keys, in order of precedence.
+  ///
+  /// Keys are tried in order until a value is found.
+  /// If [configKey] is also set, it is tried first.
+  final List<String>? configKeys;
+
   final V? Function(Configuration cfg)? fromCustom;
   final V Function()? fromDefault;
   final V? defaultsTo;
@@ -208,6 +221,7 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
     this.argPos,
     this.envName,
     this.configKey,
+    this.configKeys,
     this.fromCustom,
     this.fromDefault,
     this.defaultsTo,
@@ -220,6 +234,15 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
     this.mandatory = false,
     this.hide = false,
   });
+
+  /// Configuration lookup keys in order of precedence.
+  ///
+  /// Includes [configKey] if set, followed by [configKeys] if set.
+  List<String> get allConfigKeys {
+    final key = configKey;
+    final keys = configKeys;
+    return [if (key != null) key, ...?keys];
+  }
 
   V? defaultValue() {
     final df = fromDefault;
@@ -310,8 +333,12 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
     if (argPos != null) {
       return 'positional argument $argPos';
     }
-    if (configKey != null) {
-      return 'configuration key `$configKey`';
+    final keys = allConfigKeys;
+    if (keys.isNotEmpty) {
+      if (keys.length == 1) {
+        return 'configuration key `${keys.single}`';
+      }
+      return 'configuration keys ${keys.map((final k) => '`$k`').join(', ')}';
     }
     return _unnamedOptionString;
   }
@@ -439,9 +466,15 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
     final Configuration cfg,
     final ConfigurationBroker? configBroker,
   ) {
-    final key = configKey;
-    if (configBroker == null || key == null) return null;
-    final value = configBroker.valueOrNull(key, cfg);
+    if (configBroker == null) return null;
+    final keys = allConfigKeys;
+    if (keys.isEmpty) return null;
+
+    Object? value;
+    for (final key in keys) {
+      value = configBroker.valueOrNull(key, cfg);
+      if (value != null) break;
+    }
     if (value == null) return null;
     if (value is String) {
       return OptionResolutionImpl(
@@ -536,6 +569,7 @@ class FlagOption extends ConfigOptionBase<bool> {
     super.argAbbrev,
     super.envName,
     super.configKey,
+    super.configKeys,
     super.fromCustom,
     super.fromDefault,
     super.defaultsTo,
@@ -628,6 +662,7 @@ class MultiOption<T> extends ConfigOptionBase<List<T>> {
     super.argAbbrev,
     super.envName,
     super.configKey,
+    super.configKeys,
     super.fromCustom,
     super.fromDefault,
     super.defaultsTo,
