@@ -3,8 +3,8 @@ import 'dart:io' show Platform, File, stderr, Directory;
 import 'package:config/config.dart';
 import 'package:path/path.dart' as p;
 
-import '../better_command.dart';
-import '../better_command_runner.dart' show StandardGlobalOption;
+import '../command.dart';
+import '../command_runner.dart' show StandardGlobalOption;
 import '../exit_exception.dart';
 import 'completion_command.dart' show CompletionOptions;
 import 'completion_tool.dart';
@@ -19,7 +19,8 @@ enum CompletionInstallOption<V extends Object> implements OptionDefinition<V> {
       helpText: 'Override the directory to write the script to',
       mode: PathExistMode.mustExist,
     ),
-  );
+  )
+  ;
 
   const CompletionInstallOption(this.option);
 
@@ -28,7 +29,7 @@ enum CompletionInstallOption<V extends Object> implements OptionDefinition<V> {
 }
 
 class CompletionInstallCommand<T>
-    extends BetterCommand<CompletionInstallOption, T> {
+    extends NewCommand<CompletionInstallOption, T> {
   final Map<CompletionTool, String> _embeddedCompletions;
 
   CompletionInstallCommand({
@@ -57,9 +58,9 @@ class CompletionInstallCommand<T>
       CompletionInstallOption.writeDir,
     );
 
-    final betterRunner = runner;
-    if (betterRunner == null) {
-      throw StateError('BetterCommandRunner not set');
+    final cmdRunner = runner;
+    if (cmdRunner == null) {
+      throw StateError('NewCommandRunner not set');
     }
 
     final scriptContent = _embeddedCompletions[tool];
@@ -68,7 +69,7 @@ class CompletionInstallCommand<T>
       throw ExitException.error();
     }
 
-    final executableName = execName ?? betterRunner.executableName;
+    final executableName = execName ?? cmdRunner.executableName;
 
     final writeFileName = switch (tool) {
       CompletionTool.completely => '$executableName.bash',

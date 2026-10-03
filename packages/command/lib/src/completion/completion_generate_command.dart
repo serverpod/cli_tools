@@ -2,8 +2,8 @@ import 'dart:io' show IOSink, stdout, stderr;
 
 import 'package:config/config.dart';
 
-import '../better_command.dart';
-import '../better_command_runner.dart' show StandardGlobalOption;
+import '../command.dart';
+import '../command_runner.dart' show StandardGlobalOption;
 import 'carapace_generator.dart';
 import 'completely_generator.dart';
 import 'completion_command.dart' show CompletionOptions;
@@ -19,7 +19,8 @@ enum CompletionGenerateOption<V extends Object> implements OptionDefinition<V> {
       argAbbrev: 'f',
       helpText: 'Write the specification to a file instead of stdout',
     ),
-  );
+  )
+  ;
 
   const CompletionGenerateOption(this.option);
 
@@ -28,7 +29,7 @@ enum CompletionGenerateOption<V extends Object> implements OptionDefinition<V> {
 }
 
 class CompletionGenerateCommand<T>
-    extends BetterCommand<CompletionGenerateOption, T> {
+    extends NewCommand<CompletionGenerateOption, T> {
   CompletionGenerateCommand() : super(options: CompletionGenerateOption.values);
 
   @override
@@ -46,13 +47,13 @@ class CompletionGenerateCommand<T>
     );
     final file = commandConfig.optionalValue(CompletionGenerateOption.file);
 
-    final betterRunner = runner;
-    if (betterRunner == null) {
-      throw StateError('BetterCommandRunner not set');
+    final cmdRunner = runner;
+    if (cmdRunner == null) {
+      throw StateError('NewCommandRunner not set');
     }
 
     final usage = UsageRepresentation.compile(
-      betterRunner,
+      cmdRunner,
       execNameOverride: execName,
     );
 

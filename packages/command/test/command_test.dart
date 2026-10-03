@@ -1,30 +1,26 @@
 import 'dart:async';
 
 import 'package:command/command.dart';
-import 'package:config/config.dart' show StringOption;
+import 'package:config/config.dart';
 import 'package:test/test.dart';
 
-class MockCommand extends BetterCommand {
-  void Function()? onRun;
+enum BespokeGlobalOption<V extends Object> implements OptionDefinition<V> {
+  quiet(NewCommandRunnerFlags.quietOption),
+  verbose(NewCommandRunnerFlags.verboseOption),
+  analytics(NewCommandRunnerFlags.analyticsOption),
+  age(IntOption(argName: 'age', helpText: 'Required age', min: 0, max: 100))
+  ;
+
+  const BespokeGlobalOption(this.option);
+
+  @override
+  final ConfigOptionBase<V> option;
+}
+
+class MockCommand extends NewCommand {
   static String commandName = 'mock-command';
-  List<String> trackedOptions = [];
-  int numberOfRuns = 0;
 
-  @override
-  String get description => 'Mock command used for testing';
-
-  @override
-  FutureOr? run(RunContext runContext) {
-    final commandConfig = runContext.commandConfig;
-    onRun?.call();
-    trackedOptions.add(commandConfig.findValueOf(argName: 'name') as String);
-    numberOfRuns++;
-  }
-
-  @override
-  String get name => commandName;
-
-  MockCommand({this.onRun})
+  MockCommand({super.messageOutput})
     : super(
         options: [
           const StringOption(
@@ -34,88 +30,313 @@ class MockCommand extends BetterCommand {
           ),
         ],
       );
+
+  @override
+  String get description => 'Mock command used for testing';
+
+  @override
+  String get name => commandName;
+
+  @override
+  FutureOr? run(RunContext runContext) {
+    return null;
+  }
 }
 
 void main() {
-  late BetterCommandRunner runner;
-  late MockCommand mockCommand;
-  group('Given runner with registered command', () {
+  group('Given a command registered in the command runner '
+      'with analytics set up and default global options', () {
+    final infos = <String>[];
+    final analyticsEvents = <String>[];
+    final messageOutput = MessageOutput(
+      usageLogger: (u) => infos.add(u),
+    );
+
+    final testCommand = MockCommand(
+      messageOutput: messageOutput,
+    );
+    final runner = NewCommandRunner(
+      'test',
+      'test project',
+      onAnalyticsEvent: (e, _) => analyticsEvents.add(e),
+      messageOutput: messageOutput,
+    )..addCommand(testCommand);
+
     setUp(() {
-      mockCommand = MockCommand();
-      runner = BetterCommandRunner('test', 'this is a test cli')
-        ..addCommand(mockCommand);
+      infos.clear();
+      analyticsEvents.clear();
     });
 
-    group('when running registered command with global flag', () {
-      final args = [
-        '--${BetterCommandRunnerFlags.quiet}',
-        MockCommand.commandName,
-      ];
-      setUp(() async => await runner.run(args));
+    test('when running base command with --help flag '
+        'then global usage is printed to commands logInfo', () async {
+      await runner.run(['--help']);
 
-      test('then command is run once', () {
-        expect(mockCommand.numberOfRuns, equals(1));
-      });
+      expect(infos, hasLength(1));
+      expect(infos.single, runner.usage);
+      expect(
+        infos.single,
+        stringContainsInOrder([
+          'Usage: test <command> [arguments]',
+          'Global options:',
+          '-h, --help',
+          'Print this usage information.',
+          '-q, --quiet',
+          'Suppress all cli output. Is overridden by  -v, --verbose.',
+          '-v, --verbose',
+          'Prints additional information useful for development. Overrides --q, --quiet.',
+          '-a, --[no-]analytics',
+          'Toggles if analytics data is sent.',
+        ]),
+      );
     });
 
-    group('when running registered command without option', () {
-      final args = [MockCommand.commandName];
-      setUp(() async => await runner.run(args));
+    test('when running base command with --help flag '
+        'then help analytics is sent', () async {
+      await runner.run(['--help']);
 
-      test('then command is run once', () {
-        expect(mockCommand.numberOfRuns, equals(1));
-      });
-
-      test('then default option is used in command', () {
-        expect(mockCommand.trackedOptions, hasLength(1));
-        expect(mockCommand.trackedOptions.first, equals('serverpod'));
-      });
+      await Future.delayed(const Duration(milliseconds: 100));
+      expect(analyticsEvents, hasLength(1));
+      expect(analyticsEvents.single, 'help');
     });
 
-    group('when running registered command and valid option', () {
-      final args = [MockCommand.commandName, '--name', 'stockholm'];
-      setUp(() async => await runner.run(args));
+    test('when running with subcommand `help` '
+        'then help analytics is sent', () async {
+      await runner.run(['help']);
 
-      test('then command is run once', () {
-        expect(mockCommand.numberOfRuns, equals(1));
-      });
+      await Future.delayed(const Duration(milliseconds: 100));
+      expect(analyticsEvents, hasLength(1));
+      expect(analyticsEvents.single, 'help');
+    });
 
-      test('then provided option is used in command', () {
-        expect(mockCommand.trackedOptions, hasLength(1));
-        expect(mockCommand.trackedOptions.first, equals('stockholm'));
-      });
+    test('when running with subcommand `mock-command` '
+        'then subcommand analytics is sent', () async {
+      await runner.run([MockCommand.commandName]);
+
+      await Future.delayed(const Duration(milliseconds: 100));
+      expect(analyticsEvents, hasLength(1));
+      expect(analyticsEvents.single, 'mock-command');
+    });
+
+    test('when running with invalid subcommand '
+        'then invalid command analytics is sent', () async {
+      await runner.run(['no-such-command']).catchError((_) {});
+
+      await Future.delayed(const Duration(milliseconds: 100));
+      expect(analyticsEvents, hasLength(1));
+      expect(analyticsEvents.single, 'invalid');
+    });
+
+    test('when running with subcommand `mock-command` '
+        'and --no-analytics flag '
+        'then subcommand analytics is not sent', () async {
+      await runner.run([MockCommand.commandName, '--no-analytics']);
+
+      await Future.delayed(const Duration(milliseconds: 100));
+      expect(analyticsEvents, isEmpty);
+    });
+  });
+
+  group('Given a command registered in the command runner '
+      'with analytics set up and empty global options', () {
+    final infos = <String>[];
+    final analyticsEvents = <String>[];
+    final messageOutput = MessageOutput(
+      usageLogger: (u) => infos.add(u),
+    );
+
+    final testCommand = MockCommand(
+      messageOutput: messageOutput,
+    );
+    final runner = NewCommandRunner(
+      'test',
+      'test project',
+      onAnalyticsEvent: (e, _) => analyticsEvents.add(e),
+      globalOptions: <OptionDefinition>[],
+      messageOutput: messageOutput,
+    )..addCommand(testCommand);
+
+    setUp(() {
+      infos.clear();
+      analyticsEvents.clear();
     });
 
     test(
-      'when running registered command with invalid option then command is never run.',
+      'when running base command with --help flag '
+      'then global usage is printed to commands logInfo',
       () async {
-        final args = [MockCommand.commandName, '--name', 'invalid'];
+        await runner.run(['--help']);
 
-        try {
-          await runner.run(args);
-        } catch (_) {
-          // ignore any exceptions.
-        }
-        expect(mockCommand.numberOfRuns, equals(0));
+        expect(infos, hasLength(1));
+        expect(infos.single, runner.usage);
+        expect(
+          infos.single,
+          allOf(
+            stringContainsInOrder([
+              'Usage: test <command> [arguments]',
+              'Global options:',
+              '-h, --help',
+              'Print this usage information.',
+            ]),
+            isNot(contains('-q, --quiet')),
+            isNot(contains('-v, --verbose')),
+            isNot(contains('-a, --[no-]analytics')),
+          ),
+        );
       },
     );
   });
 
-  test(
-    'Given runner with registered command and onBeforeRunCommand callback then onBeforeRunCommand is called before running command',
-    () async {
-      final List<String> calls = [];
-      mockCommand = MockCommand(onRun: () => calls.add('command'));
-      runner = BetterCommandRunner(
-        'test',
-        'this is a test cli',
-        onBeforeRunCommand: (_) => Future(() => calls.add('callback')),
-      )..addCommand(mockCommand);
+  group('Given a command registered in the command runner '
+      'without analytics set up and default global options', () {
+    final infos = <String>[];
+    final messageOutput = MessageOutput(
+      usageLogger: (u) => infos.add(u),
+    );
 
-      final args = [MockCommand.commandName];
+    final testCommand = MockCommand(
+      messageOutput: messageOutput,
+    );
+    final runner = NewCommandRunner(
+      'test',
+      'test project',
+      messageOutput: messageOutput,
+    )..addCommand(testCommand);
 
-      await runner.run(args);
-      expect(calls, equals(['callback', 'command']));
-    },
-  );
+    setUp(() {
+      infos.clear();
+    });
+
+    test('when running base command with --help flag '
+        'then global usage is printed to commands logInfo', () async {
+      await runner.run(['--help']);
+
+      expect(infos, hasLength(1));
+      expect(infos.single, runner.usage);
+      expect(
+        infos.single,
+        allOf(
+          stringContainsInOrder([
+            'Usage: test <command> [arguments]',
+            'Global options:',
+            '-h, --help',
+            'Print this usage information.',
+            '-q, --quiet',
+            'Suppress all cli output. Is overridden by  -v, --verbose.',
+            '-v, --verbose',
+            'Prints additional information useful for development. Overrides --q, --quiet.',
+          ]),
+          isNot(
+            contains(
+              '-a, --[no-]analytics',
+            ),
+          ),
+        ),
+      );
+    });
+  });
+
+  group('Given a command registered in the command runner '
+      'with additional global options', () {
+    final infos = <String>[];
+    final messageOutput = MessageOutput(
+      usageLogger: (u) => infos.add(u),
+    );
+
+    final testCommand = MockCommand(
+      messageOutput: messageOutput,
+    );
+    final runner = NewCommandRunner(
+      'test',
+      'test project',
+      globalOptions: BespokeGlobalOption.values,
+      messageOutput: messageOutput,
+    )..addCommand(testCommand);
+
+    setUp(() {
+      infos.clear();
+    });
+
+    test(
+      'when running base command with --help flag '
+      'then global usage is printed to commands logInfo',
+      () async {
+        await runner.run(['--help']);
+
+        expect(infos, hasLength(1));
+        expect(infos.single, runner.usage);
+        expect(
+          infos.single,
+          stringContainsInOrder([
+            'Usage: test <command> [arguments]',
+            'Global options:',
+            '-h, --help',
+            'Print this usage information.',
+            '-q, --quiet',
+            'Suppress all cli output. Is overridden by  -v, --verbose.',
+            '-v, --verbose',
+            'Prints additional information useful for development. Overrides --q, --quiet.',
+            '-a, --[no-]analytics',
+            'Toggles if analytics data is sent.',
+            '--age=<integer>',
+            'Required age',
+            'Available commands:',
+            'mock-command',
+            'Mock command used for testing',
+          ]),
+        );
+      },
+    );
+
+    test(
+      'when running with subcommand `help` '
+      'then global usage is printed to commands logInfo',
+      () async {
+        await runner.run(['help']);
+
+        expect(infos, hasLength(1));
+        expect(infos.single, runner.usage);
+        expect(
+          infos.single,
+          stringContainsInOrder([
+            'Usage: test <command> [arguments]',
+            'Global options:',
+            '-h, --help',
+            'Print this usage information.',
+            '-q, --quiet',
+            'Suppress all cli output. Is overridden by  -v, --verbose.',
+            '-v, --verbose',
+            'Prints additional information useful for development. Overrides --q, --quiet.',
+            '-a, --[no-]analytics',
+            'Toggles if analytics data is sent.',
+            '--age=<integer>',
+            'Required age',
+            'Available commands:',
+            'mock-command',
+            'Mock command used for testing',
+          ]),
+        );
+      },
+    );
+
+    test(
+      'when running with subcommand `mock-command` and option --help flag '
+      'then subcommand usage is printed to commands logInfo',
+      () async {
+        await runner.run([MockCommand.commandName, '--help']);
+
+        expect(infos, hasLength(1));
+        expect(infos.single, testCommand.usage);
+        expect(
+          infos.single,
+          stringContainsInOrder([
+            'Usage: test mock-command [arguments]',
+            '-h, --help',
+            'Print this usage information.',
+            '--name',
+            '[serverpod (default), stockholm]',
+          ]),
+        );
+      },
+    );
+  });
 }

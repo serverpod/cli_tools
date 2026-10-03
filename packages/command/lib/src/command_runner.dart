@@ -6,7 +6,7 @@ import 'package:args/args.dart';
 import 'package:config/config.dart';
 
 import 'analytics/command_properties.dart';
-import 'better_command.dart';
+import 'command.dart';
 import 'completion/completion_command.dart';
 import 'completion/completion_tool.dart' show CompletionScript;
 import 'help_command.dart';
@@ -15,7 +15,7 @@ import 'similarity_search.dart';
 import 'usage.dart';
 
 /// A function type for executing code before running a command.
-typedef OnBeforeRunCommand = Future<void> Function(BetterCommandRunner runner);
+typedef OnBeforeRunCommand = Future<void> Function(NewCommandRunner runner);
 
 /// A proxy for user-provided functions for passing specific log messages.
 ///
@@ -46,29 +46,31 @@ final class MessageOutput {
 /// The [logLevel] is the log level to set.
 /// The [commandName] is the name of the command if custom rules for log
 /// levels are needed.
-typedef SetLogLevel = void Function({
-  required CommandRunnerLogLevel parsedLogLevel,
-  String? commandName,
-});
+typedef SetLogLevel =
+    void Function({
+      required CommandRunnerLogLevel parsedLogLevel,
+      String? commandName,
+    });
 
 /// A function type for tracking events.
-typedef OnAnalyticsEvent = void Function(
-  String event,
-  Map<String, dynamic> properties,
-);
+typedef OnAnalyticsEvent =
+    void Function(
+      String event,
+      Map<String, dynamic> properties,
+    );
 
 /// An improved alternative to [CommandRunner] from the `args` package, with
 /// additional features such as logging, setting log levels, tracking events,
 /// and handling analytics.
 ///
-/// The type argument `T` represents the type returned by [BetterCommand.resolveAndRun] and
+/// The type argument `T` represents the type returned by [NewCommand.resolveAndRun] and
 /// [CommandRunner.run]; it can be ommitted if you're not using the return
 /// values.
 ///
-/// The [BetterCommandRunner] class uses the config library to provide
+/// The [NewCommandRunner] class uses the config library to provide
 /// a more enhanced command line interface for running commands and handling
 /// command line arguments, environment variables, and configuration.
-class BetterCommandRunner<O extends OptionDefinition, T> {
+class NewCommandRunner<O extends OptionDefinition, T> {
   /// Process exit code value for command not found -
   /// The specified command was not found or couldn't be located.
   static const int exitCodeCommandNotFound = 127;
@@ -140,9 +142,9 @@ class BetterCommandRunner<O extends OptionDefinition, T> {
   }
 
   /// An unmodifiable view of all top-level commands defined for this runner.
-  Map<String, BetterCommand<OptionDefinition, T>> get commands =>
+  Map<String, NewCommand<OptionDefinition, T>> get commands =>
       UnmodifiableMapView(_commands);
-  final _commands = <String, BetterCommand<OptionDefinition, T>>{};
+  final _commands = <String, NewCommand<OptionDefinition, T>>{};
 
   /// The top-level argument parser.
   ///
@@ -161,8 +163,8 @@ class BetterCommandRunner<O extends OptionDefinition, T> {
   Never usageException(String message) =>
       throw UsageException(message, _usageWithoutDescription);
 
-  /// Adds [BetterCommand] as a top-level command to this runner.
-  void addCommand(BetterCommand<OptionDefinition, T> command) {
+  /// Adds [NewCommand] as a top-level command to this runner.
+  void addCommand(NewCommand<OptionDefinition, T> command) {
     final names = [command.name, ...command.aliases];
     for (final name in names) {
       _commands[name] = command;
@@ -173,7 +175,7 @@ class BetterCommandRunner<O extends OptionDefinition, T> {
 
   /// Runs the command specified by [topLevelResults].
   ///
-  /// This returns the return value of [BetterCommand.resolveAndRun].
+  /// This returns the return value of [NewCommand.resolveAndRun].
   Future<T?> _originalRunCommand(
     Configuration<O> globalConfiguration,
     ArgResults topLevelResults,
@@ -181,7 +183,7 @@ class BetterCommandRunner<O extends OptionDefinition, T> {
   ) async {
     var argResults = topLevelResults;
     var commands = _commands;
-    BetterCommand? command;
+    NewCommand? command;
     var commandString = executableName;
 
     while (commands.isNotEmpty) {
@@ -220,8 +222,7 @@ class BetterCommandRunner<O extends OptionDefinition, T> {
       argResults = argResults.command!;
       command = commands[argResults.name]!;
       commands =
-          command.subcommands
-              as Map<String, BetterCommand<OptionDefinition, T>>;
+          command.subcommands as Map<String, NewCommand<OptionDefinition, T>>;
       commandString += ' ${argResults.name}';
 
       if (argResults.options.contains('help') && argResults.flag('help')) {
@@ -243,11 +244,12 @@ class BetterCommandRunner<O extends OptionDefinition, T> {
     }
 
     return (await command.resolveAndRun(
-      globalConfiguration: globalConfiguration,
-      topLevelResults: topLevelResults,
-      commandResults: argResults,
-      env: env,
-    )) as T?;
+          globalConfiguration: globalConfiguration,
+          topLevelResults: topLevelResults,
+          commandResults: argResults,
+          env: env,
+        ))
+        as T?;
   }
 
   //-------------------------------------------------------------------
@@ -261,7 +263,7 @@ class BetterCommandRunner<O extends OptionDefinition, T> {
   /// The global option definitions.
   late final List<O> _globalOptions;
 
-  /// Creates a new instance of [BetterCommandRunner].
+  /// Creates a new instance of [NewCommandRunner].
   ///
   /// - [executableName] is the name of the executable for the command line interface.
   /// - [description] is a description of the command line interface.
@@ -293,9 +295,9 @@ class BetterCommandRunner<O extends OptionDefinition, T> {
   ///
   /// ```dart
   /// enum BespokeGlobalOption<V> implements OptionDefinition<V> {
-  ///   quiet(BetterCommandRunnerFlags.quietOption),
-  ///   verbose(BetterCommandRunnerFlags.verboseOption),
-  ///   analytics(BetterCommandRunnerFlags.analyticsOption),
+  ///   quiet(NewCommandRunnerFlags.quietOption),
+  ///   verbose(NewCommandRunnerFlags.verboseOption),
+  ///   analytics(NewCommandRunnerFlags.analyticsOption),
   ///   name(StringOption(
   ///     argName: 'name',
   ///     allowedValues: ['serverpod', 'stockholm'],
@@ -309,7 +311,7 @@ class BetterCommandRunner<O extends OptionDefinition, T> {
   ///   final ConfigOptionBase<V> option;
   /// }
   /// ```
-  BetterCommandRunner(
+  NewCommandRunner(
     this.executableName,
     this.description, {
     this.suggestionDistanceLimit = 2,
@@ -365,7 +367,7 @@ class BetterCommandRunner<O extends OptionDefinition, T> {
   MessageOutput? get messageOutput => _messageOutput;
 
   /// Adds a list of commands to the command runner.
-  void addCommands(List<BetterCommand<OptionDefinition, T>> commands) {
+  void addCommands(List<NewCommand<OptionDefinition, T>> commands) {
     for (final command in commands) {
       addCommand(command);
     }
@@ -380,7 +382,7 @@ class BetterCommandRunner<O extends OptionDefinition, T> {
   OnAnalyticsEvent? get onAnalyticsEvent => _onAnalyticsEvent;
 
   /// Sends an analytics event, provided the analytics are enabled.
-  /// Invoked from BetterCommandRunner upon command execution
+  /// Invoked from NewCommandRunner upon command execution
   /// with the event name, or command name if applicable.
   /// Can be overridden to customize the event sending behavior.
   void sendAnalyticsEvent(
@@ -412,7 +414,7 @@ class BetterCommandRunner<O extends OptionDefinition, T> {
     }
 
     if (globalConfiguration.findValueOf(
-          argName: BetterCommandRunnerFlags.analytics,
+          argName: NewCommandRunnerFlags.analytics,
         ) ==
         false) {
       return false;
@@ -421,7 +423,7 @@ class BetterCommandRunner<O extends OptionDefinition, T> {
     return true;
   }
 
-  /// Parses [args] and [env] and invokes [BetterCommand.resolveAndRun] on the
+  /// Parses [args] and [env] and invokes [NewCommand.resolveAndRun] on the
   /// chosen command.
   ///
   /// This always returns a [Future] in case the command is asynchronous. The
@@ -448,7 +450,7 @@ class BetterCommandRunner<O extends OptionDefinition, T> {
         }
       } on UsageException catch (e) {
         messageOutput?.logUsageException(e);
-        sendAnalyticsEvent(BetterCommandRunnerAnalyticsEvents.invalid);
+        sendAnalyticsEvent(NewCommandRunnerAnalyticsEvents.invalid);
         rethrow;
       }
 
@@ -488,7 +490,7 @@ class BetterCommandRunner<O extends OptionDefinition, T> {
       return _argParserParse(args);
     } on UsageException catch (e) {
       messageOutput?.logUsageException(e);
-      sendAnalyticsEvent(BetterCommandRunnerAnalyticsEvents.invalid);
+      sendAnalyticsEvent(NewCommandRunnerAnalyticsEvents.invalid);
       rethrow;
     }
   }
@@ -510,7 +512,7 @@ class BetterCommandRunner<O extends OptionDefinition, T> {
   /// command in a block. For example, you might handle the `--verbose` flag
   /// here to enable verbose logging before running the command.
   ///
-  /// This returns the return value of [BetterCommand.resolveAndRun].
+  /// This returns the return value of [NewCommand.resolveAndRun].
   Future<T?> runCommand({
     required Configuration<O> globalConfiguration,
     required ArgResults topLevelResults,
@@ -549,7 +551,7 @@ class BetterCommandRunner<O extends OptionDefinition, T> {
         // so the try/catch statement can't be fully compensated for handled here.
         final noUnexpectedArgs = topLevelResults.rest.isEmpty;
         if (noUnexpectedArgs) {
-          sendAnalyticsEvent(BetterCommandRunnerAnalyticsEvents.help);
+          sendAnalyticsEvent(NewCommandRunnerAnalyticsEvents.help);
         }
       }),
     );
@@ -571,7 +573,7 @@ class BetterCommandRunner<O extends OptionDefinition, T> {
       );
     } on UsageException catch (e) {
       messageOutput?.logUsageException(e);
-      sendAnalyticsEvent(BetterCommandRunnerAnalyticsEvents.invalid);
+      sendAnalyticsEvent(NewCommandRunnerAnalyticsEvents.invalid);
       rethrow;
     }
   }
@@ -593,9 +595,9 @@ class BetterCommandRunner<O extends OptionDefinition, T> {
   }
 
   static CommandRunnerLogLevel _determineLogLevel(Configuration config) {
-    if (config.findValueOf(argName: BetterCommandRunnerFlags.verbose) == true) {
+    if (config.findValueOf(argName: NewCommandRunnerFlags.verbose) == true) {
       return CommandRunnerLogLevel.verbose;
-    } else if (config.findValueOf(argName: BetterCommandRunnerFlags.quiet) ==
+    } else if (config.findValueOf(argName: NewCommandRunnerFlags.quiet) ==
         true) {
       return CommandRunnerLogLevel.quiet;
     }
@@ -605,7 +607,7 @@ class BetterCommandRunner<O extends OptionDefinition, T> {
 }
 
 /// Constants for the command runner flags.
-abstract class BetterCommandRunnerFlags {
+abstract class NewCommandRunnerFlags {
   static const quiet = 'quiet';
   static const quietAbbr = 'q';
   static const verbose = 'verbose';
@@ -643,9 +645,10 @@ abstract class BetterCommandRunnerFlags {
 }
 
 enum StandardGlobalOption<V extends Object> implements OptionDefinition<V> {
-  quiet(BetterCommandRunnerFlags.quietOption),
-  verbose(BetterCommandRunnerFlags.verboseOption),
-  analytics(BetterCommandRunnerFlags.analyticsOption);
+  quiet(NewCommandRunnerFlags.quietOption),
+  verbose(NewCommandRunnerFlags.verboseOption),
+  analytics(NewCommandRunnerFlags.analyticsOption)
+  ;
 
   const StandardGlobalOption(this.option);
 
@@ -654,7 +657,7 @@ enum StandardGlobalOption<V extends Object> implements OptionDefinition<V> {
 }
 
 /// Constants for the command runner analytics events.
-abstract class BetterCommandRunnerAnalyticsEvents {
+abstract class NewCommandRunnerAnalyticsEvents {
   static const help = 'help';
   static const invalid = 'invalid';
 }

@@ -1,14 +1,14 @@
 import 'dart:collection' show SplayTreeMap;
 import 'dart:math' as math;
 
-import 'better_command.dart';
+import 'command.dart';
 
 /// Returns a string representation of [commands] fit for use in a usage string.
 ///
 /// [isSubcommand] indicates whether the commands should be called "commands" or
 /// "subcommands".
 String getCommandUsage(
-  Map<String, BetterCommand> commands, {
+  Map<String, NewCommand> commands, {
   bool isSubcommand = false,
   int? lineLength,
 }) {
@@ -25,7 +25,7 @@ String getCommandUsage(
   names = names.toList()..sort();
 
   // Group the commands by category.
-  final commandsByCategory = SplayTreeMap<String, List<BetterCommand>>();
+  final commandsByCategory = SplayTreeMap<String, List<NewCommand>>();
   for (final name in names) {
     final category = commands[name]!.category;
     commandsByCategory.putIfAbsent(category, () => []).add(commands[name]!);

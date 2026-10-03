@@ -1,17 +1,17 @@
 import 'dart:collection' show SplayTreeSet;
 import 'dart:math' as math;
 
-import 'better_command.dart';
+import 'command.dart';
 
 // Returns help text for commands similar to `name`, in sorted order.
 String similarCommandsText(
   String name,
-  Iterable<BetterCommand> commands, {
+  Iterable<NewCommand> commands, {
   int suggestionDistanceLimit = 2,
 }) {
   if (suggestionDistanceLimit <= 0) return '';
-  final distances = <BetterCommand, int>{};
-  final candidates = SplayTreeSet<BetterCommand>(
+  final distances = <NewCommand, int>{};
+  final candidates = SplayTreeSet<NewCommand>(
     (a, b) => distances[a]! - distances[b]!,
   );
   for (final command in commands) {

@@ -3,7 +3,7 @@ import 'dart:async' show FutureOr;
 import 'package:command/command.dart';
 import 'package:test/test.dart';
 
-class MockCommand extends BetterCommand {
+class MockCommand extends NewCommand {
   static String commandName = 'mock-command';
 
   @override
@@ -27,7 +27,7 @@ void main() {
     logLevel = null;
   });
   group('Given runner with setLogLevel callback', () {
-    final runner = BetterCommandRunner(
+    final runner = NewCommandRunner(
       'test',
       'this is a test cli',
       messageOutput: const MessageOutput(),
@@ -53,7 +53,7 @@ void main() {
     });
 
     group('when only quiet flag is provided', () {
-      final args = ['--${BetterCommandRunnerFlags.quiet}'];
+      final args = ['--${NewCommandRunnerFlags.quiet}'];
 
       setUp(() async => await runner.run(args));
       test('then parsed log level is quiet.', () {
@@ -66,7 +66,7 @@ void main() {
     });
 
     group('when only verbose flag is provided', () {
-      final args = ['--${BetterCommandRunnerFlags.verbose}'];
+      final args = ['--${NewCommandRunnerFlags.verbose}'];
 
       setUp(() async => await runner.run(args));
       test('then parsed log level is verbose.', () {
@@ -80,8 +80,8 @@ void main() {
 
     group('when both quiet and verbose flags are provided', () {
       final args = [
-        '--${BetterCommandRunnerFlags.quiet}',
-        '--${BetterCommandRunnerFlags.verbose}',
+        '--${NewCommandRunnerFlags.quiet}',
+        '--${NewCommandRunnerFlags.verbose}',
       ];
 
       setUp(() async => await runner.run(args));
@@ -96,7 +96,7 @@ void main() {
   });
 
   group('Given runner with setLogLevel callback and registered command', () {
-    final runner = BetterCommandRunner(
+    final runner = NewCommandRunner(
       'test',
       'this is a test cli',
       setLogLevel:
@@ -122,7 +122,7 @@ void main() {
 
     group('when verbose flag is passed before registered command', () {
       final args = [
-        '--${BetterCommandRunnerFlags.verbose}',
+        '--${NewCommandRunnerFlags.verbose}',
         MockCommand.commandName,
       ];
       setUp(() async => await runner.run(args));
@@ -139,7 +139,7 @@ void main() {
     group('when verbose flag is passed after registered command', () {
       final args = [
         MockCommand.commandName,
-        '--${BetterCommandRunnerFlags.verbose}',
+        '--${NewCommandRunnerFlags.verbose}',
       ];
       setUp(() async => await runner.run(args));
 

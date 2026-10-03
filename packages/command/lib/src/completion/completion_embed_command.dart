@@ -5,8 +5,8 @@ import 'package:config/config.dart';
 import 'package:path/path.dart' as p;
 import 'package:super_string/super_string.dart';
 
-import '../better_command.dart';
-import '../better_command_runner.dart' show StandardGlobalOption;
+import '../command.dart';
+import '../command_runner.dart' show StandardGlobalOption;
 import 'completion_command.dart' show CompletionOptions;
 
 enum CompletionEmbedOption<V extends Object> implements OptionDefinition<V> {
@@ -36,7 +36,8 @@ enum CompletionEmbedOption<V extends Object> implements OptionDefinition<V> {
       mode: PathExistMode.mustExist,
       fromDefault: _defaultWriteDir,
     ),
-  );
+  )
+  ;
 
   const CompletionEmbedOption(this.option);
 
@@ -84,8 +85,7 @@ void _validateSourceFileName(String value) {
   }
 }
 
-class CompletionEmbedCommand<T>
-    extends BetterCommand<CompletionEmbedOption, T> {
+class CompletionEmbedCommand<T> extends NewCommand<CompletionEmbedOption, T> {
   CompletionEmbedCommand() : super(options: CompletionEmbedOption.values);
 
   @override

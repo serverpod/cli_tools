@@ -4,7 +4,7 @@ import 'package:command/command.dart';
 import 'package:config/config.dart' show StringOption;
 import 'package:test/test.dart';
 
-class MockCommand extends BetterCommand {
+class MockCommand extends NewCommand {
   static String commandName = 'mock-command';
 
   @override
@@ -34,7 +34,7 @@ void main() {
   group('Given runner with registered command and logging monitor', () {
     final errors = <String>[];
     final infos = <String>[];
-    final runner = BetterCommandRunner(
+    final runner = NewCommandRunner(
       'test',
       'this is a test cli',
       messageOutput: MessageOutput(

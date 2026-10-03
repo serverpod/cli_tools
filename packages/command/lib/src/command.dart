@@ -5,7 +5,7 @@ import 'dart:io' show Platform;
 import 'package:args/args.dart';
 import 'package:config/config.dart';
 
-import 'better_command_runner.dart';
+import 'command_runner.dart';
 import 'usage.dart';
 
 /// An improved alternative to the args package's [Command] with additional features.
@@ -17,10 +17,10 @@ import 'usage.dart';
 /// itself. It should call [addSubcommand] (often from the constructor) to
 /// register subcommands.
 ///
-/// The [BetterCommand] class uses the config library to provide
+/// The [NewCommand] class uses the config library to provide
 /// a more enhanced command line interface for running commands and handling
 /// command line arguments, environment variables, and configuration.
-abstract class BetterCommand<O extends OptionDefinition, T> {
+abstract class NewCommand<O extends OptionDefinition, T> {
   /// The name of this command.
   String get name;
 
@@ -114,9 +114,9 @@ abstract class BetterCommand<O extends OptionDefinition, T> {
   }
 
   /// An unmodifiable view of all sublevel commands of this command.
-  Map<String, BetterCommand<OptionDefinition, T>> get subcommands =>
+  Map<String, NewCommand<OptionDefinition, T>> get subcommands =>
       UnmodifiableMapView(_subcommands);
-  final _subcommands = <String, BetterCommand<OptionDefinition, T>>{};
+  final _subcommands = <String, NewCommand<OptionDefinition, T>>{};
 
   /// Whether or not this command should be hidden from help listings.
   ///
@@ -162,8 +162,8 @@ abstract class BetterCommand<O extends OptionDefinition, T> {
   /// This is intended to be overridden.
   List<String> get suggestionAliases => const [];
 
-  /// Adds [BetterCommand] as a subcommand of this.
-  void addSubcommand(BetterCommand<OptionDefinition, T> command) {
+  /// Adds [NewCommand] as a subcommand of this.
+  void addSubcommand(NewCommand<OptionDefinition, T> command) {
     final names = [command.name, ...command.aliases];
     for (final name in names) {
       _subcommands[name] = command;
@@ -196,7 +196,7 @@ abstract class BetterCommand<O extends OptionDefinition, T> {
   /// The option definitions for this command.
   final List<O> options;
 
-  /// Creates a new instance of [BetterCommand].
+  /// Creates a new instance of [NewCommand].
   ///
   /// - [messageOutput] is an optional [MessageOutput] object used to pass specific log messages.
   /// - [wrapTextColumn] is the column width for wrapping text in the command line interface.
@@ -228,7 +228,7 @@ abstract class BetterCommand<O extends OptionDefinition, T> {
   ///   final ConfigOptionBase<V> option;
   /// }
   /// ```
-  BetterCommand({
+  NewCommand({
     MessageOutput? messageOutput = _defaultMessageOutput,
     int? wrapTextColumn,
     this.options = const [],
@@ -250,7 +250,7 @@ abstract class BetterCommand<O extends OptionDefinition, T> {
     if (_messageOutput != _defaultMessageOutput) {
       return _messageOutput;
     }
-    if (runner case final BetterCommandRunner<O, T> runner) {
+    if (runner case final NewCommandRunner<O, T> runner) {
       return runner.messageOutput;
     }
     return _messageOutput;
@@ -260,26 +260,26 @@ abstract class BetterCommand<O extends OptionDefinition, T> {
   ///
   /// This will be `null` until [addSubcommand] has been called with
   /// this command.
-  BetterCommand<OptionDefinition, T>? get parent => _parent;
-  BetterCommand<OptionDefinition, T>? _parent;
+  NewCommand<OptionDefinition, T>? get parent => _parent;
+  NewCommand<OptionDefinition, T>? _parent;
 
   /// The command runner for this command.
   ///
   /// This will be `null` until [CommandRunner.addCommand] has been called with
   /// this command or one of its parents.
-  BetterCommandRunner<OptionDefinition, T>? get runner {
+  NewCommandRunner<OptionDefinition, T>? get runner {
     if (parent == null) return _runner;
     return parent!.runner;
   }
 
-  void setRunner(BetterCommandRunner<OptionDefinition, T> runner) {
+  void setRunner(NewCommandRunner<OptionDefinition, T> runner) {
     if (_runner != null) {
       throw StateError('Runner already set');
     }
     _runner = runner;
   }
 
-  BetterCommandRunner<OptionDefinition, T>? _runner;
+  NewCommandRunner<OptionDefinition, T>? _runner;
 
   ArgParser get argParser => _argParser;
 

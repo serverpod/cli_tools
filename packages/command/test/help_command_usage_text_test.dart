@@ -1,7 +1,7 @@
 import 'dart:async' show ZoneSpecification, runZoned;
 
 import 'package:command/command.dart'
-    show BetterCommandRunner, MessageOutput, UsageException;
+    show NewCommandRunner, MessageOutput, UsageException;
 import 'package:test/test.dart';
 
 void main() => _runTests();
@@ -12,12 +12,12 @@ const _moMockText = 'SUCCESS: `MessageOutput.usageLogger`';
 const _moExceptionText = 'SUCCESS: `MessageOutput.usageExceptionLogger`';
 const _invalidOption = '-z';
 
-BetterCommandRunner _buildUpstreamRunner() => BetterCommandRunner(
+NewCommandRunner _buildUpstreamRunner() => NewCommandRunner(
   _exeName,
   _exeDescription,
 );
 
-BetterCommandRunner _buildBetterRunner() => BetterCommandRunner(
+NewCommandRunner _buildNewRunner() => NewCommandRunner(
   _exeName,
   _exeDescription,
   messageOutput: MessageOutput(
@@ -34,7 +34,7 @@ BetterCommandRunner _buildBetterRunner() => BetterCommandRunner(
 );
 
 void _runTests() {
-  group('Given a BetterCommandRunner with custom MessageOutput', () {
+  group('Given a NewCommandRunner with custom MessageOutput', () {
     for (final args in [
       ['help', '-h'],
       ['help', 'help'],
@@ -59,16 +59,16 @@ void _runTests() {
 
 void _testsForValidHelpUsageRequests(List<String> args) {
   group('when $args is received', () {
-    final betterRunnerOutput = StringBuffer();
+    final commandRunnerOutput = StringBuffer();
     final upstreamRunnerOutput = StringBuffer();
-    late final Object? betterRunnerExitCode;
+    late final Object? commandRunnerExitCode;
     late final Object? upstreamRunnerExitCode;
     setUpAll(() async {
-      betterRunnerExitCode = await runZoned(
-        () async => await _buildBetterRunner().run(args),
+      commandRunnerExitCode = await runZoned(
+        () async => await _buildNewRunner().run(args),
         zoneSpecification: ZoneSpecification(
           print: (_, _, _, String line) {
-            betterRunnerOutput.writeln(line);
+            commandRunnerOutput.writeln(line);
           },
         ),
       );
@@ -83,13 +83,13 @@ void _testsForValidHelpUsageRequests(List<String> args) {
     });
     test('then MessageOutput is not bypassed', () {
       expect(
-        betterRunnerOutput.toString(),
+        commandRunnerOutput.toString(),
         contains(_moMockText),
       );
     });
     test('then it can subsume upstream HelpCommand output', () {
       expect(
-        betterRunnerOutput.toString(),
+        commandRunnerOutput.toString(),
         stringContainsInOrder([
           _moMockText,
           upstreamRunnerOutput.toString(),
@@ -97,30 +97,30 @@ void _testsForValidHelpUsageRequests(List<String> args) {
       );
     });
     test('then Exit Code (null) matches that of upstream HelpCommand', () {
-      expect(betterRunnerExitCode, equals(null));
-      expect(betterRunnerExitCode, equals(upstreamRunnerExitCode));
+      expect(commandRunnerExitCode, equals(null));
+      expect(commandRunnerExitCode, equals(upstreamRunnerExitCode));
     });
   });
 }
 
 void _testsForInvalidHelpUsageRequests(List<String> args) {
   group('when $args is received', () {
-    final betterRunnerOutput = StringBuffer();
+    final commandRunnerOutput = StringBuffer();
     final upstreamRunnerOutput = StringBuffer();
-    UsageException? betterRunnerException;
+    UsageException? commandRunnerException;
     UsageException? upstreamRunnerException;
     setUpAll(() async {
       try {
         await runZoned(
-          () async => await _buildBetterRunner().run(args),
+          () async => await _buildNewRunner().run(args),
           zoneSpecification: ZoneSpecification(
             print: (_, _, _, String line) {
-              betterRunnerOutput.writeln(line);
+              commandRunnerOutput.writeln(line);
             },
           ),
         );
       } on UsageException catch (e) {
-        betterRunnerException = e;
+        commandRunnerException = e;
       }
       try {
         await runZoned(
@@ -136,32 +136,32 @@ void _testsForInvalidHelpUsageRequests(List<String> args) {
       }
     });
     test('then it throws UsageException exactly like CommandRunner', () {
-      expect(betterRunnerException, isA<UsageException>());
+      expect(commandRunnerException, isA<UsageException>());
       expect(upstreamRunnerException, isA<UsageException>());
       expect(
-        betterRunnerException!.message,
+        commandRunnerException!.message,
         equals(upstreamRunnerException!.message),
       );
       expect(
-        betterRunnerException!.usage,
+        commandRunnerException!.usage,
         equals(upstreamRunnerException!.usage),
       );
     });
     test('then MessageOutput is not bypassed', () {
       expect(
-        betterRunnerOutput.toString(),
+        commandRunnerOutput.toString(),
         stringContainsInOrder(
           [
             _moExceptionText,
-            betterRunnerException!.message,
-            betterRunnerException!.usage,
+            commandRunnerException!.message,
+            commandRunnerException!.usage,
           ],
         ),
       );
     });
     test('then it can subsume upstream HelpCommand output', () {
       expect(
-        betterRunnerOutput.toString(),
+        commandRunnerOutput.toString(),
         contains(upstreamRunnerOutput.toString()),
       );
     });

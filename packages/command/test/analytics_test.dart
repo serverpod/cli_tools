@@ -6,7 +6,7 @@ import 'package:test/test.dart';
 
 import 'test_utils/test_utils.dart' show flushEventQueue;
 
-class MockCommand extends BetterCommand {
+class MockCommand extends NewCommand {
   static String commandName = 'mock-command';
 
   @override
@@ -32,7 +32,7 @@ class MockCommand extends BetterCommand {
       );
 }
 
-class CompletableMockCommand extends BetterCommand {
+class CompletableMockCommand extends NewCommand {
   static String commandName = 'completable-mock-command';
 
   @override
@@ -61,9 +61,9 @@ class CompletableMockCommand extends BetterCommand {
 }
 
 void main() {
-  late BetterCommandRunner runner;
+  late NewCommandRunner runner;
   group('Given runner with null onAnalyticsEvent callback', () {
-    final runner = BetterCommandRunner(
+    final runner = NewCommandRunner(
       'test',
       'this is a test cli',
       onAnalyticsEvent: null,
@@ -79,7 +79,7 @@ void main() {
       () {
         expect(
           runner.globalOptions.findOption(
-            argName: BetterCommandRunnerFlags.analytics,
+            argName: NewCommandRunnerFlags.analytics,
           ),
           isNull,
         );
@@ -88,7 +88,7 @@ void main() {
   });
 
   group('Given runner with onAnalyticsEvent callback defined', () {
-    final runner = BetterCommandRunner(
+    final runner = NewCommandRunner(
       'test',
       'this is a test cli',
       onAnalyticsEvent: (event, properties) {},
@@ -102,7 +102,7 @@ void main() {
     test('when checking available flags then analytics is defined.', () {
       expect(
         runner.globalOptions.findOption(
-          argName: BetterCommandRunnerFlags.analytics,
+          argName: NewCommandRunnerFlags.analytics,
         ),
         isNotNull,
       );
@@ -112,7 +112,7 @@ void main() {
   group('Given runner with analytics enabled', () {
     List<String> events = [];
     setUp(() {
-      runner = BetterCommandRunner(
+      runner = NewCommandRunner(
         'test',
         'this is a test cli',
         onAnalyticsEvent: (event, _) => events.add(event),
@@ -128,7 +128,7 @@ void main() {
     test(
       'when running command with no-analytics flag then analytics is disabled.',
       () async {
-        final args = ['--no-${BetterCommandRunnerFlags.analytics}'];
+        final args = ['--no-${NewCommandRunnerFlags.analytics}'];
         await runner.run(args);
 
         await flushEventQueue();
@@ -188,7 +188,7 @@ void main() {
     test(
       'when running with only registered flag then "help" analytics event is sent.',
       () async {
-        await runner.run(['--${BetterCommandRunnerFlags.analytics}']);
+        await runner.run(['--${NewCommandRunnerFlags.analytics}']);
 
         await flushEventQueue();
 
@@ -225,7 +225,7 @@ void main() {
   group('Given runner with registered command and analytics enabled', () {
     List<String> events = [];
     setUp(() {
-      runner = BetterCommandRunner(
+      runner = NewCommandRunner(
         'test',
         'this is a test cli',
         onAnalyticsEvent: (event, _) => events.add(event),
@@ -290,7 +290,7 @@ void main() {
     late CompletableMockCommand command;
     setUp(() {
       command = CompletableMockCommand();
-      runner = BetterCommandRunner(
+      runner = NewCommandRunner(
         'test',
         'this is a test cli',
         onAnalyticsEvent: (event, _) => events.add(event),

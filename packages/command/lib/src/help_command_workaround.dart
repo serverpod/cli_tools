@@ -1,13 +1,13 @@
 import 'package:args/args.dart' show ArgResults;
 
-import 'better_command.dart';
-import 'better_command_runner.dart';
+import 'command.dart';
+import 'command_runner.dart';
 
 /// A dummy to replicate the usage-text of upstream private `HelpCommand`.
 ///
 /// It is intended to be used for an internal patch only and is
 /// intentionally not part of the public API of this package.
-final class HelpCommandWorkaround extends BetterCommand {
+final class HelpCommandWorkaround extends NewCommand {
   HelpCommandWorkaround({required this.runner});
 
   /// Checks whether the main command seeks the
@@ -48,7 +48,7 @@ final class HelpCommandWorkaround extends BetterCommand {
   }
 
   @override
-  final BetterCommandRunner runner;
+  final NewCommandRunner runner;
 
   @override
   final name = 'help';

@@ -1,11 +1,11 @@
 import 'package:args/args.dart';
 
-import '../better_command.dart';
+import '../command.dart';
 
 Map<String, dynamic> buildCommandPropertiesForAnalytics({
   required ArgResults topLevelResults,
   required ArgParser argParser,
-  required Map<String, BetterCommand> commands,
+  required Map<String, NewCommand> commands,
 }) {
   return _CommandPropertiesBuilder(
     topLevelResults: topLevelResults,
@@ -25,12 +25,12 @@ class _CommandPropertiesBuilder {
 
   final ArgResults topLevelResults;
   final ArgParser argParser;
-  final Map<String, BetterCommand> commands;
+  final Map<String, NewCommand> commands;
   final Map<String, dynamic> _properties = <String, dynamic>{};
 
   final List<String> _tokens = <String>[];
   late ArgParser _currentParser = argParser;
-  late Map<String, BetterCommand> _currentCommands = commands;
+  late Map<String, NewCommand> _currentCommands = commands;
   var _afterDoubleDash = false;
   var _expectingValue = false;
 

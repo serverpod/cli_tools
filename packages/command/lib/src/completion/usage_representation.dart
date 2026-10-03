@@ -2,8 +2,8 @@ import 'dart:io' show IOSink;
 
 import 'package:config/config.dart';
 
-import '../better_command.dart';
-import '../better_command_runner.dart';
+import '../command.dart';
+import '../command_runner.dart';
 
 /// Interface for generating a usage representation for a command.
 abstract interface class UsageRepresentationGenerator {
@@ -40,7 +40,7 @@ abstract class UsageRepresentation {
   /// Compiles a usage representation tree for all subcommands and options
   /// for a command runner.
   static CommandUsage compile(
-    BetterCommandRunner runner, {
+    NewCommandRunner runner, {
     String? execNameOverride,
   }) {
     return _generateForCommand(
@@ -53,12 +53,12 @@ abstract class UsageRepresentation {
 
   static CommandUsage _generateForCommand(
     List<String> commandSequence,
-    Iterable<BetterCommand> subcommands,
+    Iterable<NewCommand> subcommands,
     List<OptionDefinition> persistentOptions,
     List<OptionDefinition> options,
   ) {
     final validOptions = _filterOptions(options);
-    final validSubcommands = subcommands.whereType<BetterCommand>().where(
+    final validSubcommands = subcommands.whereType<NewCommand>().where(
       (c) => !c.hidden,
     );
 

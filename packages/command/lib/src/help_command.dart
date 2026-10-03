@@ -4,12 +4,12 @@
 
 import 'package:config/config.dart';
 
-import 'better_command.dart';
+import 'command.dart';
 
 /// The built-in help command that's added to every [CommandRunner].
 ///
 /// This command displays help information for the various subcommands.
-class HelpCommand<T> extends BetterCommand<OptionDefinition, T> {
+class HelpCommand<T> extends NewCommand<OptionDefinition, T> {
   @override
   final name = 'help';
 
@@ -34,7 +34,7 @@ class HelpCommand<T> extends BetterCommand<OptionDefinition, T> {
     // Walk the command tree to show help for the selected command or
     // subcommand.
     var commands = runner!.commands;
-    BetterCommand<OptionDefinition, T>? command;
+    NewCommand<OptionDefinition, T>? command;
     var commandString = runner!.executableName;
 
     for (final name in runContext.commandResults.rest) {

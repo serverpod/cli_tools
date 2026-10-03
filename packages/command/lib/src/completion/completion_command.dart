@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:config/config.dart';
 
-import '../better_command.dart';
+import '../command.dart';
 import 'completion_embed_command.dart';
 import 'completion_generate_command.dart';
 import 'completion_install_command.dart';
@@ -15,7 +15,8 @@ abstract final class CompletionOptions {
     argAbbrev: 't',
     helpText: 'The completion tool to target',
     allowedHelp: {
-      'completely': 'Use the `completely` tool (https://github.com/bashly-framework/completely)',
+      'completely':
+          'Use the `completely` tool (https://github.com/bashly-framework/completely)',
       'carapace': 'Use the `carapace` tool (https://carapace.sh/)',
     },
     mandatory: true,
@@ -27,7 +28,7 @@ abstract final class CompletionOptions {
   );
 }
 
-class CompletionCommand<T> extends BetterCommand<OptionDefinition, T> {
+class CompletionCommand<T> extends NewCommand<OptionDefinition, T> {
   CompletionCommand({
     Iterable<CompletionScript>? embeddedCompletions,
   }) {

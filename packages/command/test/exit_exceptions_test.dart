@@ -1,11 +1,11 @@
 import 'dart:async' show FutureOr;
 
 import 'package:command/command.dart'
-    show BetterCommand, BetterCommandRunner, UsageException, RunContext;
+    show NewCommand, NewCommandRunner, UsageException, RunContext;
 import 'package:config/config.dart' show StringOption;
 import 'package:test/test.dart';
 
-class MockCommand extends BetterCommand {
+class MockCommand extends NewCommand {
   static String commandName = 'mock-command';
 
   @override
@@ -33,7 +33,7 @@ class MockCommand extends BetterCommand {
 
 void main() {
   group('Given runner with registered command', () {
-    final runner = BetterCommandRunner('test', 'this is a test cli')
+    final runner = NewCommandRunner('test', 'this is a test cli')
       ..addCommand(MockCommand());
 
     test(

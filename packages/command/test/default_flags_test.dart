@@ -2,8 +2,8 @@ import 'package:command/command.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('Given BetterCommandRunner runner with onAnalyticsEvent', () {
-    final runner = BetterCommandRunner(
+  group('Given NewCommandRunner runner with onAnalyticsEvent', () {
+    final runner = NewCommandRunner(
       'test',
       'test description',
       onAnalyticsEvent: (event, _) {},
@@ -17,7 +17,8 @@ void main() {
         await expectLater(
           runner.run(args),
           completes,
-          reason: 'Expected runner to successfully parse and complete when run with --verbose flag.',
+          reason:
+              'Expected runner to successfully parse and complete when run with --verbose flag.',
         );
       },
     );
@@ -27,7 +28,8 @@ void main() {
       await expectLater(
         runner.run(args),
         completes,
-        reason: 'Expected runner to successfully parse and complete when run with -v flag.',
+        reason:
+            'Expected runner to successfully parse and complete when run with -v flag.',
       );
     });
 
@@ -38,7 +40,8 @@ void main() {
         await expectLater(
           runner.run(args),
           completes,
-          reason: 'Expected runner to successfully parse and complete when run with --quiet flag.',
+          reason:
+              'Expected runner to successfully parse and complete when run with --quiet flag.',
         );
       },
     );
@@ -48,7 +51,8 @@ void main() {
       await expectLater(
         runner.run(args),
         completes,
-        reason: 'Expected runner to successfully parse and complete when run with -q flag.',
+        reason:
+            'Expected runner to successfully parse and complete when run with -q flag.',
       );
     });
 
@@ -59,7 +63,8 @@ void main() {
         await expectLater(
           runner.run(args),
           completes,
-          reason: 'Expected runner to successfully parse and complete when run with --analytics flag.',
+          reason:
+              'Expected runner to successfully parse and complete when run with --analytics flag.',
         );
       },
     );
@@ -69,7 +74,8 @@ void main() {
       await expectLater(
         runner.run(args),
         completes,
-        reason: 'Expected runner to successfully parse and complete when run with -a flag.',
+        reason:
+            'Expected runner to successfully parse and complete when run with -a flag.',
       );
     });
   });

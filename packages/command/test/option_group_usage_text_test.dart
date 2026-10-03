@@ -28,8 +28,8 @@ void main() {
     helpText: 'Help section for $argName.',
   );
 
-  BetterCommandRunner buildRunner(List<OptionDefinition> options) =>
-      BetterCommandRunner(
+  NewCommandRunner buildRunner(List<OptionDefinition> options) =>
+      NewCommandRunner(
         mockCommandName,
         mockCommandDescription,
         globalOptions: options,
