@@ -1,8 +1,6 @@
-/// Support for doing something awesome.
-///
-/// More dartdocs go here.
-library;
+export 'package:config/config.dart' show UsageException;
 
-export 'src/command_base.dart';
-
-// TODO: Export any libraries intended for clients of this package.
+export 'src/better_command.dart';
+export 'src/better_command_runner.dart';
+export 'src/completion/completion.dart';
+export 'src/exit_exception.dart';
