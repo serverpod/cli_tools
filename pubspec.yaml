@@ -7,6 +7,7 @@ issue_tracker: https://github.com/serverpod/cli_tools/issues
 
 workspace:
   - packages/config
+  - packages/command
   - packages/cli_tools
   - packages/serverpod_logging
   - packages/isolated_object

@@ -1,6 +1,6 @@
 import 'package:command/command.dart';
 
 void main() {
-  var awesome = Awesome();
+  final awesome = Awesome();
   print('awesome: ${awesome.isAwesome}');
 }

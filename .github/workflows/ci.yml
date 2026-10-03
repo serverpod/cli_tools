@@ -17,6 +17,7 @@ jobs:
         dart: [3.6, 3.12]
         package:
           - cli_tools
+          - command
           - config
           - isolated_object
           - serverpod_logging
@@ -42,6 +43,7 @@ jobs:
         dart: [3.6, 3.12]
         package:
           - cli_tools
+          - command
           - config
           - isolated_object
           - serverpod_logging

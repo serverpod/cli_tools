@@ -3,6 +3,8 @@ description: A starting point for Dart libraries or applications.
 version: 1.0.0
 # repository: https://github.com/my_org/my_repo
 
+resolution: workspace
+
 environment:
   sdk: ^3.13.1
 
@@ -11,5 +13,5 @@ dependencies:
   # path: ^1.9.0
 
 dev_dependencies:
-  lints: ^6.0.0
+  serverpod_lints: '>=2.7.0'
   test: ^1.25.6
