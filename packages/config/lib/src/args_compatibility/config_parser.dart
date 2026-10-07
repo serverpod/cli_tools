@@ -2,11 +2,11 @@ import 'dart:io' show Platform;
 
 import 'package:args/args.dart';
 
-import 'configuration.dart';
-import 'configuration_broker.dart';
-import 'option_types.dart';
-import 'options.dart';
-import 'source_type.dart';
+import '../config/configuration.dart';
+import '../config/configuration_broker.dart';
+import '../config/option_types.dart';
+import '../config/options.dart';
+import '../config/source_type.dart';
 
 /// A backwards compatible parser for command args and configuration sources.
 ///
