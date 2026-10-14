@@ -46,6 +46,11 @@ class Configuration<O extends OptionDefinition> {
   final Map<O, OptionResolutionImpl> _config;
   final List<String> _errors;
 
+  /// The remaining positional arguments that were not parsed as options.
+  /// If non-empty and [ignoreUnexpectedPositionalArgs] is false,
+  /// such arguments will also be registered as errors.
+  late final List<String> remainingPosArgs;
+
   /// Creates a configuration with the provided option values.
   ///
   /// This does not throw upon value parsing or validation errors,
@@ -64,7 +69,8 @@ class Configuration<O extends OptionDefinition> {
     required final Configuration<O> configuration,
   })  : _options = List.from(configuration._options),
         _config = Map.from(configuration._config),
-        _errors = List.from(configuration._errors);
+        _errors = List.from(configuration._errors),
+        remainingPosArgs = List.from(configuration.remainingPosArgs);
 
   /// {@template Configuration.resolveNoExcept}
   /// Creates a configuration with option values resolved from the provided context.
@@ -347,7 +353,7 @@ class Configuration<O extends OptionDefinition> {
 
     _validateGroups(optionGroups);
 
-    final remainingPosArgs = posArgs.restAsList();
+    remainingPosArgs = posArgs.restAsList();
     if (remainingPosArgs.isNotEmpty && !ignoreUnexpectedPositionalArgs) {
       _errors.add(
           "Unexpected positional argument(s): '${remainingPosArgs.join("', '")}'");
