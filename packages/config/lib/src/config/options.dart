@@ -1,5 +1,4 @@
 import 'package:args/args.dart';
-import 'package:args/command_runner.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
@@ -53,7 +52,7 @@ class OptionGroup {
 
   /// Validates the configuration option definitions as a group.
   ///
-  /// This method is called by [prepareOptionsForParsing] to validate
+  /// This method is called by [validateOptions] to validate
   /// the configuration option definitions as a group.
   /// Throws an error if any definition is invalid as part of this group.
   ///
@@ -126,7 +125,7 @@ abstract class ValueParser<V> {
 /// A [customValidator] may be provided for an individual option.
 /// If a value was provided the customValidator is invoked,
 /// and shall throw a [FormatException] if its format is invalid,
-/// or a [UsageException] if the it is invalid for other reasons.
+/// or a [InvalidValueException] if the it is invalid for other reasons.
 ///
 /// ### Positional arguments
 ///
@@ -281,7 +280,7 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
 
   /// Validates the configuration option definition.
   ///
-  /// This method is called by [prepareOptionsForParsing] to validate
+  /// This method is called by [validateOptions] to validate
   /// the configuration option definition.
   /// Throws an error if the definition is invalid.
   ///
@@ -294,6 +293,24 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
           "An argument option can't have an abbreviation but not a full name");
     }
 
+    if (argName?.contains('=') == true || argAbbrev?.contains('=') == true) {
+      throw OptionDefinitionError(
+          this, "An argument option name / abbreviation can't contain '='");
+    }
+    if (argName?.startsWith('-') == true ||
+        argAbbrev?.startsWith('-') == true) {
+      throw OptionDefinitionError(
+          this, "An argument option name / abbreviation can't start with '-'");
+    }
+    if (argAliases?.any((final alias) => alias.contains('=')) == true) {
+      throw OptionDefinitionError(
+          this, "An argument option alias can't contain '='");
+    }
+    if (argAliases?.any((final alias) => alias.startsWith('-')) == true) {
+      throw OptionDefinitionError(
+          this, "An argument option alias can't start with '-'");
+    }
+
     if ((fromDefault != null || defaultsTo != null) && mandatory) {
       throw OptionDefinitionError(
           this, "Mandatory options can't have default values");
@@ -302,15 +319,15 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
 
   /// Validates the parsed value,
   /// throwing a [FormatException] if the value is invalid,
-  /// or a [UsageException] if the value is invalid for other reasons.
+  /// or a [InvalidValueException] if the value is invalid for other reasons.
   ///
   /// Subclasses may override this method to perform specific validations.
   /// If they do, they must also call the super implementation.
   @mustCallSuper
   void validateValue(final V value) {
     if (allowedValues?.contains(value) == false) {
-      throw UsageException(
-          '`$value` is not an allowed value for ${qualifiedString()}', '');
+      throw InvalidValueException(
+          '`$value` is not an allowed value for ${qualifiedString()}');
     }
 
     customValidator?.call(value);
@@ -526,8 +543,13 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
         validateValue(value);
       } on FormatException catch (e) {
         return _makeFormatErrorMessage(e);
-      } on UsageException catch (e) {
+      } on InvalidValueException catch (e) {
         return _makeErrorMessage(e.message);
+      } on UsageException catch (e) {
+        // Retained for backwards compatibility for users who may have custom
+        // option implementations that throw UsageException.
+        // TODO: Remove in a future version.
+        return _makeErrorMessage(e.toString());
       }
     }
     return null;
@@ -732,8 +754,8 @@ class MultiOption<T> extends ConfigOptionBase<List<T>> {
     if (allowed != null) {
       for (final v in value) {
         if (allowed.contains(v) == false) {
-          throw UsageException(
-              '`$v` is not an allowed value for ${qualifiedString()}', '');
+          throw InvalidValueException(
+              '`$v` is not an allowed value for ${qualifiedString()}');
         }
       }
     }
@@ -763,6 +785,12 @@ void prepareOptionsForParsing(
   addOptionsToParser(argNameOpts, argParser, addGroupSeparators: true);
 }
 
+/// Validates a set of options.
+///
+/// Throws an [OptionDefinitionError] if the options are invalid.
+///
+/// Returns an iterable of the options that are specifyable with an argument
+/// name on the command line.
 Iterable<OptionDefinition> validateOptions(
   final Iterable<OptionDefinition> options,
 ) {
@@ -908,10 +936,35 @@ extension PrepareOptions on Iterable<OptionDefinition> {
   void prepareForParsing(final ArgParser argParser) =>
       prepareOptionsForParsing(this, argParser);
 
+  /// Validates these options.
+  void validate() => validateOptions(this);
+
   /// Returns the usage help text for these options.
   String get usage {
     final parser = ArgParser();
     prepareForParsing(parser);
     return parser.usage;
+  }
+
+  /// Returns the option definition for the given enum name,
+  /// or any provided argument name, position,
+  /// environment variable name, or configuration key.
+  /// The first one that matches is returned, or null if none match.
+  ///
+  /// The recommended practice is to define options as enums and identify them by the enum name.
+  OptionDefinition? findOption({
+    final String? enumName,
+    final String? argName,
+    final int? argPos,
+    final String? envName,
+    final String? configKey,
+  }) {
+    return firstWhereOrNull((final o) {
+      return (enumName != null && o is Enum && (o as Enum).name == enumName) ||
+          (argName != null && o.option.argName == argName) ||
+          (argPos != null && o.option.argPos == argPos) ||
+          (envName != null && o.option.envName == envName) ||
+          (configKey != null && o.option.allConfigKeys.contains(configKey));
+    });
   }
 }
