@@ -302,6 +302,14 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
       throw OptionDefinitionError(
           this, "An argument option name / abbreviation can't start with '-'");
     }
+    if (argAliases?.any((final alias) => alias.contains('=')) == true) {
+      throw OptionDefinitionError(
+          this, "An argument option alias can't contain '='");
+    }
+    if (argAliases?.any((final alias) => alias.startsWith('-')) == true) {
+      throw OptionDefinitionError(
+          this, "An argument option alias can't start with '-'");
+    }
 
     if ((fromDefault != null || defaultsTo != null) && mandatory) {
       throw OptionDefinitionError(
@@ -956,7 +964,7 @@ extension PrepareOptions on Iterable<OptionDefinition> {
           (argName != null && o.option.argName == argName) ||
           (argPos != null && o.option.argPos == argPos) ||
           (envName != null && o.option.envName == envName) ||
-          (configKey != null && o.option.configKey == configKey);
+          (configKey != null && o.option.allConfigKeys.contains(configKey));
     });
   }
 }

@@ -65,6 +65,44 @@ void main() async {
     });
   });
 
+  group('Given an option with an invalid argument alias', () {
+    final parser = ArgParser();
+
+    test("when the alias contains '=' then definition validation throws",
+        () async {
+      const option = StringOption(
+        argName: 'name',
+        argAliases: ['bad=name'],
+      );
+
+      expect(
+        () => [option].prepareForParsing(parser),
+        throwsA(isA<OptionDefinitionError>().having(
+          (final e) => e.message,
+          'message',
+          "An argument option alias can't contain '='",
+        )),
+      );
+    });
+
+    test("when the alias starts with '-' then definition validation throws",
+        () async {
+      const option = StringOption(
+        argName: 'name',
+        argAliases: ['-bad'],
+      );
+
+      expect(
+        () => [option].prepareForParsing(parser),
+        throwsA(isA<OptionDefinitionError>().having(
+          (final e) => e.message,
+          'message',
+          "An argument option alias can't start with '-'",
+        )),
+      );
+    });
+  });
+
   group('Given a configuration option definition', () {
     const projectIdOpt = StringOption(
       argName: 'project',
@@ -348,6 +386,15 @@ void main() async {
         equals('fallbackValue'),
       );
     });
+
+    test(
+        'when finding the option on the option list via a configKeys entry '
+        'then it succeeds', () {
+      expect(
+        [projectIdOpt].findOption(configKey: 'fallback:/projectId'),
+        same(projectIdOpt),
+      );
+    });
   });
 
   group('Given a configuration option with both configKey and configKeys', () {
@@ -386,6 +433,15 @@ void main() async {
         }),
       );
       expect(config.optionalValue(projectIdOpt), equals('fallbackValue'));
+    });
+
+    test(
+        'when finding the option on the option list via a configKeys entry '
+        'then it succeeds', () {
+      expect(
+        [projectIdOpt].findOption(configKey: 'fallback:/projectId'),
+        same(projectIdOpt),
+      );
     });
   });
 
@@ -1341,6 +1397,33 @@ void main() async {
       );
 
       expect(config.remainingPosArgs, isEmpty);
+    });
+  });
+
+  group('Given argument parsing fails', () {
+    const projectOpt = StringOption(argName: 'project');
+
+    late Configuration<StringOption> config;
+
+    setUp(() {
+      config = Configuration.resolveNoExcept(
+        options: [projectOpt],
+        args: ['--not-an-option'],
+      );
+    });
+
+    test('then remaining positional arguments are empty', () {
+      expect(config.remainingPosArgs, isEmpty);
+    });
+
+    test('then the parse error is recorded', () {
+      expect(config.errors, isNotEmpty);
+    });
+
+    test('then a copy has empty remaining positional arguments', () {
+      final copy = Configuration.from(configuration: config);
+
+      expect(copy.remainingPosArgs, isEmpty);
     });
   });
 

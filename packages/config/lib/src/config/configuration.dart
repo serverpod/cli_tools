@@ -48,6 +48,8 @@ class Configuration<O extends OptionDefinition> {
   /// The remaining positional arguments that were not parsed as options.
   /// If non-empty and [ignoreUnexpectedPositionalArgs] is false,
   /// such arguments will also be registered as errors.
+  ///
+  /// Empty when argument parsing fails before any arguments can be classified.
   late final List<String> remainingPosArgs;
 
   /// Creates a configuration with the provided option values.
@@ -96,6 +98,7 @@ class Configuration<O extends OptionDefinition> {
     if (argResults == null && args != null) {
       argResults = _prepareArgResults(args);
       if (argResults == null) {
+        remainingPosArgs = <String>[];
         return;
       }
     }
@@ -128,6 +131,7 @@ class Configuration<O extends OptionDefinition> {
     if (argResults == null && args != null) {
       argResults = _prepareArgResults(args);
       if (argResults == null) {
+        remainingPosArgs = <String>[];
         throwExceptionOnErrors();
         return;
       }
