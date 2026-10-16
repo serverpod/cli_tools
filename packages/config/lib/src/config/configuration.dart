@@ -1,5 +1,4 @@
 import 'package:args/args.dart';
-import 'package:args/command_runner.dart';
 import 'package:collection/collection.dart';
 
 import 'configuration_broker.dart';
@@ -239,10 +238,10 @@ class Configuration<O extends OptionDefinition> {
   /// Returns the value of a configuration option
   /// that is guaranteed to be non-null.
   ///
-  /// Throws [UsageException] if the option is mandatory and no value is provided.
-  ///
   /// If called for an option that is neither mandatory nor has defaults,
   /// [StateError] is thrown. See also [optionalValue].
+  ///
+  /// Throws [InvalidParseStateError] if the option has no value due to previous errors.
   ///
   /// Throws [ArgumentError] if the option is unknown.
   V value<V>(final OptionDefinition<V> option) {
@@ -395,11 +394,4 @@ extension _RestAsList<T> on Iterator<T> {
     }
     return list;
   }
-}
-
-/// Specialized [StateError] that indicates that the configuration
-/// has not been successfully parsed and this prevents accessing
-/// some or all of the configuration values.
-class InvalidParseStateError extends StateError {
-  InvalidParseStateError(super.message);
 }

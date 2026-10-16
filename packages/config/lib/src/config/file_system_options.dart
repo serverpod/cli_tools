@@ -1,8 +1,8 @@
 import 'dart:io';
 
-import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as p;
 
+import 'exceptions.dart';
 import 'options.dart';
 
 enum PathExistMode {
@@ -29,7 +29,7 @@ class DirParser extends ValueParser<Directory> {
 /// Directory path configuration option.
 ///
 /// If the input is not valid according to the [mode],
-/// the validation throws a [UsageException].
+/// the validation throws a [InvalidValueException].
 class DirOption extends ConfigOptionBase<Directory> {
   final PathExistMode mode;
 
@@ -62,20 +62,23 @@ class DirOption extends ConfigOptionBase<Directory> {
       case PathExistMode.mayExist:
         if (type != FileSystemEntityType.notFound &&
             type != FileSystemEntityType.directory) {
-          throw UsageException('Path "${value.path}" is not a directory', '');
+          throw InvalidValueException(
+              'Path "${value.path}" is not a directory');
         }
         break;
       case PathExistMode.mustExist:
         if (type == FileSystemEntityType.notFound) {
-          throw UsageException('Directory "${value.path}" does not exist', '');
+          throw InvalidValueException(
+              'Directory "${value.path}" does not exist');
         }
         if (type != FileSystemEntityType.directory) {
-          throw UsageException('Path "${value.path}" is not a directory', '');
+          throw InvalidValueException(
+              'Path "${value.path}" is not a directory');
         }
         break;
       case PathExistMode.mustNotExist:
         if (type != FileSystemEntityType.notFound) {
-          throw UsageException('Path "${value.path}" already exists', '');
+          throw InvalidValueException('Path "${value.path}" already exists');
         }
         break;
     }
@@ -99,7 +102,7 @@ class FileParser extends ValueParser<File> {
 /// File path configuration option.
 ///
 /// If the input is not valid according to the [mode],
-/// the validation throws a [UsageException].
+/// the validation throws a [InvalidValueException].
 class FileOption extends ConfigOptionBase<File> {
   final PathExistMode mode;
 
@@ -132,20 +135,20 @@ class FileOption extends ConfigOptionBase<File> {
       case PathExistMode.mayExist:
         if (type != FileSystemEntityType.notFound &&
             type != FileSystemEntityType.file) {
-          throw UsageException('Path "${value.path}" is not a file', '');
+          throw InvalidValueException('Path "${value.path}" is not a file');
         }
         break;
       case PathExistMode.mustExist:
         if (type == FileSystemEntityType.notFound) {
-          throw UsageException('File "${value.path}" does not exist', '');
+          throw InvalidValueException('File "${value.path}" does not exist');
         }
         if (type != FileSystemEntityType.file) {
-          throw UsageException('Path "${value.path}" is not a file', '');
+          throw InvalidValueException('Path "${value.path}" is not a file');
         }
         break;
       case PathExistMode.mustNotExist:
         if (type != FileSystemEntityType.notFound) {
-          throw UsageException('Path "${value.path}" already exists', '');
+          throw InvalidValueException('Path "${value.path}" already exists');
         }
         break;
     }

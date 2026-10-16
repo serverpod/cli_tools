@@ -1,5 +1,4 @@
 import 'package:args/args.dart';
-import 'package:args/command_runner.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
@@ -126,7 +125,7 @@ abstract class ValueParser<V> {
 /// A [customValidator] may be provided for an individual option.
 /// If a value was provided the customValidator is invoked,
 /// and shall throw a [FormatException] if its format is invalid,
-/// or a [UsageException] if the it is invalid for other reasons.
+/// or a [InvalidValueException] if the it is invalid for other reasons.
 ///
 /// ### Positional arguments
 ///
@@ -312,15 +311,15 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
 
   /// Validates the parsed value,
   /// throwing a [FormatException] if the value is invalid,
-  /// or a [UsageException] if the value is invalid for other reasons.
+  /// or a [InvalidValueException] if the value is invalid for other reasons.
   ///
   /// Subclasses may override this method to perform specific validations.
   /// If they do, they must also call the super implementation.
   @mustCallSuper
   void validateValue(final V value) {
     if (allowedValues?.contains(value) == false) {
-      throw UsageException(
-          '`$value` is not an allowed value for ${qualifiedString()}', '');
+      throw InvalidValueException(
+          '`$value` is not an allowed value for ${qualifiedString()}');
     }
 
     customValidator?.call(value);
@@ -536,8 +535,13 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
         validateValue(value);
       } on FormatException catch (e) {
         return _makeFormatErrorMessage(e);
-      } on UsageException catch (e) {
+      } on InvalidValueException catch (e) {
         return _makeErrorMessage(e.message);
+      } on UsageException catch (e) {
+        // Retained for backwards compatibility for users who may have custom
+        // option implementations that throw UsageException.
+        // TODO: Remove in a future version.
+        return _makeErrorMessage(e.toString());
       }
     }
     return null;
@@ -742,8 +746,8 @@ class MultiOption<T> extends ConfigOptionBase<List<T>> {
     if (allowed != null) {
       for (final v in value) {
         if (allowed.contains(v) == false) {
-          throw UsageException(
-              '`$v` is not an allowed value for ${qualifiedString()}', '');
+          throw InvalidValueException(
+              '`$v` is not an allowed value for ${qualifiedString()}');
         }
       }
     }
