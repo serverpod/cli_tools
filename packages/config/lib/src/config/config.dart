@@ -1,3 +1,11 @@
+export 'arg_parser/command_definition.dart';
+export 'arg_parser_facade.dart'
+    show
+        prepareOptionsForParsing,
+        legacyParsedArgs,
+        legacyParsedArgsFromArgResults,
+        newParsedArgs,
+        ParsedArgs;
 export 'config_source.dart';
 export 'config_source_provider.dart';
 export 'configuration.dart';
