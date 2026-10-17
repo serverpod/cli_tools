@@ -1,3 +1,16 @@
+export 'arg_parser/arg_parser.dart';
+
+export 'arg_parser_facade.dart'
+    show
+        addOptionsToReceiver,
+        prepareOptionsForParsing,
+        legacyParsedArgs,
+        legacyParsedArgsFromArgResults,
+        newParsedArgs,
+        NewParsedArgs,
+        OptionReceiver,
+        ParsedArgs;
+export 'completion.dart';
 export 'config_source.dart';
 export 'config_source_provider.dart';
 export 'configuration.dart';

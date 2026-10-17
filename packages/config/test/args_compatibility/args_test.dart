@@ -31,8 +31,7 @@ void main() {
       throwsIllegalArg(() => parser.addFlag('flummox', abbr: 'f'));
     });
 
-    test(
-        'throws ArgumentError if the abbreviation is longer '
+    test('throws ArgumentError if the abbreviation is longer '
         'than one character', () {
       var parser = ConfigParser();
       throwsIllegalArg(() => parser.addFlag('flummox', abbr: 'flu'));
@@ -76,8 +75,7 @@ void main() {
       throwsIllegalArg(() => parser.addOption('flummox', abbr: 'f'));
     });
 
-    test(
-        'throws ArgumentError if the abbreviation is longer '
+    test('throws ArgumentError if the abbreviation is longer '
         'than one character', () {
       var parser = ConfigParser();
       throwsIllegalArg(() => parser.addOption('flummox', abbr: 'flu'));
@@ -153,14 +151,18 @@ void main() {
       expect(parser.commands['seek'], isNotNull);
     }, skip: 'commands not supported');
 
-    test('iterates over the commands in the order they were added', () {
-      var parser = ConfigParser();
-      parser.addCommand('a');
-      parser.addCommand('d');
-      parser.addCommand('b');
-      parser.addCommand('c');
-      expect(parser.commands.keys, equals(['a', 'd', 'b', 'c']));
-    }, skip: 'commands not supported');
+    test(
+      'iterates over the commands in the order they were added',
+      () {
+        var parser = ConfigParser();
+        parser.addCommand('a');
+        parser.addCommand('d');
+        parser.addCommand('b');
+        parser.addCommand('c');
+        expect(parser.commands.keys, equals(['a', 'd', 'b', 'c']));
+      },
+      skip: 'commands not supported',
+    );
   });
 
   group('ConfigParser.options', () {
@@ -196,14 +198,18 @@ void main() {
 
     test('can find options by alias', () {
       var parser = ConfigParser()..addOption('a', aliases: ['b']);
-      expect(parser.findByNameOrAlias('b'),
-          isA<Option>().having((o) => o.name, 'name', 'a'));
+      expect(
+        parser.findByNameOrAlias('b'),
+        isA<Option>().having((o) => o.name, 'name', 'a'),
+      );
     });
 
     test('can find flags by alias', () {
       var parser = ConfigParser()..addFlag('a', aliases: ['b']);
-      expect(parser.findByNameOrAlias('b'),
-          isA<Option>().having((o) => o.name, 'name', 'a'));
+      expect(
+        parser.findByNameOrAlias('b'),
+        isA<Option>().having((o) => o.name, 'name', 'a'),
+      );
     });
 
     test('does not allow duplicate aliases', () {
@@ -319,7 +325,9 @@ void main() {
       expect(parser.options['multi-no']!.valueOrDefault(null), equals([]));
       expect(parser.options['multi-no']!.valueOrDefault(['v']), equals(['v']));
       expect(
-          parser.options['multi-def']!.valueOrDefault(null), equals(['def']));
+        parser.options['multi-def']!.valueOrDefault(null),
+        equals(['def']),
+      );
       expect(parser.options['multi-def']!.valueOrDefault(['v']), equals(['v']));
     });
   });
@@ -338,7 +346,7 @@ const _invalidOptions = [
   "'singlequotes'",
   '"doublequotes"',
   'back\\slash',
-  'forward/slash'
+  'forward/slash',
 ];
 
 const _validOptions = [
@@ -349,5 +357,5 @@ const _validOptions = [
   'contains--doubledash--',
   '1starts-with-number',
   'contains-a-1number',
-  'ends-with-a-number8'
+  'ends-with-a-number8',
 ];

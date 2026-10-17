@@ -1,7 +1,9 @@
+import 'dart:async' show FutureOr;
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
+import 'completion.dart';
 import 'exceptions.dart';
 import 'options.dart';
 
@@ -63,17 +65,20 @@ class DirOption extends ConfigOptionBase<Directory> {
         if (type != FileSystemEntityType.notFound &&
             type != FileSystemEntityType.directory) {
           throw InvalidValueException(
-              'Path "${value.path}" is not a directory');
+            'Path "${value.path}" is not a directory',
+          );
         }
         break;
       case PathExistMode.mustExist:
         if (type == FileSystemEntityType.notFound) {
           throw InvalidValueException(
-              'Directory "${value.path}" does not exist');
+            'Directory "${value.path}" does not exist',
+          );
         }
         if (type != FileSystemEntityType.directory) {
           throw InvalidValueException(
-              'Path "${value.path}" is not a directory');
+            'Path "${value.path}" is not a directory',
+          );
         }
         break;
       case PathExistMode.mustNotExist:
@@ -82,6 +87,12 @@ class DirOption extends ConfigOptionBase<Directory> {
         }
         break;
     }
+  }
+
+  /// Offers native directory completion from the shell.
+  @override
+  FutureOr<CompletionResult> complete(final CompletionContext context) {
+    return const CompletionResult.directories();
   }
 }
 
@@ -152,5 +163,11 @@ class FileOption extends ConfigOptionBase<File> {
         }
         break;
     }
+  }
+
+  /// Offers native file completion from the shell.
+  @override
+  FutureOr<CompletionResult> complete(final CompletionContext context) {
+    return const CompletionResult.files();
   }
 }

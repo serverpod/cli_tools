@@ -54,6 +54,9 @@ jobs:
           - package: cli_tools
             platform: macos-latest
             dart: 3.6
+          - package: config
+            platform: windows-latest
+            dart: 3.12
     runs-on: ${{ matrix.platform }}
     defaults:
       run:
@@ -67,3 +70,61 @@ jobs:
       - run: dart pub get
       - run: dart analyze --fatal-infos
       - run: dart test
+
+  shell_completion:
+    name: Shell completion integration
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Bash and PowerShell are preinstalled on the Ubuntu runners;
+          # Zsh, Fish and Carapace are installed below.
+          - platform: ubuntu-latest
+            shells: bash,zsh,fish,pwsh,carapace
+          # PowerShell is preinstalled on the Windows runners. The other
+          # shells' test harnesses are POSIX scripts and do not run there.
+          - platform: windows-latest
+            shells: pwsh
+    runs-on: ${{ matrix.platform }}
+    defaults:
+      run:
+        working-directory: packages/config
+    env:
+      CARAPACE_VERSION: 1.8.1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1.7.1
+        with:
+          sdk: stable
+
+      - name: Install Zsh and Fish
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zsh fish
+
+      - name: Install Carapace
+        if: runner.os == 'Linux'
+        run: |
+          curl -sSL -o /tmp/carapace.tar.gz \
+            "https://github.com/carapace-sh/carapace-bin/releases/download/v${CARAPACE_VERSION}/carapace-bin_${CARAPACE_VERSION}_linux_amd64.tar.gz"
+          sudo tar -xzf /tmp/carapace.tar.gz -C /usr/local/bin carapace
+
+      - name: Show shell versions
+        if: runner.os == 'Linux'
+        run: |
+          bash --version | head -n 1
+          zsh --version
+          fish --version
+          pwsh --version
+          carapace --version
+
+      - name: Show shell versions
+        if: runner.os == 'Windows'
+        run: pwsh --version
+
+      - run: dart pub get
+      - name: Run the completion tests in the shells supported on ${{ runner.os }}
+        run: dart test test/command/completion/shell_integration_test.dart
+        env:
+          CLI_COMPLETION_SHELLS: ${{ matrix.shells }}

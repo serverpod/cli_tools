@@ -1,9 +1,14 @@
+import 'package:args/command_runner.dart' show UsageException;
+
+import 'arg_parser/arg_parser.dart' show CommandDefinition;
 import 'options.dart';
 
 export 'package:args/command_runner.dart' show UsageException;
 
+sealed class ConfigDefinitionError extends Error {}
+
 /// Indicates that the option definition is invalid.
-class OptionDefinitionError extends Error {
+class OptionDefinitionError extends ConfigDefinitionError {
   final OptionDefinition option;
   final String? message;
 
@@ -12,8 +17,24 @@ class OptionDefinitionError extends Error {
   @override
   String toString() {
     return message != null
-        ? 'Invalid definition for ${option.qualifiedString()}: $message'
-        : 'Invalid definition for ${option.qualifiedString()}';
+        ? '$runtimeType: Invalid definition for ${option.qualifiedString()}: $message'
+        : '$runtimeType: Invalid definition for ${option.qualifiedString()}';
+  }
+}
+
+/// Indicates that the command definition is invalid.
+class CommandDefinitionError extends ConfigDefinitionError {
+  final CommandDefinition command;
+  final String? message;
+
+  CommandDefinitionError(this.command, [this.message]);
+
+  @override
+  String toString() {
+    final label = 'command `${command.name}`';
+    return message != null
+        ? '$runtimeType: Invalid definition for $label: $message'
+        : '$runtimeType: Invalid definition for $label';
   }
 }
 
@@ -36,5 +57,17 @@ class InvalidValueException implements Exception {
   @override
   String toString() {
     return '$runtimeType: $message';
+  }
+}
+
+class CommandUsageException extends UsageException {
+  final CommandDefinition command;
+
+  CommandUsageException(final String message, this.command)
+    : super(message, '');
+
+  @override
+  String toString() {
+    return 'Usage error for command: ${command.name}\n$message';
   }
 }
