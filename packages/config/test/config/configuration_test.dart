@@ -1,4 +1,4 @@
-import 'package:args/args.dart';
+import 'package:args/args.dart' show ArgParser, ArgParserException;
 import 'package:config/config.dart';
 import 'package:test/test.dart';
 
@@ -60,6 +60,44 @@ void main() async {
           (final e) => e
               .toString()
               .contains("Mandatory options can't have default values"),
+        )),
+      );
+    });
+  });
+
+  group('Given an option with an invalid argument alias', () {
+    final parser = ArgParser();
+
+    test("when the alias contains '=' then definition validation throws",
+        () async {
+      const option = StringOption(
+        argName: 'name',
+        argAliases: ['bad=name'],
+      );
+
+      expect(
+        () => [option].prepareForParsing(parser),
+        throwsA(isA<OptionDefinitionError>().having(
+          (final e) => e.message,
+          'message',
+          "An argument option alias can't contain '='",
+        )),
+      );
+    });
+
+    test("when the alias starts with '-' then definition validation throws",
+        () async {
+      const option = StringOption(
+        argName: 'name',
+        argAliases: ['-bad'],
+      );
+
+      expect(
+        () => [option].prepareForParsing(parser),
+        throwsA(isA<OptionDefinitionError>().having(
+          (final e) => e.message,
+          'message',
+          "An argument option alias can't start with '-'",
         )),
       );
     });
@@ -386,6 +424,214 @@ void main() async {
         }),
       );
       expect(config.optionalValue(projectIdOpt), equals('fallbackValue'));
+    });
+  });
+
+  group('Given an option list with several options', () {
+    const firstOpt = StringOption(
+      argName: 'first',
+      argPos: 0,
+      envName: 'FIRST',
+      configKey: 'config:/first',
+      configKeys: ['config:/first-fallback'],
+    );
+    const keysOnlyOpt = StringOption(
+      configKeys: ['config:/keys-only', 'config:/keys-only-fallback'],
+    );
+    const lastOpt = StringOption(
+      argName: 'last',
+      argPos: 2,
+      envName: 'LAST',
+      configKey: 'config:/last',
+    );
+    final options = <OptionDefinition>[
+      firstOpt,
+      _TestOption.intOpt,
+      keysOnlyOpt,
+      lastOpt,
+    ];
+    final config = Configuration<OptionDefinition>.fromValues(
+      values: {
+        firstOpt: 'first',
+        _TestOption.intOpt: 2,
+        keysOnlyOpt: null,
+        lastOpt: 'last',
+      },
+    );
+
+    test(
+        'when finding by the first option argument name '
+        'then that option is returned', () {
+      expect(options.findOption(argName: 'first'), same(firstOpt));
+      expect(config.findOption(argName: 'first'), same(firstOpt));
+    });
+
+    test(
+        'when finding by the last option argument name '
+        'then that option is returned', () {
+      expect(options.findOption(argName: 'last'), same(lastOpt));
+      expect(config.findOption(argName: 'last'), same(lastOpt));
+    });
+
+    test(
+        'when finding by an unknown argument name '
+        'then no option is returned', () {
+      expect(options.findOption(argName: 'missing'), isNull);
+      expect(config.findOption(argName: 'missing'), isNull);
+    });
+
+    test(
+        'when finding by the middle option enum name '
+        'then that option is returned', () {
+      expect(
+        options.findOption(enumName: _TestOption.intOpt.name),
+        same(_TestOption.intOpt),
+      );
+      expect(
+        config.findOption(enumName: _TestOption.intOpt.name),
+        same(_TestOption.intOpt),
+      );
+    });
+
+    test(
+        'when finding by an unknown enum name '
+        'then no option is returned', () {
+      expect(options.findOption(enumName: 'missing'), isNull);
+      expect(config.findOption(enumName: 'missing'), isNull);
+    });
+
+    test(
+        'when finding by the first option position '
+        'then that option is returned', () {
+      expect(options.findOption(argPos: 0), same(firstOpt));
+      expect(config.findOption(argPos: 0), same(firstOpt));
+    });
+
+    test(
+        'when finding by the last option position '
+        'then that option is returned', () {
+      expect(options.findOption(argPos: 2), same(lastOpt));
+      expect(config.findOption(argPos: 2), same(lastOpt));
+    });
+
+    test(
+        'when finding by an unknown position '
+        'then no option is returned', () {
+      expect(options.findOption(argPos: 3), isNull);
+      expect(config.findOption(argPos: 3), isNull);
+    });
+
+    test(
+        'when finding by the first option environment name '
+        'then that option is returned', () {
+      expect(options.findOption(envName: 'FIRST'), same(firstOpt));
+      expect(config.findOption(envName: 'FIRST'), same(firstOpt));
+    });
+
+    test(
+        'when finding by the last option environment name '
+        'then that option is returned', () {
+      expect(options.findOption(envName: 'LAST'), same(lastOpt));
+      expect(config.findOption(envName: 'LAST'), same(lastOpt));
+    });
+
+    test(
+        'when finding by an unknown environment name '
+        'then no option is returned', () {
+      expect(options.findOption(envName: 'MISSING'), isNull);
+      expect(config.findOption(envName: 'MISSING'), isNull);
+    });
+
+    test(
+        'when finding by the first option config key '
+        'then that option is returned', () {
+      expect(options.findOption(configKey: 'config:/first'), same(firstOpt));
+      expect(config.findOption(configKey: 'config:/first'), same(firstOpt));
+    });
+
+    test(
+        'when finding by a later config key of the first option '
+        'then that option is returned', () {
+      expect(
+        options.findOption(configKey: 'config:/first-fallback'),
+        same(firstOpt),
+      );
+      expect(
+        config.findOption(configKey: 'config:/first-fallback'),
+        same(firstOpt),
+      );
+    });
+
+    test(
+        'when finding by the middle option config key '
+        'then that option is returned', () {
+      expect(
+        options.findOption(configKey: 'config:/int'),
+        same(_TestOption.intOpt),
+      );
+      expect(
+        config.findOption(configKey: 'config:/int'),
+        same(_TestOption.intOpt),
+      );
+    });
+
+    test(
+        'when finding by the first key of an option that has only configKeys '
+        'then that option is returned', () {
+      expect(
+        options.findOption(configKey: 'config:/keys-only'),
+        same(keysOnlyOpt),
+      );
+      expect(
+        config.findOption(configKey: 'config:/keys-only'),
+        same(keysOnlyOpt),
+      );
+    });
+
+    test(
+        'when finding by a later key of an option that has only configKeys '
+        'then that option is returned', () {
+      expect(
+        options.findOption(configKey: 'config:/keys-only-fallback'),
+        same(keysOnlyOpt),
+      );
+      expect(
+        config.findOption(configKey: 'config:/keys-only-fallback'),
+        same(keysOnlyOpt),
+      );
+    });
+
+    test(
+        'when finding by the last option config key '
+        'then that option is returned', () {
+      expect(options.findOption(configKey: 'config:/last'), same(lastOpt));
+      expect(config.findOption(configKey: 'config:/last'), same(lastOpt));
+    });
+
+    test(
+        'when finding by an unknown config key '
+        'then no option is returned', () {
+      expect(options.findOption(configKey: 'config:/missing'), isNull);
+      expect(config.findOption(configKey: 'config:/missing'), isNull);
+    });
+
+    test(
+        'when two options share a config key '
+        'then the earlier option is returned', () {
+      const earlier = StringOption(configKeys: ['config:/shared']);
+      const later = StringOption(configKey: 'config:/shared');
+      final shared = <OptionDefinition>[earlier, later];
+      final sharedConfig = Configuration<OptionDefinition>.fromValues(
+        values: {earlier: 'earlier', later: 'later'},
+      );
+
+      expect(shared.findOption(configKey: 'config:/shared'), same(earlier));
+      expect(
+          sharedConfig.findOption(configKey: 'config:/shared'), same(earlier));
+    });
+
+    test('when the option list is empty then no option is returned', () {
+      expect(<OptionDefinition>[].findOption(argName: 'first'), isNull);
     });
   });
 
@@ -1061,6 +1307,313 @@ void main() async {
           config.errors.first, "Unexpected positional argument(s): '3rd-arg'");
       expect(config.optionalValue(firstOpt), equals('1st-arg'));
       expect(config.optionalValue(secondOpt), equals('2nd-arg'));
+    });
+  });
+
+  group('Given a configuration with one positional option', () {
+    const positionalOpt = StringOption(
+      argPos: 0,
+    );
+    const projectOpt = StringOption(
+      argName: 'project',
+    );
+    final options = [positionalOpt, projectOpt];
+
+    group('when every positional argument is consumed', () {
+      late Configuration<StringOption> config;
+
+      setUp(() {
+        config = Configuration.resolveNoExcept(
+          options: options,
+          args: ['pos-arg', '--project', '123'],
+        );
+      });
+
+      test('then remaining positional arguments are empty', () {
+        expect(config.remainingPosArgs, isEmpty);
+      });
+
+      test('then the positional option has its argument', () {
+        expect(config.optionalValue(positionalOpt), equals('pos-arg'));
+      });
+    });
+
+    group('when no arguments are provided', () {
+      late Configuration<StringOption> config;
+
+      setUp(() {
+        config = Configuration.resolveNoExcept(
+          options: options,
+          args: <String>[],
+        );
+      });
+
+      test('then remaining positional arguments are empty', () {
+        expect(config.remainingPosArgs, isEmpty);
+      });
+    });
+
+    group('when an extra positional argument is provided', () {
+      late Configuration<StringOption> config;
+
+      setUp(() {
+        config = Configuration.resolveNoExcept(
+          options: options,
+          args: ['pos-arg', 'extra'],
+        );
+      });
+
+      test(
+        'then remaining positional arguments contain the extra argument',
+        () {
+          expect(config.remainingPosArgs, equals(['extra']));
+        },
+      );
+
+      test('then the extra argument is reported as unexpected', () {
+        expect(
+          config.errors,
+          equals(["Unexpected positional argument(s): 'extra'"]),
+        );
+      });
+
+      test('then the positional option still has its argument', () {
+        expect(config.optionalValue(positionalOpt), equals('pos-arg'));
+      });
+    });
+
+    group('when several extra positional arguments are provided', () {
+      late Configuration<StringOption> config;
+
+      setUp(() {
+        config = Configuration.resolveNoExcept(
+          options: options,
+          args: ['pos-arg', 'extra-a', 'extra-b'],
+        );
+      });
+
+      test('then remaining positional arguments keep their order', () {
+        expect(config.remainingPosArgs, equals(['extra-a', 'extra-b']));
+      });
+
+      test('then every extra argument is reported as unexpected', () {
+        expect(
+          config.errors,
+          equals(["Unexpected positional argument(s): 'extra-a', 'extra-b'"]),
+        );
+      });
+    });
+
+    group('when extra positional arguments are ignored', () {
+      late Configuration<StringOption> config;
+
+      setUp(() {
+        config = Configuration.resolve(
+          options: options,
+          args: ['pos-arg', '--project', '123', 'extra-a', 'extra-b'],
+          ignoreUnexpectedPositionalArgs: true,
+        );
+      });
+
+      test('then remaining positional arguments keep their order', () {
+        expect(config.remainingPosArgs, equals(['extra-a', 'extra-b']));
+      });
+
+      test('then there are no resolution errors', () {
+        expect(config.errors, isEmpty);
+      });
+
+      test('then named and positional options keep their values', () {
+        expect(config.optionalValue(positionalOpt), equals('pos-arg'));
+        expect(config.optionalValue(projectOpt), equals('123'));
+      });
+    });
+
+    group(
+      'when the positional option is preset and a positional argument remains',
+      () {
+        late Configuration<StringOption> config;
+
+        setUp(() {
+          config = Configuration.resolveNoExcept(
+            options: options,
+            args: ['from-args', 'extra'],
+            presetValues: {positionalOpt: 'preset'},
+            ignoreUnexpectedPositionalArgs: true,
+          );
+        });
+
+        test(
+          'then remaining positional arguments include the unconsumed arguments',
+          () {
+            expect(config.remainingPosArgs, equals(['from-args', 'extra']));
+          },
+        );
+
+        test('then the positional option keeps the preset value', () {
+          expect(config.optionalValue(positionalOpt), equals('preset'));
+        });
+      },
+    );
+  });
+
+  group('Given a configuration with only a named option', () {
+    const projectOpt = StringOption(
+      argName: 'project',
+    );
+
+    group('when positional arguments are provided', () {
+      late Configuration<StringOption> config;
+
+      setUp(() {
+        config = Configuration.resolveNoExcept(
+          options: [projectOpt],
+          args: ['--project', '123', 'left', 'over'],
+        );
+      });
+
+      test('then remaining positional arguments contain those arguments', () {
+        expect(config.remainingPosArgs, equals(['left', 'over']));
+      });
+
+      test('then those arguments are reported as unexpected', () {
+        expect(
+          config.errors,
+          equals(["Unexpected positional argument(s): 'left', 'over'"]),
+        );
+      });
+
+      test('then the named option keeps its value', () {
+        expect(config.optionalValue(projectOpt), equals('123'));
+      });
+    });
+  });
+
+  group('Given two positional options supplied by name', () {
+    const firstOpt = StringOption(
+      argName: 'first',
+      argPos: 0,
+    );
+    const secondOpt = StringOption(
+      argName: 'second',
+      argPos: 1,
+    );
+    final options = [firstOpt, secondOpt];
+
+    group('when one positional argument follows the named arguments', () {
+      late Configuration<StringOption> config;
+
+      setUp(() {
+        config = Configuration.resolveNoExcept(
+          options: options,
+          args: ['--first', '1st-arg', '--second', '2nd-arg', 'extra'],
+          ignoreUnexpectedPositionalArgs: true,
+        );
+      });
+
+      test('then remaining positional arguments contain that argument', () {
+        expect(config.remainingPosArgs, equals(['extra']));
+      });
+
+      test('then both options keep their named values', () {
+        expect(config.optionalValue(firstOpt), equals('1st-arg'));
+        expect(config.optionalValue(secondOpt), equals('2nd-arg'));
+      });
+    });
+
+    group(
+      'when the first option is named and further positional arguments follow',
+      () {
+        late Configuration<StringOption> config;
+
+        setUp(() {
+          config = Configuration.resolveNoExcept(
+            options: options,
+            args: ['--first', '1st-arg', '2nd-arg', 'extra'],
+            ignoreUnexpectedPositionalArgs: true,
+          );
+        });
+
+        test('then the next positional argument fills the second option', () {
+          expect(config.optionalValue(secondOpt), equals('2nd-arg'));
+        });
+
+        test('then the last positional argument remains', () {
+          expect(config.remainingPosArgs, equals(['extra']));
+        });
+      },
+    );
+  });
+
+  group(
+    'Given a configuration copied from one with remaining positional arguments',
+    () {
+      late Configuration<StringOption> config;
+
+      setUp(() {
+        const positionalOpt = StringOption(argPos: 0);
+        config = Configuration.resolveNoExcept(
+          options: [positionalOpt],
+          args: ['pos-arg', 'extra-a', 'extra-b'],
+          ignoreUnexpectedPositionalArgs: true,
+        );
+      });
+
+      test('then the copy has the same remaining positional arguments', () {
+        final copy = Configuration.from(configuration: config);
+
+        expect(copy.remainingPosArgs, equals(['extra-a', 'extra-b']));
+      });
+
+      test('then changing the copy does not change the original', () {
+        final copy = Configuration.from(configuration: config);
+
+        copy.remainingPosArgs.add('mutated');
+
+        expect(config.remainingPosArgs, equals(['extra-a', 'extra-b']));
+        expect(
+          copy.remainingPosArgs,
+          equals(['extra-a', 'extra-b', 'mutated']),
+        );
+      });
+    },
+  );
+
+  group('Given a configuration built from preset values', () {
+    test('then remaining positional arguments are empty', () {
+      const projectOpt = StringOption(argName: 'project');
+      final config = Configuration.fromValues(
+        values: {projectOpt: '123'},
+      );
+
+      expect(config.remainingPosArgs, isEmpty);
+    });
+  });
+
+  group('Given argument parsing fails', () {
+    const projectOpt = StringOption(argName: 'project');
+
+    late Configuration<StringOption> config;
+
+    setUp(() {
+      config = Configuration.resolveNoExcept(
+        options: [projectOpt],
+        args: ['--not-an-option'],
+      );
+    });
+
+    test('then remaining positional arguments are empty', () {
+      expect(config.remainingPosArgs, isEmpty);
+    });
+
+    test('then the parse error is recorded', () {
+      expect(config.errors, isNotEmpty);
+    });
+
+    test('then a copy has empty remaining positional arguments', () {
+      final copy = Configuration.from(configuration: config);
+
+      expect(copy.remainingPosArgs, isEmpty);
     });
   });
 

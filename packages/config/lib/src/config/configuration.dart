@@ -1,5 +1,4 @@
 import 'package:args/args.dart';
-import 'package:args/command_runner.dart';
 import 'package:collection/collection.dart';
 
 import 'configuration_broker.dart';
@@ -46,6 +45,13 @@ class Configuration<O extends OptionDefinition> {
   final Map<O, OptionResolutionImpl> _config;
   final List<String> _errors;
 
+  /// The remaining positional arguments that were not parsed as options.
+  /// If non-empty and [ignoreUnexpectedPositionalArgs] is false,
+  /// such arguments will also be registered as errors.
+  ///
+  /// Empty when argument parsing fails before any arguments can be classified.
+  late final List<String> remainingPosArgs;
+
   /// Creates a configuration with the provided option values.
   ///
   /// This does not throw upon value parsing or validation errors,
@@ -64,7 +70,8 @@ class Configuration<O extends OptionDefinition> {
     required final Configuration<O> configuration,
   })  : _options = List.from(configuration._options),
         _config = Map.from(configuration._config),
-        _errors = List.from(configuration._errors);
+        _errors = List.from(configuration._errors),
+        remainingPosArgs = List.from(configuration.remainingPosArgs);
 
   /// {@template Configuration.resolveNoExcept}
   /// Creates a configuration with option values resolved from the provided context.
@@ -91,6 +98,7 @@ class Configuration<O extends OptionDefinition> {
     if (argResults == null && args != null) {
       argResults = _prepareArgResults(args);
       if (argResults == null) {
+        remainingPosArgs = <String>[];
         return;
       }
     }
@@ -123,6 +131,7 @@ class Configuration<O extends OptionDefinition> {
     if (argResults == null && args != null) {
       argResults = _prepareArgResults(args);
       if (argResults == null) {
+        remainingPosArgs = <String>[];
         throwExceptionOnErrors();
         return;
       }
@@ -233,10 +242,10 @@ class Configuration<O extends OptionDefinition> {
   /// Returns the value of a configuration option
   /// that is guaranteed to be non-null.
   ///
-  /// Throws [UsageException] if the option is mandatory and no value is provided.
-  ///
   /// If called for an option that is neither mandatory nor has defaults,
   /// [StateError] is thrown. See also [optionalValue].
+  ///
+  /// Throws [InvalidParseStateError] if the option has no value due to previous errors.
   ///
   /// Throws [ArgumentError] if the option is unknown.
   V value<V>(final OptionDefinition<V> option) {
@@ -347,7 +356,7 @@ class Configuration<O extends OptionDefinition> {
 
     _validateGroups(optionGroups);
 
-    final remainingPosArgs = posArgs.restAsList();
+    remainingPosArgs = posArgs.restAsList();
     if (remainingPosArgs.isNotEmpty && !ignoreUnexpectedPositionalArgs) {
       _errors.add(
           "Unexpected positional argument(s): '${remainingPosArgs.join("', '")}'");
@@ -389,11 +398,4 @@ extension _RestAsList<T> on Iterator<T> {
     }
     return list;
   }
-}
-
-/// Specialized [StateError] that indicates that the configuration
-/// has not been successfully parsed and this prevents accessing
-/// some or all of the configuration values.
-class InvalidParseStateError extends StateError {
-  InvalidParseStateError(super.message);
 }
