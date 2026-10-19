@@ -386,15 +386,6 @@ void main() async {
         equals('fallbackValue'),
       );
     });
-
-    test(
-        'when finding the option on the option list via a configKeys entry '
-        'then it succeeds', () {
-      expect(
-        [projectIdOpt].findOption(configKey: 'fallback:/projectId'),
-        same(projectIdOpt),
-      );
-    });
   });
 
   group('Given a configuration option with both configKey and configKeys', () {
@@ -434,14 +425,213 @@ void main() async {
       );
       expect(config.optionalValue(projectIdOpt), equals('fallbackValue'));
     });
+  });
+
+  group('Given an option list with several options', () {
+    const firstOpt = StringOption(
+      argName: 'first',
+      argPos: 0,
+      envName: 'FIRST',
+      configKey: 'config:/first',
+      configKeys: ['config:/first-fallback'],
+    );
+    const keysOnlyOpt = StringOption(
+      configKeys: ['config:/keys-only', 'config:/keys-only-fallback'],
+    );
+    const lastOpt = StringOption(
+      argName: 'last',
+      argPos: 2,
+      envName: 'LAST',
+      configKey: 'config:/last',
+    );
+    final options = <OptionDefinition>[
+      firstOpt,
+      _TestOption.intOpt,
+      keysOnlyOpt,
+      lastOpt,
+    ];
+    final config = Configuration<OptionDefinition>.fromValues(
+      values: {
+        firstOpt: 'first',
+        _TestOption.intOpt: 2,
+        keysOnlyOpt: null,
+        lastOpt: 'last',
+      },
+    );
 
     test(
-        'when finding the option on the option list via a configKeys entry '
-        'then it succeeds', () {
+        'when finding by the first option argument name '
+        'then that option is returned', () {
+      expect(options.findOption(argName: 'first'), same(firstOpt));
+      expect(config.findOption(argName: 'first'), same(firstOpt));
+    });
+
+    test(
+        'when finding by the last option argument name '
+        'then that option is returned', () {
+      expect(options.findOption(argName: 'last'), same(lastOpt));
+      expect(config.findOption(argName: 'last'), same(lastOpt));
+    });
+
+    test(
+        'when finding by an unknown argument name '
+        'then no option is returned', () {
+      expect(options.findOption(argName: 'missing'), isNull);
+      expect(config.findOption(argName: 'missing'), isNull);
+    });
+
+    test(
+        'when finding by the middle option enum name '
+        'then that option is returned', () {
       expect(
-        [projectIdOpt].findOption(configKey: 'fallback:/projectId'),
-        same(projectIdOpt),
+        options.findOption(enumName: _TestOption.intOpt.name),
+        same(_TestOption.intOpt),
       );
+      expect(
+        config.findOption(enumName: _TestOption.intOpt.name),
+        same(_TestOption.intOpt),
+      );
+    });
+
+    test(
+        'when finding by an unknown enum name '
+        'then no option is returned', () {
+      expect(options.findOption(enumName: 'missing'), isNull);
+      expect(config.findOption(enumName: 'missing'), isNull);
+    });
+
+    test(
+        'when finding by the first option position '
+        'then that option is returned', () {
+      expect(options.findOption(argPos: 0), same(firstOpt));
+      expect(config.findOption(argPos: 0), same(firstOpt));
+    });
+
+    test(
+        'when finding by the last option position '
+        'then that option is returned', () {
+      expect(options.findOption(argPos: 2), same(lastOpt));
+      expect(config.findOption(argPos: 2), same(lastOpt));
+    });
+
+    test(
+        'when finding by an unknown position '
+        'then no option is returned', () {
+      expect(options.findOption(argPos: 3), isNull);
+      expect(config.findOption(argPos: 3), isNull);
+    });
+
+    test(
+        'when finding by the first option environment name '
+        'then that option is returned', () {
+      expect(options.findOption(envName: 'FIRST'), same(firstOpt));
+      expect(config.findOption(envName: 'FIRST'), same(firstOpt));
+    });
+
+    test(
+        'when finding by the last option environment name '
+        'then that option is returned', () {
+      expect(options.findOption(envName: 'LAST'), same(lastOpt));
+      expect(config.findOption(envName: 'LAST'), same(lastOpt));
+    });
+
+    test(
+        'when finding by an unknown environment name '
+        'then no option is returned', () {
+      expect(options.findOption(envName: 'MISSING'), isNull);
+      expect(config.findOption(envName: 'MISSING'), isNull);
+    });
+
+    test(
+        'when finding by the first option config key '
+        'then that option is returned', () {
+      expect(options.findOption(configKey: 'config:/first'), same(firstOpt));
+      expect(config.findOption(configKey: 'config:/first'), same(firstOpt));
+    });
+
+    test(
+        'when finding by a later config key of the first option '
+        'then that option is returned', () {
+      expect(
+        options.findOption(configKey: 'config:/first-fallback'),
+        same(firstOpt),
+      );
+      expect(
+        config.findOption(configKey: 'config:/first-fallback'),
+        same(firstOpt),
+      );
+    });
+
+    test(
+        'when finding by the middle option config key '
+        'then that option is returned', () {
+      expect(
+        options.findOption(configKey: 'config:/int'),
+        same(_TestOption.intOpt),
+      );
+      expect(
+        config.findOption(configKey: 'config:/int'),
+        same(_TestOption.intOpt),
+      );
+    });
+
+    test(
+        'when finding by the first key of an option that has only configKeys '
+        'then that option is returned', () {
+      expect(
+        options.findOption(configKey: 'config:/keys-only'),
+        same(keysOnlyOpt),
+      );
+      expect(
+        config.findOption(configKey: 'config:/keys-only'),
+        same(keysOnlyOpt),
+      );
+    });
+
+    test(
+        'when finding by a later key of an option that has only configKeys '
+        'then that option is returned', () {
+      expect(
+        options.findOption(configKey: 'config:/keys-only-fallback'),
+        same(keysOnlyOpt),
+      );
+      expect(
+        config.findOption(configKey: 'config:/keys-only-fallback'),
+        same(keysOnlyOpt),
+      );
+    });
+
+    test(
+        'when finding by the last option config key '
+        'then that option is returned', () {
+      expect(options.findOption(configKey: 'config:/last'), same(lastOpt));
+      expect(config.findOption(configKey: 'config:/last'), same(lastOpt));
+    });
+
+    test(
+        'when finding by an unknown config key '
+        'then no option is returned', () {
+      expect(options.findOption(configKey: 'config:/missing'), isNull);
+      expect(config.findOption(configKey: 'config:/missing'), isNull);
+    });
+
+    test(
+        'when two options share a config key '
+        'then the earlier option is returned', () {
+      const earlier = StringOption(configKeys: ['config:/shared']);
+      const later = StringOption(configKey: 'config:/shared');
+      final shared = <OptionDefinition>[earlier, later];
+      final sharedConfig = Configuration<OptionDefinition>.fromValues(
+        values: {earlier: 'earlier', later: 'later'},
+      );
+
+      expect(shared.findOption(configKey: 'config:/shared'), same(earlier));
+      expect(
+          sharedConfig.findOption(configKey: 'config:/shared'), same(earlier));
+    });
+
+    test('when the option list is empty then no option is returned', () {
+      expect(<OptionDefinition>[].findOption(argName: 'first'), isNull);
     });
   });
 
