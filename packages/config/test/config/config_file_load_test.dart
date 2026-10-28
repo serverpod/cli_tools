@@ -90,8 +90,7 @@ String _buildFilepath(
   final _Fact fact,
   final _AllowedFile format,
   final String extension,
-) =>
-    '$_mockDir/${_mockFilenames[format]![fact]!}.$extension';
+) => '$_mockDir/${_mockFilenames[format]![fact]!}.$extension';
 
 void _prepareMockFiles() {
   _mockFilenames.forEach((final fileFormat, final namesMap) {
@@ -120,11 +119,13 @@ void _runTests() {
         test('then it is parsed successfully', () {
           for (final jsonExtension in _mockExtensions[_AllowedFile.json]!) {
             expect(
-              ConfigurationParser.fromFile(_buildFilepath(
-                _Fact.correct,
-                _AllowedFile.json,
-                jsonExtension,
-              )).valueOrNull(_mockKey),
+              ConfigurationParser.fromFile(
+                _buildFilepath(
+                  _Fact.correct,
+                  _AllowedFile.json,
+                  jsonExtension,
+                ),
+              ).valueOrNull(_mockKey),
               equals(_mockVal),
             );
           }
@@ -134,11 +135,13 @@ void _runTests() {
         test('then it is parsed successfully', () {
           for (final yamlExtension in _mockExtensions[_AllowedFile.yaml]!) {
             expect(
-              ConfigurationParser.fromFile(_buildFilepath(
-                _Fact.correct,
-                _AllowedFile.yaml,
-                yamlExtension,
-              )).valueOrNull(_mockKey),
+              ConfigurationParser.fromFile(
+                _buildFilepath(
+                  _Fact.correct,
+                  _AllowedFile.yaml,
+                  yamlExtension,
+                ),
+              ).valueOrNull(_mockKey),
               equals(_mockVal),
             );
           }
@@ -149,11 +152,13 @@ void _runTests() {
       group('when loading a JSON file', () {
         test('then it reports an Unsupported Error', () {
           expect(
-            () => ConfigurationParser.fromFile(_buildFilepath(
-              _Fact.correct,
-              _AllowedFile.json,
-              _anUnsupportedExtension,
-            )),
+            () => ConfigurationParser.fromFile(
+              _buildFilepath(
+                _Fact.correct,
+                _AllowedFile.json,
+                _anUnsupportedExtension,
+              ),
+            ),
             throwsUnsupportedError,
           );
         });
@@ -161,11 +166,13 @@ void _runTests() {
       group('when loading a YAML file', () {
         test('then it reports an Unsupported Error', () {
           expect(
-            () => ConfigurationParser.fromFile(_buildFilepath(
-              _Fact.correct,
-              _AllowedFile.yaml,
-              _anUnsupportedExtension,
-            )),
+            () => ConfigurationParser.fromFile(
+              _buildFilepath(
+                _Fact.correct,
+                _AllowedFile.yaml,
+                _anUnsupportedExtension,
+              ),
+            ),
             throwsUnsupportedError,
           );
         });
@@ -179,11 +186,13 @@ void _runTests() {
         test('then it reports a Format Exception', () {
           for (final jsonExtension in _mockExtensions[_AllowedFile.json]!) {
             expect(
-              () => ConfigurationParser.fromFile(_buildFilepath(
-                _Fact.wrong,
-                _AllowedFile.json,
-                jsonExtension,
-              )),
+              () => ConfigurationParser.fromFile(
+                _buildFilepath(
+                  _Fact.wrong,
+                  _AllowedFile.json,
+                  jsonExtension,
+                ),
+              ),
               throwsFormatException,
             );
           }
@@ -193,11 +202,13 @@ void _runTests() {
         test('then it reports a Format Exception', () {
           for (final yamlExtension in _mockExtensions[_AllowedFile.yaml]!) {
             expect(
-              () => ConfigurationParser.fromFile(_buildFilepath(
-                _Fact.wrong,
-                _AllowedFile.yaml,
-                yamlExtension,
-              )),
+              () => ConfigurationParser.fromFile(
+                _buildFilepath(
+                  _Fact.wrong,
+                  _AllowedFile.yaml,
+                  yamlExtension,
+                ),
+              ),
               throwsFormatException,
             );
           }
@@ -208,11 +219,13 @@ void _runTests() {
       group('when loading a JSON file', () {
         test('then it reports an Unsupported Error', () {
           expect(
-            () => ConfigurationParser.fromFile(_buildFilepath(
-              _Fact.wrong,
-              _AllowedFile.json,
-              _anUnsupportedExtension,
-            )),
+            () => ConfigurationParser.fromFile(
+              _buildFilepath(
+                _Fact.wrong,
+                _AllowedFile.json,
+                _anUnsupportedExtension,
+              ),
+            ),
             throwsUnsupportedError,
           );
         });
@@ -220,11 +233,13 @@ void _runTests() {
       group('when loading a YAML file', () {
         test('then it reports an Unsupported Error', () {
           expect(
-            () => ConfigurationParser.fromFile(_buildFilepath(
-              _Fact.wrong,
-              _AllowedFile.yaml,
-              _anUnsupportedExtension,
-            )),
+            () => ConfigurationParser.fromFile(
+              _buildFilepath(
+                _Fact.wrong,
+                _AllowedFile.yaml,
+                _anUnsupportedExtension,
+              ),
+            ),
             throwsUnsupportedError,
           );
         });

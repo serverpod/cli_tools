@@ -51,18 +51,27 @@ void main() {
 
     test('works as a subcommand', () {
       var commandParser = ArgParser()..addCommand('command', parser);
-      var results =
-          commandParser.parse(['command', '--foo', '-abc', '--', 'bar']);
+      var results = commandParser.parse([
+        'command',
+        '--foo',
+        '-abc',
+        '--',
+        'bar',
+      ]);
       expect(results.command!.options, isEmpty);
       expect(results.command!.rest, equals(['--foo', '-abc', '--', 'bar']));
       expect(
-          results.command!.arguments, equals(['--foo', '-abc', '--', 'bar']));
+        results.command!.arguments,
+        equals(['--foo', '-abc', '--', 'bar']),
+      );
       expect(results.command!.name, equals('command'));
     });
 
     test('works as a subcommand in a CommandRunner', () async {
-      var commandRunner =
-          CommandRunner<void>('command', 'Description of command');
+      var commandRunner = CommandRunner<void>(
+        'command',
+        'Description of command',
+      );
       var command = AllowAnythingCommand();
       commandRunner.addCommand(command);
 

@@ -84,20 +84,26 @@ void main() {
     }, skip: 'commands not supported');
   });
 
-  test("uses the innermost command's trailing options behavior", () {
-    var parser = ConfigParser(allowTrailingOptions: true);
-    parser.addFlag('flag', abbr: 'f');
-    var command =
-        parser.addCommand('cmd', ConfigParser(allowTrailingOptions: false));
-    command.addFlag('verbose', abbr: 'v');
+  test(
+    "uses the innermost command's trailing options behavior",
+    () {
+      var parser = ConfigParser(allowTrailingOptions: true);
+      parser.addFlag('flag', abbr: 'f');
+      var command = parser.addCommand(
+        'cmd',
+        ConfigParser(allowTrailingOptions: false),
+      );
+      command.addFlag('verbose', abbr: 'v');
 
-    var results = parser.parse(['a', '-f', 'b']);
-    expect(results['flag'], isTrue);
-    expect(results.rest, equals(['a', 'b']));
+      var results = parser.parse(['a', '-f', 'b']);
+      expect(results['flag'], isTrue);
+      expect(results.rest, equals(['a', 'b']));
 
-    results = parser.parse(['cmd', '-f', 'a', '-v', '--unknown']);
-    expect(results['flag'], isTrue); // Not trailing.
-    expect(results.command!['verbose'], isFalse);
-    expect(results.command!.rest, equals(['a', '-v', '--unknown']));
-  }, skip: 'commands not supported');
+      results = parser.parse(['cmd', '-f', 'a', '-v', '--unknown']);
+      expect(results['flag'], isTrue); // Not trailing.
+      expect(results.command!['verbose'], isFalse);
+      expect(results.command!.rest, equals(['a', '-v', '--unknown']));
+    },
+    skip: 'commands not supported',
+  );
 }

@@ -3,369 +3,372 @@ import 'package:test/test.dart';
 
 void main() {
   group(
-      'Given a MultiDomainConfigBroker with two domains and correctly configured options',
-      () {
-    const yamlContentOpt = StringOption(
-      argName: 'yaml-content',
-      envName: 'YAML_CONTENT',
-    );
-    const jsonContentOpt = StringOption(
-      argName: 'json-content',
-      envName: 'JSON_CONTENT',
-    );
-    const yamlProjectIdOpt = StringOption(
-      configKey: 'yamlOption:/project/projectId',
-    );
-    const jsonProjectIdOpt = StringOption(
-      configKey: 'jsonOption:/project/projectId',
-    );
-    final options = [
-      yamlContentOpt,
-      jsonContentOpt,
-      yamlProjectIdOpt,
-      jsonProjectIdOpt,
-    ];
+    'Given a MultiDomainConfigBroker with two domains and correctly configured options',
+    () {
+      const yamlContentOpt = StringOption(
+        argName: 'yaml-content',
+        envName: 'YAML_CONTENT',
+      );
+      const jsonContentOpt = StringOption(
+        argName: 'json-content',
+        envName: 'JSON_CONTENT',
+      );
+      const yamlProjectIdOpt = StringOption(
+        configKey: 'yamlOption:/project/projectId',
+      );
+      const jsonProjectIdOpt = StringOption(
+        configKey: 'jsonOption:/project/projectId',
+      );
+      final options = [
+        yamlContentOpt,
+        jsonContentOpt,
+        yamlProjectIdOpt,
+        jsonProjectIdOpt,
+      ];
 
-    late ConfigurationBroker configSource;
+      late ConfigurationBroker configSource;
 
-    setUp(() {
-      configSource = MultiDomainConfigBroker.prefix({
-        'yamlOption': OptionContentConfigProvider(
-          contentOption: yamlContentOpt,
-          format: ConfigEncoding.yaml,
-        ),
-        'jsonOption': OptionContentConfigProvider(
-          contentOption: jsonContentOpt,
-          format: ConfigEncoding.json,
-        ),
+      setUp(() {
+        configSource = MultiDomainConfigBroker.prefix({
+          'yamlOption': OptionContentConfigProvider(
+            contentOption: yamlContentOpt,
+            format: ConfigEncoding.yaml,
+          ),
+          'jsonOption': OptionContentConfigProvider(
+            contentOption: jsonContentOpt,
+            format: ConfigEncoding.json,
+          ),
+        });
       });
-    });
 
-    test(
-        'when the YAML content option has data '
-        'then the correct value is retrieved', () async {
-      final config = Configuration.resolveNoExcept(
-        options: options,
-        args: [
-          '--yaml-content',
-          '''
+      test('when the YAML content option has data '
+          'then the correct value is retrieved', () async {
+        final config = Configuration.resolveNoExcept(
+          options: options,
+          args: [
+            '--yaml-content',
+            '''
 project:
   projectId: '123'
 ''',
-        ],
-        configBroker: configSource,
-      );
+          ],
+          configBroker: configSource,
+        );
 
-      expect(config.errors, isEmpty);
-      expect(config.optionalValue(yamlProjectIdOpt), equals('123'));
-      expect(config.optionalValue(jsonProjectIdOpt), isNull);
-    });
+        expect(config.errors, isEmpty);
+        expect(config.optionalValue(yamlProjectIdOpt), equals('123'));
+        expect(config.optionalValue(jsonProjectIdOpt), isNull);
+      });
 
-    test(
-        'when the JSON content option has data '
-        'then the correct value is retrieved', () async {
-      final config = Configuration.resolveNoExcept(
-        options: options,
-        args: [
-          '--json-content',
-          '''
+      test('when the JSON content option has data '
+          'then the correct value is retrieved', () async {
+        final config = Configuration.resolveNoExcept(
+          options: options,
+          args: [
+            '--json-content',
+            '''
 {
   "project": {
     "projectId": "123"
   }
 }
 ''',
-        ],
-        configBroker: configSource,
-      );
+          ],
+          configBroker: configSource,
+        );
 
-      expect(config.errors, isEmpty);
-      expect(config.optionalValue(yamlProjectIdOpt), isNull);
-      expect(config.optionalValue(jsonProjectIdOpt), equals('123'));
-    });
+        expect(config.errors, isEmpty);
+        expect(config.optionalValue(yamlProjectIdOpt), isNull);
+        expect(config.optionalValue(jsonProjectIdOpt), equals('123'));
+      });
 
-    test(
-        'when the YAML content option has data of the wrong type '
-        'then an appropriate error is registered', () async {
-      final config = Configuration.resolveNoExcept(
-        options: options,
-        args: [
-          '--yaml-content',
-          '''
+      test('when the YAML content option has data of the wrong type '
+          'then an appropriate error is registered', () async {
+        final config = Configuration.resolveNoExcept(
+          options: options,
+          args: [
+            '--yaml-content',
+            '''
 project:
   projectId: 123
 ''',
-        ],
-        configBroker: configSource,
-      );
+          ],
+          configBroker: configSource,
+        );
 
-      expect(
+        expect(
           config.errors,
           contains(
             equals(
               'configuration key `yamlOption:/project/projectId` value 123 is of type int, not String.',
             ),
-          ));
-      expect(
-        () => config.optionalValue(yamlProjectIdOpt),
-        throwsA(isA<StateError>()),
-      );
-      expect(config.optionalValue(jsonProjectIdOpt), isNull);
-    });
+          ),
+        );
+        expect(
+          () => config.optionalValue(yamlProjectIdOpt),
+          throwsA(isA<StateError>()),
+        );
+        expect(config.optionalValue(jsonProjectIdOpt), isNull);
+      });
 
-    test(
-        'when the JSON content option has data of the wrong type '
-        'then an appropriate error is registered', () async {
-      final config = Configuration.resolveNoExcept(
-        options: options,
-        args: [
-          '--json-content',
-          '''
+      test('when the JSON content option has data of the wrong type '
+          'then an appropriate error is registered', () async {
+        final config = Configuration.resolveNoExcept(
+          options: options,
+          args: [
+            '--json-content',
+            '''
 {
   "project": {
     "projectId": 123
   }
 }
 ''',
-        ],
-        configBroker: configSource,
-      );
+          ],
+          configBroker: configSource,
+        );
 
-      expect(
+        expect(
           config.errors,
           contains(
             equals(
               'configuration key `jsonOption:/project/projectId` value 123 is of type int, not String.',
             ),
-          ));
-      expect(
-        () => config.optionalValue(jsonProjectIdOpt),
-        throwsA(isA<StateError>()),
-      );
-      expect(config.optionalValue(yamlProjectIdOpt), isNull);
-    });
+          ),
+        );
+        expect(
+          () => config.optionalValue(jsonProjectIdOpt),
+          throwsA(isA<StateError>()),
+        );
+        expect(config.optionalValue(yamlProjectIdOpt), isNull);
+      });
 
-    test(
-        'when the YAML content option has malformed data '
-        'then an appropriate error is registered', () async {
-      final config = Configuration.resolveNoExcept(
-        options: options,
-        args: [
-          '--yaml-content',
-          '''
+      test('when the YAML content option has malformed data '
+          'then an appropriate error is registered', () async {
+        final config = Configuration.resolveNoExcept(
+          options: options,
+          args: [
+            '--yaml-content',
+            '''
 project:
 projectId:123
 ''',
-        ],
-        configBroker: configSource,
-      );
+          ],
+          configBroker: configSource,
+        );
 
-      expect(
+        expect(
           config.errors,
-          contains(contains(
-            'Failed to resolve configuration key `yamlOption:/project/projectId`: Error on line',
-          )));
-      expect(
-        () => config.optionalValue(yamlProjectIdOpt),
-        throwsA(isA<StateError>()),
-      );
-      expect(config.optionalValue(jsonProjectIdOpt), isNull);
-    });
+          contains(
+            contains(
+              'Failed to resolve configuration key `yamlOption:/project/projectId`: Error on line',
+            ),
+          ),
+        );
+        expect(
+          () => config.optionalValue(yamlProjectIdOpt),
+          throwsA(isA<StateError>()),
+        );
+        expect(config.optionalValue(jsonProjectIdOpt), isNull);
+      });
 
-    test(
-        'when the JSON content option has malformed data '
-        'then an appropriate error is registered', () async {
-      final config = Configuration.resolveNoExcept(
-        options: options,
-        args: [
-          '--json-content',
-          '''
+      test('when the JSON content option has malformed data '
+          'then an appropriate error is registered', () async {
+        final config = Configuration.resolveNoExcept(
+          options: options,
+          args: [
+            '--json-content',
+            '''
 {
   "project": {
     "projectId":
   }
 }
 ''',
-        ],
-        configBroker: configSource,
-      );
-
-      expect(
-          config.errors,
-          contains(contains(
-            'Failed to resolve configuration key `jsonOption:/project/projectId`: FormatException: Unexpected character',
-          )));
-      expect(
-        () => config.optionalValue(jsonProjectIdOpt),
-        throwsA(isA<StateError>()),
-      );
-      expect(config.optionalValue(yamlProjectIdOpt), isNull);
-    });
-  });
-
-  group(
-      'Given a MultiDomainConfigBroker with a domain and misconfigured options',
-      () {
-    const yamlContentOpt = StringOption(
-      argName: 'yaml-content',
-      envName: 'YAML_CONTENT',
-    );
-    const yamlProjectIdOpt = StringOption(
-      configKey: 'yamlOption:/project/projectId',
-    );
-    const missingDomainOpt = StringOption(
-      configKey: '/project/projectId',
-    );
-    const unknownDomainOpt = StringOption(
-      configKey: 'unknown:/project/projectId',
-    );
-    final options = [
-      yamlContentOpt,
-      yamlProjectIdOpt,
-      missingDomainOpt,
-      unknownDomainOpt,
-    ];
-
-    late ConfigurationBroker configSource;
-
-    setUp(() {
-      configSource = MultiDomainConfigBroker.prefix({
-        'yamlOption': OptionContentConfigProvider(
-          contentOption: yamlContentOpt,
-          format: ConfigEncoding.yaml,
-        ),
-      });
-    });
-
-    test(
-        'when creating the configuration '
-        'then the expected errors are registered', () async {
-      expect(
-        () => Configuration.resolveNoExcept(
-          options: options,
+          ],
           configBroker: configSource,
-        ),
-        throwsA(isA<StateError>().having(
-          (final e) => e.message,
-          'message',
-          equals(
-            'No matching configuration domain for key: /project/projectId',
+        );
+
+        expect(
+          config.errors,
+          contains(
+            contains(
+              'Failed to resolve configuration key `jsonOption:/project/projectId`: FormatException: Unexpected character',
+            ),
           ),
-        )),
-      );
-    });
-  });
+        );
+        expect(
+          () => config.optionalValue(jsonProjectIdOpt),
+          throwsA(isA<StateError>()),
+        );
+        expect(config.optionalValue(yamlProjectIdOpt), isNull);
+      });
+    },
+  );
 
   group(
-      'Given a MultiDomainConfigBroker with an option that has multiple configKeys',
-      () {
-    const yamlContentOpt = StringOption(
-      argName: 'yaml-content',
-    );
-    const jsonContentOpt = StringOption(
-      argName: 'json-content',
-    );
-    const projectIdOpt = StringOption(
-      configKeys: [
-        'yamlOption:/project/projectId',
-        'jsonOption:/project/projectId',
-      ],
-    );
-    final options = [
-      yamlContentOpt,
-      jsonContentOpt,
-      projectIdOpt,
-    ];
+    'Given a MultiDomainConfigBroker with a domain and misconfigured options',
+    () {
+      const yamlContentOpt = StringOption(
+        argName: 'yaml-content',
+        envName: 'YAML_CONTENT',
+      );
+      const yamlProjectIdOpt = StringOption(
+        configKey: 'yamlOption:/project/projectId',
+      );
+      const missingDomainOpt = StringOption(
+        configKey: '/project/projectId',
+      );
+      const unknownDomainOpt = StringOption(
+        configKey: 'unknown:/project/projectId',
+      );
+      final options = [
+        yamlContentOpt,
+        yamlProjectIdOpt,
+        missingDomainOpt,
+        unknownDomainOpt,
+      ];
 
-    late ConfigurationBroker configSource;
+      late ConfigurationBroker configSource;
 
-    setUp(() {
-      configSource = MultiDomainConfigBroker.prefix({
-        'yamlOption': OptionContentConfigProvider(
-          contentOption: yamlContentOpt,
-          format: ConfigEncoding.yaml,
-        ),
-        'jsonOption': OptionContentConfigProvider(
-          contentOption: jsonContentOpt,
-          format: ConfigEncoding.json,
-        ),
+      setUp(() {
+        configSource = MultiDomainConfigBroker.prefix({
+          'yamlOption': OptionContentConfigProvider(
+            contentOption: yamlContentOpt,
+            format: ConfigEncoding.yaml,
+          ),
+        });
       });
-    });
 
-    test(
-        'when both domains have a value '
-        'then the first config key is used', () async {
-      final config = Configuration.resolveNoExcept(
-        options: options,
-        args: [
-          '--yaml-content',
-          '''
+      test('when creating the configuration '
+          'then the expected errors are registered', () async {
+        expect(
+          () => Configuration.resolveNoExcept(
+            options: options,
+            configBroker: configSource,
+          ),
+          throwsA(
+            isA<StateError>().having(
+              (final e) => e.message,
+              'message',
+              equals(
+                'No matching configuration domain for key: /project/projectId',
+              ),
+            ),
+          ),
+        );
+      });
+    },
+  );
+
+  group(
+    'Given a MultiDomainConfigBroker with an option that has multiple configKeys',
+    () {
+      const yamlContentOpt = StringOption(
+        argName: 'yaml-content',
+      );
+      const jsonContentOpt = StringOption(
+        argName: 'json-content',
+      );
+      const projectIdOpt = StringOption(
+        configKeys: [
+          'yamlOption:/project/projectId',
+          'jsonOption:/project/projectId',
+        ],
+      );
+      final options = [
+        yamlContentOpt,
+        jsonContentOpt,
+        projectIdOpt,
+      ];
+
+      late ConfigurationBroker configSource;
+
+      setUp(() {
+        configSource = MultiDomainConfigBroker.prefix({
+          'yamlOption': OptionContentConfigProvider(
+            contentOption: yamlContentOpt,
+            format: ConfigEncoding.yaml,
+          ),
+          'jsonOption': OptionContentConfigProvider(
+            contentOption: jsonContentOpt,
+            format: ConfigEncoding.json,
+          ),
+        });
+      });
+
+      test('when both domains have a value '
+          'then the first config key is used', () async {
+        final config = Configuration.resolveNoExcept(
+          options: options,
+          args: [
+            '--yaml-content',
+            '''
 project:
   projectId: 'yaml-id'
 ''',
-          '--json-content',
-          '''
+            '--json-content',
+            '''
 {
   "project": {
     "projectId": "json-id"
   }
 }
 ''',
-        ],
-        configBroker: configSource,
-      );
+          ],
+          configBroker: configSource,
+        );
 
-      expect(config.errors, isEmpty);
-      expect(config.optionalValue(projectIdOpt), equals('yaml-id'));
-    });
+        expect(config.errors, isEmpty);
+        expect(config.optionalValue(projectIdOpt), equals('yaml-id'));
+      });
 
-    test(
-        'when only the second domain has a value '
-        'then the second config key is used', () async {
-      final config = Configuration.resolveNoExcept(
-        options: options,
-        args: [
-          '--json-content',
-          '''
+      test('when only the second domain has a value '
+          'then the second config key is used', () async {
+        final config = Configuration.resolveNoExcept(
+          options: options,
+          args: [
+            '--json-content',
+            '''
 {
   "project": {
     "projectId": "json-id"
   }
 }
 ''',
-        ],
-        configBroker: configSource,
-      );
+          ],
+          configBroker: configSource,
+        );
 
-      expect(config.errors, isEmpty);
-      expect(config.optionalValue(projectIdOpt), equals('json-id'));
-    });
+        expect(config.errors, isEmpty);
+        expect(config.optionalValue(projectIdOpt), equals('json-id'));
+      });
 
-    test(
-        'when neither domain has a value '
-        'then the option has no value', () async {
-      final config = Configuration.resolveNoExcept(
-        options: options,
-        args: [
-          '--yaml-content',
-          '''
+      test('when neither domain has a value '
+          'then the option has no value', () async {
+        final config = Configuration.resolveNoExcept(
+          options: options,
+          args: [
+            '--yaml-content',
+            '''
 project:
   name: demo
 ''',
-          '--json-content',
-          '''
+            '--json-content',
+            '''
 {
   "project": {
     "name": "demo"
   }
 }
 ''',
-        ],
-        configBroker: configSource,
-      );
+          ],
+          configBroker: configSource,
+        );
 
-      expect(config.errors, isEmpty);
-      expect(config.optionalValue(projectIdOpt), isNull);
-    });
-  });
+        expect(config.errors, isEmpty);
+        expect(config.optionalValue(projectIdOpt), isNull);
+      });
+    },
+  );
 }

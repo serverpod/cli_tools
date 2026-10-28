@@ -1,7 +1,11 @@
-import 'package:args/args.dart';
+import 'dart:async' show FutureOr;
+
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
+import 'arg_parser_bridge.dart';
+import 'arg_parser_facade.dart';
+import 'completion.dart';
 import 'configuration.dart' show Configuration;
 import 'configuration_broker.dart';
 import 'exceptions.dart';
@@ -240,7 +244,7 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
   List<String> get allConfigKeys {
     final key = configKey;
     final keys = configKeys;
-    return [if (key != null) key, ...?keys];
+    return [?key, ...?keys];
   }
 
   V? defaultValue() {
@@ -258,26 +262,6 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
     return valueHelp;
   }
 
-  /// Adds this configuration option to the provided argument parser.
-  void _addToArgParser(final ArgParser argParser) {
-    final argName = this.argName;
-    if (argName == null) {
-      throw StateError("Can't add option without arg name to arg parser.");
-    }
-    argParser.addOption(
-      argName,
-      abbr: argAbbrev,
-      help: helpText,
-      valueHelp: valueHelpString(),
-      allowed: allowedValues?.map(valueParser.format),
-      allowedHelp: allowedHelp,
-      defaultsTo: defaultValueString(),
-      mandatory: mandatory,
-      hide: hide,
-      aliases: argAliases ?? const [],
-    );
-  }
-
   /// Validates the configuration option definition.
   ///
   /// This method is called by [validateOptions] to validate
@@ -288,32 +272,53 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
   /// If they do, they must also call the super implementation.
   @mustCallSuper
   void validateDefinition() {
-    if (argName == null && argAbbrev != null) {
-      throw OptionDefinitionError(this,
-          "An argument option can't have an abbreviation but not a full name");
-    }
-
-    if (argName?.contains('=') == true || argAbbrev?.contains('=') == true) {
-      throw OptionDefinitionError(
-          this, "An argument option name / abbreviation can't contain '='");
-    }
-    if (argName?.startsWith('-') == true ||
-        argAbbrev?.startsWith('-') == true) {
-      throw OptionDefinitionError(
-          this, "An argument option name / abbreviation can't start with '-'");
+    final fullName = argName;
+    if (fullName == null) {
+      if (argAbbrev != null) {
+        throw OptionDefinitionError(
+          this,
+          "An argument option can't have an abbreviation but not a full name",
+        );
+      }
+      if (argAliases?.isNotEmpty == true) {
+        throw OptionDefinitionError(
+          this,
+          "An argument option can't have aliases but not a full name",
+        );
+      }
+    } else {
+      if (fullName.contains('=') == true || argAbbrev?.contains('=') == true) {
+        throw OptionDefinitionError(
+          this,
+          "An argument option name / abbreviation can't contain '='",
+        );
+      }
+      if (fullName.startsWith('-') == true ||
+          argAbbrev?.startsWith('-') == true) {
+        throw OptionDefinitionError(
+          this,
+          "An argument option name / abbreviation can't start with '-'",
+        );
+      }
     }
     if (argAliases?.any((final alias) => alias.contains('=')) == true) {
       throw OptionDefinitionError(
-          this, "An argument option alias can't contain '='");
+        this,
+        "An argument option alias can't contain '='",
+      );
     }
     if (argAliases?.any((final alias) => alias.startsWith('-')) == true) {
       throw OptionDefinitionError(
-          this, "An argument option alias can't start with '-'");
+        this,
+        "An argument option alias can't start with '-'",
+      );
     }
 
     if ((fromDefault != null || defaultsTo != null) && mandatory) {
       throw OptionDefinitionError(
-          this, "Mandatory options can't have default values");
+        this,
+        "Mandatory options can't have default values",
+      );
     }
   }
 
@@ -327,7 +332,8 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
   void validateValue(final V value) {
     if (allowedValues?.contains(value) == false) {
       throw InvalidValueException(
-          '`$value` is not an allowed value for ${qualifiedString()}');
+        '`$value` is not an allowed value for ${qualifiedString()}',
+      );
     }
 
     customValidator?.call(value);
@@ -337,6 +343,67 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
   @override
   ConfigOptionBase<V> get option => this;
 
+  /////////////////////
+  // Command line completion
+
+  /// Returns the command line completion alternatives for a value of this
+  /// option.
+  ///
+  /// Invoked by the command runner when the shell requests completion of a
+  /// value for this option. [context] describes the command line typed so far,
+  /// including the partial [CompletionContext.wordToComplete].
+  ///
+  /// The default implementation offers [allowedValues] when set, with
+  /// descriptions from [allowedHelp]; otherwise the keys of [allowedHelp]
+  /// when set; otherwise it requests native file completion from the shell.
+  ///
+  /// Subclasses override this for type-specific behavior, for example
+  /// [EnumOption] offers the enum names and [DirOption] offers directories.
+  /// A custom option type can override this to offer any alternatives,
+  /// for example names fetched from a server. The implementation may be
+  /// asynchronous, but must be fast and should not throw. If it throws,
+  /// nothing is offered.
+  ///
+  /// The candidates need not be filtered by [CompletionContext.wordToComplete]
+  /// since the shells do that; filtering is still recommended for large sets.
+  FutureOr<CompletionResult> complete(final CompletionContext context) {
+    final candidates = allowedValueCandidates();
+    if (candidates != null) return CompletionResult.values(candidates);
+    return const CompletionResult.files();
+  }
+
+  /// Returns completion candidates for [allowedValues] with descriptions
+  /// from [allowedHelp], or for the keys of [allowedHelp] alone,
+  /// or null if neither is set.
+  @protected
+  List<CompletionCandidate>? allowedValueCandidates() {
+    final allowed = allowedValues;
+    if (allowed != null) return candidatesForValues(allowed);
+
+    final help = allowedHelp;
+    if (help != null) {
+      return [
+        for (final entry in help.entries)
+          CompletionCandidate(entry.key, description: entry.value),
+      ];
+    }
+    return null;
+  }
+
+  /// Returns completion candidates for [values], formatted with
+  /// [valueParser] and described by [allowedHelp] when available.
+  @protected
+  List<CompletionCandidate> candidatesForValues(final Iterable<V> values) {
+    final help = allowedHelp;
+    return [
+      for (final value in values)
+        if (valueParser.format(value) case final formatted)
+          CompletionCandidate(formatted, description: help?[formatted]),
+    ];
+  }
+
+  // TODO: Present arg options including the '--' prefix,
+  //       and {position 0} for positional arguments without a name.
   @override
   String toString() => argName ?? envName ?? '<unnamed option>';
 
@@ -373,7 +440,7 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
   @internal
   OptionResolutionImpl<V> resolveValue(
     final Configuration cfg, {
-    final ArgResults? args,
+    final ParsedArgs? args,
     final Iterator<String>? posArgs,
     final Map<String, String>? env,
     final ConfigurationBroker? configBroker,
@@ -419,7 +486,7 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
 
   OptionResolutionImpl<V> _doResolve(
     final Configuration cfg, {
-    final ArgResults? args,
+    final ParsedArgs? args,
     final Iterator<String>? posArgs,
     final Map<String, String>? env,
     final ConfigurationBroker? configBroker,
@@ -447,13 +514,12 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
     return const OptionResolutionImpl.noValue();
   }
 
-  OptionResolutionImpl<V>? _resolveNamedArg(final ArgResults? args) {
-    final argOptName = argName;
-    if (argOptName == null || args == null || !args.wasParsed(argOptName)) {
+  OptionResolutionImpl<V>? _resolveNamedArg(final ParsedArgs? args) {
+    if (argName == null || args == null || !args.wasParsed(this)) {
       return null;
     }
     return OptionResolutionImpl(
-      stringValue: args.option(argOptName),
+      stringValue: args.option(this),
       source: ValueSourceType.arg,
     );
   }
@@ -604,37 +670,35 @@ class FlagOption extends ConfigOptionBase<bool> {
     this.negatable = true,
     this.hideNegatedUsage = false,
   }) : super(
-          valueParser: const BoolParser(),
-        );
+         valueParser: const BoolParser(),
+       );
 
   @override
-  void _addToArgParser(final ArgParser argParser) {
-    final argName = this.argName;
-    if (argName == null) {
-      throw StateError("Can't add flag without arg name to arg parser.");
+  void validateDefinition() {
+    super.validateDefinition();
+    if (argName?.startsWith('no-') == true) {
+      throw OptionDefinitionError(
+        this,
+        "A flag name can't start with 'no-'",
+      );
     }
-    argParser.addFlag(
-      argName,
-      abbr: argAbbrev,
-      help: helpText,
-      defaultsTo: defaultValue(),
-      negatable: negatable,
-      hideNegatedUsage: hideNegatedUsage,
-      hide: hide,
-      aliases: argAliases ?? const [],
-    );
   }
 
   @override
-  OptionResolutionImpl<bool>? _resolveNamedArg(final ArgResults? args) {
-    final argOptName = argName;
-    if (argOptName == null || args == null || !args.wasParsed(argOptName)) {
+  OptionResolutionImpl<bool>? _resolveNamedArg(final ParsedArgs? args) {
+    if (argName == null || args == null || !args.wasParsed(this)) {
       return null;
     }
     return OptionResolutionImpl(
-      value: args.flag(argOptName),
+      value: args.flag(this),
       source: ValueSourceType.arg,
     );
+  }
+
+  /// A flag takes no value on the command line, so there is nothing to offer.
+  @override
+  FutureOr<CompletionResult> complete(final CompletionContext context) {
+    return const CompletionResult.none();
   }
 }
 
@@ -696,10 +760,10 @@ class MultiOption<T> extends ConfigOptionBase<List<T>> {
     super.customValidator,
     super.mandatory,
     super.hide,
-  })  : allowedElementValues = allowedValues,
-        super(
-          valueParser: multiParser,
-        );
+  }) : allowedElementValues = allowedValues,
+       super(
+         valueParser: multiParser,
+       );
 
   /// [MultiOption] does not properly support [allowedValues],
   /// use [allowedElementValues] instead.
@@ -709,38 +773,13 @@ class MultiOption<T> extends ConfigOptionBase<List<T>> {
   }
 
   @override
-  void _addToArgParser(final ArgParser argParser) {
-    final argName = this.argName;
-    if (argName == null) {
-      throw StateError("Can't add option without arg name to arg parser.");
-    }
-
-    argParser.addMultiOption(
-      argName,
-      abbr: argAbbrev,
-      help: helpText,
-      valueHelp: valueHelpString(),
-      allowed: allowedElementValues?.map(multiParser.elementParser.format),
-      allowedHelp: allowedHelp,
-      defaultsTo: defaultValue()?.map(multiParser.elementParser.format),
-      hide: hide,
-      splitCommas: multiParser.separator == ',',
-      aliases: argAliases ?? const [],
-    );
-  }
-
-  @override
-  OptionResolutionImpl<List<T>>? _resolveNamedArg(final ArgResults? args) {
-    final argOptName = argName;
-    if (argOptName == null || args == null || !args.wasParsed(argOptName)) {
+  OptionResolutionImpl<List<T>>? _resolveNamedArg(final ParsedArgs? args) {
+    if (argName == null || args == null || !args.wasParsed(this)) {
       return null;
     }
     final multiParser = valueParser as MultiParser<T>;
     return OptionResolutionImpl(
-      value: args
-          .multiOption(argOptName)
-          .map(multiParser.elementParser.parse)
-          .toList(),
+      value: args.multiOption(this).expand(multiParser.parse).toList(),
       source: ValueSourceType.arg,
     );
   }
@@ -755,10 +794,31 @@ class MultiOption<T> extends ConfigOptionBase<List<T>> {
       for (final v in value) {
         if (allowed.contains(v) == false) {
           throw InvalidValueException(
-              '`$v` is not an allowed value for ${qualifiedString()}');
+            '`$v` is not an allowed value for ${qualifiedString()}',
+          );
         }
       }
     }
+  }
+
+  /// Offers the [allowedElementValues] when set, with descriptions from
+  /// [allowedHelp]; otherwise the keys of [allowedHelp] when set;
+  /// otherwise native file completion.
+  ///
+  /// The command runner completes the element after the last separator,
+  /// when the [MultiParser.separator] is a string.
+  @override
+  FutureOr<CompletionResult> complete(final CompletionContext context) {
+    final allowed = allowedElementValues;
+    if (allowed != null) {
+      final help = allowedHelp;
+      return CompletionResult.values([
+        for (final value in allowed)
+          if (multiParser.elementParser.format(value) case final formatted)
+            CompletionCandidate(formatted, description: help?[formatted]),
+      ]);
+    }
+    return super.complete(context);
   }
 }
 
@@ -776,27 +836,20 @@ extension QualifiedString on OptionDefinition {
   }
 }
 
-/// Validates and prepares a set of options for the provided argument parser.
-void prepareOptionsForParsing(
-  final Iterable<OptionDefinition> options,
-  final ArgParser argParser,
-) {
-  final argNameOpts = validateOptions(options);
-  addOptionsToParser(argNameOpts, argParser, addGroupSeparators: true);
-}
-
 /// Validates a set of options.
 ///
 /// Throws an [OptionDefinitionError] if the options are invalid.
 ///
 /// Returns an iterable of the options that are specifyable with an argument
 /// name on the command line.
-Iterable<OptionDefinition> validateOptions(
+List<OptionDefinition> validateOptions(
   final Iterable<OptionDefinition> options,
 ) {
   final argNameOpts = <String, OptionDefinition>{};
   final argPosOpts = <int, OptionDefinition>{};
   final envNameOpts = <String, OptionDefinition>{};
+  final claimedNames = <String, OptionDefinition>{};
+  final claimedAbbrevs = <String, OptionDefinition>{};
 
   final optionGroups = <OptionGroup, List<OptionDefinition>>{};
 
@@ -805,10 +858,7 @@ Iterable<OptionDefinition> validateOptions(
 
     final argName = opt.option.argName;
     if (argName != null) {
-      if (argNameOpts.containsKey(opt.option.argName)) {
-        throw OptionDefinitionError(
-            opt, 'Duplicate argument name: ${opt.option.argName} for $opt');
-      }
+      _claimOptionArgs(opt, claimedNames, claimedAbbrevs);
       argNameOpts[argName] = opt;
     }
 
@@ -816,7 +866,9 @@ Iterable<OptionDefinition> validateOptions(
     if (argPos != null) {
       if (argPosOpts.containsKey(opt.option.argPos)) {
         throw OptionDefinitionError(
-            opt, 'Duplicate argument position: ${opt.option.argPos} for $opt');
+          opt,
+          'Duplicate argument position: ${opt.option.argPos} for $opt',
+        );
       }
       argPosOpts[argPos] = opt;
     }
@@ -824,8 +876,10 @@ Iterable<OptionDefinition> validateOptions(
     final envName = opt.option.envName;
     if (envName != null) {
       if (envNameOpts.containsKey(opt.option.envName)) {
-        throw OptionDefinitionError(opt,
-            'Duplicate environment variable name: ${opt.option.envName} for $opt');
+        throw OptionDefinitionError(
+          opt,
+          'Duplicate environment variable name: ${opt.option.envName} for $opt',
+        );
       }
       envNameOpts[envName] = opt;
     }
@@ -846,7 +900,8 @@ Iterable<OptionDefinition> validateOptions(
 
   if (argPosOpts.isNotEmpty) {
     final orderedPosOpts = argPosOpts.values.sorted(
-        (final a, final b) => a.option.argPos!.compareTo(b.option.argPos!));
+      (final a, final b) => a.option.argPos!.compareTo(b.option.argPos!),
+    );
 
     if (orderedPosOpts.first.option.argPos != 0) {
       throw OptionDefinitionError(
@@ -863,87 +918,70 @@ Iterable<OptionDefinition> validateOptions(
     }
   }
 
-  return argNameOpts.values;
+  return argNameOpts.values.toList();
 }
 
-/// Adds [argNameOpts] to [argParser].
-///
-/// When [addGroupSeparators] is `true`,
-/// - options are grouped by [OptionGroup] and a
-/// - separator with the group name is inserted
-/// - before each group that has at least one visible option.
-/// - Note:
-///     - groupless options are added first in their original order
-///     - relative order of all options within a group is preserved
-///     - relative order of all groups is preserved
-///
-/// By default,
-/// [addGroupSeparators] is `false` to ensure backwards compatibility.
-void addOptionsToParser(
-  final Iterable<OptionDefinition> argNameOpts,
-  final ArgParser argParser, {
-  final bool addGroupSeparators = false,
-}) {
-  // plain option-addition without any group separator logic
-  if (!addGroupSeparators) {
-    for (final o in argNameOpts) {
-      o.option._addToArgParser(argParser);
-    }
-    return;
+void _claimOptionArgs(
+  final OptionDefinition opt,
+  final Map<String, OptionDefinition> names,
+  final Map<String, OptionDefinition> abbrevs,
+) {
+  final argName = opt.option.argName;
+  if (argName == null) return;
+
+  _claimArg(
+    names,
+    argName,
+    opt,
+    'Duplicate argument name: $argName for $opt',
+  );
+  if (opt.option case final FlagOption flag when flag.negatable) {
+    final negation = 'no-$argName';
+    _claimArg(
+      names,
+      negation,
+      opt,
+      'Duplicate argument name: $negation for $opt',
+    );
   }
 
-  // the following containers are ordered by default i.e.
-  // preserves insertion-order:
-  // - Map  : https://stackoverflow.com/q/79786585/10251345
-  // - List : https://api.dart.dev/dart-core/List-class.html
-  final optionGroups = <OptionGroup, List<OptionDefinition>>{};
-  final grouplessOptions = <OptionDefinition>[];
-
-  // gather all necessary option-group information
-  for (final opt in argNameOpts) {
-    final group = opt.option.group;
-    if (group != null) {
-      optionGroups.update(
-        group,
-        (final options) => options..add(opt),
-        ifAbsent: () => [opt],
+  if (opt.option.argAliases case final List<String> aliases) {
+    for (final alias in aliases) {
+      _claimArg(
+        names,
+        alias,
+        opt,
+        'Duplicate argument name: $alias for $opt',
       );
-    } else {
-      grouplessOptions.add(opt);
     }
   }
 
-  // add all groupless-options first (in order)
-  for (final o in grouplessOptions) {
-    o.option._addToArgParser(argParser);
+  if (opt.option.argAbbrev case final String abbrev) {
+    _claimArg(
+      abbrevs,
+      abbrev,
+      opt,
+      'Duplicate argument abbreviation: $abbrev for $opt',
+    );
   }
+}
 
-  // add all explicit groups (in order)
-  optionGroups.forEach((final group, final groupedOptions) {
-    // add the group-name-separator only if it has at least one visible option
-    if (groupedOptions.any((final o) => !o.option.hide)) {
-      argParser.addSeparator(group.name);
-    }
-    // add all options within this group (in order)
-    for (final o in groupedOptions) {
-      o.option._addToArgParser(argParser);
-    }
-  });
+void _claimArg(
+  final Map<String, OptionDefinition> claimed,
+  final String key,
+  final OptionDefinition opt,
+  final String message,
+) {
+  if (claimed.containsKey(key)) {
+    throw OptionDefinitionError(opt, message);
+  }
+  claimed[key] = opt;
 }
 
 extension PrepareOptions on Iterable<OptionDefinition> {
-  /// Validates and prepares these options for the provided argument parser.
-  void prepareForParsing(final ArgParser argParser) =>
-      prepareOptionsForParsing(this, argParser);
-
-  /// Validates these options.
-  void validate() => validateOptions(this);
-
   /// Returns the usage help text for these options.
   String get usage {
-    final parser = ArgParser();
-    prepareForParsing(parser);
-    return parser.usage;
+    return oldUsage(this);
   }
 
   /// Returns the option definition for the given enum name,

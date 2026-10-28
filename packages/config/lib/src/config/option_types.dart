@@ -1,5 +1,8 @@
+import 'dart:async' show FutureOr;
+
 import 'package:meta/meta.dart';
 
+import 'completion.dart';
 import 'options.dart';
 
 /// ValueParser that returns the input string unchanged.
@@ -34,8 +37,8 @@ class StringOption extends ConfigOptionBase<String> {
     super.mandatory,
     super.hide,
   }) : super(
-          valueParser: const StringParser(),
-        );
+         valueParser: const StringParser(),
+       );
 }
 
 /// Convenience class for multi-value configuration option for strings.
@@ -60,8 +63,8 @@ class MultiStringOption extends MultiOption<String> {
     super.mandatory,
     super.hide,
   }) : super(
-          multiParser: const MultiParser(StringParser()),
-        );
+         multiParser: const MultiParser(StringParser()),
+       );
 
   /// Creates a MultiStringOption which treats input strings as single elements.
   const MultiStringOption.noSplit({
@@ -83,8 +86,8 @@ class MultiStringOption extends MultiOption<String> {
     super.mandatory,
     super.hide,
   }) : super(
-          multiParser: const MultiParser(StringParser(), separator: null),
-        );
+         multiParser: const MultiParser(StringParser(), separator: null),
+       );
 }
 
 /// Parses a string value into an enum value.
@@ -157,6 +160,14 @@ class EnumOption<E extends Enum> extends ConfigOptionBase<E> {
     if (allowedValues != null || allowedHelp != null) return null;
     // if no other value help is provided, auto-generate it with the enum names
     return (valueParser as EnumParser<E>).valueHelpString();
+  }
+
+  /// Offers the enum names, restricted to [allowedValues] when set,
+  /// with descriptions from [allowedHelp].
+  @override
+  FutureOr<CompletionResult> complete(final CompletionContext context) {
+    final values = allowedValues ?? (valueParser as EnumParser<E>).enumValues;
+    return CompletionResult.values(candidatesForValues(values));
   }
 }
 
@@ -266,8 +277,9 @@ class DateTimeParser extends ValueParser<DateTime> {
     final val = DateTime.tryParse(value);
     if (val != null) return val;
     if (value.length >= 11 && '-_/:t'.contains(value[10])) {
-      final val =
-          DateTime.tryParse('${value.substring(0, 10)}T${value.substring(11)}');
+      final val = DateTime.tryParse(
+        '${value.substring(0, 10)}T${value.substring(11)}',
+      );
       if (val != null) return val;
     }
     throw FormatException('Invalid date-time "$value"');
