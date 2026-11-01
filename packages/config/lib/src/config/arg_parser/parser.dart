@@ -424,7 +424,7 @@ void _validateCommandsAndOptions<O extends OptionDefinition>(
   ];
   for (final subcommand in subcommands) {
     _validateCommandsAndOptions(
-      subcommand as CommandDefinition<O>,
+      subcommand,
       inheritedPersistentOptions: persistentOptions,
     );
   }
