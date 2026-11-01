@@ -74,10 +74,16 @@ void main() {
       expect(result.errors, ['Unexpected value: --']);
     });
 
-    test('when - is parsed then the error is recorded', () {
+    test('when - is parsed then it stays positional', () {
       final result = scanAndParseArgs(['-'], options: <OptionDefinition>[]);
 
-      expect(result.errors, ['Unexpected value: -']);
+      expect(result.positionalWords, ['-']);
+    });
+
+    test('when - is parsed then there is no error', () {
+      final result = scanAndParseArgs(['-'], options: <OptionDefinition>[]);
+
+      expect(result.errors, isEmpty);
     });
 
     test(
@@ -208,6 +214,14 @@ void main() {
 
     test('when passed as -v then it is set', () {
       expect(parse(['-v']).flagOptions[verbose], isTrue);
+    });
+
+    test('when - follows the flag then the flag is set', () {
+      expect(parse(['-v', '-']).flagOptions[verbose], isTrue);
+    });
+
+    test('when - follows the flag then - stays positional', () {
+      expect(parse(['-v', '-']).positionalWords, ['-']);
     });
 
     test('when passed by alias then it is set', () {
