@@ -2,6 +2,7 @@ import 'dart:io' show Platform;
 
 import 'package:args/args.dart';
 
+import '../config/arg_parser_bridge.dart' show addOptionsToParser;
 import '../config/configuration.dart';
 import '../config/configuration_broker.dart';
 import '../config/option_types.dart';

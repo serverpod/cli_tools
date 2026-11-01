@@ -181,7 +181,7 @@ void main() async {
         expect(config.errors, hasLength(1));
         expect(
           config.errors.single,
-          equals('"99" is not an allowed value for option "--number".'),
+          contains('`99` is not an allowed value for option `number`'),
         );
       },
     );
@@ -873,7 +873,7 @@ void main() async {
         expect(config.errors, hasLength(1));
         expect(
           config.errors.single,
-          equals('"wrong" is not an allowed value for option "--many".'),
+          contains('`wrong` is not an allowed value for option `many`'),
         );
         expect(
           () => config.optionalValue(typedOpt),
@@ -915,7 +915,7 @@ void main() async {
         expect(config.errors, hasLength(1));
         expect(
           config.errors.single,
-          equals('"wrong" is not an allowed value for option "--many".'),
+          contains('`wrong` is not an allowed value for option `many`'),
         );
         expect(
           () => config.optionalValue(typedOpt),
