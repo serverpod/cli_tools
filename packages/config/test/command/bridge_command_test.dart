@@ -419,6 +419,7 @@ void main() {
         'tool',
         'Tools',
         usageOutput: usage.handler,
+        completion: CompletionSettings.disabled,
         subcommands: [command],
       );
     });
@@ -463,6 +464,7 @@ CommandRunner<OptionDefinition, String> _runner({
     'Tools',
     subcommands: subcommands,
     usageOutput: noUsageErrorOutput,
+    completion: CompletionSettings.disabled,
   );
 }
 

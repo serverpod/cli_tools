@@ -1088,6 +1088,8 @@ CommandRunner<OptionDefinition, void> _runner({
     subcommands: subcommands,
     usageLineLength: usageLineLength,
     rootFooter: rootFooter,
+    // The built-in completion command is covered by the completion tests.
+    completion: CompletionSettings.disabled,
   );
 }
 
