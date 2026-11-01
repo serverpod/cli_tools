@@ -11,8 +11,7 @@ void main() {
       log = Log(writer);
     });
 
-    test(
-        'when a log is emitted, '
+    test('when a log is emitted, '
         'then it attaches to the synthetic root scope', () async {
       log.info('orphan');
       await log.flush();
@@ -20,8 +19,7 @@ void main() {
       expect(writer.entries.single.scope.label, 'unknown');
     });
 
-    test(
-        'when progress is given metadata, '
+    test('when progress is given metadata, '
         'then the opened scope carries it', () async {
       await log.progress('op', () async => true, metadata: {'k': 'v'});
 

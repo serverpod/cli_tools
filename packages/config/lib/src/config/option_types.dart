@@ -34,8 +34,8 @@ class StringOption extends ConfigOptionBase<String> {
     super.mandatory,
     super.hide,
   }) : super(
-          valueParser: const StringParser(),
-        );
+         valueParser: const StringParser(),
+       );
 }
 
 /// Convenience class for multi-value configuration option for strings.
@@ -60,8 +60,8 @@ class MultiStringOption extends MultiOption<String> {
     super.mandatory,
     super.hide,
   }) : super(
-          multiParser: const MultiParser(StringParser()),
-        );
+         multiParser: const MultiParser(StringParser()),
+       );
 
   /// Creates a MultiStringOption which treats input strings as single elements.
   const MultiStringOption.noSplit({
@@ -83,8 +83,8 @@ class MultiStringOption extends MultiOption<String> {
     super.mandatory,
     super.hide,
   }) : super(
-          multiParser: const MultiParser(StringParser(), separator: null),
-        );
+         multiParser: const MultiParser(StringParser(), separator: null),
+       );
 }
 
 /// Parses a string value into an enum value.
@@ -266,8 +266,9 @@ class DateTimeParser extends ValueParser<DateTime> {
     final val = DateTime.tryParse(value);
     if (val != null) return val;
     if (value.length >= 11 && '-_/:t'.contains(value[10])) {
-      final val =
-          DateTime.tryParse('${value.substring(0, 10)}T${value.substring(11)}');
+      final val = DateTime.tryParse(
+        '${value.substring(0, 10)}T${value.substring(11)}',
+      );
       if (val != null) return val;
     }
     throw FormatException('Invalid date-time "$value"');

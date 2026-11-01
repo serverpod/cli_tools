@@ -4,8 +4,7 @@ import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
 void main() {
-  test(
-      'Given a BetterCommandRunner without enabling completion feature'
+  test('Given a BetterCommandRunner without enabling completion feature'
       ' when running base command with --help flag'
       ' then global usage does not include "completion" command', () async {
     final infos = <String>[];
@@ -23,9 +22,11 @@ void main() {
     expect(infos, hasLength(1));
     expect(
       infos.single,
-      isNot(stringContainsInOrder([
-        'Generate a command line completion specification',
-      ])),
+      isNot(
+        stringContainsInOrder([
+          'Generate a command line completion specification',
+        ]),
+      ),
     );
   });
 
@@ -46,8 +47,7 @@ void main() {
       infos.clear();
     });
 
-    test(
-        'when running base command with --help flag '
+    test('when running base command with --help flag '
         'then global usage includes "completion" command', () async {
       await runner.run(['--help']);
 
@@ -66,22 +66,22 @@ void main() {
     });
 
     test(
-        'when running subcommand "completion generate -t completely -f <file>" '
-        'then a proper completely specification is written to the file',
-        () async {
-      await d.dir('test-dir').create();
-      final filePath = p.join(d.sandbox, 'test-dir', 'test.yaml');
+      'when running subcommand "completion generate -t completely -f <file>" '
+      'then a proper completely specification is written to the file',
+      () async {
+        await d.dir('test-dir').create();
+        final filePath = p.join(d.sandbox, 'test-dir', 'test.yaml');
 
-      await runner.run([
-        'completion',
-        'generate',
-        '-t',
-        'completely',
-        '-f',
-        filePath,
-      ]);
+        await runner.run([
+          'completion',
+          'generate',
+          '-t',
+          'completely',
+          '-f',
+          filePath,
+        ]);
 
-      final spec = d.file(
+        final spec = d.file(
           filePath,
           stringContainsInOrder([
             'test:',
@@ -100,41 +100,44 @@ void main() {
             '  - <file>',
             'test completion generate*-f:',
             '  - <file>',
-          ]));
-      await expectLater(spec.validate(), completes);
-    });
+          ]),
+        );
+        await expectLater(spec.validate(), completes);
+      },
+    );
 
     test(
-        'when running subcommand "completion generate -t completely -e other-exec-name -f <file>" '
-        'then the completely specification contains other-exec-name', () async {
-      await d.dir('test-dir').create();
-      final filePath = p.join(d.sandbox, 'test-dir', 'test.yaml');
+      'when running subcommand "completion generate -t completely -e other-exec-name -f <file>" '
+      'then the completely specification contains other-exec-name',
+      () async {
+        await d.dir('test-dir').create();
+        final filePath = p.join(d.sandbox, 'test-dir', 'test.yaml');
 
-      await runner.run([
-        'completion',
-        'generate',
-        '-t',
-        'completely',
-        '-e',
-        'other-exec-name',
-        '-f',
-        filePath,
-      ]);
+        await runner.run([
+          'completion',
+          'generate',
+          '-t',
+          'completely',
+          '-e',
+          'other-exec-name',
+          '-f',
+          filePath,
+        ]);
 
-      final spec = d.file(
+        final spec = d.file(
           filePath,
           stringContainsInOrder([
             'other-exec-name:',
             '  - completion',
             'other-exec-name completion generate*--tool:',
-          ]));
-      await expectLater(spec.validate(), completes);
-    });
+          ]),
+        );
+        await expectLater(spec.validate(), completes);
+      },
+    );
 
-    test(
-        'when running subcommand "completion generate -t carapace -f <file>" '
-        'then a proper carapace specification is written to the file',
-        () async {
+    test('when running subcommand "completion generate -t carapace -f <file>" '
+        'then a proper carapace specification is written to the file', () async {
       await d.dir('test-dir').create();
       final filePath = p.join(d.sandbox, 'test-dir', 'test.yaml');
 
@@ -148,57 +151,60 @@ void main() {
       ]);
 
       final spec = d.file(
+        filePath,
+        stringContainsInOrder([
+          r'# yaml-language-server: $schema=https://carapace.sh/schemas/command.json',
+          'name: test',
+          'persistentFlags:',
+          '  -q, --quiet: "Suppress all cli output. Is overridden by  -v, --verbose."',
+          '  -v, --verbose: "Prints additional information useful for development. Overrides --q, --quiet."',
+          'commands:',
+          '  - name: completion',
+          '    commands:',
+          '      - name: generate',
+          '      flags:',
+          '        -t, --tool=!: "The completion tool to target"',
+          '        -e, --exec-name=: "Override the name of the executable"',
+          '        -f, --file=: "Write the specification to a file instead of stdout"',
+          '      completion:',
+          '        flag:',
+          '          tool: ["completely", "carapace"]',
+          r'          file: ["$files"]',
+        ]),
+      );
+      await expectLater(spec.validate(), completes);
+    });
+
+    test(
+      'when running subcommand "completion generate -t carapace -e other-exec-name -f <file>" '
+      'then the carapace specification contains other-exec-name',
+      () async {
+        await d.dir('test-dir').create();
+        final filePath = p.join(d.sandbox, 'test-dir', 'test.yaml');
+
+        await runner.run([
+          'completion',
+          'generate',
+          '-t',
+          'carapace',
+          '-e',
+          'other-exec-name',
+          '-f',
           filePath,
-          stringContainsInOrder([
-            r'# yaml-language-server: $schema=https://carapace.sh/schemas/command.json',
-            'name: test',
-            'persistentFlags:',
-            '  -q, --quiet: "Suppress all cli output. Is overridden by  -v, --verbose."',
-            '  -v, --verbose: "Prints additional information useful for development. Overrides --q, --quiet."',
-            'commands:',
-            '  - name: completion',
-            '    commands:',
-            '      - name: generate',
-            '      flags:',
-            '        -t, --tool=!: "The completion tool to target"',
-            '        -e, --exec-name=: "Override the name of the executable"',
-            '        -f, --file=: "Write the specification to a file instead of stdout"',
-            '      completion:',
-            '        flag:',
-            '          tool: ["completely", "carapace"]',
-            r'          file: ["$files"]',
-          ]));
-      await expectLater(spec.validate(), completes);
-    });
+        ]);
 
-    test(
-        'when running subcommand "completion generate -t carapace -e other-exec-name -f <file>" '
-        'then the carapace specification contains other-exec-name', () async {
-      await d.dir('test-dir').create();
-      final filePath = p.join(d.sandbox, 'test-dir', 'test.yaml');
-
-      await runner.run([
-        'completion',
-        'generate',
-        '-t',
-        'carapace',
-        '-e',
-        'other-exec-name',
-        '-f',
-        filePath,
-      ]);
-
-      final spec = d.file(
+        final spec = d.file(
           filePath,
           stringContainsInOrder([
             r'# yaml-language-server: $schema=https://carapace.sh/schemas/command.json',
             'name: other-exec-name',
-          ]));
-      await expectLater(spec.validate(), completes);
-    });
+          ]),
+        );
+        await expectLater(spec.validate(), completes);
+      },
+    );
 
-    test(
-        'when running subcommand "completion embed -t completely" '
+    test('when running subcommand "completion embed -t completely" '
         'then the proper embedded script dart file is written', () async {
       await d.dir('test-dir', [
         d.file('test.bash', r'''
@@ -210,7 +216,7 @@ void main() {
 
 _example_completions_filter() {
 }
-        ''')
+        '''),
       ]).create();
       final dirPath = p.join(d.sandbox, 'test-dir');
       final bashFilePath = p.join(dirPath, 'test.bash');
@@ -228,13 +234,13 @@ _example_completions_filter() {
 
       final filePath = p.join(dirPath, 'completion_script_completely.dart');
       final spec = d.file(
-          filePath,
-          stringContainsInOrder([
-            '/// This file is auto-generated.',
-            'library;',
-            "import 'package:cli_tools/better_command_runner.dart' show CompletionTool;",
-            'const String _completionScript = r',
-            r'''
+        filePath,
+        stringContainsInOrder([
+          '/// This file is auto-generated.',
+          'library;',
+          "import 'package:cli_tools/better_command_runner.dart' show CompletionTool;",
+          'const String _completionScript = r',
+          r'''
 # example completion                                       -*- shell-script -*-
 
 # This bash completions script was generated by
@@ -244,19 +250,19 @@ _example_completions_filter() {
 _example_completions_filter() {
 }
 ''',
-            r'''
+          r'''
 /// Embedded script for command line completion for `completely`.
 const completionScriptCompletely = (
   tool: CompletionTool.completely,
   script: _completionScript,
 );
 ''',
-          ]));
+        ]),
+      );
       await expectLater(spec.validate(), completes);
     });
 
-    test(
-        'when running subcommand "completion embed -t carapace" '
+    test('when running subcommand "completion embed -t carapace" '
         'then the proper embedded script dart file is written', () async {
       await d.dir('test-dir', [
         d.file('test.yaml', r'''
@@ -265,7 +271,7 @@ name: test
 persistentFlags:
   -q, --quiet: Suppress all cli output. Is overridden by  -v, --verbose.
   -v, --verbose: Prints additional information useful for development. Overrides --q, --quiet.
-        ''')
+        '''),
       ]).create();
       final dirPath = p.join(d.sandbox, 'test-dir');
       final yamlFilePath = p.join(dirPath, 'test.yaml');
@@ -283,33 +289,33 @@ persistentFlags:
 
       final filePath = p.join(dirPath, 'completion_script_carapace.dart');
       final spec = d.file(
-          filePath,
-          stringContainsInOrder([
-            '/// This file is auto-generated.',
-            'library;',
-            "import 'package:cli_tools/better_command_runner.dart' show CompletionTool;",
-            'const String _completionScript = r',
-            r'''
+        filePath,
+        stringContainsInOrder([
+          '/// This file is auto-generated.',
+          'library;',
+          "import 'package:cli_tools/better_command_runner.dart' show CompletionTool;",
+          'const String _completionScript = r',
+          r'''
 # yaml-language-server: $schema=https://carapace.sh/schemas/command.json
 name: test
 persistentFlags:
   -q, --quiet: Suppress all cli output. Is overridden by  -v, --verbose.
   -v, --verbose: Prints additional information useful for development. Overrides --q, --quiet.
 ''',
-            r'''
+          r'''
 /// Embedded script for command line completion for `carapace`.
 const completionScriptCarapace = (
   tool: CompletionTool.carapace,
   script: _completionScript,
 );
 ''',
-          ]));
+        ]),
+      );
       await expectLater(spec.validate(), completes);
     });
   });
 
-  group(
-      'Given a BetterCommandRunner with completion feature enabled'
+  group('Given a BetterCommandRunner with completion feature enabled'
       ' and embedded completions', () {
     final infos = <String>[];
     final messageOutput = MessageOutput(
@@ -357,8 +363,7 @@ persistentFlags:
       infos.clear();
     });
 
-    test(
-        'when running subcommand "completion install -t completely -d <dir>" '
+    test('when running subcommand "completion install -t completely -d <dir>" '
         'then the proper script file is written', () async {
       await d.dir('test-dir').create();
       final dirPath = p.join(d.sandbox, 'test-dir');
@@ -374,9 +379,9 @@ persistentFlags:
 
       final filePath = p.join(dirPath, 'test.bash');
       final spec = d.file(
-          filePath,
-          stringContainsInOrder([
-            r'''
+        filePath,
+        stringContainsInOrder([
+          r'''
 # example completion                                       -*- shell-script -*-
 
 # This bash completions script was generated by
@@ -386,12 +391,12 @@ persistentFlags:
 _example_completions_filter() {
 }
 ''',
-          ]));
+        ]),
+      );
       await expectLater(spec.validate(), completes);
     });
 
-    test(
-        'when running subcommand "completion install -t carapace -d <dir>" '
+    test('when running subcommand "completion install -t carapace -d <dir>" '
         'then the proper script file is written', () async {
       await d.dir('test-dir').create();
       final dirPath = p.join(d.sandbox, 'test-dir');
@@ -407,16 +412,17 @@ _example_completions_filter() {
 
       final filePath = p.join(dirPath, 'test.yaml');
       final spec = d.file(
-          filePath,
-          stringContainsInOrder([
-            r'''
+        filePath,
+        stringContainsInOrder([
+          r'''
 # yaml-language-server: $schema=https://carapace.sh/schemas/command.json
 name: test
 persistentFlags:
   -q, --quiet: Suppress all cli output. Is overridden by  -v, --verbose.
   -v, --verbose: Prints additional information useful for development. Overrides --q, --quiet.
 ''',
-          ]));
+        ]),
+      );
       await expectLater(spec.validate(), completes);
     });
   });

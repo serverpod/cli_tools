@@ -14,7 +14,8 @@ class CarapaceYamlGenerator implements UsageRepresentationGenerator {
     final CommandUsage usage,
   ) {
     out.writeln(
-        r'# yaml-language-server: $schema=https://carapace.sh/schemas/command.json');
+      r'# yaml-language-server: $schema=https://carapace.sh/schemas/command.json',
+    );
 
     _generateForCommand(out, usage, 0);
   }
@@ -28,7 +29,10 @@ class CarapaceYamlGenerator implements UsageRepresentationGenerator {
       _writeWithIndent(out, 'name: ${usage.commandSequence.last}', indentLevel);
     } else {
       _writeWithIndent(
-          out, '- name: ${usage.commandSequence.last}', indentLevel);
+        out,
+        '- name: ${usage.commandSequence.last}',
+        indentLevel,
+      );
       indentLevel += 1;
     }
 

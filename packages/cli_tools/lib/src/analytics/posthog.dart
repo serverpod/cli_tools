@@ -28,12 +28,12 @@ class PostHogAnalytics extends Analytics {
     final String? host,
     final Duration timeout = _defaultTimeout,
     final String libName = _defaultLibName,
-  })  : _uniqueUserId = uniqueUserId,
-        _projectApiKey = projectApiKey,
-        _version = version,
-        _endpoint = Uri.parse('${host ?? _defaultHost}/capture/'),
-        _timeout = timeout,
-        _libName = libName;
+  }) : _uniqueUserId = uniqueUserId,
+       _projectApiKey = projectApiKey,
+       _version = version,
+       _endpoint = Uri.parse('${host ?? _defaultHost}/capture/'),
+       _timeout = timeout,
+       _libName = libName;
 
   @override
   Future<void> sendEvent({

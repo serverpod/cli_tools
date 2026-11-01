@@ -45,14 +45,15 @@ Future<int> execute(
   );
 
   // Forward signals to child process
-  final sigSubscription = StreamGroup.merge(
-    [
-      ProcessSignal.sigint,
-      if (!Platform.isWindows) ProcessSignal.sigterm,
-    ].map((final s) => s.watch()),
-  ).listen((final s) {
-    process.kill(s);
-  });
+  final sigSubscription =
+      StreamGroup.merge(
+        [
+          ProcessSignal.sigint,
+          if (!Platform.isWindows) ProcessSignal.sigterm,
+        ].map((final s) => s.watch()),
+      ).listen((final s) {
+        process.kill(s);
+      });
 
   // Forward stdin to the child process
   final stdinSubscription = stdin?.listen(

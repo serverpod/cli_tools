@@ -35,9 +35,9 @@ class ConfigParser implements ArgParser {
     final bool allowTrailingOptions = true,
     final int? usageLineLength,
   }) : _parser = ArgParser(
-          allowTrailingOptions: allowTrailingOptions,
-          usageLineLength: usageLineLength,
-        );
+         allowTrailingOptions: allowTrailingOptions,
+         usageLineLength: usageLineLength,
+       );
 
   ArgParser get parser => _parser;
 

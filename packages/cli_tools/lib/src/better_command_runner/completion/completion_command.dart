@@ -35,9 +35,11 @@ class CompletionCommand<T> extends BetterCommand<OptionDefinition, T> {
     addSubcommand(CompletionGenerateCommand());
     addSubcommand(CompletionEmbedCommand());
     if (embeddedCompletions != null) {
-      addSubcommand(CompletionInstallCommand(
-        embeddedCompletions: embeddedCompletions,
-      ));
+      addSubcommand(
+        CompletionInstallCommand(
+          embeddedCompletions: embeddedCompletions,
+        ),
+      );
     }
   }
 

@@ -24,7 +24,7 @@ class IsolatedObject<T> {
   /// lifecycle. Set to false for fire-and-forget isolates that shouldn't
   /// block process shutdown on their own.
   IsolatedObject(Factory<T> create, {bool keepIsolateAlive = true})
-      : _connected = _connect(create, keepIsolateAlive);
+    : _connected = _connect(create, keepIsolateAlive);
 
   static Future<_Setup> _connect<T>(
     Factory<T> create,

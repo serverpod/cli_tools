@@ -80,8 +80,9 @@ class StdOutLogger extends Logger {
     final StackTrace? stackTrace,
     final LogType type = TextLogType.normal,
   }) {
-    final msg =
-        stackTrace != null ? '$message\n${stackTrace.toString()}' : message;
+    final msg = stackTrace != null
+        ? '$message\n${stackTrace.toString()}'
+        : message;
 
     log(msg, LogLevel.error, newParagraph: newParagraph, type: type);
   }
@@ -145,8 +146,11 @@ class StdOutLogger extends Logger {
       write('', LogLevel.info, newParagraph: false, newLine: true);
     }
 
-    final progress = Progress(initialMessage, stdout,
-        options: const ProgressOptions(ellipsis: ''));
+    final progress = Progress(
+      initialMessage,
+      stdout,
+      options: const ProgressOptions(ellipsis: ''),
+    );
     trackedAnimationInProgress = progress;
     try {
       bool hasEvent = false;
@@ -244,10 +248,10 @@ class StdOutLogger extends Logger {
     message = switch (_replacements) {
       null => message,
       final Map<String, String> replacements => replacements.entries.fold(
-          message,
-          (final String acc, final entry) =>
-              acc.replaceAll(entry.key, entry.value),
-        ),
+        message,
+        (final String acc, final entry) =>
+            acc.replaceAll(entry.key, entry.value),
+      ),
     };
 
     _stopAnimationInProgress();

@@ -21,13 +21,12 @@ void main() {
     final String argName,
     final String? groupName, {
     final bool hide = false,
-  }) =>
-      FlagOption(
-        argName: argName,
-        hide: hide,
-        group: groupName != null ? OptionGroup(groupName) : null,
-        helpText: 'Help section for $argName.',
-      );
+  }) => FlagOption(
+    argName: argName,
+    hide: hide,
+    group: groupName != null ? OptionGroup(groupName) : null,
+    helpText: 'Help section for $argName.',
+  );
 
   BetterCommandRunner buildRunner(final List<OptionDefinition> options) =>
       BetterCommandRunner(

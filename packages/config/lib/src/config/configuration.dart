@@ -59,19 +59,19 @@ class Configuration<O extends OptionDefinition> {
   Configuration.fromValues({
     required final Map<O, Object?> values,
   }) : this.resolveNoExcept(
-          options: values.keys,
-          presetValues: values,
-        );
+         options: values.keys,
+         presetValues: values,
+       );
 
   /// Creates a configuration by copying the contents from another.
   ///
   /// This is a 1:1 copy including the errors.
   Configuration.from({
     required final Configuration<O> configuration,
-  })  : _options = List.from(configuration._options),
-        _config = Map.from(configuration._config),
-        _errors = List.from(configuration._errors),
-        remainingPosArgs = List.from(configuration.remainingPosArgs);
+  }) : _options = List.from(configuration._options),
+       _config = Map.from(configuration._config),
+       _errors = List.from(configuration._errors),
+       remainingPosArgs = List.from(configuration.remainingPosArgs);
 
   /// {@template Configuration.resolveNoExcept}
   /// Creates a configuration with option values resolved from the provided context.
@@ -92,9 +92,9 @@ class Configuration<O extends OptionDefinition> {
     final ConfigurationBroker? configBroker,
     final Map<O, Object?>? presetValues,
     final bool ignoreUnexpectedPositionalArgs = false,
-  })  : _options = List<O>.from(options),
-        _config = <O, OptionResolutionImpl>{},
-        _errors = <String>[] {
+  }) : _options = List<O>.from(options),
+       _config = <O, OptionResolutionImpl>{},
+       _errors = <String>[] {
     if (argResults == null && args != null) {
       argResults = _prepareArgResults(args);
       if (argResults == null) {
@@ -125,9 +125,9 @@ class Configuration<O extends OptionDefinition> {
     final ConfigurationBroker? configBroker,
     final Map<O, Object?>? presetValues,
     final bool ignoreUnexpectedPositionalArgs = false,
-  })  : _options = List<O>.from(options),
-        _config = <O, OptionResolutionImpl>{},
-        _errors = <String>[] {
+  }) : _options = List<O>.from(options),
+       _config = <O, OptionResolutionImpl>{},
+       _errors = <String>[] {
     if (argResults == null && args != null) {
       argResults = _prepareArgResults(args);
       if (argResults == null) {
@@ -157,8 +157,9 @@ class Configuration<O extends OptionDefinition> {
     } on FormatException catch (e) {
       _errors.add(e.message);
       for (final o in _options) {
-        _config[o] =
-            const OptionResolutionImpl.error('Previous ArgParser error');
+        _config[o] = const OptionResolutionImpl.error(
+          'Previous ArgParser error',
+        );
       }
       return null;
     }
@@ -253,14 +254,16 @@ class Configuration<O extends OptionDefinition> {
         option.option.fromDefault != null ||
         option.option.defaultsTo != null)) {
       throw StateError(
-          "Can't invoke non-nullable value() for ${option.qualifiedString()} "
-          'which is neither mandatory nor has a default value.');
+        "Can't invoke non-nullable value() for ${option.qualifiedString()} "
+        'which is neither mandatory nor has a default value.',
+      );
     }
     final val = optionalValue(option);
     if (val != null) return val;
 
     throw InvalidParseStateError(
-        'No value available for ${option.qualifiedString()} due to previous errors');
+      'No value available for ${option.qualifiedString()} due to previous errors',
+    );
   }
 
   /// Returns the value of an optional configuration option.
@@ -285,19 +288,23 @@ class Configuration<O extends OptionDefinition> {
   ) {
     if (!_options.contains(option)) {
       throw ArgumentError(
-          '${option.qualifiedString()} is not part of this configuration');
+        '${option.qualifiedString()} is not part of this configuration',
+      );
     }
 
     final resolution = _config[option];
 
     if (resolution == null) {
-      throw OptionDefinitionError(option,
-          'Out-of-order dependency on not-yet-resolved ${option.qualifiedString()}');
+      throw OptionDefinitionError(
+        option,
+        'Out-of-order dependency on not-yet-resolved ${option.qualifiedString()}',
+      );
     }
 
     if (resolution.error != null) {
       throw InvalidParseStateError(
-          'No value available for ${option.qualifiedString()} due to previous errors');
+        'No value available for ${option.qualifiedString()} due to previous errors',
+      );
     }
 
     return resolution;
@@ -311,8 +318,10 @@ class Configuration<O extends OptionDefinition> {
     final bool ignoreUnexpectedPositionalArgs = false,
   }) {
     final posArgs = (args?.rest ?? []).iterator;
-    final orderedOpts = _options.sorted((final a, final b) =>
-        (a.option.argPos ?? -1).compareTo(b.option.argPos ?? -1));
+    final orderedOpts = _options.sorted(
+      (final a, final b) =>
+          (a.option.argPos ?? -1).compareTo(b.option.argPos ?? -1),
+    );
 
     final optionGroups = <OptionGroup, Map<O, OptionResolutionImpl>>{};
 
@@ -359,7 +368,8 @@ class Configuration<O extends OptionDefinition> {
     remainingPosArgs = posArgs.restAsList();
     if (remainingPosArgs.isNotEmpty && !ignoreUnexpectedPositionalArgs) {
       _errors.add(
-          "Unexpected positional argument(s): '${remainingPosArgs.join("', '")}'");
+        "Unexpected positional argument(s): '${remainingPosArgs.join("', '")}'",
+      );
     }
   }
 

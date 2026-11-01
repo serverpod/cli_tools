@@ -59,20 +59,23 @@ abstract class UsageRepresentation {
     final List<OptionDefinition> options,
   ) {
     final validOptions = _filterOptions(options);
-    final validSubcommands =
-        subcommands.whereType<BetterCommand>().where((final c) => !c.hidden);
+    final validSubcommands = subcommands.whereType<BetterCommand>().where(
+      (final c) => !c.hidden,
+    );
 
     return CommandUsage(
       commandSequence: commandSequence,
       persistentOptions: persistentOptions,
       options: validOptions,
       subcommands: validSubcommands
-          .map((final subcommand) => _generateForCommand(
-                [...commandSequence, subcommand.name],
-                subcommand.subcommands.values,
-                const [],
-                subcommand.options,
-              ))
+          .map(
+            (final subcommand) => _generateForCommand(
+              [...commandSequence, subcommand.name],
+              subcommand.subcommands.values,
+              const [],
+              subcommand.options,
+            ),
+          )
           .toList(),
     );
   }
@@ -82,10 +85,12 @@ abstract class UsageRepresentation {
   ) {
     return options
         .where((final o) => !o.option.hide)
-        .where((final o) =>
-            o.option.argName != null ||
-            o.option.argAbbrev != null ||
-            o.option.argPos != null)
+        .where(
+          (final o) =>
+              o.option.argName != null ||
+              o.option.argAbbrev != null ||
+              o.option.argPos != null,
+        )
         .toList();
   }
 }
