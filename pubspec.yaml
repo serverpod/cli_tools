@@ -20,7 +20,7 @@ topics:
   - yaml
 
 environment:
-  sdk: ^3.6.0
+  sdk: ^3.9.0
 
 dev_dependencies:
   melos: '>=6.3.3 <8.0.0'
