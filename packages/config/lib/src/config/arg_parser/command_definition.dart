@@ -35,9 +35,6 @@ abstract interface class CommandDefinition<O extends OptionDefinition> {
 }
 
 class CommandUsageDefinition {
-  // TODO: Support overriding `summary` and `invocation` of the formatted usage
-  //       like the old Command did.
-
   /// A description of this command, included in usage.
   final String description;
 
@@ -46,7 +43,7 @@ class CommandUsageDefinition {
 
   /// The command's category.
   ///
-  /// Displayed in [parent]'s [CommandRunner.usage]. Commands with categories
+  /// Displayed in [parent]'s usage. Commands with categories
   /// will be grouped together, and displayed after commands without a category.
   final String? category;
 
@@ -56,11 +53,25 @@ class CommandUsageDefinition {
   /// as long as any of their leaf commands are visible.
   final bool hidden;
 
+  /// A short description of this command, included in [parent]'s usage.
+  /// If null, the default is used which is typically the first line of [description].
+  final String? summary;
+
+  /// A custom template for this command's own invocation, replacing its name
+  /// and argument synopsis.
+  ///
+  /// Parent command names are prepended. If the default synopsis would be
+  /// `executable branch leaf <args>`, this string replaces `leaf <args>`
+  /// (for example `"leaf <package>"`). If null, the synopsis is generated.
+  final String? invocation;
+
   const CommandUsageDefinition({
     final String? description,
     this.usageFooter,
     this.category,
     final bool? hidden,
+    this.summary,
+    this.invocation,
   }) : description = description ?? '',
        hidden = hidden ?? false;
 }
