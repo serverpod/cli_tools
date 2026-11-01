@@ -445,6 +445,63 @@ void main() {
     });
   });
 
+  group('Given a root and subcommand with different option types', () {
+    final build = _EnumCommand<_BuildOption>(
+      name: 'build',
+      options: const [_BuildOption.output],
+    );
+    final root = _EnumCommand<_RootOption>(
+      name: 'tool',
+      persistentOptions: const [_RootOption.verbose],
+      subcommands: [build],
+    );
+
+    group('when root and subcommand options are parsed', () {
+      late ArgParseResult result;
+      late ArgParseResult buildResult;
+
+      setUp(() {
+        result = scanAndParseCommands<_RootOption>(
+          ['--verbose', 'build', '--output', 'out', 'file'],
+          rootCommand: root,
+        );
+        buildResult = childResult(result);
+      });
+
+      test('then the root command is selected', () {
+        expect(result.command, same(root));
+      });
+
+      test('then the subcommand is selected', () {
+        expect(buildResult.command, same(build));
+      });
+
+      test('then the root option is recorded', () {
+        expect(result.flagOptions[_verbose], isTrue);
+      });
+
+      test('then the subcommand does not record the root option', () {
+        expect(buildResult.flagOptions[_verbose], isNull);
+      });
+
+      test('then the subcommand option is recorded', () {
+        expect(buildResult.regularOptions[_output], 'out');
+      });
+
+      test('then the remaining word is positional on the subcommand', () {
+        expect(buildResult.positionalWords, ['file']);
+      });
+
+      test('then the root has no errors', () {
+        expect(result.errors, isEmpty);
+      });
+
+      test('then the subcommand has no errors', () {
+        expect(buildResult.errors, isEmpty);
+      });
+    });
+  });
+
   group('Given subcommands that can both answer to the same word', () {
     const buildOut = StringOption(argName: 'out');
     const otherOut = StringOption(argName: 'other');
@@ -2132,4 +2189,65 @@ void main() {
       ]);
     });
   });
+}
+
+const _verbose = FlagOption(argName: 'verbose', argAbbrev: 'v');
+const _output = StringOption(argName: 'output', argAbbrev: 'o');
+
+enum _RootOption<V> implements OptionDefinition<V> {
+  verbose(_verbose);
+
+  const _RootOption(this.option);
+
+  @override
+  final ConfigOptionBase<V> option;
+}
+
+enum _BuildOption<V> implements OptionDefinition<V> {
+  output(_output);
+
+  const _BuildOption(this.option);
+
+  @override
+  final ConfigOptionBase<V> option;
+}
+
+class _EnumCommand<O extends OptionDefinition> implements CommandDefinition<O> {
+  _EnumCommand({
+    required this.name,
+    final List<O>? persistentOptions,
+    final List<O>? options,
+    final List<CommandDefinition>? subcommands,
+  }) : persistentOptions = persistentOptions ?? const [],
+       options = options ?? const [],
+       subcommands = subcommands ?? const [];
+
+  @override
+  final String name;
+
+  @override
+  String get usage => name;
+
+  @override
+  final CommandUsageDefinition usageDefinition = const CommandUsageDefinition(
+    description: '',
+  );
+
+  @override
+  final CommandAliasesDefinition aliases = const CommandAliasesDefinition();
+
+  @override
+  final List<O> persistentOptions;
+
+  @override
+  final List<OptionDefinition> builtinPersistentOptions = const [];
+
+  @override
+  final List<O> options;
+
+  @override
+  final List<CommandDefinition> subcommands;
+
+  @override
+  final bool canRunAsLeafCommand = false;
 }
