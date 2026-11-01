@@ -17,22 +17,27 @@ void main() {
 
     test('for abbreviations', () {
       _testParserPerformance(
-          ConfigParser()
-            ..addFlag('short', abbr: 's')
-            ..addFlag('short2', abbr: 't')
-            ..addFlag('short3', abbr: 'u')
-            ..addFlag('short4', abbr: 'v'),
-          '-stuv');
+        ConfigParser()
+          ..addFlag('short', abbr: 's')
+          ..addFlag('short2', abbr: 't')
+          ..addFlag('short3', abbr: 'u')
+          ..addFlag('short4', abbr: 'v'),
+        '-stuv',
+      );
     });
 
     test('for long flags', () {
       _testParserPerformance(
-          ConfigParser()..addFlag('long-flag'), '--long-flag');
+        ConfigParser()..addFlag('long-flag'),
+        '--long-flag',
+      );
     });
 
     test('for long options with =', () {
-      _testParserPerformance(ConfigParser()..addOption('long-option-name'),
-          '--long-option-name=long-option-value');
+      _testParserPerformance(
+        ConfigParser()..addOption('long-option-name'),
+        '--long-option-name=long-option-value',
+      );
     });
   });
 }
@@ -58,8 +63,10 @@ void _testParserPerformance(ArgParser parser, String string) {
   var baseTime = _time(baseAction);
   var largeTime = _time(largeAction);
 
-  print('Parsed $baseSize elements in ${baseTime}ms, '
-      '${baseSize * multiplier} elements in ${largeTime}ms.');
+  print(
+    'Parsed $baseSize elements in ${baseTime}ms, '
+    '${baseSize * multiplier} elements in ${largeTime}ms.',
+  );
 
   expect(
     largeTime,

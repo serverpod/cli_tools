@@ -24,8 +24,10 @@ import 'ansi_style.dart';
 /// {@endtemplate}
 class ProgressOptions {
   /// {@macro progress_options}
-  const ProgressOptions(
-      {this.animation = const ProgressAnimation(), this.ellipsis = '...'});
+  const ProgressOptions({
+    this.animation = const ProgressAnimation(),
+    this.ellipsis = '...',
+  });
 
   /// The progress animation configuration.
   final ProgressAnimation animation;
@@ -68,8 +70,8 @@ class Progress {
     this._message,
     this._stdout, {
     final ProgressOptions options = const ProgressOptions(),
-  })  : _stopwatch = Stopwatch(),
-        _options = options {
+  }) : _stopwatch = Stopwatch(),
+       _options = options {
     _stopwatch
       ..reset()
       ..start();
@@ -81,8 +83,9 @@ class Progress {
     if (!_stdout.hasTerminal) {
       final frames = _options.animation.frames;
       final char = frames.isEmpty ? '' : frames.first;
-      final prefix =
-          char.isEmpty ? char : '${AnsiStyle.lightGreen.wrap(char)} ';
+      final prefix = char.isEmpty
+          ? char
+          : '${AnsiStyle.lightGreen.wrap(char)} ';
       _write('$prefix$_message${_options.ellipsis}\n');
       return;
     }
@@ -172,8 +175,9 @@ class Progress {
     final elapsedTime = _stopwatch.elapsed.inMilliseconds;
     final displayInMilliseconds = elapsedTime < 100;
     final time = displayInMilliseconds ? elapsedTime : elapsedTime / 1000;
-    final formattedTime =
-        displayInMilliseconds ? '${time}ms' : '${time.toStringAsFixed(1)}s';
+    final formattedTime = displayInMilliseconds
+        ? '${time}ms'
+        : '${time.toStringAsFixed(1)}s';
     return AnsiStyle.darkGray.wrap('($formattedTime)');
   }
 }

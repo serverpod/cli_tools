@@ -11,26 +11,32 @@ import 'completion_command.dart' show CompletionOptions;
 
 enum CompletionEmbedOption<V extends Object> implements OptionDefinition<V> {
   tool(CompletionOptions.toolOption),
-  scriptFileName(StringOption(
-    argName: 'script-file',
-    argAbbrev: 'f',
-    helpText: 'Read the script to embed from a file instead of stdin',
-  )),
-  outFileName(StringOption(
-    argName: 'output-file',
-    argAbbrev: 'o',
-    helpText: 'The Dart file name to write ("-" for stdout)',
-    fromCustom: _outputSourceFileName,
-    customValidator: _validateSourceFileName,
-    defaultsTo: 'completion_script_<tool>.dart',
-  )),
-  outDir(DirOption(
-    argName: 'output-dir',
-    argAbbrev: 'd',
-    helpText: 'Override the directory to write the Dart source file to',
-    mode: PathExistMode.mustExist,
-    fromDefault: _defaultWriteDir,
-  ));
+  scriptFileName(
+    StringOption(
+      argName: 'script-file',
+      argAbbrev: 'f',
+      helpText: 'Read the script to embed from a file instead of stdin',
+    ),
+  ),
+  outFileName(
+    StringOption(
+      argName: 'output-file',
+      argAbbrev: 'o',
+      helpText: 'The Dart file name to write ("-" for stdout)',
+      fromCustom: _outputSourceFileName,
+      customValidator: _validateSourceFileName,
+      defaultsTo: 'completion_script_<tool>.dart',
+    ),
+  ),
+  outDir(
+    DirOption(
+      argName: 'output-dir',
+      argAbbrev: 'd',
+      helpText: 'Override the directory to write the Dart source file to',
+      mode: PathExistMode.mustExist,
+      fromDefault: _defaultWriteDir,
+    ),
+  );
 
   const CompletionEmbedOption(this.option);
 
@@ -94,10 +100,12 @@ class CompletionEmbedCommand<T>
 
   @override
   Future<T> runWithConfig(
-      final Configuration<CompletionEmbedOption> commandConfig) async {
+    final Configuration<CompletionEmbedOption> commandConfig,
+  ) async {
     final tool = commandConfig.value(CompletionEmbedOption.tool);
-    final scriptFileName =
-        commandConfig.optionalValue(CompletionEmbedOption.scriptFileName);
+    final scriptFileName = commandConfig.optionalValue(
+      CompletionEmbedOption.scriptFileName,
+    );
     final writeFile = commandConfig.value(CompletionEmbedOption.outFileName);
     final writeDir = commandConfig.value(CompletionEmbedOption.outDir);
 
@@ -109,7 +117,8 @@ class CompletionEmbedCommand<T>
       scriptContent = scriptFile.readAsStringSync();
     }
 
-    final outputContent = """
+    final outputContent =
+        """
 /// This file is auto-generated.
 library;
 
@@ -126,8 +135,9 @@ const completionScript${tool.name.capitalize()} = (
 );
 """;
 
-    final File? embeddedFile =
-        writeFile == '-' ? null : File(p.join(writeDir.path, writeFile));
+    final File? embeddedFile = writeFile == '-'
+        ? null
+        : File(p.join(writeDir.path, writeFile));
 
     final IOSink out = embeddedFile?.openWrite() ?? stdout;
 
@@ -139,10 +149,12 @@ const completionScript${tool.name.capitalize()} = (
     }
 
     if (runner?.globalConfiguration.findValueOf(
-            argName: StandardGlobalOption.verbose.option.argName) ==
+          argName: StandardGlobalOption.verbose.option.argName,
+        ) ==
         true) {
-      final out =
-          embeddedFile == null ? ' to stdout' : ': ${embeddedFile.path}';
+      final out = embeddedFile == null
+          ? ' to stdout'
+          : ': ${embeddedFile.path}';
       stderr.writeln('Wrote embedded script$out');
     }
 

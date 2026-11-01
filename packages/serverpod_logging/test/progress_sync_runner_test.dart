@@ -14,8 +14,7 @@ void main() {
       log = Log(writer);
     });
 
-    test(
-        'when the runner returns true synchronously, '
+    test('when the runner returns true synchronously, '
         'then the scope closes with success true', () async {
       final result = await log.progress('op', () => true);
 
@@ -23,8 +22,7 @@ void main() {
       expect(writer.closedScopes.single.success, isTrue);
     });
 
-    test(
-        'when the runner returns false synchronously, '
+    test('when the runner returns false synchronously, '
         'then the scope closes with success false', () async {
       final result = await log.progress('op', () => false);
 
@@ -43,8 +41,7 @@ void main() {
       },
     );
 
-    test(
-        'when a synchronous runner emits a log entry, '
+    test('when a synchronous runner emits a log entry, '
         'then that entry is scoped to the progress scope', () async {
       await log.progress('op', () {
         log.info('inside');
@@ -57,8 +54,7 @@ void main() {
       expect(inside.scope.id, opened.id);
     });
 
-    test(
-        'when a synchronous runner throws, '
+    test('when a synchronous runner throws, '
         'then the scope closes with success false and rethrows', () async {
       await expectLater(
         log.progress<bool>('op', () => throw StateError('boom')),

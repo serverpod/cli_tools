@@ -27,15 +27,15 @@ final class OptionResolutionImpl<V> extends OptionResolution<V> {
   }) : error = null;
 
   const OptionResolutionImpl.noValue()
-      : source = ValueSourceType.noValue,
-        stringValue = null,
-        value = null,
-        error = null;
+    : source = ValueSourceType.noValue,
+      stringValue = null,
+      value = null,
+      error = null;
 
   const OptionResolutionImpl.error(this.error)
-      : source = ValueSourceType.noValue,
-        stringValue = null,
-        value = null;
+    : source = ValueSourceType.noValue,
+      stringValue = null,
+      value = null;
 
   OptionResolutionImpl<V> copyWithValue(final V newValue) =>
       OptionResolutionImpl._(

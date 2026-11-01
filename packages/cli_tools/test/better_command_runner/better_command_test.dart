@@ -20,13 +20,15 @@ class MockCommand extends BetterCommand {
   static String commandName = 'mock-command';
 
   MockCommand({super.messageOutput})
-      : super(options: [
+    : super(
+        options: [
           const StringOption(
             argName: 'name',
             defaultsTo: 'serverpod',
             allowedValues: ['serverpod', 'stockholm'],
-          )
-        ]);
+          ),
+        ],
+      );
 
   @override
   String get description => 'Mock command used for testing';
@@ -44,8 +46,7 @@ class MockCommand extends BetterCommand {
 }
 
 void main() {
-  group(
-      'Given a better command registered in the better command runner '
+  group('Given a better command registered in the better command runner '
       'with analytics set up and default global options', () {
     final infos = <String>[];
     final analyticsEvents = <String>[];
@@ -68,8 +69,7 @@ void main() {
       analyticsEvents.clear();
     });
 
-    test(
-        'when running base command with --help flag '
+    test('when running base command with --help flag '
         'then global usage is printed to commands logInfo', () async {
       await runner.run(['--help']);
 
@@ -92,8 +92,7 @@ void main() {
       );
     });
 
-    test(
-        'when running base command with --help flag '
+    test('when running base command with --help flag '
         'then help analytics is sent', () async {
       await runner.run(['--help']);
 
@@ -102,8 +101,7 @@ void main() {
       expect(analyticsEvents.single, 'help');
     });
 
-    test(
-        'when running with subcommand `help` '
+    test('when running with subcommand `help` '
         'then help analytics is sent', () async {
       await runner.run(['help']);
 
@@ -112,8 +110,7 @@ void main() {
       expect(analyticsEvents.single, 'help');
     });
 
-    test(
-        'when running with subcommand `mock-command` '
+    test('when running with subcommand `mock-command` '
         'then subcommand analytics is sent', () async {
       await runner.run([MockCommand.commandName]);
 
@@ -122,8 +119,7 @@ void main() {
       expect(analyticsEvents.single, 'mock-command');
     });
 
-    test(
-        'when running with invalid subcommand '
+    test('when running with invalid subcommand '
         'then invalid command analytics is sent', () async {
       await runner.run(['no-such-command']).catchError((final _) {});
 
@@ -132,8 +128,7 @@ void main() {
       expect(analyticsEvents.single, 'invalid');
     });
 
-    test(
-        'when running with subcommand `mock-command` '
+    test('when running with subcommand `mock-command` '
         'and --no-analytics flag '
         'then subcommand analytics is not sent', () async {
       await runner.run([MockCommand.commandName, '--no-analytics']);
@@ -143,8 +138,7 @@ void main() {
     });
   });
 
-  group(
-      'Given a better command registered in the better command runner '
+  group('Given a better command registered in the better command runner '
       'with analytics set up and empty global options', () {
     final infos = <String>[];
     final analyticsEvents = <String>[];
@@ -194,8 +188,7 @@ void main() {
     );
   });
 
-  group(
-      'Given a better command registered in the better command runner '
+  group('Given a better command registered in the better command runner '
       'without analytics set up and default global options', () {
     final infos = <String>[];
     final messageOutput = MessageOutput(
@@ -215,8 +208,7 @@ void main() {
       infos.clear();
     });
 
-    test(
-        'when running base command with --help flag '
+    test('when running base command with --help flag '
         'then global usage is printed to commands logInfo', () async {
       await runner.run(['--help']);
 
@@ -235,16 +227,17 @@ void main() {
             '-v, --verbose',
             'Prints additional information useful for development. Overrides --q, --quiet.',
           ]),
-          isNot(contains(
-            '-a, --[no-]analytics',
-          )),
+          isNot(
+            contains(
+              '-a, --[no-]analytics',
+            ),
+          ),
         ),
       );
     });
   });
 
-  group(
-      'Given a better command registered in the better command runner '
+  group('Given a better command registered in the better command runner '
       'with additional global options', () {
     final infos = <String>[];
     final messageOutput = MessageOutput(
@@ -274,24 +267,25 @@ void main() {
         expect(infos, hasLength(1));
         expect(infos.single, runner.usage);
         expect(
-            infos.single,
-            stringContainsInOrder([
-              'Usage: test <command> [arguments]',
-              'Global options:',
-              '-h, --help',
-              'Print this usage information.',
-              '-q, --quiet',
-              'Suppress all cli output. Is overridden by  -v, --verbose.',
-              '-v, --verbose',
-              'Prints additional information useful for development. Overrides --q, --quiet.',
-              '-a, --[no-]analytics',
-              'Toggles if analytics data is sent.',
-              '--age=<integer>',
-              'Required age',
-              'Available commands:',
-              'mock-command',
-              'Mock command used for testing',
-            ]));
+          infos.single,
+          stringContainsInOrder([
+            'Usage: test <command> [arguments]',
+            'Global options:',
+            '-h, --help',
+            'Print this usage information.',
+            '-q, --quiet',
+            'Suppress all cli output. Is overridden by  -v, --verbose.',
+            '-v, --verbose',
+            'Prints additional information useful for development. Overrides --q, --quiet.',
+            '-a, --[no-]analytics',
+            'Toggles if analytics data is sent.',
+            '--age=<integer>',
+            'Required age',
+            'Available commands:',
+            'mock-command',
+            'Mock command used for testing',
+          ]),
+        );
       },
     );
 
@@ -304,24 +298,25 @@ void main() {
         expect(infos, hasLength(1));
         expect(infos.single, runner.usage);
         expect(
-            infos.single,
-            stringContainsInOrder([
-              'Usage: test <command> [arguments]',
-              'Global options:',
-              '-h, --help',
-              'Print this usage information.',
-              '-q, --quiet',
-              'Suppress all cli output. Is overridden by  -v, --verbose.',
-              '-v, --verbose',
-              'Prints additional information useful for development. Overrides --q, --quiet.',
-              '-a, --[no-]analytics',
-              'Toggles if analytics data is sent.',
-              '--age=<integer>',
-              'Required age',
-              'Available commands:',
-              'mock-command',
-              'Mock command used for testing',
-            ]));
+          infos.single,
+          stringContainsInOrder([
+            'Usage: test <command> [arguments]',
+            'Global options:',
+            '-h, --help',
+            'Print this usage information.',
+            '-q, --quiet',
+            'Suppress all cli output. Is overridden by  -v, --verbose.',
+            '-v, --verbose',
+            'Prints additional information useful for development. Overrides --q, --quiet.',
+            '-a, --[no-]analytics',
+            'Toggles if analytics data is sent.',
+            '--age=<integer>',
+            'Required age',
+            'Available commands:',
+            'mock-command',
+            'Mock command used for testing',
+          ]),
+        );
       },
     );
 
@@ -334,14 +329,15 @@ void main() {
         expect(infos, hasLength(1));
         expect(infos.single, betterCommand.usage);
         expect(
-            infos.single,
-            stringContainsInOrder([
-              'Usage: test mock-command [arguments]',
-              '-h, --help',
-              'Print this usage information.',
-              '--name',
-              '[serverpod (default), stockholm]',
-            ]));
+          infos.single,
+          stringContainsInOrder([
+            'Usage: test mock-command [arguments]',
+            '-h, --help',
+            'Print this usage information.',
+            '--name',
+            '[serverpod (default), stockholm]',
+          ]),
+        );
       },
     );
   });

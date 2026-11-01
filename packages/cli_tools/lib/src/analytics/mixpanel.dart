@@ -26,14 +26,14 @@ class MixPanelAnalytics extends Analytics {
     final String? endpoint,
     final Duration timeout = _defaultTimeout,
     final bool disableIpTracking = false,
-  })  : _uniqueUserId = uniqueUserId,
-        _projectToken = projectToken,
-        _version = version,
-        _endpoint = _buildEndpoint(
-          endpoint ?? _defaultEndpoint,
-          disableIpTracking,
-        ),
-        _timeout = timeout;
+  }) : _uniqueUserId = uniqueUserId,
+       _projectToken = projectToken,
+       _version = version,
+       _endpoint = _buildEndpoint(
+         endpoint ?? _defaultEndpoint,
+         disableIpTracking,
+       ),
+       _timeout = timeout;
 
   static Uri _buildEndpoint(
     final String baseEndpoint,
@@ -68,13 +68,15 @@ class MixPanelAnalytics extends Analytics {
       },
     });
 
-    await http.post(
-      _endpoint,
-      body: 'data=$payload',
-      headers: {
-        'Accept': 'text/plain',
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    ).timeout(_timeout);
+    await http
+        .post(
+          _endpoint,
+          body: 'data=$payload',
+          headers: {
+            'Accept': 'text/plain',
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        )
+        .timeout(_timeout);
   }
 }

@@ -13,8 +13,8 @@ Future<bool> confirm(
   final prompt = defaultValue == null
       ? '[y/n]'
       : defaultValue
-          ? '[Y/n]'
-          : '[y/N]';
+      ? '[Y/n]'
+      : '[y/N]';
 
   while (true) {
     logger.write(

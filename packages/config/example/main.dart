@@ -42,29 +42,35 @@ int main(final List<String> args) {
 /// The enum approach is more distinct and type safe.
 /// The list approach is more dynamic and permits non-const initialization.
 enum TimeSeriesOption<V> implements OptionDefinition<V> {
-  until(DateTimeOption(
-    argName: 'until',
-    envName: 'SERIES_UNTIL', // can also be specified as environment variable
-    fromDefault: _defaultUntil,
-    helpText: 'The end timestamp of the series',
-  )),
-  length(IntOption(
-    argName: 'length',
-    argAbbrev: 'l',
-    argPos: 0, // can also be specified as positional argument
-    helpText: 'The number of elements in the series',
-    min: 1,
-    max: 100,
-    group: _granularityGroup,
-  )),
-  interval(DurationOption(
-    argName: 'interval',
-    argAbbrev: 'i',
-    helpText: 'The interval between the series elements',
-    min: Duration(seconds: 1),
-    max: Duration(days: 1),
-    group: _granularityGroup,
-  ));
+  until(
+    DateTimeOption(
+      argName: 'until',
+      envName: 'SERIES_UNTIL', // can also be specified as environment variable
+      fromDefault: _defaultUntil,
+      helpText: 'The end timestamp of the series',
+    ),
+  ),
+  length(
+    IntOption(
+      argName: 'length',
+      argAbbrev: 'l',
+      argPos: 0, // can also be specified as positional argument
+      helpText: 'The number of elements in the series',
+      min: 1,
+      max: 100,
+      group: _granularityGroup,
+    ),
+  ),
+  interval(
+    DurationOption(
+      argName: 'interval',
+      argAbbrev: 'i',
+      helpText: 'The interval between the series elements',
+      min: Duration(seconds: 1),
+      max: Duration(days: 1),
+      group: _granularityGroup,
+    ),
+  );
 
   const TimeSeriesOption(this.option);
 

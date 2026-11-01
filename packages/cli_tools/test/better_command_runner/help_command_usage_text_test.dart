@@ -14,25 +14,25 @@ const _moExceptionText = 'SUCCESS: `MessageOutput.usageExceptionLogger`';
 const _invalidOption = '-z';
 
 CommandRunner _buildUpstreamRunner() => CommandRunner(
-      _exeName,
-      _exeDescription,
-    );
+  _exeName,
+  _exeDescription,
+);
 
 BetterCommandRunner _buildBetterRunner() => BetterCommandRunner(
-      _exeName,
-      _exeDescription,
-      messageOutput: MessageOutput(
-        usageLogger: (final usage) {
-          print(_moMockText);
-          print(usage);
-        },
-        usageExceptionLogger: (final exception) {
-          print(_moExceptionText);
-          print(exception.message);
-          print(exception.usage);
-        },
-      ),
-    );
+  _exeName,
+  _exeDescription,
+  messageOutput: MessageOutput(
+    usageLogger: (final usage) {
+      print(_moMockText);
+      print(usage);
+    },
+    usageExceptionLogger: (final exception) {
+      print(_moExceptionText);
+      print(exception.message);
+      print(exception.usage);
+    },
+  ),
+);
 
 void _runTests() {
   group('Given a BetterCommandRunner with custom MessageOutput', () {
@@ -68,16 +68,18 @@ void _testsForValidHelpUsageRequests(final List<String> args) {
       betterRunnerExitCode = await runZoned(
         () async => await _buildBetterRunner().run(args),
         zoneSpecification: ZoneSpecification(
-            print: (final _, final _, final _, final String line) {
-          betterRunnerOutput.writeln(line);
-        }),
+          print: (final _, final _, final _, final String line) {
+            betterRunnerOutput.writeln(line);
+          },
+        ),
       );
       upstreamRunnerExitCode = await runZoned(
         () async => await _buildUpstreamRunner().run(args),
         zoneSpecification: ZoneSpecification(
-            print: (final _, final _, final _, final String line) {
-          upstreamRunnerOutput.writeln(line);
-        }),
+          print: (final _, final _, final _, final String line) {
+            upstreamRunnerOutput.writeln(line);
+          },
+        ),
       );
     });
     test('then MessageOutput is not bypassed', () {

@@ -289,31 +289,43 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
   @mustCallSuper
   void validateDefinition() {
     if (argName == null && argAbbrev != null) {
-      throw OptionDefinitionError(this,
-          "An argument option can't have an abbreviation but not a full name");
+      throw OptionDefinitionError(
+        this,
+        "An argument option can't have an abbreviation but not a full name",
+      );
     }
 
     if (argName?.contains('=') == true || argAbbrev?.contains('=') == true) {
       throw OptionDefinitionError(
-          this, "An argument option name / abbreviation can't contain '='");
+        this,
+        "An argument option name / abbreviation can't contain '='",
+      );
     }
     if (argName?.startsWith('-') == true ||
         argAbbrev?.startsWith('-') == true) {
       throw OptionDefinitionError(
-          this, "An argument option name / abbreviation can't start with '-'");
+        this,
+        "An argument option name / abbreviation can't start with '-'",
+      );
     }
     if (argAliases?.any((final alias) => alias.contains('=')) == true) {
       throw OptionDefinitionError(
-          this, "An argument option alias can't contain '='");
+        this,
+        "An argument option alias can't contain '='",
+      );
     }
     if (argAliases?.any((final alias) => alias.startsWith('-')) == true) {
       throw OptionDefinitionError(
-          this, "An argument option alias can't start with '-'");
+        this,
+        "An argument option alias can't start with '-'",
+      );
     }
 
     if ((fromDefault != null || defaultsTo != null) && mandatory) {
       throw OptionDefinitionError(
-          this, "Mandatory options can't have default values");
+        this,
+        "Mandatory options can't have default values",
+      );
     }
   }
 
@@ -327,7 +339,8 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
   void validateValue(final V value) {
     if (allowedValues?.contains(value) == false) {
       throw InvalidValueException(
-          '`$value` is not an allowed value for ${qualifiedString()}');
+        '`$value` is not an allowed value for ${qualifiedString()}',
+      );
     }
 
     customValidator?.call(value);
@@ -604,8 +617,8 @@ class FlagOption extends ConfigOptionBase<bool> {
     this.negatable = true,
     this.hideNegatedUsage = false,
   }) : super(
-          valueParser: const BoolParser(),
-        );
+         valueParser: const BoolParser(),
+       );
 
   @override
   void _addToArgParser(final ArgParser argParser) {
@@ -696,10 +709,10 @@ class MultiOption<T> extends ConfigOptionBase<List<T>> {
     super.customValidator,
     super.mandatory,
     super.hide,
-  })  : allowedElementValues = allowedValues,
-        super(
-          valueParser: multiParser,
-        );
+  }) : allowedElementValues = allowedValues,
+       super(
+         valueParser: multiParser,
+       );
 
   /// [MultiOption] does not properly support [allowedValues],
   /// use [allowedElementValues] instead.
@@ -755,7 +768,8 @@ class MultiOption<T> extends ConfigOptionBase<List<T>> {
       for (final v in value) {
         if (allowed.contains(v) == false) {
           throw InvalidValueException(
-              '`$v` is not an allowed value for ${qualifiedString()}');
+            '`$v` is not an allowed value for ${qualifiedString()}',
+          );
         }
       }
     }
@@ -807,7 +821,9 @@ Iterable<OptionDefinition> validateOptions(
     if (argName != null) {
       if (argNameOpts.containsKey(opt.option.argName)) {
         throw OptionDefinitionError(
-            opt, 'Duplicate argument name: ${opt.option.argName} for $opt');
+          opt,
+          'Duplicate argument name: ${opt.option.argName} for $opt',
+        );
       }
       argNameOpts[argName] = opt;
     }
@@ -816,7 +832,9 @@ Iterable<OptionDefinition> validateOptions(
     if (argPos != null) {
       if (argPosOpts.containsKey(opt.option.argPos)) {
         throw OptionDefinitionError(
-            opt, 'Duplicate argument position: ${opt.option.argPos} for $opt');
+          opt,
+          'Duplicate argument position: ${opt.option.argPos} for $opt',
+        );
       }
       argPosOpts[argPos] = opt;
     }
@@ -824,8 +842,10 @@ Iterable<OptionDefinition> validateOptions(
     final envName = opt.option.envName;
     if (envName != null) {
       if (envNameOpts.containsKey(opt.option.envName)) {
-        throw OptionDefinitionError(opt,
-            'Duplicate environment variable name: ${opt.option.envName} for $opt');
+        throw OptionDefinitionError(
+          opt,
+          'Duplicate environment variable name: ${opt.option.envName} for $opt',
+        );
       }
       envNameOpts[envName] = opt;
     }
@@ -846,7 +866,8 @@ Iterable<OptionDefinition> validateOptions(
 
   if (argPosOpts.isNotEmpty) {
     final orderedPosOpts = argPosOpts.values.sorted(
-        (final a, final b) => a.option.argPos!.compareTo(b.option.argPos!));
+      (final a, final b) => a.option.argPos!.compareTo(b.option.argPos!),
+    );
 
     if (orderedPosOpts.first.option.argPos != 0) {
       throw OptionDefinitionError(

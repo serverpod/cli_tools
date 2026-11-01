@@ -307,7 +307,7 @@ void main() {
         final args = [
           CompletableMockCommand.commandName,
           '--name',
-          'serverpod'
+          'serverpod',
         ];
 
         unawaited(runner.run(args));

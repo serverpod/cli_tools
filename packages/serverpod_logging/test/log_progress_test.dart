@@ -11,8 +11,7 @@ void main() {
       log = Log(writer);
     });
 
-    test(
-        'when the runner returns true, '
+    test('when the runner returns true, '
         'then the scope closes with success true', () async {
       await log.progress('op', () async => true);
 
@@ -20,8 +19,7 @@ void main() {
       expect(writer.closedScopes.first.success, isTrue);
     });
 
-    test(
-        'when the runner returns false, '
+    test('when the runner returns false, '
         'then the scope closes with success false', () async {
       await log.progress('op', () async => false);
 
@@ -39,16 +37,14 @@ void main() {
       log = Log(writer);
     });
 
-    test(
-        'when no isSuccess is provided, '
+    test('when no isSuccess is provided, '
         'then the scope closes with success true', () async {
       await log.progress<String>('op', () async => 'ok');
 
       expect(writer.closedScopes.first.success, isTrue);
     });
 
-    test(
-        'when isSuccess is provided, '
+    test('when isSuccess is provided, '
         'then the scope uses its verdict', () async {
       await log.progress<String>(
         'op',
@@ -69,8 +65,7 @@ void main() {
       log = Log(writer);
     });
 
-    test(
-        'when the runner throws, '
+    test('when the runner throws, '
         'then the scope closes with success false and rethrows', () async {
       await expectLater(
         log.progress<bool>('op', () async => throw StateError('boom')),

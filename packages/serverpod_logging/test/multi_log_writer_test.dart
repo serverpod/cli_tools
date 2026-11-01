@@ -2,11 +2,11 @@ import 'package:serverpod_logging/serverpod_logging.dart';
 import 'package:test/test.dart';
 
 LogEntry _entry(String message) => LogEntry(
-      time: DateTime.now(),
-      level: LogLevel.info,
-      message: message,
-      scope: LogScope.root('r'),
-    );
+  time: DateTime.now(),
+  level: LogLevel.info,
+  message: message,
+  scope: LogScope.root('r'),
+);
 
 /// Minimal writer that only records whether [close] was called, so the
 /// close fan-out can be observed (the base [LogWriter.close] is a no-op).
@@ -34,8 +34,7 @@ class _CloseTrackingWriter extends LogWriter {
 
 void main() {
   group('Given a MultiLogWriter', () {
-    test(
-        'when constructed with writers, '
+    test('when constructed with writers, '
         'then log/openScope/closeScope fan out to all of them', () async {
       final a = TestLogWriter();
       final b = TestLogWriter();
@@ -53,8 +52,7 @@ void main() {
       }
     });
 
-    test(
-        'when a writer is added after construction, '
+    test('when a writer is added after construction, '
         'then it receives subsequent entries', () async {
       final added = TestLogWriter();
       final multi = MultiLogWriter([]);

@@ -19,15 +19,17 @@ void main() {
           ''');
     });
 
-    test('negatable flags with hideNegatedUsage don\'t show "no-" in title',
-        () {
-      var parser = ConfigParser();
-      parser.addFlag('mode', help: 'The mode', hideNegatedUsage: true);
+    test(
+      'negatable flags with hideNegatedUsage don\'t show "no-" in title',
+      () {
+        var parser = ConfigParser();
+        parser.addFlag('mode', help: 'The mode', hideNegatedUsage: true);
 
-      validateUsage(parser, '''
+        validateUsage(parser, '''
           --mode    The mode
           ''');
-    });
+      },
+    );
 
     test('non-negatable flags don\'t show "no-" in title', () {
       var parser = ConfigParser();
@@ -116,10 +118,16 @@ void main() {
 
     test('the default value for an option with no allowed list is shown', () {
       var parser = ConfigParser();
-      parser.addOption('single',
-          help: 'Can be anything', defaultsTo: 'whatevs');
-      parser.addMultiOption('multiple',
-          help: 'Can be anything', defaultsTo: ['whatevs']);
+      parser.addOption(
+        'single',
+        help: 'Can be anything',
+        defaultsTo: 'whatevs',
+      );
+      parser.addMultiOption(
+        'multiple',
+        help: 'Can be anything',
+        defaultsTo: ['whatevs'],
+      );
 
       validateUsage(parser, '''
           --single      Can be anything
@@ -129,35 +137,49 @@ void main() {
           ''');
     });
 
-    test('multiple default values for an option with no allowed list are shown',
-        () {
-      var parser = ConfigParser();
-      parser.addMultiOption('any',
-          help: 'Can be anything', defaultsTo: ['some', 'stuff']);
+    test(
+      'multiple default values for an option with no allowed list are shown',
+      () {
+        var parser = ConfigParser();
+        parser.addMultiOption(
+          'any',
+          help: 'Can be anything',
+          defaultsTo: ['some', 'stuff'],
+        );
 
-      validateUsage(parser, '''
+        validateUsage(parser, '''
           --any    Can be anything
                    (defaults to "some", "stuff")
           ''');
-    });
+      },
+    );
 
-    test('no default values are shown for a multi option with an empty default',
-        () {
-      var parser = ConfigParser();
-      parser.addMultiOption('implicit', help: 'Implicit default');
-      parser
-          .addMultiOption('explicit', help: 'Explicit default', defaultsTo: []);
+    test(
+      'no default values are shown for a multi option with an empty default',
+      () {
+        var parser = ConfigParser();
+        parser.addMultiOption('implicit', help: 'Implicit default');
+        parser.addMultiOption(
+          'explicit',
+          help: 'Explicit default',
+          defaultsTo: [],
+        );
 
-      validateUsage(parser, '''
+        validateUsage(parser, '''
           --implicit    Implicit default
           --explicit    Explicit default
           ''');
-    });
+      },
+    );
 
     test('the value help is shown', () {
       var parser = ConfigParser();
-      parser.addOption('out',
-          abbr: 'o', help: 'Where to write file', valueHelp: 'path');
+      parser.addOption(
+        'out',
+        abbr: 'o',
+        help: 'Where to write file',
+        valueHelp: 'path',
+      );
 
       validateUsage(parser, '''
           -o, --out=<path>    Where to write file
@@ -166,9 +188,11 @@ void main() {
 
     test('the allowed list is shown', () {
       var parser = ConfigParser();
-      parser.addOption('suit',
-          help: 'Like in cards',
-          allowed: ['spades', 'clubs', 'hearts', 'diamonds']);
+      parser.addOption(
+        'suit',
+        help: 'Like in cards',
+        allowed: ['spades', 'clubs', 'hearts', 'diamonds'],
+      );
 
       validateUsage(parser, '''
           --suit    Like in cards
@@ -178,10 +202,12 @@ void main() {
 
     test('the default is highlighted in the allowed list', () {
       var parser = ConfigParser();
-      parser.addOption('suit',
-          help: 'Like in cards',
-          defaultsTo: 'clubs',
-          allowed: ['spades', 'clubs', 'hearts', 'diamonds']);
+      parser.addOption(
+        'suit',
+        help: 'Like in cards',
+        defaultsTo: 'clubs',
+        allowed: ['spades', 'clubs', 'hearts', 'diamonds'],
+      );
 
       validateUsage(parser, '''
           --suit    Like in cards
@@ -191,10 +217,12 @@ void main() {
 
     test('multiple defaults are highlighted in the allowed list', () {
       var parser = ConfigParser();
-      parser.addMultiOption('suit',
-          help: 'Like in cards',
-          defaultsTo: ['clubs', 'diamonds'],
-          allowed: ['spades', 'clubs', 'hearts', 'diamonds']);
+      parser.addMultiOption(
+        'suit',
+        help: 'Like in cards',
+        defaultsTo: ['clubs', 'diamonds'],
+        allowed: ['spades', 'clubs', 'hearts', 'diamonds'],
+      );
 
       validateUsage(parser, '''
           --suit    Like in cards
@@ -204,17 +232,17 @@ void main() {
 
     test('the allowed help is shown', () {
       var parser = ConfigParser();
-      parser.addOption('suit', help: 'Like in cards', allowed: [
-        'spades',
-        'clubs',
-        'diamonds',
-        'hearts'
-      ], allowedHelp: {
-        'spades': 'Swords of a soldier',
-        'clubs': 'Weapons of war',
-        'diamonds': 'Money for this art',
-        'hearts': 'The shape of my heart'
-      });
+      parser.addOption(
+        'suit',
+        help: 'Like in cards',
+        allowed: ['spades', 'clubs', 'diamonds', 'hearts'],
+        allowedHelp: {
+          'spades': 'Swords of a soldier',
+          'clubs': 'Weapons of war',
+          'diamonds': 'Money for this art',
+          'hearts': 'The shape of my heart',
+        },
+      );
 
       validateUsage(parser, '''
           --suit              Like in cards
@@ -228,21 +256,18 @@ void main() {
 
     test('the default is highlighted in the allowed help', () {
       var parser = ConfigParser();
-      parser.addOption('suit',
-          help: 'Like in cards',
-          defaultsTo: 'clubs',
-          allowed: [
-            'spades',
-            'clubs',
-            'diamonds',
-            'hearts'
-          ],
-          allowedHelp: {
-            'spades': 'Swords of a soldier',
-            'clubs': 'Weapons of war',
-            'diamonds': 'Money for this art',
-            'hearts': 'The shape of my heart'
-          });
+      parser.addOption(
+        'suit',
+        help: 'Like in cards',
+        defaultsTo: 'clubs',
+        allowed: ['spades', 'clubs', 'diamonds', 'hearts'],
+        allowedHelp: {
+          'spades': 'Swords of a soldier',
+          'clubs': 'Weapons of war',
+          'diamonds': 'Money for this art',
+          'hearts': 'The shape of my heart',
+        },
+      );
 
       validateUsage(parser, '''
           --suit                     Like in cards
@@ -256,20 +281,18 @@ void main() {
 
     test('multiple defaults are highlighted in the allowed help', () {
       var parser = ConfigParser();
-      parser.addMultiOption('suit', help: 'Like in cards', defaultsTo: [
-        'clubs',
-        'hearts'
-      ], allowed: [
-        'spades',
-        'clubs',
-        'diamonds',
-        'hearts'
-      ], allowedHelp: {
-        'spades': 'Swords of a soldier',
-        'clubs': 'Weapons of war',
-        'diamonds': 'Money for this art',
-        'hearts': 'The shape of my heart'
-      });
+      parser.addMultiOption(
+        'suit',
+        help: 'Like in cards',
+        defaultsTo: ['clubs', 'hearts'],
+        allowed: ['spades', 'clubs', 'diamonds', 'hearts'],
+        allowedHelp: {
+          'spades': 'Swords of a soldier',
+          'clubs': 'Weapons of war',
+          'diamonds': 'Money for this art',
+          'hearts': 'The shape of my heart',
+        },
+      );
 
       validateUsage(parser, '''
           --suit                      Like in cards
@@ -319,39 +342,53 @@ void main() {
 
     test('help strings are not wrapped if usageLineLength is null', () {
       var parser = ConfigParser(usageLineLength: null);
-      parser.addFlag('long',
-          help: 'The flag with a really long help text that will not '
-              'be wrapped.');
+      parser.addFlag(
+        'long',
+        help:
+            'The flag with a really long help text that will not '
+            'be wrapped.',
+      );
       validateUsage(parser, '''
           --[no-]long    The flag with a really long help text that will not be wrapped.
           ''');
     });
 
-    test('help strings are wrapped properly when usageLineLength is specified',
-        () {
-      var parser = ConfigParser(usageLineLength: 60);
-      parser.addFlag('long',
-          help: 'The flag with a really long help text that will be wrapped.');
-      parser.addFlag('longNewline',
-          help: 'The flag with a really long help text and newlines\n\nthat '
-              'will still be wrapped because it is really long.');
-      parser.addFlag(
-        'solid',
-        help: 'The-flag-with-no-whitespace-that-will-be-wrapped-by-splitting-a'
-            '-word.',
-      );
-      parser.addFlag('longWhitespace',
+    test(
+      'help strings are wrapped properly when usageLineLength is specified',
+      () {
+        var parser = ConfigParser(usageLineLength: 60);
+        parser.addFlag(
+          'long',
+          help: 'The flag with a really long help text that will be wrapped.',
+        );
+        parser.addFlag(
+          'longNewline',
+          help:
+              'The flag with a really long help text and newlines\n\nthat '
+              'will still be wrapped because it is really long.',
+        );
+        parser.addFlag(
+          'solid',
+          help:
+              'The-flag-with-no-whitespace-that-will-be-wrapped-by-splitting-a'
+              '-word.',
+        );
+        parser.addFlag(
+          'longWhitespace',
           help:
               '           The flag with a really long help text and whitespace '
-              'at the start.');
-      parser.addFlag('longTrailspace',
+              'at the start.',
+        );
+        parser.addFlag(
+          'longTrailspace',
           help:
               'The flag with a really long help text and whitespace at the end.'
-              '             ');
-      parser.addFlag('small1', help: ' a ');
-      parser.addFlag('small2', help: ' a');
-      parser.addFlag('small3', help: 'a ');
-      validateUsage(parser, '''
+              '             ',
+        );
+        parser.addFlag('small1', help: ' a ');
+        parser.addFlag('small2', help: ' a');
+        parser.addFlag('small3', help: 'a ');
+        validateUsage(parser, '''
           --[no-]long              The flag with a really long help
                                    text that will be wrapped.
           --[no-]longNewline       The flag with a really long help
@@ -369,21 +406,26 @@ void main() {
           --[no-]small2            a
           --[no-]small3            a
           ''');
-    });
+      },
+    );
 
-    test(
-        'help strings are wrapped with at 10 chars when usageLineLength is '
+    test('help strings are wrapped with at 10 chars when usageLineLength is '
         'smaller than available space', () {
       var parser = ConfigParser(usageLineLength: 1);
-      parser.addFlag('long',
-          help: 'The flag with a really long help text that will be wrapped.');
-      parser.addFlag('longNewline',
-          help:
-              'The flag with a really long help text and newlines\n\nthat will '
-              'still be wrapped because it is really long.');
+      parser.addFlag(
+        'long',
+        help: 'The flag with a really long help text that will be wrapped.',
+      );
+      parser.addFlag(
+        'longNewline',
+        help:
+            'The flag with a really long help text and newlines\n\nthat will '
+            'still be wrapped because it is really long.',
+      );
       parser.addFlag(
         'solid',
-        help: 'The-flag-with-no-whitespace-that-will-be-wrapped-by-splitting-a-'
+        help:
+            'The-flag-with-no-whitespace-that-will-be-wrapped-by-splitting-a-'
             'word.',
       );
       parser.addFlag('small1', help: ' a ');
@@ -431,13 +473,16 @@ void main() {
         ''');
     });
 
-    test('throw argument error if option is mandatory with a default value',
-        () {
-      var parser = ConfigParser();
-      expect(
+    test(
+      'throw argument error if option is mandatory with a default value',
+      () {
+        var parser = ConfigParser();
+        expect(
           () => parser.addOption('test', mandatory: true, defaultsTo: 'test'),
-          throwsArgumentError);
-    });
+          throwsArgumentError,
+        );
+      },
+    );
 
     group('separators', () {
       test("separates options where it's placed", () {

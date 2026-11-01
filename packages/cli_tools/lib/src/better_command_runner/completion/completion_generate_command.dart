@@ -13,11 +13,13 @@ import 'usage_representation.dart';
 enum CompletionGenerateOption<V extends Object> implements OptionDefinition<V> {
   tool(CompletionOptions.toolOption),
   execName(CompletionOptions.execNameOption),
-  file(FileOption(
-    argName: 'file',
-    argAbbrev: 'f',
-    helpText: 'Write the specification to a file instead of stdout',
-  ));
+  file(
+    FileOption(
+      argName: 'file',
+      argAbbrev: 'f',
+      helpText: 'Write the specification to a file instead of stdout',
+    ),
+  );
 
   const CompletionGenerateOption(this.option);
 
@@ -37,10 +39,12 @@ class CompletionGenerateCommand<T>
 
   @override
   Future<T> runWithConfig(
-      final Configuration<CompletionGenerateOption> commandConfig) async {
+    final Configuration<CompletionGenerateOption> commandConfig,
+  ) async {
     final tool = commandConfig.value(CompletionGenerateOption.tool);
-    final execName =
-        commandConfig.optionalValue(CompletionGenerateOption.execName);
+    final execName = commandConfig.optionalValue(
+      CompletionGenerateOption.execName,
+    );
     final file = commandConfig.optionalValue(CompletionGenerateOption.file);
 
     final betterRunner = runner;
@@ -70,7 +74,8 @@ class CompletionGenerateCommand<T>
     }
 
     if (betterRunner.globalConfiguration.findValueOf(
-            argName: StandardGlobalOption.verbose.option.argName) ==
+          argName: StandardGlobalOption.verbose.option.argName,
+        ) ==
         true) {
       final out = file == null ? ' to stdout' : ': ${file.path}';
       stderr.writeln('Generated specification$out');

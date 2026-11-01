@@ -29,8 +29,10 @@ void main() {
     'Empty body and not found status response when fetching latest version exception with message is thrown.',
     () async {
       // Issue: https://github.com/leoafarias/pub_api_client/issues/35
-      final httpClient =
-          createMockClient(body: '', status: HttpStatus.notFound);
+      final httpClient = createMockClient(
+        body: '',
+        status: HttpStatus.notFound,
+      );
       final pubApiClient = PubApiClient(httpClient: httpClient);
 
       await expectLater(
@@ -52,8 +54,10 @@ void main() {
     'Empty body and not found status response when fetching latest version then returns null.',
     () async {
       // Issue: https://github.com/leoafarias/pub_api_client/issues/35
-      final httpClient =
-          createMockClient(body: '', status: HttpStatus.notFound);
+      final httpClient = createMockClient(
+        body: '',
+        status: HttpStatus.notFound,
+      );
       final pubApiClient = PubApiClient(httpClient: httpClient);
 
       await expectLater(
@@ -100,7 +104,8 @@ void main() {
     () async {
       final expectedVersion = Version(1, 2, 3);
       final httpClient = createMockClient(
-        body: '''
+        body:
+            '''
 {
     "name": "${PubApiClientTestConstants.testPackageName}",
     "versions": ["1.2.5-b", "1.2.4+a", "${expectedVersion.toString()}"]
@@ -123,7 +128,8 @@ void main() {
     'Only non stable versions when fetching latest then returns null',
     () async {
       final httpClient = createMockClient(
-        body: '''
+        body:
+            '''
 {
     "name": "${PubApiClientTestConstants.testPackageName}",
     "versions": ["1.2.5-b", "1.2.4+a"]
@@ -145,7 +151,8 @@ void main() {
     'Invalid version format when fetching latest from pub.dev then throws version parse exception.',
     () async {
       final httpClient = createMockClient(
-        body: '''
+        body:
+            '''
 {
     "name": "${PubApiClientTestConstants.testPackageName}",
     "versions": ["invalid_format"]

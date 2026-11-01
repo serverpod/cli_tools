@@ -30,15 +30,17 @@ Future<int> main(final List<String> args) async {
 }
 
 enum ShowOption<V extends Object> implements OptionDefinition<V> {
-  interval(DurationOption(
-    argName: 'interval',
-    argAbbrev: 'i',
-    envName: 'INTERVAL',
-    helpText: 'The time interval',
-    mandatory: true,
-    min: Duration(seconds: 1),
-    max: Duration(days: 1),
-  ));
+  interval(
+    DurationOption(
+      argName: 'interval',
+      argAbbrev: 'i',
+      envName: 'INTERVAL',
+      helpText: 'The time interval',
+      mandatory: true,
+      min: Duration(seconds: 1),
+      max: Duration(days: 1),
+    ),
+  );
 
   const ShowOption(this.option);
 

@@ -12,12 +12,14 @@ import 'completion_tool.dart';
 enum CompletionInstallOption<V extends Object> implements OptionDefinition<V> {
   tool(CompletionOptions.toolOption),
   execName(CompletionOptions.execNameOption),
-  writeDir(DirOption(
-    argName: 'write-dir',
-    argAbbrev: 'd',
-    helpText: 'Override the directory to write the script to',
-    mode: PathExistMode.mustExist,
-  ));
+  writeDir(
+    DirOption(
+      argName: 'write-dir',
+      argAbbrev: 'd',
+      helpText: 'Override the directory to write the script to',
+      mode: PathExistMode.mustExist,
+    ),
+  );
 
   const CompletionInstallOption(this.option);
 
@@ -31,10 +33,12 @@ class CompletionInstallCommand<T>
 
   CompletionInstallCommand({
     required final Iterable<CompletionScript> embeddedCompletions,
-  })  : _embeddedCompletions = Map.fromEntries(embeddedCompletions.map(
-          (final e) => MapEntry(e.tool, e.script),
-        )),
-        super(options: CompletionInstallOption.values);
+  }) : _embeddedCompletions = Map.fromEntries(
+         embeddedCompletions.map(
+           (final e) => MapEntry(e.tool, e.script),
+         ),
+       ),
+       super(options: CompletionInstallOption.values);
 
   @override
   String get name => 'install';
@@ -44,12 +48,15 @@ class CompletionInstallCommand<T>
 
   @override
   Future<T> runWithConfig(
-      final Configuration<CompletionInstallOption> commandConfig) async {
+    final Configuration<CompletionInstallOption> commandConfig,
+  ) async {
     final tool = commandConfig.value(CompletionInstallOption.tool);
-    final execName =
-        commandConfig.optionalValue(CompletionInstallOption.execName);
-    final writeDir =
-        commandConfig.optionalValue(CompletionInstallOption.writeDir);
+    final execName = commandConfig.optionalValue(
+      CompletionInstallOption.execName,
+    );
+    final writeDir = commandConfig.optionalValue(
+      CompletionInstallOption.writeDir,
+    );
 
     final betterRunner = runner;
     if (betterRunner == null) {
@@ -68,20 +75,21 @@ class CompletionInstallCommand<T>
       CompletionTool.completely => '$executableName.bash',
       CompletionTool.carapace => '$executableName.yaml',
     };
-    final writeDirPath = writeDir?.path ??
+    final writeDirPath =
+        writeDir?.path ??
         switch (tool) {
           CompletionTool.completely => p.join(
-              _getHomeDir(),
-              '.local',
-              'share',
-              'bash-completion',
-              'completions',
-            ),
+            _getHomeDir(),
+            '.local',
+            'share',
+            'bash-completion',
+            'completions',
+          ),
           CompletionTool.carapace => p.join(
-              _getUserConfigDir(),
-              'carapace',
-              'specs',
-            ),
+            _getUserConfigDir(),
+            'carapace',
+            'specs',
+          ),
         };
     final writeFilePath = p.join(writeDirPath, writeFileName);
 
@@ -92,7 +100,8 @@ class CompletionInstallCommand<T>
     await out.close();
 
     if (betterRunner.globalConfiguration.findValueOf(
-            argName: StandardGlobalOption.verbose.option.argName) ==
+          argName: StandardGlobalOption.verbose.option.argName,
+        ) ==
         true) {
       stderr.writeln('Installed script: $writeFilePath');
     }

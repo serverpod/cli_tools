@@ -21,8 +21,10 @@ abstract class Analytics {
     final Map<String, dynamic> properties = const {},
   }) {
     late final Future<void> pendingTrack;
-    pendingTrack = _quietSendEvent(event: event, properties: properties)
-        .whenComplete(() => _pendingTracks.remove(pendingTrack));
+    pendingTrack = _quietSendEvent(
+      event: event,
+      properties: properties,
+    ).whenComplete(() => _pendingTracks.remove(pendingTrack));
     _pendingTracks.add(pendingTrack);
   }
 

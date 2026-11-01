@@ -20,8 +20,7 @@ void main() {
       log = Log(writer);
     });
 
-    test(
-        'when the runner emits a log entry, '
+    test('when the runner emits a log entry, '
         'then that entry is scoped to the progress scope', () async {
       await log.progress('outer', () async {
         log.info('inside');
@@ -35,14 +34,14 @@ void main() {
       expect(
         inside.scope.id,
         opened.id,
-        reason: 'a log emitted inside the runner must reference the '
+        reason:
+            'a log emitted inside the runner must reference the '
             'progress scope, via the Zone',
       );
       expect(inside.scope.label, 'outer');
     });
 
-    test(
-        'when the runner opens a nested progress scope, '
+    test('when the runner opens a nested progress scope, '
         'then the inner scope is a child of the outer scope', () async {
       await log.progress('outer', () async {
         await log.progress('inner', () async => true);
@@ -54,7 +53,8 @@ void main() {
       expect(
         inner.parent?.id,
         outer.id,
-        reason: 'the inner progress scope must nest under the outer one, '
+        reason:
+            'the inner progress scope must nest under the outer one, '
             'which only works if the runner executes inside the outer Zone',
       );
     });
