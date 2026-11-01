@@ -58,6 +58,14 @@ void main() {
       expect(parse(['--']).errors, ['Unexpected value: --']);
     });
 
+    test('when - is parsed then it stays positional', () {
+      expect(parse(['-']).positionalWords, ['-']);
+    });
+
+    test('when - is parsed then there is no error', () {
+      expect(parse(['-']).errors, isEmpty);
+    });
+
     test('when an unknown option is parsed then the error is recorded', () {
       expect(parse(['--missing']).errors, ['Unknown option: --missing']);
     });
@@ -423,6 +431,17 @@ void main() {
         'Unexpected value: --',
         'A subcommand is required under tool',
       ]);
+    });
+
+    test('when - is parsed then it is an unknown subcommand', () {
+      expect(parse(['-']).errors, ['Unknown subcommand: -']);
+    });
+
+    test('when the leaf receives - then it stays positional', () {
+      expect(
+        childResult(childResult(parse(['mid', 'leaf', '-']))).positionalWords,
+        ['-'],
+      );
     });
   });
 
