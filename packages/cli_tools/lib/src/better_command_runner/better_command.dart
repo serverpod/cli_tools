@@ -123,6 +123,7 @@ abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
   Configuration<O> resolveConfiguration(final ArgResults? argResults) {
     return Configuration.resolveNoExcept(
       options: options,
+      // ignore: deprecated_member_use
       argResults: argResults,
       env: envVariables,
     );
