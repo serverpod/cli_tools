@@ -18,6 +18,7 @@ import 'abstract_command.dart';
 import 'builtin_global_option.dart';
 import 'command_context.dart';
 import 'command_resolver.dart';
+import 'completion/completion.dart';
 import 'context_provider.dart';
 import 'usage_generator.dart' show StandardRunnerUsageGenerator, UsageGenerator;
 import 'usage_output.dart';
@@ -86,6 +87,8 @@ class CommandRunner<O extends OptionDefinition, T>
   /// The built-in global options, e.g. `--help`.
   List<BuiltinGlobalOption> get builtinPersistentOptions => [
     BuiltinGlobalOption.help,
+    if (completion.enabled && subcommands.isEmpty)
+      BuiltinGlobalOption.completion,
   ];
 
   @override
@@ -128,6 +131,11 @@ class CommandRunner<O extends OptionDefinition, T>
   /// controls the help output and the usage exception output.
   final UsageOutputHandler usageOutput;
 
+  /// The settings for the built-in shell completion support.
+  ///
+  /// Enabled by default, see [CompletionSettings].
+  final CompletionSettings completion;
+
   /// Resolves the configurations for each command on the command line.
   final CommandResolver<O, T> resolver = StandardCommandResolver<O, T>();
 
@@ -138,6 +146,7 @@ class CommandRunner<O extends OptionDefinition, T>
   /// command line.
   ///
   /// The built-in global option `--help` / `-h` is available in addition,
+  /// as is `--completion <shell>` for a runner without subcommands,
   /// see [builtinPersistentOptions].
   ///
   /// [subcommands] is a list of subcommands that will be added to
@@ -148,6 +157,9 @@ class CommandRunner<O extends OptionDefinition, T>
   /// [ignoreUnexpectedPositionalArgs] is a boolean that determines whether unexpected positional arguments should be ignored.
   ///
   /// [rootFooter] is a string that will be added to the runner's usage footer.
+  ///
+  /// [completion] configures the built-in shell completion support,
+  /// which is enabled by default. See [CompletionSettings].
   CommandRunner(
     this.executableName,
     final String description, {
@@ -161,16 +173,22 @@ class CommandRunner<O extends OptionDefinition, T>
     final bool? ignoreUnexpectedPositionalArgs,
     final int? suggestionDistanceLimit,
     final UsageOutputHandler? usageOutput,
+    final CompletionSettings? completion,
   }) : usageDefinition = CommandUsageDefinition(
          description: description,
          usageFooter: rootFooter,
        ),
        usageOutput = usageOutput ?? UsageOutputHandler(),
+       completion = completion ?? const CompletionSettings(),
        ignoreUnexpectedPositionalArgs = ignoreUnexpectedPositionalArgs ?? false,
        suggestionDistanceLimit = suggestionDistanceLimit ?? 2,
        super(
          usageGenerator: usageGenerator ?? const StandardRunnerUsageGenerator(),
          persistentOptions: globalOptions,
+         builtinSubcommands: [
+           if (completion?.enabled ?? true)
+             CompletionCommand<T>(hidden: completion?.hideCommand ?? false),
+         ],
        );
 
   /// Runs a command line by parsing [args] and [env] (and [configBroker], when
@@ -244,6 +262,12 @@ class CommandRunner<O extends OptionDefinition, T>
     final envVars = env ?? Platform.environment;
     final argList = args.toList();
 
+    if (completion.enabled) {
+      if (argList.isNotEmpty && argList.first == _completeRequestCommand) {
+        return _serveCompletionRequest(argList.sublist(1), envVars);
+      }
+    }
+
     final provider = customProvider ?? ContextProvider();
     final contexts = resolveConfigurations(argList, envVars, provider);
     if (contexts == null) return null;
@@ -251,6 +275,38 @@ class CommandRunner<O extends OptionDefinition, T>
     contexts.provider.store(OriginalCommandLine(argList));
 
     return runCommandLine(contexts);
+  }
+
+  /// Serves a completion request from a shell completion script:
+  /// writes the completion alternatives for the partial command line
+  /// [words] to [CompletionSettings.sinks].
+  ///
+  /// Completion requests are served before any configuration resolution:
+  /// no middlewares run and no option values are resolved, so environment
+  /// variables, configuration files and the configuration broker are not
+  /// consulted for option values.
+  ///
+  /// The [env] map is only passed through to custom `ConfigOptionBase.complete`
+  /// implementations, as `CompletionContext.environment`.
+  ///
+  /// Exits the process with 0 after writing the response unless
+  /// [CompletionSettings.exitAfterResponse] is false.
+  Future<T?> _serveCompletionRequest(
+    final List<String> words,
+    final Map<String, String> env,
+  ) async {
+    final engine = CompletionEngine(
+      this,
+      ignoreUnexpectedPositionalArgs: ignoreUnexpectedPositionalArgs,
+      onError: (final error, final stackTrace) {
+        completion.sinks.err.writeln(
+          'Completion failed: $error\n$stackTrace',
+        );
+      },
+    );
+    final response = await engine.complete(words, environment: env);
+    await writeCompletionOutput(this, response.format());
+    return null;
   }
 
   /// Resolves the configurations for all commands on the command line
@@ -316,7 +372,7 @@ class CommandRunner<O extends OptionDefinition, T>
 
   /// Runs the command line, i.e. the middlewares of the commands on the command
   /// line and run the tail command.
-  /// Some commands have special handling, such as help, and
+  /// Some commands have special handling, such as help and completion, and
   /// commands flagged with runStandalone=true which skip middlewares of their
   /// parents.
   ///
@@ -328,6 +384,12 @@ class CommandRunner<O extends OptionDefinition, T>
     if (_helpOptionSpecified(contexts)) {
       usageOutput.printUsage(leafContext.command);
       return Future.value(null);
+    }
+
+    if (_completionShellSpecified(contexts) case final CompletionShell shell) {
+      // Exits the process after writing the script unless
+      // CompletionSettings.exitAfterResponse is false.
+      return printCompletionScript(this, shell).then((final _) => null);
     }
 
     if (leafContext.command.runStandalone) {
@@ -382,8 +444,27 @@ class CommandRunner<O extends OptionDefinition, T>
   }
 }
 
+/// The hidden built-in root command word that serves completion requests
+/// from the shell completion scripts.
+///
+/// The request has the form:
+/// ```
+/// <executable> __complete <word>... <word-to-complete>
+/// ```
+/// where the words are the command line arguments typed so far and the last
+/// word is the (possibly empty) partial word being completed.
+///
+/// The response on stdout is one line per completion candidate, in the form
+/// `value` or `value<TAB>description`, followed by a final line `:<N>`
+/// where N is the sum of the [CompletionDirective] flags.
+///
+/// This is the protocol of Cobra's `__complete` command, which is understood
+/// by third-party completion engines such as Carapace.
+const String _completeRequestCommand = '__complete';
+
 /// The value of the built-in global [option] on the command line,
-/// or null if the option is not available or not given.
+/// or null if the option is not available (e.g. completion is disabled)
+/// or not given.
 V? builtinOptionValue<V extends Object>(
   final CommandContext rootContext,
   final BuiltinGlobalOption<V> option,
@@ -398,10 +479,17 @@ bool _helpOptionSpecified(final CommandContext rootContext) {
   return builtinOptionValue(rootContext, BuiltinGlobalOption.help) ?? false;
 }
 
+/// The shell given to the built-in `--completion <shell>` option
+/// on the command line, or null if not given.
+CompletionShell? _completionShellSpecified(final CommandContext rootContext) {
+  return builtinOptionValue(rootContext, BuiltinGlobalOption.completion);
+}
+
 /// Whether a built-in option that acts on the command line as given
-/// (`--help`) is specified.
+/// (`--help` or `--completion`) is specified.
 bool builtinActionOptionSpecified(final CommandContext rootContext) {
-  return _helpOptionSpecified(rootContext);
+  return _helpOptionSpecified(rootContext) ||
+      _completionShellSpecified(rootContext) != null;
 }
 
 class OriginalCommandLine {

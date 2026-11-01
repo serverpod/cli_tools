@@ -44,7 +44,50 @@ void main() {
 
     test(
       'when reading the built-in global options '
-      'then the help flag is included',
+      'then the help flag and the completion option are included '
+      'since there are no subcommands',
+      () {
+        expect(
+          runner.builtinPersistentOptions.map(
+            (final option) => option.option.argName,
+          ),
+          ['help', 'completion'],
+        );
+      },
+    );
+
+    test(
+      'when a subcommand is added afterwards '
+      'then the completion option gives way to the completion command',
+      () {
+        final runner = CommandRunner('tool', 'Tools')
+          ..addSubcommand(
+            CommandImpl.leafWithRunFunction(
+              name: 'build',
+              description: 'Build',
+              run: (final _) => null,
+            ),
+          );
+        expect(runner.builtinPersistentOptions, [BuiltinGlobalOption.help]);
+        expect(runner.subcommands.map((final c) => c.name), [
+          'build',
+          'completion',
+          'help',
+        ]);
+      },
+    );
+  });
+
+  group('Given a runner with completion disabled', () {
+    final runner = CommandRunner(
+      'tool',
+      'Tools',
+      completion: CompletionSettings.disabled,
+    );
+
+    test(
+      'when reading the built-in global options '
+      'then only the help flag is included',
       () {
         expect(
           runner.builtinPersistentOptions.map(
@@ -107,11 +150,11 @@ void main() {
 
     test(
       'when reading subcommands '
-      'then the command is followed by the built-in help',
+      'then the command is followed by the built-in completion and help',
       () {
         expect(
           runner.subcommands.map((final command) => command.name),
-          ['build', 'help'],
+          ['build', 'completion', 'help'],
         );
       },
     );
@@ -159,7 +202,7 @@ void main() {
 
       expect(
         runner.subcommands.map((final command) => command.name),
-        ['build', 'test', 'help'],
+        ['build', 'test', 'completion', 'help'],
       );
     });
   });
@@ -206,7 +249,7 @@ void main() {
 
         expect(
           runner.subcommands.map((final command) => command.name),
-          ['build', 'help'],
+          ['build', 'completion', 'help'],
         );
       },
     );
@@ -228,6 +271,7 @@ void main() {
         'tool',
         'Tools',
         subcommands: [help],
+        completion: CompletionSettings.disabled,
       );
 
       expect(runner.subcommands, hasLength(1));
