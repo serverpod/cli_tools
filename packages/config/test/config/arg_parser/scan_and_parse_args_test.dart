@@ -328,6 +328,25 @@ void main() {
     });
   });
 
+  group('Given a non-negatable flag whose name starts with no-', () {
+    const noColor = FlagOption(argName: 'no-color', negatable: false);
+
+    ArgParseResult<FlagOption> parse(final List<String> args) {
+      return scanAndParseArgs(args, options: [noColor]);
+    }
+
+    test('when passed as --no-color then it is set', () {
+      expect(parse(['--no-color']).flagOptions[noColor], isTrue);
+    });
+
+    test('when passed as --no-no-color then the error is recorded', () {
+      expect(
+        parse(['--no-no-color']).errors,
+        ['Unknown option: --no-no-color'],
+      );
+    });
+  });
+
   group('Given a non-negatable flag with an alias that starts with no-', () {
     const color = FlagOption(
       argName: 'color',

@@ -1,17 +1,15 @@
-import 'package:args/args.dart' show ArgParser, ArgParserException;
 import 'package:config/config.dart';
 import 'package:test/test.dart';
 
 void main() async {
-  group('Given invalid configuration abbrevation without full name', () {
+  group('Given an option abbreviation without a full name', () {
     const projectIdOpt = StringOption(
       argAbbrev: 'p',
     );
-    final parser = ArgParser();
 
-    test('when preparing for parsing then throws exception', () async {
+    test('when validating the definition then it throws', () async {
       expect(
-        () => [projectIdOpt].prepareForParsing(parser),
+        () => validateOptions([projectIdOpt]),
         throwsA(
           allOf(
             isA<OptionDefinitionError>(),
@@ -29,11 +27,10 @@ void main() async {
       mandatory: true,
       defaultsTo: 'default',
     );
-    final parser = ArgParser();
 
-    test('when preparing for parsing then throws exception', () async {
+    test('when validating the definition then it throws', () async {
       expect(
-        () => [projectIdOpt].prepareForParsing(parser),
+        () => validateOptions([projectIdOpt]),
         throwsA(
           allOf(
             isA<OptionDefinitionError>(),
@@ -54,11 +51,9 @@ void main() async {
         fromDefault: _defaultValueFunction,
       );
 
-      final parser = ArgParser();
-
-      test('when preparing for parsing then throws exception', () async {
+      test('when validating the definition then it throws', () async {
         expect(
-          () => [projectIdOpt].prepareForParsing(parser),
+          () => validateOptions([projectIdOpt]),
           throwsA(
             allOf(
               isA<OptionDefinitionError>(),
@@ -73,39 +68,34 @@ void main() async {
   );
 
   group('Given an option with an invalid argument alias', () {
-    final parser = ArgParser();
+    test("when the alias contains '=' then definition validation throws", () {
+      const option = StringOption(
+        argName: 'name',
+        argAliases: ['bad=name'],
+      );
 
-    test(
-      "when the alias contains '=' then definition validation throws",
-      () async {
-        const option = StringOption(
-          argName: 'name',
-          argAliases: ['bad=name'],
-        );
-
-        expect(
-          () => [option].prepareForParsing(parser),
-          throwsA(
-            isA<OptionDefinitionError>().having(
-              (final e) => e.message,
-              'message',
-              "An argument option alias can't contain '='",
-            ),
+      expect(
+        () => validateOptions([option]),
+        throwsA(
+          isA<OptionDefinitionError>().having(
+            (final e) => e.message,
+            'message',
+            "An argument option alias can't contain '='",
           ),
-        );
-      },
-    );
+        ),
+      );
+    });
 
     test(
       "when the alias starts with '-' then definition validation throws",
-      () async {
+      () {
         const option = StringOption(
           argName: 'name',
           argAliases: ['-bad'],
         );
 
         expect(
-          () => [option].prepareForParsing(parser),
+          () => validateOptions([option]),
           throwsA(
             isA<OptionDefinitionError>().having(
               (final e) => e.message,
@@ -116,68 +106,6 @@ void main() async {
         );
       },
     );
-  });
-
-  group('Given a configuration option definition', () {
-    const projectIdOpt = StringOption(
-      argName: 'project',
-    );
-
-    group('added to the arg parser', () {
-      final parser = ArgParser();
-      [projectIdOpt].prepareForParsing(parser);
-
-      test('then it is listed as an option there', () async {
-        expect(parser.options, contains('project'));
-      });
-
-      test(
-        'when present on the command line, then it is successfully parsed',
-        () async {
-          final results = parser.parse(['--project', '123']);
-          expect(results.option('project'), '123');
-        },
-      );
-
-      test(
-        'when present on the command line, then it is marked as parsed',
-        () async {
-          final results = parser.parse(['--project', '123']);
-          expect(results.wasParsed('project'), isTrue);
-        },
-      );
-
-      test(
-        'when not present on the command line, then it is marked as not parsed',
-        () async {
-          final results = parser.parse(['123']);
-          expect(results.wasParsed('project'), isFalse);
-        },
-      );
-
-      test(
-        'when misspelled on the command line, then it fails to parse',
-        () async {
-          expect(
-            () => parser.parse(['--projectid', '123']),
-            throwsA(isA<ArgParserException>()),
-          );
-        },
-      );
-
-      test(
-        'when present twice on the command line, the value is the last one',
-        () async {
-          final results = parser.parse([
-            '--project',
-            '123',
-            '--project',
-            '456',
-          ]);
-          expect(results.option('project'), '456');
-        },
-      );
-    });
   });
 
   group('Given a configuration option defined for all sources', () {
@@ -264,16 +192,26 @@ void main() async {
       expect(config.value(projectIdOpt), equals('customValueFunction'));
     });
 
-    test('when provided twice via args then the last value is used', () async {
-      // Note: This is the behavior of ArgParser.
-      // It may be considered to make this a usage error instead.
-      final args = ['--project', '123', '--project', '456'];
-      final config = Configuration.resolveNoExcept(
-        options: [projectIdOpt],
-        args: args,
-      );
-      expect(config.value(projectIdOpt), equals('456'));
-    });
+    test(
+      'when provided twice via args '
+      'then it reports that the option cannot be specified more than once',
+      () async {
+        final args = ['--project', '123', '--project', '456'];
+        expect(
+          () => Configuration.resolve(
+            options: [projectIdOpt],
+            args: args,
+          ),
+          throwsA(
+            isA<UsageException>().having(
+              (final e) => e.message,
+              'message',
+              'Option --project cannot be specified more than once.',
+            ),
+          ),
+        );
+      },
+    );
   });
 
   group('Given a configuration option with a defaultsTo value', () {
@@ -345,7 +283,7 @@ void main() async {
       configKeys: ['primary:/projectId', 'fallback:/projectId'],
     );
 
-    test('then lookupConfigKeys lists the keys in order', () async {
+    test('then allConfigKeys lists the keys in order', () async {
       expect(
         projectIdOpt.allConfigKeys,
         equals(['primary:/projectId', 'fallback:/projectId']),
@@ -418,6 +356,14 @@ void main() async {
         equals('fallbackValue'),
       );
     });
+
+    test('when finding the option on the option list via a configKeys entry '
+        'then it succeeds', () {
+      expect(
+        [projectIdOpt].findOption(configKey: 'fallback:/projectId'),
+        same(projectIdOpt),
+      );
+    });
   });
 
   group('Given a configuration option with both configKey and configKeys', () {
@@ -426,7 +372,7 @@ void main() async {
       configKeys: ['fallback:/projectId'],
     );
 
-    test('then lookupConfigKeys starts with configKey', () async {
+    test('then allConfigKeys starts with configKey', () async {
       expect(
         projectIdOpt.allConfigKeys,
         equals(['primary:/projectId', 'fallback:/projectId']),
@@ -902,11 +848,22 @@ void main() async {
     );
 
     test('when provided as argument then parsing fails', () async {
-      final parser = ArgParser();
-      [projectIdOpt].prepareForParsing(parser);
       expect(
-        () => parser.parse(['--project', '123']),
-        throwsA(isA<ArgParserException>()),
+        () => Configuration.resolve(
+          options: [projectIdOpt],
+          args: ['--project', '123'],
+        ),
+        throwsA(
+          isA<UsageException>().having(
+            (final e) => e.message,
+            'message',
+            stringContainsInOrder([
+              'Unknown option: --project',
+              'Environment variable `PROJECT_ID` is mandatory.',
+              "Unexpected positional argument(s): '123'",
+            ]),
+          ),
+        ),
       );
     });
 
@@ -950,6 +907,65 @@ void main() async {
     });
   });
 
+  group('Given a negatable flag whose name starts with no-', () {
+    const noColor = FlagOption(argName: 'no-color');
+
+    test('when validating the definition then it throws', () async {
+      expect(
+        () => validateOptions([noColor]),
+        throwsA(
+          allOf(
+            isA<OptionDefinitionError>(),
+            (final e) => e.toString().contains(
+              "A flag whose name starts with 'no-' can't be negatable",
+            ),
+          ),
+        ),
+      );
+    });
+  });
+
+  group('Given a non-negatable flag whose name starts with no-', () {
+    const noColor = FlagOption(argName: 'no-color', negatable: false);
+
+    test('when validating the definition then it is accepted', () {
+      expect(validateOptions([noColor]), [noColor]);
+    });
+  });
+
+  group('Given a non-negatable flag with an alias that starts with no-', () {
+    const color = FlagOption(
+      argName: 'color',
+      negatable: false,
+      argAliases: ['no-color'],
+    );
+
+    test('when validating the definition then it is accepted', () {
+      expect(validateOptions([color]), [color]);
+    });
+  });
+
+  group('Given a negatable flag whose alias is its negation', () {
+    const color = FlagOption(
+      argName: 'color',
+      argAliases: ['no-color'],
+    );
+
+    test('when validating the definition then it throws', () async {
+      expect(
+        () => validateOptions([color]),
+        throwsA(
+          allOf(
+            isA<OptionDefinitionError>(),
+            (final e) => e.toString().contains(
+              'Duplicate argument name: no-color',
+            ),
+          ),
+        ),
+      );
+    });
+  });
+
   group('Given invalid combinations of options', () {
     const argNameOpt = StringOption(
       argName: 'arg-name',
@@ -970,55 +986,70 @@ void main() async {
     );
 
     test(
-      'when duplicate arg names specified then InvalidOptionConfigurationException is thrown',
+      'when duplicate arg names specified then OptionDefinitionError is thrown',
       () async {
-        final parser = ArgParser();
         expect(
-          () => [argNameOpt, duplicateOpt].prepareForParsing(parser),
+          () => validateOptions([argNameOpt, duplicateOpt]),
           throwsA(isA<OptionDefinitionError>()),
         );
       },
     );
 
     test(
-      'when duplicate env names specified then InvalidOptionConfigurationException is thrown',
+      'when duplicate abbreviations specified then OptionDefinitionError is thrown',
       () async {
-        final parser = ArgParser();
+        const first = StringOption(argName: 'first', argAbbrev: 'x');
+        const second = StringOption(argName: 'second', argAbbrev: 'x');
+
         expect(
-          () => [envNameOpt, duplicateOpt].prepareForParsing(parser),
+          () => validateOptions([first, second]),
+          throwsA(
+            allOf(
+              isA<OptionDefinitionError>(),
+              (final e) => e.toString().contains(
+                'Duplicate argument abbreviation: x',
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    test(
+      'when duplicate env names specified then OptionDefinitionError is thrown',
+      () async {
+        expect(
+          () => validateOptions([envNameOpt, duplicateOpt]),
           throwsA(isA<OptionDefinitionError>()),
         );
       },
     );
 
     test(
-      'when duplicate arg positions specified then InvalidOptionConfigurationException is thrown',
+      'when duplicate arg positions specified then OptionDefinitionError is thrown',
       () async {
-        final parser = ArgParser();
         expect(
-          () => [argPosOpt, duplicateOpt].prepareForParsing(parser),
+          () => validateOptions([argPosOpt, duplicateOpt]),
           throwsA(isA<OptionDefinitionError>()),
         );
       },
     );
 
     test(
-      'when non-consecutive arg positions specified then InvalidOptionConfigurationException is thrown',
+      'when non-consecutive arg positions specified then OptionDefinitionError is thrown',
       () async {
-        final parser = ArgParser();
         expect(
-          () => [argPosOpt, argPos2Opt].prepareForParsing(parser),
+          () => validateOptions([argPosOpt, argPos2Opt]),
           throwsA(isA<OptionDefinitionError>()),
         );
       },
     );
 
     test(
-      'when first arg position does not start at 0 then InvalidOptionConfigurationException is thrown',
+      'when first arg position does not start at 0 then OptionDefinitionError is thrown',
       () async {
-        final parser = ArgParser();
         expect(
-          () => [argPos2Opt].prepareForParsing(parser),
+          () => validateOptions([argPos2Opt]),
           throwsA(isA<OptionDefinitionError>()),
         );
       },
@@ -1669,27 +1700,33 @@ void main() async {
   group('Given argument parsing fails', () {
     const projectOpt = StringOption(argName: 'project');
 
-    late Configuration<StringOption> config;
+    test(
+      'then resolveNoExcept registers an error but does not throw a usage exception',
+      () {
+        final config = Configuration.resolveNoExcept(
+          options: [projectOpt],
+          args: ['--not-an-option'],
+        );
 
-    setUp(() {
-      config = Configuration.resolveNoExcept(
-        options: [projectOpt],
-        args: ['--not-an-option'],
+        expect(config.errors, hasLength(1));
+        expect(config.errors.first, 'Unknown option: --not-an-option');
+      },
+    );
+
+    test('then resolve throws a usage exception', () {
+      expect(
+        () => Configuration.resolve(
+          options: [projectOpt],
+          args: ['--not-an-option'],
+        ),
+        throwsA(
+          isA<UsageException>().having(
+            (final e) => e.message,
+            'message',
+            'Unknown option: --not-an-option.',
+          ),
+        ),
       );
-    });
-
-    test('then remaining positional arguments are empty', () {
-      expect(config.remainingPosArgs, isEmpty);
-    });
-
-    test('then the parse error is recorded', () {
-      expect(config.errors, isNotEmpty);
-    });
-
-    test('then a copy has empty remaining positional arguments', () {
-      final copy = Configuration.from(configuration: config);
-
-      expect(copy.remainingPosArgs, isEmpty);
     });
   });
 
@@ -1747,7 +1784,8 @@ void main() async {
     );
 
     test(
-      'when the first option is provided twice using aliases then the last value is used',
+      'when the first option is provided twice using aliases '
+      'then it reports that the option cannot be specified more than once',
       () async {
         final args = [
           '--alias-first-a',
@@ -1759,9 +1797,11 @@ void main() async {
           options: options,
           args: args,
         );
-        expect(config.errors, isEmpty);
-        expect(config.optionalValue(firstOpt), equals('2nd-arg'));
-        expect(config.optionalValue(secondOpt), isNull);
+        expect(config.errors, hasLength(1));
+        expect(
+          config.errors.first,
+          'Option --first cannot be specified more than once',
+        );
       },
     );
 
@@ -2211,7 +2251,8 @@ void main() async {
       );
 
       test(
-        'when dependee is specified before depender then parsing fails',
+        'when dependee is specified before depender '
+        'then resolution throws an out-of-order dependency error',
         () async {
           final options = [projectIdOpt, configFileOpt];
 
@@ -2378,25 +2419,25 @@ void main() async {
     });
 
     test('when getting an unknown option value via the arg name '
-        'then it succeeds', () async {
+        'then it returns null', () async {
       final value = config.findValueOf(argName: 'unknown');
       expect(value, isNull);
     });
 
     test('when getting an unknown option value via the arg pos '
-        'then it succeeds', () async {
+        'then it returns null', () async {
       final value = config.findValueOf(argPos: 2);
       expect(value, isNull);
     });
 
     test('when getting an unknown option value via the env name '
-        'then it succeeds', () async {
+        'then it returns null', () async {
       final value = config.findValueOf(envName: 'UNKNOWN');
       expect(value, isNull);
     });
 
     test('when getting an unknown option value via the config key '
-        'then it succeeds', () async {
+        'then it returns null', () async {
       final value = config.findValueOf(configKey: 'config:/unknown');
       expect(value, isNull);
     });
