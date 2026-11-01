@@ -292,6 +292,14 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
         }
         result.unparsedArgs.addAll(scannedArgs.takeRemainingRaw());
 
+      case SingleDashArg():
+        if (command != null && command.subcommands.isNotEmpty) {
+          rejectedSubcommand = true;
+          result.errors.add('$unknownSubcommandErrorPrefix${arg.string}');
+        } else {
+          result.positionalWords.add(arg.string);
+        }
+
       case ValueArg():
         result.errors.add('Unexpected value: ${arg.string}');
 
