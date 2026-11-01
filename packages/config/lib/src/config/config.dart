@@ -10,6 +10,7 @@ export 'arg_parser_facade.dart'
         NewParsedArgs,
         OptionReceiver,
         ParsedArgs;
+export 'completion.dart';
 export 'config_source.dart';
 export 'config_source_provider.dart';
 export 'configuration.dart';

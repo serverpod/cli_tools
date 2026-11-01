@@ -1,5 +1,8 @@
+import 'dart:async' show FutureOr;
+
 import 'package:meta/meta.dart';
 
+import 'completion.dart';
 import 'options.dart';
 
 /// ValueParser that returns the input string unchanged.
@@ -157,6 +160,14 @@ class EnumOption<E extends Enum> extends ConfigOptionBase<E> {
     if (allowedValues != null || allowedHelp != null) return null;
     // if no other value help is provided, auto-generate it with the enum names
     return (valueParser as EnumParser<E>).valueHelpString();
+  }
+
+  /// Offers the enum names, restricted to [allowedValues] when set,
+  /// with descriptions from [allowedHelp].
+  @override
+  FutureOr<CompletionResult> complete(final CompletionContext context) {
+    final values = allowedValues ?? (valueParser as EnumParser<E>).enumValues;
+    return CompletionResult.values(candidatesForValues(values));
   }
 }
 
