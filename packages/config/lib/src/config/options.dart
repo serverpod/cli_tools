@@ -240,7 +240,7 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
   List<String> get allConfigKeys {
     final key = configKey;
     final keys = configKeys;
-    return [if (key != null) key, ...?keys];
+    return [?key, ...?keys];
   }
 
   V? defaultValue() {

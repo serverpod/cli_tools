@@ -68,14 +68,14 @@ void _testsForValidHelpUsageRequests(final List<String> args) {
       betterRunnerExitCode = await runZoned(
         () async => await _buildBetterRunner().run(args),
         zoneSpecification: ZoneSpecification(
-            print: (final _, final __, final ___, final String line) {
+            print: (final _, final _, final _, final String line) {
           betterRunnerOutput.writeln(line);
         }),
       );
       upstreamRunnerExitCode = await runZoned(
         () async => await _buildUpstreamRunner().run(args),
         zoneSpecification: ZoneSpecification(
-            print: (final _, final __, final ___, final String line) {
+            print: (final _, final _, final _, final String line) {
           upstreamRunnerOutput.writeln(line);
         }),
       );
@@ -113,7 +113,7 @@ void _testsForInvalidHelpUsageRequests(final List<String> args) {
         await runZoned(
           () async => await _buildBetterRunner().run(args),
           zoneSpecification: ZoneSpecification(
-            print: (final _, final __, final ___, final String line) {
+            print: (final _, final _, final _, final String line) {
               betterRunnerOutput.writeln(line);
             },
           ),
@@ -125,7 +125,7 @@ void _testsForInvalidHelpUsageRequests(final List<String> args) {
         await runZoned(
           () async => await _buildUpstreamRunner().run(args),
           zoneSpecification: ZoneSpecification(
-            print: (final _, final __, final ___, final String line) {
+            print: (final _, final _, final _, final String line) {
               upstreamRunnerOutput.writeln(line);
             },
           ),
