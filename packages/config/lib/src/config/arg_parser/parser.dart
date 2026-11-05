@@ -486,7 +486,7 @@ void _rejectOptionLikeSubcommandCollisions<O extends OptionDefinition>(
       spellings,
       isAlias: false,
     );
-    for (final alias in subcommand.aliases.aliases) {
+    for (final alias in subcommand.aliasesDefinition.aliases) {
       _rejectSubcommandSpelling(
         commandName,
         subcommand,
@@ -597,7 +597,8 @@ CommandDefinition<O>? _matchSubcommand<O extends OptionDefinition>(
   final String name,
 ) {
   for (final subcommand in subcommands) {
-    if (subcommand.name == name || subcommand.aliases.aliases.contains(name)) {
+    if (subcommand.name == name ||
+        subcommand.aliasesDefinition.aliases.contains(name)) {
       return subcommand;
     }
   }
