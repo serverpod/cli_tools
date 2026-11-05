@@ -80,7 +80,7 @@ void main() {
 
     final leaf = TestCommand(
       name: 'leaf',
-      aliases: const CommandAliasesDefinition(
+      aliasesDefinition: const CommandAliasesDefinition(
         aliases: ['lf', 'leaf-alias'],
         suggestionAliases: ['leave'],
       ),
@@ -89,7 +89,7 @@ void main() {
     );
     final mid = TestCommand(
       name: 'mid',
-      aliases: const CommandAliasesDefinition(aliases: ['m']),
+      aliasesDefinition: const CommandAliasesDefinition(aliases: ['m']),
       options: [midOnly],
       persistentOptions: [force],
       subcommands: [leaf],
@@ -508,7 +508,7 @@ void main() {
     final build = TestCommand(name: 'build', options: [buildOut]);
     final other = TestCommand(
       name: 'other',
-      aliases: const CommandAliasesDefinition(aliases: ['build']),
+      aliasesDefinition: const CommandAliasesDefinition(aliases: ['build']),
       options: [otherOut],
     );
     final root = TestCommand(name: 'tool', subcommands: [build, other]);
@@ -1653,7 +1653,7 @@ void main() {
     const out = StringOption(argName: 'out');
     final version = TestCommand(
       name: 'version',
-      aliases: const CommandAliasesDefinition(
+      aliasesDefinition: const CommandAliasesDefinition(
         aliases: ['--version', '-V'],
         suggestionAliases: ['--ver'],
       ),
@@ -1872,7 +1872,7 @@ void main() {
       const version = FlagOption(argName: 'version', argAbbrev: 'V');
       final command = TestCommand(
         name: 'show',
-        aliases: const CommandAliasesDefinition(aliases: ['-V']),
+        aliasesDefinition: const CommandAliasesDefinition(aliases: ['-V']),
       );
       final root = TestCommand(
         name: 'tool',
@@ -2021,7 +2021,7 @@ void main() {
     const version = FlagOption(argName: 'version');
     final command = TestCommand(
       name: 'version',
-      aliases: const CommandAliasesDefinition(
+      aliasesDefinition: const CommandAliasesDefinition(
         suggestionAliases: ['--version'],
       ),
     );
@@ -2091,7 +2091,9 @@ void main() {
       final first = TestCommand(name: '--version', options: [firstOut]);
       final second = TestCommand(
         name: 'other',
-        aliases: const CommandAliasesDefinition(aliases: ['--version']),
+        aliasesDefinition: const CommandAliasesDefinition(
+          aliases: ['--version'],
+        ),
         options: [secondOut],
       );
       final root = TestCommand(name: 'tool', subcommands: [first, second]);
@@ -2234,7 +2236,8 @@ class _EnumCommand<O extends OptionDefinition> implements CommandDefinition<O> {
   );
 
   @override
-  final CommandAliasesDefinition aliases = const CommandAliasesDefinition();
+  final CommandAliasesDefinition aliasesDefinition =
+      const CommandAliasesDefinition();
 
   @override
   final List<O> persistentOptions;

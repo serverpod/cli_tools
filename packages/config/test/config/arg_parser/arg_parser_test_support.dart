@@ -10,7 +10,7 @@ class TestCommand implements CommandDefinition<OptionDefinition> {
   TestCommand({
     required this.name,
     this.usageDefinition = const CommandUsageDefinition(description: ''),
-    this.aliases = const CommandAliasesDefinition(),
+    this.aliasesDefinition = const CommandAliasesDefinition(),
     this.persistentOptions = const [],
     this.builtinPersistentOptions = const [],
     this.options = const [],
@@ -28,7 +28,7 @@ class TestCommand implements CommandDefinition<OptionDefinition> {
   final CommandUsageDefinition usageDefinition;
 
   @override
-  final CommandAliasesDefinition aliases;
+  final CommandAliasesDefinition aliasesDefinition;
 
   @override
   final List<OptionDefinition> persistentOptions;

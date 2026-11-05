@@ -4,14 +4,14 @@ abstract interface class CommandDefinition<O extends OptionDefinition> {
   /// The name of this command.
   String get name;
 
-  /// Generates a string displaying usage information for this command.
+  /// Generates a formatted string with usage information for this command.
   String get usage;
 
   /// Describes usage documentation and visibility for this command.
   CommandUsageDefinition get usageDefinition;
 
   /// Describes alternate names resolution for this command.
-  CommandAliasesDefinition get aliases;
+  CommandAliasesDefinition get aliasesDefinition;
 
   /// Persistent options - the options of the current command that continue to
   /// be available for all subcommands.
@@ -36,6 +36,9 @@ abstract interface class CommandDefinition<O extends OptionDefinition> {
 }
 
 class CommandUsageDefinition {
+  // TODO: Support overriding `summary` and `invocation` of the formatted usage
+  //       like the old Command did.
+
   /// A description of this command, included in usage.
   final String description;
 
@@ -55,11 +58,12 @@ class CommandUsageDefinition {
   final bool hidden;
 
   const CommandUsageDefinition({
-    required this.description,
+    final String? description,
     this.usageFooter,
     this.category,
     final bool? hidden,
-  }) : hidden = hidden ?? false;
+  }) : description = description ?? '',
+       hidden = hidden ?? false;
 }
 
 class CommandAliasesDefinition {
@@ -79,6 +83,7 @@ class CommandAliasesDefinition {
   /// commands.
   ///
   /// Set to `0` in order to disable suggestions, defaults to `2`.
+  // TODO: Make this global on the CommandRunner instead?
   final int suggestionDistanceLimit;
 
   const CommandAliasesDefinition({
