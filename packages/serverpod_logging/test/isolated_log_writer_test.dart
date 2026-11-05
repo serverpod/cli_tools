@@ -2,11 +2,11 @@ import 'package:serverpod_logging/serverpod_logging.dart';
 import 'package:test/test.dart';
 
 LogEntry _entry(String message) => LogEntry(
-      time: DateTime.now(),
-      level: LogLevel.info,
-      message: message,
-      scope: LogScope.root('r'),
-    );
+  time: DateTime.now(),
+  level: LogLevel.info,
+  message: message,
+  scope: LogScope.root('r'),
+);
 
 /// A writer whose [log] is slow, so a write is reliably in-flight when the
 /// isolate is asked to close.
@@ -71,40 +71,42 @@ void main() {
     );
 
     test(
-        'when a scope is opened and closed, '
-        'then both are forwarded to the writer running in the isolate',
-        () async {
-      final writer = IsolatedLogWriter(() => TestLogWriter());
-      final scope = LogScope.root('op');
+      'when a scope is opened and closed, '
+      'then both are forwarded to the writer running in the isolate',
+      () async {
+        final writer = IsolatedLogWriter(() => TestLogWriter());
+        final scope = LogScope.root('op');
 
-      await writer.openScope(scope);
-      await writer.closeScope(scope, success: true, duration: Duration.zero);
+        await writer.openScope(scope);
+        await writer.closeScope(scope, success: true, duration: Duration.zero);
 
-      final opened = await writer.evaluate(
-        (w) => (w as TestLogWriter).openedScopes.length,
-      );
-      final closed = await writer.evaluate(
-        (w) => (w as TestLogWriter).closedScopes.length,
-      );
-      expect(opened, 1);
-      expect(closed, 1);
+        final opened = await writer.evaluate(
+          (w) => (w as TestLogWriter).openedScopes.length,
+        );
+        final closed = await writer.evaluate(
+          (w) => (w as TestLogWriter).closedScopes.length,
+        );
+        expect(opened, 1);
+        expect(closed, 1);
 
-      await writer.close();
-    });
+        await writer.close();
+      },
+    );
   });
 
   group('Given an IsolatedLogWriter lifecycle', () {
     test(
-        'when closed with a write in flight, '
-        'then the in-flight write is swallowed and its log future completes',
-        () async {
-      final writer = IsolatedLogWriter(() => SlowWriter());
+      'when closed with a write in flight, '
+      'then the in-flight write is swallowed and its log future completes',
+      () async {
+        final writer = IsolatedLogWriter(() => SlowWriter());
 
-      final pending = writer.log(_entry('slow')); // intentionally not awaited
-      await writer.close();
+        final pending = writer.log(_entry('slow')); // intentionally not awaited
+        await writer.close();
 
-      await expectLater(pending, completes);
-    });
+        await expectLater(pending, completes);
+      },
+    );
 
     test(
       'when a wrapped write fails while in flight, '

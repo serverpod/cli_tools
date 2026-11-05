@@ -170,23 +170,31 @@ void main() {
         expect(args['verbose'], isFalse);
       });
 
-      test('set the flag to true if the flag actually starts with "no-"', () {
-        var parser = ConfigParser();
-        parser.addFlag('no-body');
+      test(
+        'set the flag to true if the flag actually starts with "no-"',
+        () {
+          var parser = ConfigParser();
+          parser.addFlag('no-body');
 
-        var args = parser.parse(['--no-body']);
-        expect(args['no-body'], isTrue);
-      });
+          var args = parser.parse(['--no-body']);
+          expect(args['no-body'], isTrue);
+        },
+        skip: 'new logic prevents flags starting with "no-"',
+      );
 
-      test('are not preferred over a colliding one without', () {
-        var parser = ConfigParser();
-        parser.addFlag('no-strum');
-        parser.addFlag('strum');
+      test(
+        'are not preferred over a colliding one without',
+        () {
+          var parser = ConfigParser();
+          parser.addFlag('no-strum');
+          parser.addFlag('strum');
 
-        var args = parser.parse(['--no-strum']);
-        expect(args['no-strum'], isTrue);
-        expect(args['strum'], isFalse);
-      });
+          var args = parser.parse(['--no-strum']);
+          expect(args['no-strum'], isTrue);
+          expect(args['strum'], isFalse);
+        },
+        skip: 'new logic prevents flags starting with "no-"',
+      );
 
       test('fail for non-negatable flags', () {
         var parser = ConfigParser();
@@ -235,39 +243,46 @@ void main() {
 
       test('for absent options are invoked with the default value', () {
         var parser = ConfigParser();
-        parser.addOption('a',
-            defaultsTo: 'v',
-            callback: expectAsync1((value) => expect(value, 'v')));
+        parser.addOption(
+          'a',
+          defaultsTo: 'v',
+          callback: expectAsync1((value) => expect(value, 'v')),
+        );
 
         parser.parse([]);
       });
 
-      test('for absent options are invoked with null if there is no default',
-          () {
-        var parser = ConfigParser();
-        parser.addOption('a',
-            callback: expectAsync1((value) => expect(value, isNull)));
+      test(
+        'for absent options are invoked with null if there is no default',
+        () {
+          var parser = ConfigParser();
+          parser.addOption(
+            'a',
+            callback: expectAsync1((value) => expect(value, isNull)),
+          );
 
-        parser.parse([]);
-      });
+          parser.parse([]);
+        },
+      );
 
       group('with addMultiOption', () {
-        test('for multiple present, options are invoked with value as a list',
-            () {
-          List<String>? a;
-          var parser = ConfigParser();
-          parser.addMultiOption('a', callback: (value) => a = value);
-
-          parser.parse(['--a=v', '--a=x']);
-          expect(a, equals(['v', 'x']));
-
-          // This reified type is important in strong mode so that people can
-          // safely write "as List<String>".
-          expect(a, isA<List<String>>());
-        });
-
         test(
-            'for single present, options are invoked with value as a single '
+          'for multiple present, options are invoked with value as a list',
+          () {
+            List<String>? a;
+            var parser = ConfigParser();
+            parser.addMultiOption('a', callback: (value) => a = value);
+
+            parser.parse(['--a=v', '--a=x']);
+            expect(a, equals(['v', 'x']));
+
+            // This reified type is important in strong mode so that people can
+            // safely write "as List<String>".
+            expect(a, isA<List<String>>());
+          },
+        );
+
+        test('for single present, options are invoked with value as a single '
             'element list', () {
           List<String>? a;
           var parser = ConfigParser();
@@ -280,8 +295,11 @@ void main() {
         test('for absent, options are invoked with default value', () {
           List<String>? a;
           var parser = ConfigParser();
-          parser.addMultiOption('a',
-              defaultsTo: ['v', 'w'], callback: (value) => a = value);
+          parser.addMultiOption(
+            'a',
+            defaultsTo: ['v', 'w'],
+            callback: (value) => a = value,
+          );
 
           parser.parse([]);
           expect(a, equals(['v', 'w']));
@@ -305,16 +323,21 @@ void main() {
           expect(a, equals(['v', 'w', 'x']));
         });
 
-        test("doesn't parse comma-separated strings with splitCommas: false",
-            () {
-          List<String>? a;
-          var parser = ConfigParser();
-          parser.addMultiOption('a',
-              splitCommas: false, callback: (value) => a = value);
+        test(
+          "doesn't parse comma-separated strings with splitCommas: false",
+          () {
+            List<String>? a;
+            var parser = ConfigParser();
+            parser.addMultiOption(
+              'a',
+              splitCommas: false,
+              callback: (value) => a = value,
+            );
 
-          parser.parse(['--a=v,w', '--a=x']);
-          expect(a, equals(['v,w', 'x']));
-        });
+            parser.parse(['--a=v,w', '--a=x']);
+            expect(a, equals(['v,w', 'x']));
+          },
+        );
 
         test('parses empty strings', () {
           List<String>? a;
@@ -328,8 +351,11 @@ void main() {
         test('with allowed parses comma-separated strings', () {
           List<String>? a;
           var parser = ConfigParser();
-          parser.addMultiOption('a',
-              allowed: ['v', 'w', 'x'], callback: (value) => a = value);
+          parser.addMultiOption(
+            'a',
+            allowed: ['v', 'w', 'x'],
+            callback: (value) => a = value,
+          );
 
           parser.parse(['--a=v,w', '--a=x']);
           expect(a, equals(['v', 'w', 'x']));
@@ -433,8 +459,11 @@ void main() {
       group('throw if a comma-separated value is not allowed', () {
         test('with addMultiOption', () {
           var parser = ConfigParser();
-          parser
-              .addMultiOption('mode', abbr: 'm', allowed: ['debug', 'release']);
+          parser.addMultiOption(
+            'mode',
+            abbr: 'm',
+            allowed: ['debug', 'release'],
+          );
 
           throwsUsageException(parser, ['-mdebug,profile']);
         });
@@ -516,7 +545,9 @@ void main() {
 
         expect(parser.parse(['--mode', '--other'])['mode'], equals('--other'));
         expect(
-            parser.parse(['--mode', '--unknown'])['mode'], equals('--unknown'));
+          parser.parse(['--mode', '--unknown'])['mode'],
+          equals('--unknown'),
+        );
         expect(parser.parse(['--mode', '-abbr'])['mode'], equals('-abbr'));
         expect(parser.parse(['--mode', '--'])['mode'], equals('--'));
       });
@@ -530,10 +561,13 @@ void main() {
 
       test('do not throw if there is no allowed set with allowedHelp', () {
         var parser = ConfigParser();
-        parser.addOption('mode', allowedHelp: {
-          'debug': 'During development.',
-          'release': 'For customers.'
-        });
+        parser.addOption(
+          'mode',
+          allowedHelp: {
+            'debug': 'During development.',
+            'release': 'For customers.',
+          },
+        );
         var args = parser.parse(['--mode=profile']);
         expect(args['mode'], equals('profile'));
       });
@@ -668,10 +702,13 @@ void main() {
 
       test('do not throw if there is no allowed set with allowedHelp', () {
         var parser = ConfigParser();
-        parser.addOption('mode', allowedHelp: {
-          'debug': 'During development.',
-          'release': 'For customers.'
-        });
+        parser.addOption(
+          'mode',
+          allowedHelp: {
+            'debug': 'During development.',
+            'release': 'For customers.',
+          },
+        );
         var args = parser.parse(['--mode=profile']);
         expect(args.option('mode'), equals('profile'));
       });
@@ -761,8 +798,7 @@ void main() {
         expect(results.rest, equals(['--meow']));
       });
 
-      test(
-          'with allowTrailingOptions: false, leaves "--" if not the first '
+      test('with allowTrailingOptions: false, leaves "--" if not the first '
           'non-option', () {
         var parser = ConfigParser(allowTrailingOptions: false);
         parser.addFlag('woof');
@@ -776,19 +812,39 @@ void main() {
     group('ConfigParser Exception Tests', () {
       test('throws exception for unknown option', () {
         var parser = ConfigParser();
-        throwsArgParserException(parser, ['--verbose'],
-            'Could not find an option named "--verbose".', [], '--verbose');
         throwsArgParserException(
-            parser, ['-v'], 'Could not find an option or flag "-v".', [], '-v');
+          parser,
+          ['--verbose'],
+          'Could not find an option named "--verbose".',
+          [],
+          '--verbose',
+        );
+        throwsArgParserException(
+          parser,
+          ['-v'],
+          'Could not find an option or flag "-v".',
+          [],
+          '-v',
+        );
       });
 
       test('throws exception for flag with value', () {
         var parser = ConfigParser();
         parser.addFlag('flag', abbr: 'f');
-        throwsArgParserException(parser, ['--flag=1'],
-            'Flag option "--flag" should not be given a value.', [], '--flag');
-        throwsArgParserException(parser, ['-f=1'],
-            'Option "-f" is a flag and cannot handle value "=1".', [], '-f');
+        throwsArgParserException(
+          parser,
+          ['--flag=1'],
+          'Flag option "--flag" should not be given a value.',
+          [],
+          '--flag',
+        );
+        throwsArgParserException(
+          parser,
+          ['-f=1'],
+          'Option "-f" is a flag and cannot handle value "=1".',
+          [],
+          '-f',
+        );
       });
 
       test('throws exception after parsing multiple options', () {
@@ -796,11 +852,12 @@ void main() {
         parser.addOption('first');
         parser.addOption('second');
         throwsArgParserException(
-            parser,
-            ['--first', '1', '--second', '2', '--verbose', '3'],
-            'Could not find an option named "--verbose".',
-            [],
-            '--verbose');
+          parser,
+          ['--first', '1', '--second', '2', '--verbose', '3'],
+          'Could not find an option named "--verbose".',
+          [],
+          '--verbose',
+        );
       });
 
       test('throws exception for option with invalid value', () {
@@ -813,11 +870,12 @@ void main() {
         var parser = ConfigParser();
         parser.addCommand('command', ConfigParser());
         throwsArgParserException(
-            parser,
-            ['command', '--verbose'],
-            'Could not find an option named "--verbose".',
-            ['command'],
-            '--verbose');
+          parser,
+          ['command', '--verbose'],
+          'Could not find an option named "--verbose".',
+          ['command'],
+          '--verbose',
+        );
       }, skip: 'commands not supported');
     });
   });

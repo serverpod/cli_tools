@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dart: [3.6, 3.12]
+        dart: [3.9, 3.13]
         package:
           - cli_tools
           - config
@@ -39,21 +39,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dart: [3.6, 3.12]
+        dart: [3.9, 3.13]
         package:
           - cli_tools
           - config
           - isolated_object
           - serverpod_logging
           - serverpod_logging_cli
-        platform: [ubuntu-latest]
+        platform: [ubuntu-latest, windows-latest]
         include:
           - package: cli_tools
-            platform: windows-latest
-            dart: 3.6
-          - package: cli_tools
             platform: macos-latest
-            dart: 3.6
+            dart: 3.9
     runs-on: ${{ matrix.platform }}
     defaults:
       run:

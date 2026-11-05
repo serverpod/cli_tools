@@ -28,8 +28,7 @@ class _LabelRecordingWriter extends LogWriter {
     required Duration duration,
     Object? error,
     StackTrace? stackTrace,
-  }) async =>
-      observedLabels.add(scope.label);
+  }) async => observedLabels.add(scope.label);
 }
 
 void main() {
@@ -42,8 +41,7 @@ void main() {
       log = Log(writer);
     });
 
-    test(
-        'when the runner returns a value, '
+    test('when the runner returns a value, '
         'then no scope event is labelled with that value', () async {
       await log.progress<String>('op', () async => 'sentinel-result');
       await log.flush();
@@ -51,7 +49,8 @@ void main() {
       expect(
         writer.observedLabels,
         everyElement('op'),
-        reason: 'progress must not relabel the scope with the runner result; '
+        reason:
+            'progress must not relabel the scope with the runner result; '
             'the operation is called "op" from start to finish',
       );
       expect(
@@ -61,8 +60,7 @@ void main() {
       );
     });
 
-    test(
-        'when the runner returns true, '
+    test('when the runner returns true, '
         'then the scope label stays "op" (not "true")', () async {
       await log.progress<bool>('op', () async => true);
       await log.flush();

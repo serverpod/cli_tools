@@ -47,11 +47,11 @@ class _DelayedOrderWriter extends LogWriter {
 }
 
 LogEntry _entry(LogLevel level, String message) => LogEntry(
-      time: DateTime.now(),
-      level: level,
-      message: message,
-      scope: LogScope.root('r'),
-    );
+  time: DateTime.now(),
+  level: level,
+  message: message,
+  scope: LogScope.root('r'),
+);
 
 void main() {
   group('Given a Log with a warning threshold', () {
@@ -63,8 +63,7 @@ void main() {
       log = Log(writer, logLevel: LogLevel.warning);
     });
 
-    test(
-        'when a below-threshold entry is dispatched, '
+    test('when a below-threshold entry is dispatched, '
         'then it is dropped and the factory is never invoked', () async {
       var factoryInvoked = false;
       log(LogLevel.info, () {
@@ -81,8 +80,7 @@ void main() {
       expect(writer.entries, isEmpty);
     });
 
-    test(
-        'when an at-threshold entry is dispatched, '
+    test('when an at-threshold entry is dispatched, '
         'then it is forwarded', () async {
       log.warning('warn');
       await log.flush();
@@ -90,8 +88,7 @@ void main() {
       expect(writer.entries.single.message, 'warn');
     });
 
-    test(
-        'when the threshold is lowered at runtime, '
+    test('when the threshold is lowered at runtime, '
         'then newly-enabled levels start being forwarded', () async {
       log.info('dropped');
       log.logLevel = LogLevel.info;
@@ -103,8 +100,7 @@ void main() {
   });
 
   group('Given a Log whose writer throws', () {
-    test(
-        'when an entry is dispatched, '
+    test('when an entry is dispatched, '
         'then dispatch is best-effort and the error is not surfaced', () async {
       final log = Log(_ThrowingWriter());
 
@@ -115,8 +111,7 @@ void main() {
   });
 
   group('Given a Log with out-of-order write timing', () {
-    test(
-        'when earlier writes are slower than later ones, '
+    test('when earlier writes are slower than later ones, '
         'then writes still complete in invocation order', () async {
       final writer = _DelayedOrderWriter(
         (m) => m == '1' ? const Duration(milliseconds: 40) : Duration.zero,
@@ -137,8 +132,7 @@ void main() {
   });
 
   group('Given a closed Log', () {
-    test(
-        'when an entry is dispatched after close, '
+    test('when an entry is dispatched after close, '
         'then it is dropped', () async {
       final writer = TestLogWriter();
       final log = Log(writer);
@@ -169,8 +163,7 @@ void main() {
   });
 
   group('Given a Log at debug level', () {
-    test(
-        'when each convenience method is called, '
+    test('when each convenience method is called, '
         'then the entry carries the matching LogLevel', () async {
       final writer = TestLogWriter();
       final log = Log(writer, logLevel: LogLevel.debug);
@@ -191,8 +184,7 @@ void main() {
   });
 
   group('Given the error() convenience method', () {
-    test(
-        'when it is given an error and stack trace, '
+    test('when it is given an error and stack trace, '
         'then both are attached to the entry', () async {
       final writer = TestLogWriter();
       final log = Log(writer);

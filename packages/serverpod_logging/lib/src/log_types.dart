@@ -58,14 +58,13 @@ class LogScope {
     required String id,
     required String label,
     Map<String, Object?>? metadata,
-  }) =>
-      LogScope(
-        id: id,
-        label: label,
-        startTime: DateTime.now(),
-        parent: this,
-        metadata: metadata,
-      );
+  }) => LogScope(
+    id: id,
+    label: label,
+    startTime: DateTime.now(),
+    parent: this,
+    metadata: metadata,
+  );
 }
 
 /// A single log entry. Always belongs to a [LogScope].
@@ -163,18 +162,17 @@ class MultiLogWriter extends LogWriter {
     required Duration duration,
     Object? error,
     StackTrace? stackTrace,
-  }) =>
-      _writers
-          .map(
-            (w) => w.closeScope(
-              scope,
-              success: success,
-              duration: duration,
-              error: error,
-              stackTrace: stackTrace,
-            ),
-          )
-          .wait;
+  }) => _writers
+      .map(
+        (w) => w.closeScope(
+          scope,
+          success: success,
+          duration: duration,
+          error: error,
+          stackTrace: stackTrace,
+        ),
+      )
+      .wait;
 
   @override
   Future<void> close() => _writers.map((w) => w.close()).wait;

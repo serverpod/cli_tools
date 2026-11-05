@@ -2,6 +2,8 @@ import 'dart:io' show Platform;
 
 import 'package:args/args.dart';
 
+import '../config/arg_parser_bridge.dart';
+import '../config/arg_parser_facade.dart';
 import '../config/configuration.dart';
 import '../config/configuration_broker.dart';
 import '../config/option_types.dart';
@@ -35,9 +37,9 @@ class ConfigParser implements ArgParser {
     final bool allowTrailingOptions = true,
     final int? usageLineLength,
   }) : _parser = ArgParser(
-          allowTrailingOptions: allowTrailingOptions,
-          usageLineLength: usageLineLength,
-        );
+         allowTrailingOptions: allowTrailingOptions,
+         usageLineLength: usageLineLength,
+       );
 
   ArgParser get parser => _parser;
 
@@ -246,11 +248,15 @@ class ConfigParser implements ArgParser {
   }) {
     validateOptions(_optionDefinitions);
 
-    final argResults = parser.parse(args);
+    final parsedArgs = legacyParsedArgs(
+      _optionDefinitions,
+      args,
+      allowTrailingOptions: allowTrailingOptions,
+    );
 
     final configuration = Configuration.resolve(
       options: _optionDefinitions,
-      argResults: argResults,
+      parsedArgs: parsedArgs,
       env: env ?? Platform.environment,
       configBroker: configBroker,
       presetValues: presetValues,
@@ -261,8 +267,8 @@ class ConfigParser implements ArgParser {
 
     return ConfigResults(
       configuration,
-      argResults.arguments,
-      argResults.rest,
+      parsedArgs.argResults.arguments,
+      parsedArgs.argResults.rest,
     );
   }
 

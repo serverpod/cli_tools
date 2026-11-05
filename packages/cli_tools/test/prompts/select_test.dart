@@ -10,8 +10,7 @@ import '../test_utils/prompts/option_matcher.dart';
 void main() {
   final logger = StdOutLogger(LogLevel.debug);
 
-  test(
-      'Given select prompt '
+  test('Given select prompt '
       'when providing message '
       'then should be displayed first', () async {
     final (:stdout, :stderr, :stdin) = await collectOutput(
@@ -28,8 +27,7 @@ void main() {
     expect(stdout.output, startsWith('Choose an option:\n'));
   });
 
-  test(
-      'Given select prompt '
+  test('Given select prompt '
       'when providing options '
       'then instruction should be given last', () async {
     final (:stdout, :stderr, :stdin) = await collectOutput(
@@ -46,15 +44,14 @@ void main() {
     expect(stdout.output, endsWith('Press [Enter] to confirm.\n'));
   });
 
-  test(
-      'Given select prompt '
+  test('Given select prompt '
       'when selecting an option with Enter '
       'then should return the selected option', () async {
     late Future<Option> result;
     final options = [
       Option('Option 1'),
       Option('Option 2'),
-      Option('Option 3')
+      Option('Option 3'),
     ];
 
     await collectOutput(keyInputs: [KeyCodes.enterCR], () {
@@ -64,15 +61,14 @@ void main() {
     await expectLater(result, completion(equalsOption(Option('Option 1'))));
   });
 
-  test(
-      'Given select prompt '
+  test('Given select prompt '
       'when confirms selection with enter line-feed '
       'then completes', () async {
     late Future<Option> result;
     final options = [
       Option('Option 1'),
       Option('Option 2'),
-      Option('Option 3')
+      Option('Option 3'),
     ];
 
     await collectOutput(keyInputs: [KeyCodes.enterLF], () {
@@ -82,15 +78,14 @@ void main() {
     await expectLater(result, completes);
   });
 
-  test(
-      'Given select prompt '
+  test('Given select prompt '
       'when navigating with arrow keys '
       'then should return the highlighted option on Enter', () async {
     late Future<Option> result;
     final options = [
       Option('Option 1'),
       Option('Option 2'),
-      Option('Option 3')
+      Option('Option 3'),
     ];
 
     await collectOutput(
@@ -108,14 +103,13 @@ void main() {
     await expectLater(result, completion(equalsOption(Option('Option 2'))));
   });
 
-  test(
-      'Given select prompt '
+  test('Given select prompt '
       'when pressing "q" key '
       'then should throw a cancellation exception', () async {
     final options = [
       Option('Option 1'),
       Option('Option 2'),
-      Option('Option 3')
+      Option('Option 3'),
     ];
 
     final result = collectOutput(keyInputs: [KeyCodes.q], () async {
@@ -134,8 +128,7 @@ void main() {
     );
   });
 
-  test(
-      'Given select prompt '
+  test('Given select prompt '
       'when providing empty options list '
       'then should throw ArgumentError', () async {
     expect(
@@ -144,8 +137,7 @@ void main() {
     );
   });
 
-  test(
-      'Given select prompt '
+  test('Given select prompt '
       'when highlighting second option '
       'then radio button should be filled and option underlined', () async {
     final (:stdout, :stderr, :stdin) = await collectOutput(
@@ -168,15 +160,14 @@ Press [Enter] to confirm.
 ''');
   });
 
-  test(
-      'Given select prompt with multiple options '
+  test('Given select prompt with multiple options '
       'when moving past the last option '
       'then should wrap around to the first option', () async {
     late Future<Option> result;
     final options = [
       Option('Option 1'),
       Option('Option 2'),
-      Option('Option 3')
+      Option('Option 3'),
     ];
 
     await collectOutput(
@@ -194,15 +185,14 @@ Press [Enter] to confirm.
     await expectLater(result, completion(equalsOption(Option('Option 1'))));
   });
 
-  test(
-      'Given select prompt with multiple options '
+  test('Given select prompt with multiple options '
       'when moving up past the first option '
       'then should wrap around to the last option', () async {
     late Future<Option> result;
     final options = [
       Option('Option 1'),
       Option('Option 2'),
-      Option('Option 3')
+      Option('Option 3'),
     ];
 
     await collectOutput(

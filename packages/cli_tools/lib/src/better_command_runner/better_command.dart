@@ -61,9 +61,9 @@ abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
     final int? wrapTextColumn,
     this.options = const [],
     final Map<String, String>? env,
-  })  : _messageOutput = messageOutput,
-        _argParser = ArgParser(usageLineLength: wrapTextColumn),
-        envVariables = env ?? Platform.environment {
+  }) : _messageOutput = messageOutput,
+       _argParser = ArgParser(usageLineLength: wrapTextColumn),
+       envVariables = env ?? Platform.environment {
     prepareOptionsForParsing(options, argParser);
   }
 
@@ -123,6 +123,7 @@ abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
   Configuration<O> resolveConfiguration(final ArgResults? argResults) {
     return Configuration.resolveNoExcept(
       options: options,
+      // ignore: deprecated_member_use
       argResults: argResults,
       env: envVariables,
     );

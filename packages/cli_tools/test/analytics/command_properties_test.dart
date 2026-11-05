@@ -185,7 +185,7 @@ void main() {
           CreateCommand.commandName,
           TemplateCommand.commandName,
           '--path',
-          '/tmp/secret'
+          '/tmp/secret',
         ];
         final results = runner.parse(args);
 
@@ -210,7 +210,7 @@ void main() {
           'secret',
           '--',
           '--not-option',
-          'literal'
+          'literal',
         ];
         final results = runner.parse(args);
 

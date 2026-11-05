@@ -63,17 +63,20 @@ class DirOption extends ConfigOptionBase<Directory> {
         if (type != FileSystemEntityType.notFound &&
             type != FileSystemEntityType.directory) {
           throw InvalidValueException(
-              'Path "${value.path}" is not a directory');
+            'Path "${value.path}" is not a directory',
+          );
         }
         break;
       case PathExistMode.mustExist:
         if (type == FileSystemEntityType.notFound) {
           throw InvalidValueException(
-              'Directory "${value.path}" does not exist');
+            'Directory "${value.path}" does not exist',
+          );
         }
         if (type != FileSystemEntityType.directory) {
           throw InvalidValueException(
-              'Path "${value.path}" is not a directory');
+            'Path "${value.path}" is not a directory',
+          );
         }
         break;
       case PathExistMode.mustNotExist:

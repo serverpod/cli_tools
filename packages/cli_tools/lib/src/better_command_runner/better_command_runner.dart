@@ -43,16 +43,18 @@ final class MessageOutput {
 /// The [logLevel] is the log level to set.
 /// The [commandName] is the name of the command if custom rules for log
 /// levels are needed.
-typedef SetLogLevel = void Function({
-  required CommandRunnerLogLevel parsedLogLevel,
-  String? commandName,
-});
+typedef SetLogLevel =
+    void Function({
+      required CommandRunnerLogLevel parsedLogLevel,
+      String? commandName,
+    });
 
 /// A function type for tracking events.
-typedef OnAnalyticsEvent = void Function(
-  String event,
-  Map<String, dynamic> properties,
-);
+typedef OnAnalyticsEvent =
+    void Function(
+      String event,
+      Map<String, dynamic> properties,
+    );
 
 /// An extension of [CommandRunner] with additional features.
 ///
@@ -150,8 +152,9 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     super.executableName,
     super.description, {
     super.suggestionDistanceLimit,
-    final MessageOutput? messageOutput =
-        const MessageOutput(usageLogger: print),
+    final MessageOutput? messageOutput = const MessageOutput(
+      usageLogger: print,
+    ),
     final SetLogLevel? setLogLevel,
     final OnBeforeRunCommand? onBeforeRunCommand,
     final OnAnalyticsEvent? onAnalyticsEvent,
@@ -160,15 +163,15 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     final Iterable<CompletionScript>? embeddedCompletions,
     final List<O>? globalOptions,
     final Map<String, String>? env,
-  })  : _messageOutput = messageOutput,
-        _setLogLevel = setLogLevel,
-        _onBeforeRunCommand = onBeforeRunCommand,
-        _onAnalyticsEvent = onAnalyticsEvent,
-        _analyticsEnabled = onAnalyticsEvent != null,
-        envVariables = env ?? Platform.environment,
-        super(
-          usageLineLength: wrapTextColumn,
-        ) {
+  }) : _messageOutput = messageOutput,
+       _setLogLevel = setLogLevel,
+       _onBeforeRunCommand = onBeforeRunCommand,
+       _onAnalyticsEvent = onAnalyticsEvent,
+       _analyticsEnabled = onAnalyticsEvent != null,
+       envVariables = env ?? Platform.environment,
+       super(
+         usageLineLength: wrapTextColumn,
+       ) {
     if (globalOptions != null) {
       _globalOptions = globalOptions;
     } else if (O == OptionDefinition || O == StandardGlobalOption) {
@@ -246,7 +249,8 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     }
 
     if (globalConfiguration.findValueOf(
-            argName: BetterCommandRunnerFlags.analytics) ==
+          argName: BetterCommandRunnerFlags.analytics,
+        ) ==
         false) {
       return false;
     }
@@ -382,6 +386,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   Configuration<O> resolveConfiguration(final ArgResults? argResults) {
     return Configuration.resolveNoExcept(
       options: _globalOptions,
+      // ignore: deprecated_member_use
       argResults: argResults,
       env: envVariables,
       ignoreUnexpectedPositionalArgs: true,
@@ -414,7 +419,8 @@ abstract class BetterCommandRunnerFlags {
     argAbbrev: quietAbbr,
     defaultsTo: false,
     negatable: false,
-    helpText: 'Suppress all cli output. Is overridden by '
+    helpText:
+        'Suppress all cli output. Is overridden by '
         ' -$verboseAbbr, --$verbose.',
   );
 
@@ -423,7 +429,8 @@ abstract class BetterCommandRunnerFlags {
     argAbbrev: verboseAbbr,
     defaultsTo: false,
     negatable: false,
-    helpText: 'Prints additional information useful for development. '
+    helpText:
+        'Prints additional information useful for development. '
         'Overrides --$quietAbbr, --$quiet.',
   );
 
