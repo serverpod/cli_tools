@@ -295,7 +295,7 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
       case SingleDashArg():
         if (command != null && command.subcommands.isNotEmpty) {
           rejectedSubcommand = true;
-          result.errors.add('$unknownSubcommandErrorPrefix${arg.string}');
+          result.errors.add('$unknownSubcommandErrorPrefix"${arg.string}"');
         } else {
           result.positionalWords.add(arg.string);
         }
@@ -316,7 +316,7 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
         }
         if (command != null && command.subcommands.isNotEmpty) {
           rejectedSubcommand = true;
-          result.errors.add('$unknownSubcommandErrorPrefix${arg.string}');
+          result.errors.add('$unknownSubcommandErrorPrefix"${arg.string}"');
         } else {
           result.positionalWords.add(arg.string);
         }
