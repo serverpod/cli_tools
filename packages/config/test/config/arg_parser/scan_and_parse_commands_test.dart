@@ -212,34 +212,34 @@ void main() {
     test('when a suggestion alias is used then the error is recorded', () {
       expect(
         childResult(parse(['mid', 'leave'])).errors,
-        ['Unknown subcommand: leave'],
+        ['Unknown subcommand: "leave"'],
       );
     });
 
     test('when the first word is unknown then the error is on the root', () {
-      expect(parse(['nope']).errors, ['Unknown subcommand: nope']);
+      expect(parse(['nope']).errors, ['Unknown subcommand: "nope"']);
     });
 
     test('when a nested word is unknown then the error is on that command', () {
       expect(
         childResult(parse(['mid', 'nope'])).errors,
-        ['Unknown subcommand: nope'],
+        ['Unknown subcommand: "nope"'],
       );
     });
 
     test('when the root command name is used then the error is recorded', () {
-      expect(parse(['tool']).errors, ['Unknown subcommand: tool']);
+      expect(parse(['tool']).errors, ['Unknown subcommand: "tool"']);
     });
 
     test('when the first word is empty then the error is recorded', () {
-      expect(parse(['']).errors, ['Unknown subcommand: ']);
+      expect(parse(['']).errors, ['Unknown subcommand: ""']);
     });
 
     test('when a branch command receives a positional word '
         'then the error is recorded', () {
       expect(
         childResult(parse(['mid', 'file'])).errors,
-        ['Unknown subcommand: file'],
+        ['Unknown subcommand: "file"'],
       );
     });
 
@@ -253,7 +253,7 @@ void main() {
     test('when mid is repeated under itself then the error is recorded', () {
       expect(
         childResult(parse(['mid', 'mid'])).errors,
-        ['Unknown subcommand: mid'],
+        ['Unknown subcommand: "mid"'],
       );
     });
 
@@ -367,7 +367,7 @@ void main() {
         'then that option and the following word are recorded', () {
       expect(childResult(parse(['mid', '-o', 'x'])).errors, [
         'Unknown option: -o',
-        'Unknown subcommand: x',
+        'Unknown subcommand: "x"',
       ]);
     });
 
@@ -375,7 +375,7 @@ void main() {
         'then that option and its value word are recorded', () {
       expect(childResult(parse(['mid', '--root-only', 'r'])).errors, [
         'Unknown option: --root-only',
-        'Unknown subcommand: r',
+        'Unknown subcommand: "r"',
       ]);
     });
 
@@ -393,7 +393,7 @@ void main() {
         'then the option and the following word are recorded', () {
       expect(parse(['--output', 'o', 'mid']).errors, [
         'Unknown option: --output',
-        'Unknown subcommand: o',
+        'Unknown subcommand: "o"',
       ]);
     });
 
@@ -434,7 +434,7 @@ void main() {
     });
 
     test('when - is parsed then it is an unknown subcommand', () {
-      expect(parse(['-']).errors, ['Unknown subcommand: -']);
+      expect(parse(['-']).errors, ['Unknown subcommand: "-"']);
     });
 
     test('when the leaf receives - then it stays positional', () {
@@ -1433,7 +1433,7 @@ void main() {
     test('when a word is not a subcommand then the error is recorded', () {
       final result = scanAndParseCommands(['file'], rootCommand: root);
 
-      expect(result.errors, ['Unknown subcommand: file']);
+      expect(result.errors, ['Unknown subcommand: "file"']);
     });
   });
 
@@ -1524,7 +1524,7 @@ void main() {
     test(
       'when the word version is parsed then it is an unknown subcommand',
       () {
-        expect(parse(['version']).errors, ['Unknown subcommand: version']);
+        expect(parse(['version']).errors, ['Unknown subcommand: "version"']);
       },
     );
 
