@@ -12,7 +12,6 @@ class TestCommand implements CommandDefinition<OptionDefinition> {
     this.usageDefinition = const CommandUsageDefinition(description: ''),
     this.aliasesDefinition = const CommandAliasesDefinition(),
     this.persistentOptions = const [],
-    this.builtinPersistentOptions = const [],
     this.options = const [],
     this.subcommands = const [],
     this.canRunAsLeafCommand = false,
@@ -34,7 +33,10 @@ class TestCommand implements CommandDefinition<OptionDefinition> {
   final List<OptionDefinition> persistentOptions;
 
   @override
-  final List<OptionDefinition> builtinPersistentOptions;
+  List<OptionDefinition> allOptions({final bool onlyPersistent = false}) => [
+    ...persistentOptions,
+    if (!onlyPersistent) ...options,
+  ];
 
   @override
   final List<OptionDefinition> options;

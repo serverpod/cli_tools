@@ -197,8 +197,7 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
   final persistentOwners = <ConfigOptionBase, ArgParseResult<O>>{
     ...?inheritedPersistentOwners,
     if (command != null) ...{
-      for (final option in command.persistentOptions) option.option: result,
-      for (final option in command.builtinPersistentOptions)
+      for (final option in command.allOptions(onlyPersistent: true))
         option.option: result,
     },
   };
@@ -398,9 +397,7 @@ void _validateCommandsAndOptions<O extends OptionDefinition>(
 }) {
   final visibleOptions = <OptionDefinition>[
     ...inheritedPersistentOptions,
-    ...command.persistentOptions,
-    ...command.builtinPersistentOptions,
-    ...command.options,
+    ...command.allOptions(),
   ];
   validateOptions(visibleOptions);
 
@@ -419,8 +416,7 @@ void _validateCommandsAndOptions<O extends OptionDefinition>(
 
   final persistentOptions = <OptionDefinition>[
     ...inheritedPersistentOptions,
-    ...command.persistentOptions,
-    ...command.builtinPersistentOptions,
+    ...command.allOptions(onlyPersistent: true),
   ];
   for (final subcommand in subcommands) {
     _validateCommandsAndOptions(

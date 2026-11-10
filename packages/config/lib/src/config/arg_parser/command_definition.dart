@@ -22,9 +22,8 @@ abstract interface class CommandDefinition<O extends OptionDefinition> {
   /// persistent.
   List<O> get options;
 
-  /// Built-in persistent options - options provided by the command framework
-  /// rather than defined by the application, e.g. `--help` on the root command.
-  List<OptionDefinition> get builtinPersistentOptions => const [];
+  /// All the defined options of this command, depending on the passed flag.
+  List<OptionDefinition> allOptions({final bool onlyPersistent = false});
 
   List<CommandDefinition> get subcommands;
 
