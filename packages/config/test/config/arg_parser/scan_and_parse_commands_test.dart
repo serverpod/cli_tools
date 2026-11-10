@@ -2243,7 +2243,10 @@ class _EnumCommand<O extends OptionDefinition> implements CommandDefinition<O> {
   final List<O> persistentOptions;
 
   @override
-  final List<OptionDefinition> builtinPersistentOptions = const [];
+  List<OptionDefinition> allOptions({final bool onlyPersistent = false}) => [
+    ...persistentOptions,
+    if (!onlyPersistent) ...options,
+  ];
 
   @override
   final List<O> options;
