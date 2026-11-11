@@ -1,4 +1,4 @@
-import 'dart:async' show FutureOr;
+import 'dart:async' show Future, FutureOr;
 import 'dart:io' show Platform, stderr;
 
 import '../config/arg_parser/arg_parser.dart'
@@ -137,7 +137,7 @@ class CommandRunner<O extends OptionDefinition, T>
   final CompletionSettings completion;
 
   /// Resolves the configurations for each command on the command line.
-  final CommandResolver<O, T> resolver = StandardCommandResolver<O, T>();
+  late final CommandResolver<O, T> resolver = StandardCommandResolver(this);
 
   /// Creates a new command runner with the given executable name and description.
   ///
@@ -281,13 +281,14 @@ class CommandRunner<O extends OptionDefinition, T>
   /// writes the completion alternatives for the partial command line
   /// [words] to [CompletionSettings.sinks].
   ///
-  /// Completion requests are served before any configuration resolution:
-  /// no middlewares run and no option values are resolved, so environment
-  /// variables, configuration files and the configuration broker are not
-  /// consulted for option values.
+  /// Completing an option value resolves the configurations of the commands
+  /// typed so far and runs their middleware in [CommandRunMode.completion].
+  /// The command `run` methods are not called. Subcommand and option-name
+  /// completion does not resolve or run middleware.
   ///
-  /// The [env] map is only passed through to custom `ConfigOptionBase.complete`
-  /// implementations, as `CompletionContext.environment`.
+  /// The [env] map is used when resolving option values and is also passed
+  /// through to custom `ConfigOptionBase.complete` implementations, as
+  /// `CompletionContext.environment`.
   ///
   /// Exits the process with 0 after writing the response unless
   /// [CompletionSettings.exitAfterResponse] is false.
@@ -295,8 +296,9 @@ class CommandRunner<O extends OptionDefinition, T>
     final List<String> words,
     final Map<String, String> env,
   ) async {
-    final engine = CompletionEngine(
+    final engine = CompletionEngine<O, T>(
       this,
+      resolver: resolver,
       ignoreUnexpectedPositionalArgs: ignoreUnexpectedPositionalArgs,
       onError: (final error, final stackTrace) {
         completion.sinks.err.writeln(
@@ -328,7 +330,7 @@ class CommandRunner<O extends OptionDefinition, T>
     final ContextProvider provider,
   ) {
     try {
-      return resolver.resolveConfigurations(args, env, provider, runner: this);
+      return resolver.resolveConfigurations(args, env, provider);
     } on UsageException catch (e, s) {
       final exception = usageOutput.onUsageException(e, fromCommand: this);
       if (exception == null) return null;
@@ -341,8 +343,9 @@ class CommandRunner<O extends OptionDefinition, T>
     final ArgParseResult parseResult,
     final Map<String, String>? env,
     final ContextProvider provider,
-    final CommandContext<OptionDefinition, T>? prevContext,
-  ) {
+    final CommandContext<OptionDefinition, T>? prevContext, {
+    final CommandRunMode runMode = CommandRunMode.execution,
+  }) {
     final parsedArgs = NewParsedArgs(parseResult);
 
     final Configuration<O> config = Configuration.resolveNoExcept(
@@ -367,6 +370,7 @@ class CommandRunner<O extends OptionDefinition, T>
       builtinConfig: builtinConfig,
       prev: prevContext,
       provider: provider,
+      runMode: runMode,
     );
   }
 

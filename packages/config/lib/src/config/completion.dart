@@ -120,11 +120,15 @@ class CompletionResult {
 /// The state of the command line being completed,
 /// provided to `ConfigOptionBase.complete`.
 ///
-/// Only the command line arguments are available; option values are not
-/// resolved from environment variables, configuration files or the
-/// configuration broker, and are not validated, because completion must be
-/// fast and must never fail. The raw [environment] is available for custom
-/// completions that depend on it.
+/// [parsedArgs] is the raw command line, including a placeholder where the
+/// value being completed will go. Option values are not validated here.
+///
+/// When the command runner serves the completion, the context is a
+/// `CommandCompletionContext`: the commands typed so far have been resolved
+/// (arguments, environment variables, configuration files, and the
+/// configuration broker) and their middleware has run in completion mode.
+/// Read that chain with `commandContextOf`. Completion must still be fast
+/// and should not throw.
 class CompletionContext {
   /// The partial text of the value being completed. May be empty.
   ///

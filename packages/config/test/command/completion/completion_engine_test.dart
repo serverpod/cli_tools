@@ -108,6 +108,13 @@ void main() {
       expect(trace, isEmpty);
     });
 
+    test('when completing an option value '
+        'then the middlewares of the resolved commands run '
+        'and the command does not', () async {
+      await complete(runner, out, ['build', '--mode', '']);
+      expect(trace, ['middleware:comptool']);
+    });
+
     test('then nothing is written to the error sink', () async {
       await complete(runner, out, ['']);
       expect(err.toString(), isEmpty);
@@ -545,9 +552,150 @@ void main() {
     });
   });
 
+  group('Given middleware that publishes a service while completing', () {
+    const tokenOption = StringOption(
+      argName: 'token',
+      helpText: 'The access token.',
+      mandatory: true,
+    );
+
+    late _CompletionProbe probe;
+
+    setUp(() {
+      probe = _CompletionProbe();
+      trace = [];
+      runner = CommandRunner<OptionDefinition, int>(
+        'worktool',
+        'Completes with resolved context.',
+        globalOptions: [verboseOption, endpointOption],
+        usageOutput: UsageOutputHandler(
+          sinks: OutputSinks(out: out, err: err),
+        ),
+        completion: CompletionSettings(
+          exitAfterResponse: false,
+          sinks: OutputSinks(out: out, err: err),
+        ),
+        middlewares: [
+          Middlewares.withHooks(
+            onRun: (final ctx) {
+              trace.add('${ctx.command.name}:onRun:${ctx.runMode.name}');
+              if (ctx.isCompletion &&
+                  ctx.leaf().config.options.contains(projectOption)) {
+                final project = ctx.leaf().config.optionalValue(projectOption);
+                ctx.provider.store(_ProjectApi(project ?? 'none'));
+              }
+              return ctx;
+            },
+            onReturn: (final ctx, final result) {
+              trace.add('${ctx.command.name}:onReturn:${ctx.runMode.name}');
+              return result;
+            },
+          ),
+        ],
+        subcommands: [
+          CommandImpl.branch(
+            name: 'db',
+            description: 'Database commands.',
+            middlewares: [
+              Middlewares.onBeforeRun((final ctx) {
+                trace.add('db:onRun:${ctx.runMode.name}');
+              }),
+            ],
+            subcommands: [
+              CommandImpl.leafWithRunFunction(
+                name: 'migrate',
+                description: 'Run the migrations.',
+                options: [stepsOption],
+                middlewares: [
+                  Middlewares.onBeforeRun((final ctx) {
+                    trace.add('migrate:onRun:${ctx.runMode.name}');
+                  }),
+                ],
+                run: (final ctx) {
+                  trace.add('run:${ctx.command.name}:${ctx.runMode.name}');
+                  return 0;
+                },
+              ),
+            ],
+          ),
+          CommandImpl.leafWithRunFunction(
+            name: 'work',
+            description: 'Work on a resource.',
+            options: [
+              projectOption,
+              tokenOption,
+              _ContextNameOption(probe),
+            ],
+            run: (final ctx) {
+              trace.add('run:${ctx.command.name}:${ctx.runMode.name}');
+              return 0;
+            },
+          ),
+        ],
+      );
+    });
+
+    test('when completing an option value '
+        'then middleware runs inside out before completion '
+        'and the command does not run', () async {
+      await complete(runner, out, ['db', 'migrate', '--steps', '']);
+      expect(trace, [
+        'worktool:onRun:completion',
+        'db:onRun:completion',
+        'migrate:onRun:completion',
+        'worktool:onReturn:completion',
+      ]);
+    });
+
+    test('when completing an option value '
+        'then complete reads the resolved configurations '
+        'and the service middleware stored', () async {
+      final response = await complete(
+        runner,
+        out,
+        ['--verbose', 'work', '--project', 'acme', '--name', ''],
+        env: {'ENDPOINT': 'https://example.test'},
+      );
+      expect(valuesOf(response), ['alpha', 'beta', 'seen']);
+      expect(probe.project, 'acme');
+      expect(probe.endpoint, 'https://example.test');
+      expect(probe.verbose, isTrue);
+      expect(probe.apiProject, 'acme');
+      expect(probe.leafMode, CommandRunMode.completion);
+      expect(probe.leafCommand, 'work');
+      expect(probe.rootCommand, 'worktool');
+    });
+
+    test('when a mandatory option is still missing '
+        'then completion still offers the values', () async {
+      final response = await complete(runner, out, ['work', '--name', '']);
+      expect(valuesOf(response), ['alpha', 'beta', 'seen']);
+      expect(err.toString(), isEmpty);
+    });
+
+    test('when the command is run '
+        'then middleware sees execution mode and the command runs', () async {
+      await runner.run([
+        '--verbose',
+        'work',
+        '--project',
+        'acme',
+        '--token',
+        'secret',
+        '--name',
+        'alpha',
+      ]);
+      expect(trace, [
+        'worktool:onRun:execution',
+        'run:work:execution',
+        'worktool:onReturn:execution',
+      ]);
+    });
+  });
+
   group('Given a CompletionEngine used directly', () {
     test('when completing then a response object is returned', () async {
-      final engine = CompletionEngine(runner);
+      final engine = CompletionEngine<OptionDefinition, int>(runner);
       final response = await engine.complete(['build', '--mode', 'd']);
       expect(response.candidates.map((final c) => c.value), [
         'debug',
@@ -568,7 +716,7 @@ void main() {
         run: (final _) => 0,
       );
       runner = buildCompletionCli(extraCommands: [probe]);
-      final engine = CompletionEngine(runner);
+      final engine = CompletionEngine<OptionDefinition, int>(runner);
       await engine.complete(
         ['probe', '--probe', ''],
         environment: {'HOME': '/home/x'},
@@ -579,7 +727,7 @@ void main() {
     test('when the completion fails then the error is reported '
         'to the callback', () async {
       Object? reported;
-      final engine = CompletionEngine(
+      final engine = CompletionEngine<OptionDefinition, int>(
         runner,
         onError: (final error, final _) => reported = error,
       );
@@ -635,6 +783,54 @@ void main() {
       expect(response.allowsFileCompletion, isTrue);
     });
   });
+}
+
+const endpointOption = StringOption(
+  argName: 'endpoint',
+  envName: 'ENDPOINT',
+  helpText: 'The service endpoint.',
+  defaultsTo: 'http://localhost',
+);
+
+class _ProjectApi {
+  final String project;
+
+  _ProjectApi(this.project);
+}
+
+class _CompletionProbe {
+  String? project;
+  String? endpoint;
+  bool? verbose;
+  String? apiProject;
+  CommandRunMode? leafMode;
+  String? leafCommand;
+  String? rootCommand;
+}
+
+class _ContextNameOption extends StringOption {
+  final _CompletionProbe probe;
+
+  _ContextNameOption(this.probe)
+    : super(
+        argName: 'name',
+        helpText: 'The resource name.',
+        allowedValues: const ['alpha', 'beta'],
+      );
+
+  @override
+  CompletionResult complete(final CompletionContext context) {
+    final leaf = commandContextOf<OptionDefinition, int>(context);
+    final root = leaf?.root();
+    probe.project = leaf?.config.optionalValue(projectOption);
+    probe.endpoint = root?.config.optionalValue(endpointOption);
+    probe.verbose = root?.config.optionalValue(verboseOption);
+    probe.apiProject = leaf?.provider.maybeFetch<_ProjectApi>()?.project;
+    probe.leafMode = leaf?.runMode;
+    probe.leafCommand = leaf?.command.name;
+    probe.rootCommand = root?.command.name;
+    return CompletionResult.strings(['alpha', 'beta', 'seen']);
+  }
 }
 
 class _ProbeOption extends StringOption {

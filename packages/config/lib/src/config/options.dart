@@ -366,6 +366,11 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
   ///
   /// The candidates need not be filtered by [CompletionContext.wordToComplete]
   /// since the shells do that; filtering is still recommended for large sets.
+  ///
+  /// When the command runner invokes this, [context] is a
+  /// `CommandCompletionContext`. `commandContextOf` returns the leaf
+  /// `CommandContext` of the commands typed so far, with resolved option
+  /// values and whatever middleware stored on its provider.
   FutureOr<CompletionResult> complete(final CompletionContext context) {
     final candidates = allowedValueCandidates();
     if (candidates != null) return CompletionResult.values(candidates);
