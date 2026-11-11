@@ -78,18 +78,9 @@ class CommandAliasesDefinition {
   /// A name does not have to be repeated both here and in [aliases].
   final List<String> suggestionAliases;
 
-  /// The maximum edit distance allowed when suggesting possible intended
-  /// commands.
-  ///
-  /// Set to `0` in order to disable suggestions, defaults to `2`.
-  // TODO: Make this global on the CommandRunner instead?
-  final int suggestionDistanceLimit;
-
   const CommandAliasesDefinition({
     final List<String>? aliases,
     final List<String>? suggestionAliases,
-    final int? suggestionDistanceLimit,
   }) : aliases = aliases ?? const <String>[],
-       suggestionAliases = suggestionAliases ?? const <String>[],
-       suggestionDistanceLimit = suggestionDistanceLimit ?? 2;
+       suggestionAliases = suggestionAliases ?? const <String>[];
 }
