@@ -50,24 +50,6 @@ final class ScannedArg {
   const ScannedArg(this.raw, this.tokens);
 }
 
-enum DoubleDashHandling {
-  /// No special handling means it is treated as any other word.
-  noSpecialHandling,
-
-  /// When `--` is not taken as an option value, leave the following
-  /// arguments unparsed. A `--` used as a value does not start this,
-  /// so a later `--` still can.
-  passThroughRest,
-}
-
-class ScanMode {
-  final DoubleDashHandling doubleDashHandling;
-
-  const ScanMode({
-    this.doubleDashHandling = DoubleDashHandling.noSpecialHandling,
-  });
-}
-
 /// Scans command-line arguments into one [ScannedArg] per argument.
 ///
 /// Does not validate and does not throw [Exception]s.
