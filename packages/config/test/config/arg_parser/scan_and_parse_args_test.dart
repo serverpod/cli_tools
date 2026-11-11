@@ -840,7 +840,7 @@ void main() {
     const name = StringOption(argName: 'name', argAbbrev: 'n');
     const file = StringOption(argName: 'file', argAbbrev: 'f');
 
-    const passThroughRest = ScanMode(
+    const passThroughRest = ParserSettings(
       doubleDashHandling: DoubleDashHandling.passThroughRest,
     );
 
@@ -848,7 +848,7 @@ void main() {
       return scanAndParseArgs(
         args,
         options: [verbose, name, file],
-        scanMode: passThroughRest,
+        settings: passThroughRest,
       );
     }
 

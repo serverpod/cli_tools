@@ -7,7 +7,9 @@ import '../config.dart'
         CommandDefinitionError,
         validateOptions;
 import 'command_definition.dart';
+import 'parser_settings.dart';
 import 'scanner.dart';
+import 'suggestions.dart';
 
 /// The start of the [ArgParseResult.errors] message recorded when a word
 /// is not a known subcommand of a command that has subcommands.
@@ -22,7 +24,7 @@ const String unknownSubcommandErrorPrefix = 'Unknown subcommand: ';
 ArgParseResult<O> scanAndParseArgs<O extends OptionDefinition>(
   final Iterable<String> args, {
   required final Iterable<O> options,
-  final ScanMode scanMode = const ScanMode(),
+  final ParserSettings settings = const ParserSettings(),
 }) {
   validateOptions(options);
 
@@ -31,7 +33,7 @@ ArgParseResult<O> scanAndParseArgs<O extends OptionDefinition>(
   return _parseArgs(
     _ArgCursor(scannedArgs),
     options: options,
-    scanMode: scanMode,
+    settings: settings,
   );
 }
 
@@ -48,7 +50,7 @@ ArgParseResult<O> scanAndParseArgs<O extends OptionDefinition>(
 ArgParseResult<O> scanAndParseCommands<O extends OptionDefinition>(
   final Iterable<String> args, {
   required final CommandDefinition<O> rootCommand,
-  final ScanMode scanMode = const ScanMode(),
+  final ParserSettings settings = const ParserSettings(),
 }) {
   _validateCommandsAndOptions(rootCommand);
 
@@ -57,7 +59,7 @@ ArgParseResult<O> scanAndParseCommands<O extends OptionDefinition>(
   return _parseArgs(
     _ArgCursor(scannedArgs),
     command: rootCommand,
-    scanMode: scanMode,
+    settings: settings,
   );
 }
 
@@ -200,7 +202,7 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
   final Iterable<O>? options,
   final ArgParseResult? parent,
   final Map<ConfigOptionBase, ArgParseResult<O>>? inheritedPersistentOwners,
-  required final ScanMode scanMode,
+  required final ParserSettings settings,
 }) {
   final result = ArgParseResult<O>(command: command, parent: parent);
   var rejectedSubcommand = false;
@@ -263,7 +265,7 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
           scannedArgs: scannedArgs,
           command: command,
           persistentOwners: persistentOwners,
-          scanMode: scanMode,
+          settings: settings,
           name: '--${arg.string}',
         )) {
           return result;
@@ -288,7 +290,7 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
           scannedArgs: scannedArgs,
           command: command,
           persistentOwners: persistentOwners,
-          scanMode: scanMode,
+          settings: settings,
           name: '-${arg.string}',
         )) {
           return result;
@@ -296,7 +298,7 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
         result.errors.add('Unknown option: -${arg.string}');
 
       case DoubleDashToken():
-        if (scanMode.doubleDashHandling != DoubleDashHandling.passThroughRest) {
+        if (settings.doubleDashHandling != DoubleDashHandling.passThroughRest) {
           result.errors.add('Unexpected value: ${arg.string}');
           break;
         }
@@ -305,7 +307,9 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
       case SingleDashToken():
         if (command != null && command.subcommands.isNotEmpty) {
           rejectedSubcommand = true;
-          result.errors.add('$unknownSubcommandErrorPrefix"${arg.string}"');
+          result.errors.add(
+            _unknownSubcommandError(arg.string, command, settings),
+          );
         } else {
           result.positionalWords.add(arg.string);
         }
@@ -319,14 +323,16 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
           scannedArgs: scannedArgs,
           command: command,
           persistentOwners: persistentOwners,
-          scanMode: scanMode,
+          settings: settings,
           name: arg.string,
         )) {
           return result;
         }
         if (command != null && command.subcommands.isNotEmpty) {
           rejectedSubcommand = true;
-          result.errors.add('$unknownSubcommandErrorPrefix"${arg.string}"');
+          result.errors.add(
+            _unknownSubcommandError(arg.string, command, settings),
+          );
         } else {
           result.positionalWords.add(arg.string);
         }
@@ -342,6 +348,19 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
   }
 
   return result;
+}
+
+String _unknownSubcommandError<O extends OptionDefinition>(
+  final String name,
+  final CommandDefinition<O> command,
+  final ParserSettings settings,
+) {
+  final suggestions = similarCommandSuggestions(
+    name,
+    command.subcommands,
+    settings.suggestionDistanceLimit,
+  );
+  return '$unknownSubcommandErrorPrefix"$name"$suggestions';
 }
 
 void _assignOption<O extends OptionDefinition>({
@@ -577,7 +596,7 @@ bool _enterMatchedSubcommand<O extends OptionDefinition>({
   required final _ArgCursor scannedArgs,
   required final CommandDefinition<O>? command,
   required final Map<ConfigOptionBase, ArgParseResult<O>> persistentOwners,
-  required final ScanMode scanMode,
+  required final ParserSettings settings,
   required final String name,
 }) {
   final subcommands = command?.subcommands;
@@ -589,7 +608,7 @@ bool _enterMatchedSubcommand<O extends OptionDefinition>({
       command: subcommand,
       parent: result,
       inheritedPersistentOwners: persistentOwners,
-      scanMode: scanMode,
+      settings: settings,
     );
     return true;
   }
