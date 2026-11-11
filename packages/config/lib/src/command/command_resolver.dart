@@ -30,25 +30,34 @@ abstract interface class CommandResolver<O extends OptionDefinition, T> {
   ///
   /// Throws [UsageException] on configuration input errors including
   /// command line arguments, environment variables, and configuration files.
+  ///
+  /// When [allowIncomplete] is true, those errors are left on the contexts
+  /// and no exception is thrown. Completion uses this for a command line
+  /// that is not finished. [runMode] is recorded on every context in the chain.
   CommandContext<O, T> resolveConfigurations(
     final Iterable<String> args,
     final Map<String, String>? env,
     final ContextProvider provider, {
-    required final CommandRunner<O, T> runner,
+    final bool allowIncomplete = false,
+    final CommandRunMode runMode = CommandRunMode.execution,
   });
 }
 
 /// The standard command resolver.
 class StandardCommandResolver<O extends OptionDefinition, T>
     implements CommandResolver<O, T> {
-  const StandardCommandResolver();
+  /// The runner whose command tree and parser settings are resolved.
+  final CommandRunner<O, T> runner;
+
+  const StandardCommandResolver(this.runner);
 
   @override
   CommandContext<O, T> resolveConfigurations(
     final Iterable<String> args,
     final Map<String, String>? env,
     final ContextProvider provider, {
-    required final CommandRunner<O, T> runner,
+    final bool allowIncomplete = false,
+    final CommandRunMode runMode = CommandRunMode.execution,
   }) {
     final argParseResult = scanAndParseCommands(
       args,
@@ -61,9 +70,19 @@ class StandardCommandResolver<O extends OptionDefinition, T>
       ),
     );
 
-    final contextChain = resolveNext(argParseResult, env, provider, null);
+    final contextChain = resolveNext(
+      argParseResult,
+      env,
+      provider,
+      null,
+      runMode: runMode,
+    );
 
     final CommandContext<O, T> contexts = contextChain as CommandContext<O, T>;
+
+    // Completion resolves a partial command line. Errors stay on the
+    // contexts for middleware and completion to inspect.
+    if (allowIncomplete) return contexts;
 
     // Fail-fast on built-in option errors; if no such errors then
     // the built-in action options (e.g. --help, --completion)
@@ -88,8 +107,9 @@ class StandardCommandResolver<O extends OptionDefinition, T>
     final ArgParseResult<OptionDefinition> argParseResult,
     final Map<String, String>? env,
     final ContextProvider provider,
-    final CommandContext<OptionDefinition, T>? prevContext,
-  ) {
+    final CommandContext<OptionDefinition, T>? prevContext, {
+    final CommandRunMode runMode = CommandRunMode.execution,
+  }) {
     final command = argParseResult.command;
     if (command == null) throw StateError('ArgParseResult.command is null');
     if (command is! AbstractCommand<OptionDefinition, T>) {
@@ -103,10 +123,17 @@ class StandardCommandResolver<O extends OptionDefinition, T>
       env,
       provider,
       prevContext,
+      runMode: runMode,
     );
 
     if (argParseResult.child case final ArgParseResult child) {
-      final nextContext = resolveNext(child, env, provider, context);
+      final nextContext = resolveNext(
+        child,
+        env,
+        provider,
+        context,
+        runMode: runMode,
+      );
       context.next = nextContext;
     } else {
       context.next = null;

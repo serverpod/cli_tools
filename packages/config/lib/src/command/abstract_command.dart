@@ -181,8 +181,9 @@ abstract class AbstractCommand<O extends OptionDefinition, T>
     final ArgParseResult parseResult,
     final Map<String, String>? env,
     final ContextProvider provider,
-    final CommandContext<OptionDefinition, T>? prevContext,
-  ) {
+    final CommandContext<OptionDefinition, T>? prevContext, {
+    final CommandRunMode runMode = CommandRunMode.execution,
+  }) {
     final parsedArgs = NewParsedArgs(parseResult);
 
     final Configuration<O> config = Configuration.resolveNoExcept(
@@ -198,6 +199,7 @@ abstract class AbstractCommand<O extends OptionDefinition, T>
       config: config,
       prev: prevContext,
       provider: provider,
+      runMode: runMode,
     );
   }
 

@@ -3,12 +3,27 @@ import 'abstract_command.dart';
 import 'builtin_global_option.dart';
 import 'context_provider.dart';
 
+/// Whether a command context is being used to run or to complete the command line.
+enum CommandRunMode {
+  /// The command line is being executed.
+  execution,
+
+  /// The command line is being completed.
+  completion,
+}
+
 /// The configuration context for the individual command being run.
 ///
 /// The contexts for the commands on the command line form a linked list
 /// via the prev and next fields.
 class CommandContext<O extends OptionDefinition, T> {
   final AbstractCommand<O, T> command;
+
+  /// Whether this context is part of executing or completing the command line.
+  final CommandRunMode runMode;
+
+  /// Whether middleware is running for completion rather than execution.
+  bool get isCompletion => runMode == CommandRunMode.completion;
 
   /// The configuration of the command's own (application-defined) options.
   final Configuration<O> config;
@@ -33,6 +48,7 @@ class CommandContext<O extends OptionDefinition, T> {
     required this.config,
     required this.prev,
     required this.provider,
+    this.runMode = CommandRunMode.execution,
     final Configuration<BuiltinGlobalOption>? builtinConfig,
   }) : builtinConfig =
            builtinConfig ??
@@ -45,6 +61,7 @@ class CommandContext<O extends OptionDefinition, T> {
     final CommandContext<OptionDefinition, T>? prev,
     final CommandContext<OptionDefinition, T>? next,
     final ContextProvider? provider,
+    final CommandRunMode? runMode,
   }) {
     return CommandContext<O, T>(
       command: command ?? this.command,
@@ -52,6 +69,7 @@ class CommandContext<O extends OptionDefinition, T> {
       builtinConfig: builtinConfig ?? this.builtinConfig,
       prev: prev ?? this.prev,
       provider: provider ?? this.provider,
+      runMode: runMode ?? this.runMode,
     )..next = next ?? this.next;
   }
 
