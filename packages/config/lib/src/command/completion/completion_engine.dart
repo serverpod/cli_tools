@@ -20,7 +20,9 @@ import '../../config/config.dart'
         MutuallyExclusive,
         OptionDefinition,
         ParsedArgs;
+import '../command_resolver.dart';
 import 'completion_protocol.dart';
+import 'option_value_completion.dart';
 
 /// Computes the completion candidates for a partial command line,
 /// using the command tree and option definitions of a root command.
@@ -31,8 +33,8 @@ import 'completion_protocol.dart';
 ///
 /// The engine never throws; on any error it responds with
 /// [CompletionDirective.error].
-class CompletionEngine {
-  final CommandDefinition<OptionDefinition> rootCommand;
+class CompletionEngine<O extends OptionDefinition, T> {
+  final CommandDefinition<O> rootCommand;
 
   /// See `CommandRunner.ignoreUnexpectedPositionalArgs`.
   final bool ignoreUnexpectedPositionalArgs;
@@ -40,8 +42,16 @@ class CompletionEngine {
   /// Receives a diagnostic message when a completion request fails.
   final void Function(Object error, StackTrace stackTrace)? onError;
 
+  /// When set, option-value completion resolves the command line typed so far
+  /// and runs that chain's middleware before asking the option for candidates.
+  ///
+  /// Subcommand and option-name completion does not use it. Without a
+  /// resolver, option values are completed from the raw command line only.
+  final CommandResolver<O, T>? resolver;
+
   const CompletionEngine(
     this.rootCommand, {
+    this.resolver,
     this.ignoreUnexpectedPositionalArgs = false,
     this.onError,
   });
@@ -51,8 +61,8 @@ class CompletionEngine {
   ///
   /// [words] does not include the executable name.
   ///
-  /// [environment] is not used by the engine itself; it is made available
-  /// to custom `ConfigOptionBase.complete` implementations as
+  /// [environment] is passed to [resolver], when one is given, and to
+  /// custom `ConfigOptionBase.complete` implementations as
   /// `CompletionContext.environment`.
   Future<CompletionResponse> complete(
     final List<String> words, {
@@ -194,7 +204,7 @@ class CompletionEngine {
       }
     }
 
-    final context = CompletionContext(
+    final prelude = CompletionPrelude(
       wordToComplete: elementWord,
       precedingWords: line.preceding,
       commands: line.commands,
@@ -202,7 +212,24 @@ class CompletionEngine {
       environment: line.environment,
     );
 
-    final FutureOr<CompletionResult> pending = option.complete(context);
+    final FutureOr<CompletionResult> pending;
+    final resolver = this.resolver;
+    if (resolver != null) {
+      pending = OptionValueCompletion(resolver).completeOption(
+        prelude,
+        option.complete,
+      );
+    } else {
+      pending = option.complete(
+        CompletionContext(
+          wordToComplete: prelude.wordToComplete,
+          precedingWords: prelude.precedingWords,
+          commands: prelude.commands,
+          parsedArgs: prelude.parsedArgs,
+          environment: prelude.environment,
+        ),
+      );
+    }
     final result = pending is Future<CompletionResult>
         ? await pending
         : pending;
