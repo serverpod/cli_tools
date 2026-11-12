@@ -26,7 +26,7 @@ ArgParseResult<O> scanAndParseArgs<O extends OptionDefinition>(
 }) {
   validateOptions(options);
 
-  final scannedArgs = scanArgs(args);
+  final scannedArgs = scanArgs(args).toList();
 
   return _parseArgs(
     _ArgCursor(scannedArgs),
@@ -52,7 +52,7 @@ ArgParseResult<O> scanAndParseCommands<O extends OptionDefinition>(
 }) {
   _validateCommandsAndOptions(rootCommand);
 
-  final scannedArgs = scanArgs(args);
+  final scannedArgs = scanArgs(args).toList();
 
   return _parseArgs(
     _ArgCursor(scannedArgs),
@@ -111,50 +111,61 @@ class _ArgParseResultIterator implements Iterator<ArgParseResult> {
   }
 }
 
-/// Walks scanned arguments and can consume every token that came from one
-/// raw command-line argument.
+/// Walks scanned arguments one token at a time.
 class _ArgCursor {
-  final List<Argument> _args;
-  int _index = -1;
+  final List<ScannedArg> _args;
+  int _argIndex = 0;
+  int _tokenIndex = -1;
 
   _ArgCursor(this._args);
 
   bool moveNext() {
-    final next = _index + 1;
-    if (next >= _args.length) return false;
-    _index = next;
+    if (_argIndex >= _args.length) return false;
+
+    final nextToken = _tokenIndex + 1;
+    if (nextToken < _args[_argIndex].tokens.length) {
+      _tokenIndex = nextToken;
+      return true;
+    }
+
+    final nextArg = _argIndex + 1;
+    if (nextArg >= _args.length) return false;
+    _argIndex = nextArg;
+    _tokenIndex = 0;
     return true;
   }
 
-  Argument get current => _args[_index];
+  Token get current => _args[_argIndex].tokens[_tokenIndex];
 
-  bool get hasNext => _index + 1 < _args.length;
+  /// Whether the next token was cut from the same command-line argument.
+  bool get nextContinuesRaw =>
+      _argIndex < _args.length &&
+      _tokenIndex + 1 < _args[_argIndex].tokens.length;
 
-  Argument get peek => _args[_index + 1];
+  bool get hasNext => nextContinuesRaw || _argIndex + 1 < _args.length;
 
-  /// Drops later tokens that were scanned from [current]'s raw argument.
+  Token get peek => nextContinuesRaw
+      ? _args[_argIndex].tokens[_tokenIndex + 1]
+      : _args[_argIndex + 1].tokens.first;
+
+  /// Drops later tokens cut from the current command-line argument.
   void skipFollowingRawContinuation() {
-    while (_index + 1 < _args.length && _args[_index + 1].continuesRaw) {
-      _index++;
-    }
+    _tokenIndex = _args[_argIndex].tokens.length - 1;
   }
 
-  /// The original command-line argument for [current], including any later
-  /// tokens scanned from that same argument.
+  /// The original command-line argument for [current].
   String takeCurrentRaw() {
-    final raw = current.raw;
-    while (_index + 1 < _args.length && _args[_index + 1].continuesRaw) {
-      _index++;
-    }
+    final raw = _args[_argIndex].raw;
+    skipFollowingRawContinuation();
     return raw;
   }
 
-  /// Each remaining command-line argument, in order.
+  /// Each command-line argument after the current one, in order.
   List<String> takeRemainingRaw() {
-    final rest = <String>[];
-    while (moveNext()) {
-      rest.add(takeCurrentRaw());
-    }
+    final rest = <String>[
+      for (var i = _argIndex + 1; i < _args.length; i++) _args[i].raw,
+    ];
+    _argIndex = _args.length;
     return rest;
   }
 }
@@ -171,8 +182,8 @@ class _ArgCursor {
 String? _readOptionValue(final _ArgCursor scannedArgs) {
   if (!scannedArgs.hasNext) return null;
   final next = scannedArgs.peek;
-  if (next.continuesRaw) {
-    if (next is WordArg) {
+  if (scannedArgs.nextContinuesRaw) {
+    if (next is WordToken) {
       scannedArgs.moveNext();
       return next.string;
     }
@@ -234,7 +245,7 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
     final arg = scannedArgs.current;
 
     switch (arg) {
-      case LongOptionArg():
+      case LongOptionToken():
         final option = possibleOptionNames[arg.string];
         if (option != null) {
           _assignOption(
@@ -259,7 +270,7 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
         }
         result.errors.add('Unknown option: --${arg.string}');
 
-      case ShortOptionArg():
+      case ShortOptionToken():
         final option = possibleOptionAbbrevs[arg.string];
         if (option != null) {
           _assignOption(
@@ -284,14 +295,14 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
         }
         result.errors.add('Unknown option: -${arg.string}');
 
-      case DoubleDashArg():
+      case DoubleDashToken():
         if (scanMode.doubleDashHandling != DoubleDashHandling.passThroughRest) {
           result.errors.add('Unexpected value: ${arg.string}');
           break;
         }
         result.unparsedArgs.addAll(scannedArgs.takeRemainingRaw());
 
-      case SingleDashArg():
+      case SingleDashToken():
         if (command != null && command.subcommands.isNotEmpty) {
           rejectedSubcommand = true;
           result.errors.add('$unknownSubcommandErrorPrefix"${arg.string}"');
@@ -299,10 +310,10 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
           result.positionalWords.add(arg.string);
         }
 
-      case ValueArg():
+      case ValueToken():
         result.errors.add('Unexpected value: ${arg.string}');
 
-      case WordArg():
+      case WordToken():
         if (_enterMatchedSubcommand(
           result: result,
           scannedArgs: scannedArgs,
@@ -319,9 +330,6 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
         } else {
           result.positionalWords.add(arg.string);
         }
-
-      case UnparsedArg():
-        result.unparsedArgs.add(arg.string);
     }
   }
 

@@ -1,87 +1,53 @@
 import 'package:characters/characters.dart';
 
-sealed class Argument {
+sealed class Token {
   final String string;
 
-  /// The original command-line argument this token was scanned from.
-  ///
-  /// Several tokens can share one [raw] value, for example `--option=value`
-  /// or a cluster of short options.
-  final String raw;
-
-  /// Whether this token continues [raw] after an earlier token from the same
-  /// argument.
-  final bool continuesRaw;
-
-  const Argument(
-    this.string, {
-    required this.raw,
-    this.continuesRaw = false,
-  });
+  const Token(this.string);
 }
 
-sealed class OptionArg extends Argument {
-  const OptionArg(
-    super.string, {
-    required super.raw,
-    super.continuesRaw,
-  });
+sealed class OptionToken extends Token {
+  const OptionToken(super.string);
 }
 
-class ShortOptionArg extends OptionArg {
-  const ShortOptionArg(
-    super.string, {
-    required super.raw,
-    super.continuesRaw,
-  });
+class ShortOptionToken extends OptionToken {
+  const ShortOptionToken(super.string);
 }
 
-class LongOptionArg extends OptionArg {
-  const LongOptionArg(
-    super.string, {
-    required super.raw,
-    super.continuesRaw,
-  });
+class LongOptionToken extends OptionToken {
+  const LongOptionToken(super.string);
 }
 
 /// Maybe a value, maybe a command.
-class WordArg extends Argument {
-  const WordArg(
-    super.string, {
-    required super.raw,
-    super.continuesRaw,
-  });
+class WordToken extends Token {
+  const WordToken(super.string);
 }
 
-/// An argument that is definitely a value.
-class ValueArg extends WordArg {
-  const ValueArg(
-    super.string, {
-    required super.raw,
-    super.continuesRaw,
-  });
+/// A token that is definitely a value.
+class ValueToken extends WordToken {
+  const ValueToken(super.string);
 }
 
 /// Special case - the `--` double dash argument.
 /// Often this is used to separate the following arguments,
 /// for example not parse them and instead pass them to another program.
-class DoubleDashArg extends ValueArg {
-  const DoubleDashArg() : super('--', raw: '--');
+final class DoubleDashToken extends ValueToken {
+  const DoubleDashToken() : super('--');
 }
 
 /// Special case - the `-` single dash argument.
 /// Some commands attribute special meaning to `-`, such as referring to
 /// stdin/stdout.
-class SingleDashArg extends ValueArg {
-  const SingleDashArg() : super('-', raw: '-');
+final class SingleDashToken extends ValueToken {
+  const SingleDashToken() : super('-');
 }
 
-class UnparsedArg extends Argument {
-  const UnparsedArg(
-    super.string, {
-    required super.raw,
-    super.continuesRaw,
-  });
+/// One command-line argument and the tokens the scanner cut from it.
+final class ScannedArg {
+  final String raw;
+  final List<Token> tokens;
+
+  const ScannedArg(this.raw, this.tokens);
 }
 
 enum DoubleDashHandling {
@@ -102,7 +68,7 @@ class ScanMode {
   });
 }
 
-/// Scans a list of argument strings and returns a list of [Argument]s.
+/// Scans command-line arguments into one [ScannedArg] per argument.
 ///
 /// Does not validate and does not throw [Exception]s.
 ///
@@ -146,13 +112,10 @@ class ScanMode {
 /// A command name may itself be option syntax (`--version`, `-v`). This
 /// scanner still classifies that argument as an option, but the parser may
 /// then select it as a subcommand when no option matches.
-List<Argument> scanArgs(final Iterable<String> args) {
-  final List<Argument> scanned = [];
-  final argsIterator = args.iterator;
-  while (argsIterator.moveNext()) {
-    _scanNext(scanned, argsIterator);
+Iterable<ScannedArg> scanArgs(final Iterable<String> args) sync* {
+  for (final arg in args) {
+    yield _scanArg(arg);
   }
-  return scanned;
 }
 
 /// If [arg] is written as an option that would take its value from the
@@ -165,74 +128,48 @@ List<Argument> scanArgs(final Iterable<String> args) {
 /// the next argument as their value. Whether the option actually takes
 /// a value is up to the caller.
 String? optionAwaitingValue(final String arg) {
-  final tokens = scanArgs([arg]);
+  final tokens = scanArgs([arg]).first.tokens;
   if (tokens.isEmpty) return null;
   return switch (tokens.last) {
-    LongOptionArg(string: final name) => '--$name',
-    ShortOptionArg(string: final abbrev) => '-$abbrev',
+    LongOptionToken(:final string) => '--$string',
+    ShortOptionToken(:final string) => '-$string',
     _ => null,
   };
 }
 
-void _scanNext(
-  final List<Argument> scanned,
-  final Iterator<String> args,
-) {
-  final arg = args.current;
-
+ScannedArg _scanArg(final String arg) {
   if (arg.startsWith('--')) {
     if (arg.length == 2) {
-      scanned.add(const DoubleDashArg());
-      return;
+      return const ScannedArg('--', [DoubleDashToken()]);
     }
 
     final equalIndex = arg.indexOf('=');
     if (equalIndex != -1) {
-      scanned.add(LongOptionArg(arg.substring(2, equalIndex), raw: arg));
-      scanned.add(
-        ValueArg(
-          arg.substring(equalIndex + 1),
-          raw: arg,
-          continuesRaw: true,
-        ),
-      );
-      return;
+      return ScannedArg(arg, [
+        LongOptionToken(arg.substring(2, equalIndex)),
+        ValueToken(arg.substring(equalIndex + 1)),
+      ]);
     }
 
-    scanned.add(LongOptionArg(arg.substring(2), raw: arg));
-    return;
+    return ScannedArg(arg, [LongOptionToken(arg.substring(2))]);
   }
 
   if (arg.startsWith('-')) {
     if (arg.length == 1) {
-      scanned.add(const SingleDashArg());
-      return;
+      return const ScannedArg('-', [SingleDashToken()]);
     }
 
-    var continued = false;
+    final tokens = <Token>[];
     for (final (_, ch) in arg.substring(1).characters.indexed) {
       if (ch == '=') {
         final equalIndex = arg.indexOf('=');
-        scanned.add(
-          ValueArg(
-            arg.substring(equalIndex + 1),
-            raw: arg,
-            continuesRaw: continued,
-          ),
-        );
-        return;
+        tokens.add(ValueToken(arg.substring(equalIndex + 1)));
+        return ScannedArg(arg, tokens);
       }
-      scanned.add(
-        ShortOptionArg(
-          ch,
-          raw: arg,
-          continuesRaw: continued,
-        ),
-      );
-      continued = true;
+      tokens.add(ShortOptionToken(ch));
     }
-    return;
+    return ScannedArg(arg, tokens);
   }
 
-  scanned.add(WordArg(arg, raw: arg));
+  return ScannedArg(arg, [WordToken(arg)]);
 }
