@@ -1,6 +1,8 @@
-import 'package:args/args.dart';
+import 'package:args/args.dart' show ArgResults;
 import 'package:collection/collection.dart';
 
+import 'arg_parser_facade.dart'
+    show ParsedArgs, legacyParsedArgsFromArgResults, newParsedArgs;
 import 'configuration_broker.dart';
 import 'exceptions.dart';
 import 'option_resolution_impl.dart';
@@ -76,7 +78,11 @@ class Configuration<O extends OptionDefinition> {
   /// {@template Configuration.resolveNoExcept}
   /// Creates a configuration with option values resolved from the provided context.
   ///
-  /// [argResults] is used if provided. Otherwise [args] is used if provided.
+  /// [argResults] is used if provided, however it is deprecated and will be
+  /// removed in a future version, use [parsedArgs] or [args] instead.
+  /// If both [args] and [parsedArgs] are provided, [args] has precedence.
+  /// If neither [argResults], [parsedArgs], nor [args] are provided, the
+  /// configuration will be resolved without command line arguments.
   ///
   /// If [presetValues] is provided, the values present will override the other sources,
   /// including if they are null.
@@ -86,7 +92,8 @@ class Configuration<O extends OptionDefinition> {
   /// instead the caller is responsible for checking if [errors] is non-empty.
   Configuration.resolveNoExcept({
     required final Iterable<O> options,
-    ArgResults? argResults,
+    @Deprecated('Use parsedArgs or args instead') final ArgResults? argResults,
+    ParsedArgs? parsedArgs,
     final Iterable<String>? args,
     final Map<String, String>? env,
     final ConfigurationBroker? configBroker,
@@ -95,16 +102,14 @@ class Configuration<O extends OptionDefinition> {
   }) : _options = List<O>.from(options),
        _config = <O, OptionResolutionImpl>{},
        _errors = <String>[] {
-    if (argResults == null && args != null) {
-      argResults = _prepareArgResults(args);
-      if (argResults == null) {
-        remainingPosArgs = <String>[];
-        return;
-      }
+    if (argResults != null) {
+      parsedArgs = legacyParsedArgsFromArgResults(argResults);
+    } else if (args != null) {
+      parsedArgs = newParsedArgs(options, args);
     }
 
     _resolveWithArgResults(
-      args: argResults,
+      parsedArgs: parsedArgs,
       env: env,
       configBroker: configBroker,
       presetValues: presetValues,
@@ -119,7 +124,8 @@ class Configuration<O extends OptionDefinition> {
   /// A caller can use [resolveNoExcept] instead to handle the errors themselves.
   Configuration.resolve({
     required final Iterable<O> options,
-    ArgResults? argResults,
+    @Deprecated('Use parsedArgs or args instead') final ArgResults? argResults,
+    ParsedArgs? parsedArgs,
     final Iterable<String>? args,
     final Map<String, String>? env,
     final ConfigurationBroker? configBroker,
@@ -128,17 +134,14 @@ class Configuration<O extends OptionDefinition> {
   }) : _options = List<O>.from(options),
        _config = <O, OptionResolutionImpl>{},
        _errors = <String>[] {
-    if (argResults == null && args != null) {
-      argResults = _prepareArgResults(args);
-      if (argResults == null) {
-        remainingPosArgs = <String>[];
-        throwExceptionOnErrors();
-        return;
-      }
+    if (argResults != null) {
+      parsedArgs = legacyParsedArgsFromArgResults(argResults);
+    } else if (args != null) {
+      parsedArgs = newParsedArgs(options, args);
     }
 
     _resolveWithArgResults(
-      args: argResults,
+      parsedArgs: parsedArgs,
       env: env,
       configBroker: configBroker,
       presetValues: presetValues,
@@ -148,30 +151,13 @@ class Configuration<O extends OptionDefinition> {
     throwExceptionOnErrors();
   }
 
-  ArgResults? _prepareArgResults(final Iterable<String> args) {
-    final parser = ArgParser();
-    _options.prepareForParsing(parser);
-
-    try {
-      return parser.parse(args);
-    } on FormatException catch (e) {
-      _errors.add(e.message);
-      for (final o in _options) {
-        _config[o] = const OptionResolutionImpl.error(
-          'Previous ArgParser error',
-        );
-      }
-      return null;
-    }
-  }
-
   /// Throws a [UsageException] with error and correct usage information
   /// if there were any errors during configuration resolution.
   /// Can be overridden to change the exception or its content.
   void throwExceptionOnErrors() {
     if (_errors.isNotEmpty) {
       final buffer = StringBuffer();
-      final errors = _errors.map(formatConfigError);
+      final errors = formattedErrors;
       buffer.writeAll(errors, '\n');
       throw UsageException(buffer.toString(), usage);
     }
@@ -185,6 +171,9 @@ class Configuration<O extends OptionDefinition> {
 
   /// Gets the errors that occurred during configuration resolution.
   Iterable<String> get errors => _errors;
+
+  /// Gets the errors that occurred during configuration resolution with regularized formatting.
+  Iterable<String> get formattedErrors => _errors.map(formatConfigError);
 
   /// Returns the option definition for the given enum name,
   /// or any provided argument name, position,
@@ -311,13 +300,17 @@ class Configuration<O extends OptionDefinition> {
   }
 
   void _resolveWithArgResults({
-    final ArgResults? args,
+    final ParsedArgs? parsedArgs,
     final Map<String, String>? env,
     final ConfigurationBroker? configBroker,
     final Map<O, Object?>? presetValues,
     final bool ignoreUnexpectedPositionalArgs = false,
   }) {
-    final posArgs = (args?.rest ?? []).iterator;
+    validateOptions(_options);
+
+    _errors.addAll(parsedArgs?.parseErrors ?? []);
+
+    final posArgs = (parsedArgs?.rest ?? []).iterator;
     final orderedOpts = _options.sorted(
       (final a, final b) =>
           (a.option.argPos ?? -1).compareTo(b.option.argPos ?? -1),
@@ -333,7 +326,7 @@ class Configuration<O extends OptionDefinition> {
         } else {
           resolution = opt.option.resolveValue(
             this,
-            args: args,
+            args: parsedArgs,
             posArgs: posArgs,
             env: env,
             configBroker: configBroker,

@@ -386,6 +386,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   Configuration<O> resolveConfiguration(final ArgResults? argResults) {
     return Configuration.resolveNoExcept(
       options: _globalOptions,
+      // ignore: deprecated_member_use
       argResults: argResults,
       env: envVariables,
       ignoreUnexpectedPositionalArgs: true,

@@ -11,3 +11,4 @@ analyzer:
 linter:
   rules:
     prefer_relative_imports: true
+    avoid_final_parameters: false

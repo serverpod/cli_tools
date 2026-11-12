@@ -170,23 +170,30 @@ void main() {
         expect(args['verbose'], isFalse);
       });
 
-      test('set the flag to true if the flag actually starts with "no-"', () {
-        var parser = ConfigParser();
-        parser.addFlag('no-body');
+      test(
+        'set the flag to true if the flag actually starts with "no-"',
+        () {
+          var parser = ConfigParser();
+          parser.addFlag('no-body', negatable: false);
 
-        var args = parser.parse(['--no-body']);
-        expect(args['no-body'], isTrue);
-      });
+          var args = parser.parse(['--no-body']);
+          expect(args['no-body'], isTrue);
+        },
+      );
 
-      test('are not preferred over a colliding one without', () {
-        var parser = ConfigParser();
-        parser.addFlag('no-strum');
-        parser.addFlag('strum');
+      test(
+        'is prevented from colliding with a flag without "no-" prefix',
+        () {
+          var parser = ConfigParser();
+          parser.addFlag('no-strum', negatable: false);
+          parser.addFlag('strum');
 
-        var args = parser.parse(['--no-strum']);
-        expect(args['no-strum'], isTrue);
-        expect(args['strum'], isFalse);
-      });
+          expectLater(
+            () => parser.parse(['--no-strum']),
+            throwsA(isA<OptionDefinitionError>()),
+          );
+        },
+      );
 
       test('fail for non-negatable flags', () {
         var parser = ConfigParser();
