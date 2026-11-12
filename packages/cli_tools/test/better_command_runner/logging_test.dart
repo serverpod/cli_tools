@@ -1,24 +1,23 @@
-import 'package:args/command_runner.dart';
 import 'package:cli_tools/better_command_runner.dart';
+import 'package:config/config.dart';
 import 'package:test/test.dart';
 
-class MockCommand extends Command {
+class MockCommand extends BetterCommand<OptionDefinition, void> {
   static String commandName = 'mock-command';
 
   @override
   String get description => 'Mock command used for testing';
 
   @override
-  void run() {}
+  void runWithConfig(final Configuration<OptionDefinition> commandConfig) {}
 
   MockCommand() {
-    argParser.addOption(
-      'name',
-      // To make an option truly mandatory, you need to set mandatory to true.
-      // and also define a callback.
-      mandatory: true,
-      callback: (final name) {},
-      allowed: <String>['serverpod'],
+    addOption(
+      const StringOption(
+        argName: 'name',
+        mandatory: true,
+        allowedValues: ['serverpod'],
+      ),
     );
   }
 
@@ -57,12 +56,17 @@ void main() {
     });
 
     group('when running with invalid command', () {
+      late Object? exception;
       setUp(() async {
         try {
           await runner.run(['this it not a valid command']);
         } catch (e) {
-          // Ignore the exception.
+          exception = e;
         }
+      });
+
+      test('then a UsageException is thrown.', () async {
+        expect(exception, isA<UsageException>());
       });
 
       test('then no message is logged to info.', () async {
@@ -74,7 +78,7 @@ void main() {
         expect(
           errors.first,
           contains(
-            'Could not find a command named "this it not a valid command".',
+            'Unknown subcommand: "this it not a valid command"',
           ),
         );
       });
@@ -97,7 +101,7 @@ void main() {
         'then option name is mandatory message is logged to error.',
         () async {
           expect(errors, hasLength(1));
-          expect(errors.first, contains('Option name is mandatory'));
+          expect(errors.first, contains('Option `name` is mandatory'));
         },
       );
     });

@@ -1,24 +1,23 @@
-import 'package:args/command_runner.dart';
 import 'package:cli_tools/better_command_runner.dart';
+import 'package:config/config.dart';
 import 'package:test/test.dart';
 
-class MockCommand extends Command {
+class MockCommand extends BetterCommand<OptionDefinition, void> {
   static String commandName = 'mock-command';
 
   @override
   String get description => 'Mock command used for testing';
 
   @override
-  void run() {}
+  void runWithConfig(final Configuration<OptionDefinition> commandConfig) {}
 
   MockCommand() {
-    argParser.addOption(
-      'name',
-      // To make an option truly mandatory, you need to set mandatory to true.
-      // and also define a callback.
-      mandatory: true,
-      callback: (final name) {},
-      allowed: <String>['serverpod'],
+    addOption(
+      const StringOption(
+        argName: 'name',
+        mandatory: true,
+        allowedValues: ['serverpod'],
+      ),
     );
   }
 

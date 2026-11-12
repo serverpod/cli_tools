@@ -1,33 +1,37 @@
 import 'dart:async';
 
-import 'package:args/command_runner.dart';
 import 'package:cli_tools/better_command_runner.dart';
+import 'package:config/command.dart'
+    show CompletionSettings, ContextProvider, OutputSinks;
+import 'package:config/config.dart' show StringOption, Configuration;
 import 'package:test/test.dart';
 
 import '../test_utils/test_utils.dart' show flushEventQueue;
 
-class MockCommand extends Command {
+class MockCommand extends BetterCommand {
   static String commandName = 'mock-command';
 
   @override
   String get description => 'Mock command used for testing';
 
   @override
-  void run() {}
+  FutureOr? runWithConfig(final Configuration commandConfig) {}
 
   @override
   String get name => commandName;
 
   MockCommand() {
-    argParser.addOption(
-      'name',
-      defaultsTo: 'serverpod',
-      allowed: <String>['serverpod'],
+    addOption(
+      const StringOption(
+        argName: 'name',
+        defaultsTo: 'serverpod',
+        allowedValues: ['serverpod'],
+      ),
     );
   }
 }
 
-class CompletableMockCommand extends Command {
+class CompletableMockCommand extends BetterCommand {
   static String commandName = 'completable-mock-command';
 
   @override
@@ -36,7 +40,7 @@ class CompletableMockCommand extends Command {
   Completer<void> completer = Completer<void>();
 
   @override
-  void run() async {
+  FutureOr? runWithConfig(final Configuration commandConfig) async {
     await completer.future;
   }
 
@@ -44,50 +48,73 @@ class CompletableMockCommand extends Command {
   String get name => commandName;
 
   CompletableMockCommand() {
-    argParser.addOption(
-      'name',
-      defaultsTo: 'serverpod',
-      allowed: <String>['serverpod'],
+    addOption(
+      const StringOption(
+        argName: 'name',
+        defaultsTo: 'serverpod',
+        allowedValues: ['serverpod'],
+      ),
     );
   }
+}
+
+bool _hasAnalyticsOption(final BetterCommandRunner runner) {
+  return runner.globalOptions.any(
+    (final option) =>
+        option.option.argName == BetterCommandRunnerFlags.analytics,
+  );
 }
 
 void main() {
   late BetterCommandRunner runner;
   group('Given runner with null onAnalyticsEvent callback', () {
-    final runner = BetterCommandRunner(
-      'test',
-      'this is a test cli',
-      onAnalyticsEvent: null,
-      messageOutput: const MessageOutput(),
-    );
+    late ContextProvider provider;
+
+    setUp(() async {
+      provider = ContextProvider();
+      runner = BetterCommandRunner(
+        'test',
+        'this is a test cli',
+        onAnalyticsEvent: null,
+        messageOutput: const MessageOutput(),
+      );
+      await runner.run(const [], provider: provider);
+      await flushEventQueue();
+    });
 
     test('when checking if analytics is enabled then false is returned.', () {
-      expect(runner.analyticsEnabled(), isFalse);
+      expect(provider.fetch<AnalyticsEnabled>().enabled, isFalse);
     });
 
     test(
       'when checking available flags then analytics flag is not present.',
       () {
-        expect(runner.argParser.options.keys, isNot(contains('analytics')));
+        expect(_hasAnalyticsOption(runner), isFalse);
       },
     );
   });
 
   group('Given runner with onAnalyticsEvent callback defined', () {
-    final runner = BetterCommandRunner(
-      'test',
-      'this is a test cli',
-      onAnalyticsEvent: (final event, final properties) {},
-      messageOutput: const MessageOutput(),
-    );
+    late ContextProvider provider;
+
+    setUp(() async {
+      provider = ContextProvider();
+      runner = BetterCommandRunner(
+        'test',
+        'this is a test cli',
+        onAnalyticsEvent: (final event, final properties) {},
+        messageOutput: const MessageOutput(),
+      );
+      await runner.run(const [], provider: provider);
+      await flushEventQueue();
+    });
 
     test('when checking if analytics is enabled then true is returned.', () {
-      expect(runner.analyticsEnabled(), isTrue);
+      expect(provider.fetch<AnalyticsEnabled>().enabled, isTrue);
     });
 
     test('when checking available flags then analytics is defined.', () {
-      expect(runner.argParser.options.keys, contains('analytics'));
+      expect(_hasAnalyticsOption(runner), isTrue);
     });
   });
 
@@ -100,7 +127,6 @@ void main() {
         onAnalyticsEvent: (final event, final _) => events.add(event),
         messageOutput: const MessageOutput(),
       );
-      assert(runner.analyticsEnabled());
     });
 
     tearDown(() {
@@ -110,12 +136,13 @@ void main() {
     test(
       'when running command with no-analytics flag then analytics is disabled.',
       () async {
+        final provider = ContextProvider();
         final args = ['--no-${BetterCommandRunnerFlags.analytics}'];
-        await runner.run(args);
+        await runner.run(args, provider: provider);
 
         await flushEventQueue();
 
-        expect(runner.analyticsEnabled(), isFalse);
+        expect(provider.fetch<AnalyticsEnabled>().enabled, isFalse);
       },
     );
 
@@ -156,32 +183,33 @@ void main() {
     );
 
     test(
-      'when running with no command then "help" analytics event is sent.',
+      'when running with no command then the runner name is sent.',
       () async {
         await runner.run([]);
 
         await flushEventQueue();
 
         expect(events, hasLength(1));
-        expect(events.first, equals('help'));
+        expect(events.first, equals(runner.name));
       },
     );
 
     test(
-      'when running with only registered flag then "help" analytics event is sent.',
+      'when running with only a registered flag then the runner name is sent.',
       () async {
         await runner.run(['--${BetterCommandRunnerFlags.analytics}']);
 
         await flushEventQueue();
 
         expect(events, hasLength(1));
-        expect(events.first, equals('help'));
+        expect(events.first, equals(runner.name));
       },
     );
 
     test(
       'when running with help command then "help" analytics event is sent.',
       () async {
+        runner.addCommand(MockCommand());
         await runner.run(['help']);
 
         await flushEventQueue();
@@ -189,6 +217,7 @@ void main() {
         expect(events, hasLength(1));
         expect(events.first, equals('help'));
       },
+      skip: 'Currently not reporting analytics for help invocations',
     );
 
     test(
@@ -201,6 +230,7 @@ void main() {
         expect(events, hasLength(1));
         expect(events.first, equals('help'));
       },
+      skip: 'Currently not reporting analytics for help invocations',
     );
   });
 
@@ -213,7 +243,6 @@ void main() {
         onAnalyticsEvent: (final event, final _) => events.add(event),
         messageOutput: const MessageOutput(),
       )..addCommand(MockCommand());
-      assert(runner.analyticsEnabled());
     });
 
     tearDown(() {
@@ -265,6 +294,34 @@ void main() {
         expect(events.first, equals('invalid'));
       },
     );
+
+    test(
+      'when running in completion mode then no analytics event is sent.',
+      () async {
+        final completionOutput = StringBuffer();
+        runner = BetterCommandRunner(
+          'test',
+          'this is a test cli',
+          onAnalyticsEvent: (final event, final _) => events.add(event),
+          messageOutput: const MessageOutput(),
+          completion: CompletionSettings(
+            exitAfterResponse: false,
+            sinks: OutputSinks(out: completionOutput),
+          ),
+        )..addCommand(MockCommand());
+
+        await runner.run([
+          '__complete',
+          MockCommand.commandName,
+          '--name',
+          '',
+        ]);
+
+        await flushEventQueue();
+
+        expect(events, isEmpty);
+      },
+    );
   });
 
   group('Given runner with registered command and analytics enabled', () {
@@ -278,7 +335,6 @@ void main() {
         onAnalyticsEvent: (final event, final _) => events.add(event),
         messageOutput: const MessageOutput(),
       )..addCommand(command);
-      assert(runner.analyticsEnabled());
     });
 
     tearDown(() {

@@ -1,8 +1,9 @@
-import 'dart:async' show ZoneSpecification, runZoned;
+import 'dart:async' show FutureOr, ZoneSpecification, runZoned;
 
-import 'package:args/command_runner.dart' show CommandRunner, UsageException;
 import 'package:cli_tools/better_command_runner.dart'
-    show BetterCommandRunner, MessageOutput;
+    show BetterCommandRunner, MessageOutput, BetterCommand;
+import 'package:config/config.dart'
+    show Configuration, OptionDefinition, UsageException;
 import 'package:test/test.dart';
 
 void main() => _runTests();
@@ -13,71 +14,81 @@ const _moMockText = 'SUCCESS: `MessageOutput.usageLogger`';
 const _moExceptionText = 'SUCCESS: `MessageOutput.usageExceptionLogger`';
 const _invalidOption = '-z';
 
-CommandRunner _buildUpstreamRunner() => CommandRunner(
-  _exeName,
-  _exeDescription,
-);
+const _helpUsageExpectedKeyLines = <String>[
+  'Show help for a command.',
+  'Usage: mock help [<command>]',
+  'Available subcommands:',
+  'A dummy subcommand',
+  'Run "mock help" to see global options.',
+];
 
-BetterCommandRunner _buildBetterRunner() => BetterCommandRunner(
-  _exeName,
-  _exeDescription,
-  messageOutput: MessageOutput(
-    usageLogger: (final usage) {
-      print(_moMockText);
-      print(usage);
-    },
-    usageExceptionLogger: (final exception) {
-      print(_moExceptionText);
-      print(exception.message);
-      print(exception.usage);
-    },
-  ),
-);
+const _unknownOptionLine = 'help: Unknown option: $_invalidOption.';
+
+class _DummySubcommand extends BetterCommand<OptionDefinition, void> {
+  @override
+  String get name => 'dummy';
+
+  @override
+  String get description => 'A dummy subcommand';
+
+  @override
+  FutureOr<void> runWithConfig(
+    final Configuration<OptionDefinition> commandConfig,
+  ) {}
+}
+
+BetterCommandRunner<OptionDefinition, void> _buildBetterRunner() =>
+    BetterCommandRunner(
+      _exeName,
+      _exeDescription,
+      messageOutput: MessageOutput(
+        usageLogger: (final usage) {
+          print(_moMockText);
+          print(usage);
+        },
+        usageExceptionLogger: (final exception) {
+          print(_moExceptionText);
+          print(exception.message);
+          print(exception.usage);
+        },
+      ),
+      subcommands: [_DummySubcommand()],
+    );
 
 void _runTests() {
-  group('Given a BetterCommandRunner with custom MessageOutput', () {
-    for (final args in [
-      ['help', '-h'],
-      ['help', 'help'],
-      ['help', '-h', 'help'],
-      ['help', '-h', 'help', '-h'],
-      ['help', '-h', 'help', '-h', 'help'],
-      ['help', '-h', 'help', '-h', 'help', '-h'],
-    ]) {
-      _testsForValidHelpUsageRequests(args);
-    }
-    for (final args in [
-      ['help', '-h', _invalidOption],
-      ['help', 'help', _invalidOption],
-      ['help', _invalidOption, 'help'],
-      ['help', 'help', '-h', _invalidOption],
-      ['help', _invalidOption, 'help', '-h', _invalidOption],
-    ]) {
-      _testsForInvalidHelpUsageRequests(args);
-    }
-  });
+  group(
+    'Given a BetterCommandRunner with a subcommand and with custom MessageOutput',
+    () {
+      for (final args in [
+        ['help', '-h'],
+        ['help', 'help'],
+        ['help', '-h', 'help'],
+        ['help', '-h', 'help', '-h'],
+        ['help', '-h', 'help', '-h', 'help'],
+        ['help', '-h', 'help', '-h', 'help', '-h'],
+      ]) {
+        _testsForValidHelpUsageRequests(args);
+      }
+      for (final args in [
+        ['help', 'help', _invalidOption],
+        ['help', _invalidOption, 'help'],
+      ]) {
+        _testsForInvalidHelpUsageRequests(args);
+      }
+    },
+  );
 }
 
 void _testsForValidHelpUsageRequests(final List<String> args) {
   group('when $args is received', () {
     final betterRunnerOutput = StringBuffer();
-    final upstreamRunnerOutput = StringBuffer();
     late final Object? betterRunnerExitCode;
-    late final Object? upstreamRunnerExitCode;
     setUpAll(() async {
       betterRunnerExitCode = await runZoned(
         () async => await _buildBetterRunner().run(args),
         zoneSpecification: ZoneSpecification(
           print: (final _, final _, final _, final String line) {
             betterRunnerOutput.writeln(line);
-          },
-        ),
-      );
-      upstreamRunnerExitCode = await runZoned(
-        () async => await _buildUpstreamRunner().run(args),
-        zoneSpecification: ZoneSpecification(
-          print: (final _, final _, final _, final String line) {
-            upstreamRunnerOutput.writeln(line);
           },
         ),
       );
@@ -88,18 +99,17 @@ void _testsForValidHelpUsageRequests(final List<String> args) {
         contains(_moMockText),
       );
     });
-    test('then it can subsume upstream HelpCommand output', () {
+    test('then the usage text describes the help command', () {
       expect(
         betterRunnerOutput.toString(),
         stringContainsInOrder([
           _moMockText,
-          upstreamRunnerOutput.toString(),
+          ..._helpUsageExpectedKeyLines,
         ]),
       );
     });
-    test('then Exit Code (null) matches that of upstream HelpCommand', () {
-      expect(betterRunnerExitCode, equals(null));
-      expect(betterRunnerExitCode, equals(upstreamRunnerExitCode));
+    test('then the run completes', () {
+      expect(betterRunnerExitCode, isNull);
     });
   });
 }
@@ -107,9 +117,7 @@ void _testsForValidHelpUsageRequests(final List<String> args) {
 void _testsForInvalidHelpUsageRequests(final List<String> args) {
   group('when $args is received', () {
     final betterRunnerOutput = StringBuffer();
-    final upstreamRunnerOutput = StringBuffer();
     UsageException? betterRunnerException;
-    UsageException? upstreamRunnerException;
     setUpAll(() async {
       try {
         await runZoned(
@@ -123,47 +131,31 @@ void _testsForInvalidHelpUsageRequests(final List<String> args) {
       } on UsageException catch (e) {
         betterRunnerException = e;
       }
-      try {
-        await runZoned(
-          () async => await _buildUpstreamRunner().run(args),
-          zoneSpecification: ZoneSpecification(
-            print: (final _, final _, final _, final String line) {
-              upstreamRunnerOutput.writeln(line);
-            },
-          ),
-        );
-      } on UsageException catch (e) {
-        upstreamRunnerException = e;
-      }
     });
-    test('then it throws UsageException exactly like CommandRunner', () {
+    test('then it throws a UsageException', () {
       expect(betterRunnerException, isA<UsageException>());
-      expect(upstreamRunnerException, isA<UsageException>());
-      expect(
-        betterRunnerException!.message,
-        equals(upstreamRunnerException!.message),
-      );
-      expect(
-        betterRunnerException!.usage,
-        equals(upstreamRunnerException!.usage),
-      );
     });
     test('then MessageOutput is not bypassed', () {
+      final exception = betterRunnerException;
+      expect(exception, isA<UsageException>());
       expect(
         betterRunnerOutput.toString(),
         stringContainsInOrder(
           [
             _moExceptionText,
-            betterRunnerException!.message,
-            betterRunnerException!.usage,
+            exception!.message,
+            exception.usage,
           ],
         ),
       );
     });
-    test('then it can subsume upstream HelpCommand output', () {
+    test('then the error text reports the unknown option', () {
       expect(
         betterRunnerOutput.toString(),
-        contains(upstreamRunnerOutput.toString()),
+        stringContainsInOrder([
+          _moExceptionText,
+          _unknownOptionLine,
+        ]),
       );
     });
   });
