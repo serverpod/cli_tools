@@ -1,7 +1,11 @@
+import 'dart:io' show exit;
+
 import 'package:cli_tools/cli_tools.dart';
+import 'package:config/command.dart'
+    show Middlewares, CommandContext, CommandImpl;
 import 'package:config/config.dart';
 
-Future<int> main(final List<String> args) async {
+Future<void> main(final List<String> args) async {
   final commandRunner = BetterCommandRunner(
     'example',
     'Example CLI command',
@@ -12,36 +16,48 @@ Future<int> main(final List<String> args) async {
   );
   commandRunner.addCommand(TimeSeriesCommand());
 
+  // Simple example of using the [StdOutLogger] class, and passing a global
+  // logger to commands via the [ContextProvider].
+
+  commandRunner.addMiddleware(
+    Middlewares.onBeforeRun((final CommandContext context) {
+      final LogLevel logLevel;
+      if (context.config.value(StandardGlobalOption.verbose)) {
+        logLevel = LogLevel.debug;
+      } else if (context.config.value(StandardGlobalOption.quiet)) {
+        logLevel = LogLevel.error;
+      } else {
+        logLevel = LogLevel.info;
+      }
+      final logger = StdOutLogger(logLevel);
+      context.provider.store(logger);
+    }),
+  );
+
+  commandRunner.addCommand(
+    CommandImpl.leafWithRunFunction(
+      name: 'log',
+      description: 'Log a message',
+      run: (final CommandContext context) async {
+        final logger = context.provider.fetch<StdOutLogger>();
+        logger.info('An info message');
+        logger.error('An error message');
+        logger.debug(
+          'A debug message that will not be shown unless --verbose is set',
+        );
+        await logger.progress(
+          'A progress message',
+          () async => Future.delayed(const Duration(seconds: 3), () => true),
+        );
+      },
+    ),
+  );
+
   try {
     await commandRunner.run(args);
-  } on UsageException catch (e) {
-    print(e);
-    return 1;
+  } on UsageException {
+    exit(1);
   }
-
-  /// Simple example of using the [StdOutLogger] class.
-  final LogLevel logLevel;
-  if (commandRunner.globalConfiguration.value(StandardGlobalOption.verbose)) {
-    logLevel = LogLevel.debug;
-  } else if (commandRunner.globalConfiguration.value(
-    StandardGlobalOption.quiet,
-  )) {
-    logLevel = LogLevel.error;
-  } else {
-    logLevel = LogLevel.info;
-  }
-  final logger = StdOutLogger(logLevel);
-
-  logger.info('An info message');
-  logger.error('An error message');
-  logger.debug(
-    'A debug message that will not be shown unless --verbose is set',
-  );
-  await logger.progress(
-    'A progress message',
-    () async => Future.delayed(const Duration(seconds: 3), () => true),
-  );
-  return 0;
 }
 
 /// Options are defineable as enums as well as regular lists.
