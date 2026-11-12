@@ -26,7 +26,7 @@ ArgParseResult<O> scanAndParseArgs<O extends OptionDefinition>(
 }) {
   validateOptions(options);
 
-  final scannedArgs = scanArgs(args).toList();
+  final scannedArgs = scanArgs(args);
 
   return _parseArgs(
     _ArgCursor(scannedArgs),
@@ -52,7 +52,7 @@ ArgParseResult<O> scanAndParseCommands<O extends OptionDefinition>(
 }) {
   _validateCommandsAndOptions(rootCommand);
 
-  final scannedArgs = scanArgs(args).toList();
+  final scannedArgs = scanArgs(args);
 
   return _parseArgs(
     _ArgCursor(scannedArgs),

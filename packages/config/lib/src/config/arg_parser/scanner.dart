@@ -112,11 +112,9 @@ class ScanMode {
 /// A command name may itself be option syntax (`--version`, `-v`). This
 /// scanner still classifies that argument as an option, but the parser may
 /// then select it as a subcommand when no option matches.
-Iterable<ScannedArg> scanArgs(final Iterable<String> args) sync* {
-  for (final arg in args) {
-    yield _scanArg(arg);
-  }
-}
+List<ScannedArg> scanArgs(final Iterable<String> args) => [
+  for (final arg in args) ScannedArg(arg, _scanTokens(arg)),
+];
 
 /// If [arg] is written as an option that would take its value from the
 /// next argument, returns the spelling of that option: `--name` for a
@@ -128,7 +126,7 @@ Iterable<ScannedArg> scanArgs(final Iterable<String> args) sync* {
 /// the next argument as their value. Whether the option actually takes
 /// a value is up to the caller.
 String? optionAwaitingValue(final String arg) {
-  final tokens = scanArgs([arg]).first.tokens;
+  final tokens = _scanTokens(arg);
   if (tokens.isEmpty) return null;
   return switch (tokens.last) {
     LongOptionToken(:final string) => '--$string',
@@ -137,39 +135,24 @@ String? optionAwaitingValue(final String arg) {
   };
 }
 
-ScannedArg _scanArg(final String arg) {
+List<Token> _scanTokens(final String arg) {
+  if (arg == '--') return const [DoubleDashToken()];
+  if (arg == '-') return const [SingleDashToken()];
+
+  final equalIndex = arg.indexOf('=');
+  final hasValue = equalIndex != -1;
+  final nameEnd = hasValue ? equalIndex : arg.length;
+  final value = [if (hasValue) ValueToken(arg.substring(equalIndex + 1))];
+
   if (arg.startsWith('--')) {
-    if (arg.length == 2) {
-      return const ScannedArg('--', [DoubleDashToken()]);
-    }
-
-    final equalIndex = arg.indexOf('=');
-    if (equalIndex != -1) {
-      return ScannedArg(arg, [
-        LongOptionToken(arg.substring(2, equalIndex)),
-        ValueToken(arg.substring(equalIndex + 1)),
-      ]);
-    }
-
-    return ScannedArg(arg, [LongOptionToken(arg.substring(2))]);
+    return [LongOptionToken(arg.substring(2, nameEnd)), ...value];
   }
-
   if (arg.startsWith('-')) {
-    if (arg.length == 1) {
-      return const ScannedArg('-', [SingleDashToken()]);
-    }
-
-    final tokens = <Token>[];
-    for (final (_, ch) in arg.substring(1).characters.indexed) {
-      if (ch == '=') {
-        final equalIndex = arg.indexOf('=');
-        tokens.add(ValueToken(arg.substring(equalIndex + 1)));
-        return ScannedArg(arg, tokens);
-      }
-      tokens.add(ShortOptionToken(ch));
-    }
-    return ScannedArg(arg, tokens);
+    return [
+      for (final ch in arg.substring(1, nameEnd).characters)
+        ShortOptionToken(ch),
+      ...value,
+    ];
   }
-
-  return ScannedArg(arg, [WordToken(arg)]);
+  return [WordToken(arg)];
 }
