@@ -1,6 +1,11 @@
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 
+/// Builds analytics properties for the command line represented by [topLevelResults]
+/// from the legacy `args` package.
+///
+/// See [buildCommandLinePropertiesForAnalytics] for analytics properties with
+/// the new Command framework.
 Map<String, dynamic> buildCommandPropertiesForAnalytics({
   required final ArgResults topLevelResults,
   required final ArgParser argParser,
