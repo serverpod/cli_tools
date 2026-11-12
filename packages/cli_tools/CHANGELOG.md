@@ -1,3 +1,10 @@
+## 0.14.0
+
+> Note: This release has breaking changes.
+
+ - **FEAT**(config): New command line arguments parser ([#130](https://github.com/serverpod/cli_tools/issues/130)). ([aa1d64e5](https://github.com/serverpod/cli_tools/commit/aa1d64e55922dc77e2adb5d87bc67ae759a26595))
+ - **BREAKING** **CHORE**: Bumped min Dart SDK version to 3.9.0 ([#131](https://github.com/serverpod/cli_tools/issues/131)). ([712e19ac](https://github.com/serverpod/cli_tools/commit/712e19aca0856f83f1f04f91db9018e5eda6e04b))
+
 ## 0.13.2
 
 - **FIX**(cli_tools): Prevent analytics send failures from crashing the host process. ([#125](https://github.com/serverpod/cli_tools/pull/125)). ([2dcce5b5](https://github.com/serverpod/cli_tools/commit/2dcce5b588caa3df8db8943a48de2036ddbc836e))

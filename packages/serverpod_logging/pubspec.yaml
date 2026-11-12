@@ -1,6 +1,6 @@
 name: serverpod_logging
 description: Shared serverpod logging utilities.
-version: 0.1.0
+version: 0.2.0
 repository: https://github.com/serverpod/serverpod
 homepage: https://serverpod.dev
 issue_tracker: https://github.com/serverpod/serverpod/issues
@@ -11,7 +11,7 @@ environment:
 resolution: workspace
 
 dependencies:
-  isolated_object: ^0.1.0
+  isolated_object: ^0.2.0
   meta: ^1.15.0
 
 dev_dependencies:
