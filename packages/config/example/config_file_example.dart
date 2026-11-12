@@ -41,21 +41,25 @@ Future<int> main(final List<String> args) async {
 }
 
 enum TimeSeriesOption<V> implements OptionDefinition<V> {
-  configFile(FileOption(
-    argName: 'config',
-    envName: 'CONFIG_FILE',
-    helpText: 'The path to the config file',
-    fromDefault: _defaultConfigFilePath,
-    mode: PathExistMode.mustExist,
-  )),
-  interval(DurationOption(
-    argName: 'interval',
-    argAbbrev: 'i',
-    configKey: '/interval', // JSON pointer
-    helpText: 'The interval between the series elements',
-    min: Duration(seconds: 1),
-    max: Duration(days: 1),
-  ));
+  configFile(
+    FileOption(
+      argName: 'config',
+      envName: 'CONFIG_FILE',
+      helpText: 'The path to the config file',
+      fromDefault: _defaultConfigFilePath,
+      mode: PathExistMode.mustExist,
+    ),
+  ),
+  interval(
+    DurationOption(
+      argName: 'interval',
+      argAbbrev: 'i',
+      configKey: '/interval', // JSON pointer
+      helpText: 'The interval between the series elements',
+      min: Duration(seconds: 1),
+      max: Duration(days: 1),
+    ),
+  );
 
   const TimeSeriesOption(this.option);
 

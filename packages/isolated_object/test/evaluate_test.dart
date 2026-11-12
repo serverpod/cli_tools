@@ -17,16 +17,14 @@ void main() {
       await isolated.close();
     });
 
-    test(
-        'Given an IsolatedObject, '
+    test('Given an IsolatedObject, '
         'when evaluate is called with a getter, '
         'then it returns the correct value', () async {
       final result = await isolated.evaluate((counter) => counter.value);
       expect(result, 0);
     });
 
-    test(
-        'Given an IsolatedObject, '
+    test('Given an IsolatedObject, '
         'when evaluate is called with a mutation, '
         'then the state persists across evaluations', () async {
       await isolated.evaluate((counter) {
@@ -38,8 +36,7 @@ void main() {
       expect(result, 1);
     });
 
-    test(
-        'Given an IsolatedObject, '
+    test('Given an IsolatedObject, '
         'when evaluate is called multiple times sequentially, '
         'then all operations execute correctly', () async {
       await isolated.evaluate((counter) => counter.increment());
@@ -50,8 +47,7 @@ void main() {
       expect(result, 3);
     });
 
-    test(
-        'Given an IsolatedObject, '
+    test('Given an IsolatedObject, '
         'when evaluate is called with multiple concurrent operations, '
         'then all operations complete successfully', () async {
       final futures = List.generate(
@@ -65,8 +61,7 @@ void main() {
       expect(result, 10);
     });
 
-    test(
-        'Given an IsolatedObject, '
+    test('Given an IsolatedObject, '
         'when evaluate is called with different return types, '
         'then it returns the correct types', () async {
       final intResult = await isolated.evaluate<int>(
@@ -88,8 +83,7 @@ void main() {
       expect(boolResult, false);
     });
 
-    test(
-        'Given an IsolatedObject, '
+    test('Given an IsolatedObject, '
         'when evaluate is called with async function, '
         'then it awaits the result correctly', () async {
       await isolated.evaluate((counter) async {
@@ -101,8 +95,7 @@ void main() {
       expect(result, 1);
     });
 
-    test(
-        'Given an IsolatedObject, '
+    test('Given an IsolatedObject, '
         'when evaluate is called with a void function that throws, '
         'then it propagates the error', () async {
       await expectLater(
@@ -115,8 +108,7 @@ void main() {
   });
 
   group('error handling', () {
-    test(
-        'Given an IsolatedObject, '
+    test('Given an IsolatedObject, '
         'when a function throws in the isolate, '
         'then RemoteError contains error information', () async {
       final isolated = IsolatedObject<_Counter>(() => _Counter(0));
@@ -133,8 +125,7 @@ void main() {
       }
     });
 
-    test(
-        'Given an IsolatedObject, '
+    test('Given an IsolatedObject, '
         'when an error occurs, '
         'then subsequent operations still work', () async {
       final isolated = IsolatedObject<_Counter>(() => _Counter(5));
@@ -155,8 +146,7 @@ void main() {
   });
 
   group('concurrent operations', () {
-    test(
-        'Given an IsolatedObject, '
+    test('Given an IsolatedObject, '
         'when many operations are queued concurrently, '
         'then all complete with unique IDs', () async {
       final isolated = IsolatedObject<_Counter>(() => _Counter(0));
@@ -180,8 +170,7 @@ void main() {
       await isolated.close();
     });
 
-    test(
-        'Given an IsolatedObject, '
+    test('Given an IsolatedObject, '
         'when concurrent operations include some that throw, '
         'then successful operations still complete', () async {
       final isolated = IsolatedObject<_Counter>(() => _Counter(0));
@@ -207,8 +196,7 @@ void main() {
   });
 
   group('complex objects', () {
-    test(
-        'Given an IsolatedObject with a complex state object, '
+    test('Given an IsolatedObject with a complex state object, '
         'when operations modify nested state, '
         'then changes persist correctly', () async {
       final isolated = IsolatedObject<_ComplexObject>(() => _ComplexObject());
@@ -224,8 +212,7 @@ void main() {
       await isolated.close();
     });
 
-    test(
-        'Given an IsolatedObject with state, '
+    test('Given an IsolatedObject with state, '
         'when evaluating functions that return lists, '
         'then lists are correctly transferred', () async {
       final isolated = IsolatedObject<_ComplexObject>(() => _ComplexObject());

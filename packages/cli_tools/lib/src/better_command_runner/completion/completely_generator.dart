@@ -51,7 +51,7 @@ class CompletelyYamlGenerator implements UsageRepresentationGenerator {
     final allOptions = [
       ...inheritedOptions,
       ...usage.persistentOptions,
-      ...usage.options
+      ...usage.options,
     ];
 
     // options

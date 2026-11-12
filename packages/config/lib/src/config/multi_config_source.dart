@@ -44,9 +44,9 @@ class MultiDomainConfigBroker<O extends OptionDefinition>
   MultiDomainConfigBroker.regex(
     final Map<String, ConfigSourceProvider<O>> regexDomains,
   ) : this._({
-          for (final entry in regexDomains.entries)
-            RegExp(entry.key): entry.value,
-        });
+        for (final entry in regexDomains.entries)
+          RegExp(entry.key): entry.value,
+      });
 
   /// Creates a [MultiDomainConfigBroker] from a map with domain prefixes as keys.
   /// Each configuration value will be identified by a qualified key,
@@ -59,9 +59,8 @@ class MultiDomainConfigBroker<O extends OptionDefinition>
   MultiDomainConfigBroker.prefix(
     final Map<String, ConfigSourceProvider<O>> prefixDomains,
   ) : this._({
-          for (final entry in prefixDomains.entries)
-            '${entry.key}:': entry.value,
-        });
+        for (final entry in prefixDomains.entries) '${entry.key}:': entry.value,
+      });
 
   @override
   Object? valueOrNull(
@@ -75,7 +74,8 @@ class MultiDomainConfigBroker<O extends OptionDefinition>
         .firstWhere(
           (final matches) => matches.$2 != null,
           orElse: () => throw StateError(
-              'No matching configuration domain for key: $qualifiedKey'),
+            'No matching configuration domain for key: $qualifiedKey',
+          ),
         );
 
     final configSource = matchingProvider.$1.value.getConfigSource(cfg);

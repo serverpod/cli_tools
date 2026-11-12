@@ -5,8 +5,7 @@ import 'package:isolated_object/isolated_object.dart';
 import 'package:test/test.dart';
 
 void main() {
-  test(
-      'Given an open IsolatedObject, '
+  test('Given an open IsolatedObject, '
       'then isClosed is false until close is called', () async {
     final isolated = IsolatedObject<_Counter>(() => _Counter(0));
 
@@ -15,8 +14,7 @@ void main() {
     expect(isolated.isClosed, isTrue);
   });
 
-  test(
-      'Given a closed IsolatedObject, '
+  test('Given a closed IsolatedObject, '
       'when evaluate is called, '
       'then it throws a StateError', () async {
     final isolated = IsolatedObject<_Counter>(() => _Counter(0));
@@ -28,8 +26,7 @@ void main() {
     );
   });
 
-  test(
-      'Given keepIsolateAlive: false, '
+  test('Given keepIsolateAlive: false, '
       'when the object is used, '
       'then it still evaluates correctly', () async {
     final isolated = IsolatedObject<_Counter>(

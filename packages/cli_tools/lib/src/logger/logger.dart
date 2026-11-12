@@ -13,20 +13,29 @@ abstract class Logger {
   /// Display debug [message] to the user.
   /// Commands should use this for information that is important for
   /// debugging purposes.
-  void debug(final String message,
-      {final bool newParagraph, final LogType type});
+  void debug(
+    final String message, {
+    final bool newParagraph,
+    final LogType type,
+  });
 
   /// Display a normal [message] to the user.
   /// Command should use this as the standard communication channel for
   /// success, progress or information messages.
-  void info(final String message,
-      {final bool newParagraph, final LogType type});
+  void info(
+    final String message, {
+    final bool newParagraph,
+    final LogType type,
+  });
 
   /// Display a warning [message] to the user.
   /// Commands should use this if they have important but not critical
   /// information for the user.
-  void warning(final String message,
-      {final bool newParagraph, final LogType type});
+  void warning(
+    final String message, {
+    final bool newParagraph,
+    final LogType type,
+  });
 
   /// Display an error [message] to the user.
   /// Commands should use this if they want to inform a user that an error

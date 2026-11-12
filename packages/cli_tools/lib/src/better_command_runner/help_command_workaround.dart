@@ -60,5 +60,6 @@ final class HelpCommandWorkaround extends Command {
 
   @override
   Never run() => throw UnimplementedError(
-      'This class is meant to only obtain the Usage Text for `$name` command');
+    'This class is meant to only obtain the Usage Text for `$name` command',
+  );
 }

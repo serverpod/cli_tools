@@ -17,7 +17,8 @@ class CommandRunnerWithFooter extends CommandRunner {
 
 class CommandRunnerWithFooterAndWrapping extends CommandRunner {
   @override
-  String get usageFooter => 'LONG footer! '
+  String get usageFooter =>
+      'LONG footer! '
       'This is a long footer, so we can check wrapping on long footer messages.'
       '\n\n'
       'And make sure that they preserve newlines properly.';
@@ -346,12 +347,20 @@ void throwsIllegalArg(void Function() function, {String? reason}) {
 }
 
 void throwsFormat(ArgParser parser, List<String> args, {String? reason}) {
-  expect(() => parser.parse(args), throwsA(isA<FormatException>()),
-      reason: reason);
+  expect(
+    () => parser.parse(args),
+    throwsA(isA<FormatException>()),
+    reason: reason,
+  );
 }
 
-void throwsArgParserException(ArgParser parser, List<String> args,
-    String message, List<String> commands, String arg) {
+void throwsArgParserException(
+  ArgParser parser,
+  List<String> args,
+  String message,
+  List<String> commands,
+  String arg,
+) {
   try {
     parser.parse(args);
     fail('Expected an ArgParserException');
@@ -364,7 +373,8 @@ void throwsArgParserException(ArgParser parser, List<String> args,
   }
 }
 
-Matcher throwsUsageException(Object? message, Object? usage) =>
-    throwsA(isA<UsageException>()
-        .having((e) => e.message, 'message', message)
-        .having((e) => e.usage, 'usage', usage));
+Matcher throwsUsageException(Object? message, Object? usage) => throwsA(
+  isA<UsageException>()
+      .having((e) => e.message, 'message', message)
+      .having((e) => e.usage, 'usage', usage),
+);

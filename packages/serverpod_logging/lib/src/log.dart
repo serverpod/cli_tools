@@ -71,39 +71,39 @@ class Log {
 extension LogConvenience on Log {
   /// Logs [message] at [LogLevel.debug].
   void debug(String message, {Map<String, Object?>? metadata}) => this(
-        LogLevel.debug,
-        () => LogEntry(
-          time: DateTime.now(),
-          level: LogLevel.debug,
-          message: message,
-          scope: currentScope,
-          metadata: metadata,
-        ),
-      );
+    LogLevel.debug,
+    () => LogEntry(
+      time: DateTime.now(),
+      level: LogLevel.debug,
+      message: message,
+      scope: currentScope,
+      metadata: metadata,
+    ),
+  );
 
   /// Logs [message] at [LogLevel.info].
   void info(String message, {Map<String, Object?>? metadata}) => this(
-        LogLevel.info,
-        () => LogEntry(
-          time: DateTime.now(),
-          level: LogLevel.info,
-          message: message,
-          scope: currentScope,
-          metadata: metadata,
-        ),
-      );
+    LogLevel.info,
+    () => LogEntry(
+      time: DateTime.now(),
+      level: LogLevel.info,
+      message: message,
+      scope: currentScope,
+      metadata: metadata,
+    ),
+  );
 
   /// Logs [message] at [LogLevel.warning].
   void warning(String message, {Map<String, Object?>? metadata}) => this(
-        LogLevel.warning,
-        () => LogEntry(
-          time: DateTime.now(),
-          level: LogLevel.warning,
-          message: message,
-          scope: currentScope,
-          metadata: metadata,
-        ),
-      );
+    LogLevel.warning,
+    () => LogEntry(
+      time: DateTime.now(),
+      level: LogLevel.warning,
+      message: message,
+      scope: currentScope,
+      metadata: metadata,
+    ),
+  );
 
   /// Logs [message] at [LogLevel.error], optionally attaching an [error]
   /// value and [stackTrace].
@@ -112,19 +112,18 @@ extension LogConvenience on Log {
     Object? error,
     StackTrace? stackTrace,
     Map<String, Object?>? metadata,
-  }) =>
-      this(
-        LogLevel.error,
-        () => LogEntry(
-          time: DateTime.now(),
-          level: LogLevel.error,
-          message: message,
-          scope: currentScope,
-          error: error,
-          stackTrace: stackTrace,
-          metadata: metadata,
-        ),
-      );
+  }) => this(
+    LogLevel.error,
+    () => LogEntry(
+      time: DateTime.now(),
+      level: LogLevel.error,
+      message: message,
+      scope: currentScope,
+      error: error,
+      stackTrace: stackTrace,
+      metadata: metadata,
+    ),
+  );
 
   /// Whether debug-level messages are currently forwarded to the writer.
   /// Use to gate expensive message construction:

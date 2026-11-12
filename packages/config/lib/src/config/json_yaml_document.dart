@@ -15,10 +15,10 @@ class JsonYamlDocument {
   final Object? _document;
 
   JsonYamlDocument.fromJson(final String jsonSource)
-      : _document = jsonSource.isEmpty ? null : jsonDecode(jsonSource);
+    : _document = jsonSource.isEmpty ? null : jsonDecode(jsonSource);
 
   JsonYamlDocument.fromYaml(final String yamlSource)
-      : _document = loadYaml(yamlSource);
+    : _document = loadYaml(yamlSource);
 
   /// {@macro json_yaml_document.valueAtPointer}
   Object? valueAtPointer(final String pointerKey) {

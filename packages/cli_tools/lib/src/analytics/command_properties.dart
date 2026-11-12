@@ -40,9 +40,11 @@ class _CommandPropertiesBuilder {
   }
 
   void _collectOptions() {
-    for (ArgResults? current = topLevelResults;
-        current != null;
-        current = current.command) {
+    for (
+      ArgResults? current = topLevelResults;
+      current != null;
+      current = current.command
+    ) {
       _addOptions(current);
     }
   }

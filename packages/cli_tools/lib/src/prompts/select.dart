@@ -23,8 +23,7 @@ Future<Option> select(
     prompt,
     options: options,
     logger: logger,
-  ))
-      .first;
+  )).first;
 }
 
 /// Prompts the user to select multiple options from a list of [options].
@@ -209,7 +208,7 @@ void _clearTerminal() {
 const _underlineSelectGraphicRenditionControlSequence = '\x1B[4m';
 const _resetSelectGraphicRenditionControlSequence = '\x1B[0m';
 String underline(final String text) => [
-      _underlineSelectGraphicRenditionControlSequence,
-      text,
-      _resetSelectGraphicRenditionControlSequence,
-    ].join('');
+  _underlineSelectGraphicRenditionControlSequence,
+  text,
+  _resetSelectGraphicRenditionControlSequence,
+].join('');

@@ -19,9 +19,9 @@ class ServerpodCliLogger extends cli.Logger {
   final LogWriter _writer;
 
   ServerpodCliLogger(LogWriter writer, {LogLevel logLevel = LogLevel.info})
-      : _writer = writer,
-        _log = Log(writer, logLevel: logLevel),
-        super(toCliLogLevel(logLevel));
+    : _writer = writer,
+      _log = Log(writer, logLevel: logLevel),
+      super(toCliLogLevel(logLevel));
 
   /// Releases any resources held by the underlying writer.
   Future<void> close() async {
@@ -44,24 +44,21 @@ class ServerpodCliLogger extends cli.Logger {
     String message, {
     bool newParagraph = false,
     cli.LogType type = cli.TextLogType.normal,
-  }) =>
-      _call(LogLevel.debug, message, type: type);
+  }) => _call(LogLevel.debug, message, type: type);
 
   @override
   void info(
     String message, {
     bool newParagraph = false,
     cli.LogType type = cli.TextLogType.normal,
-  }) =>
-      _call(LogLevel.info, message, type: type);
+  }) => _call(LogLevel.info, message, type: type);
 
   @override
   void warning(
     String message, {
     bool newParagraph = false,
     cli.LogType type = cli.TextLogType.normal,
-  }) =>
-      _call(LogLevel.warning, message, type: type);
+  }) => _call(LogLevel.warning, message, type: type);
 
   @override
   void error(
@@ -69,8 +66,7 @@ class ServerpodCliLogger extends cli.Logger {
     bool newParagraph = false,
     StackTrace? stackTrace,
     cli.LogType type = cli.TextLogType.normal,
-  }) =>
-      _call(LogLevel.error, message, stackTrace: stackTrace, type: type);
+  }) => _call(LogLevel.error, message, stackTrace: stackTrace, type: type);
 
   @override
   void log(
@@ -201,18 +197,18 @@ class ServerpodCliLogger extends cli.Logger {
   bool get _silent => super.logLevel == cli.LogLevel.nothing;
 
   static LogLevel _mapLogLevel(cli.LogLevel level) => switch (level) {
-        cli.LogLevel.debug => LogLevel.debug,
-        cli.LogLevel.info => LogLevel.info,
-        cli.LogLevel.warning => LogLevel.warning,
-        cli.LogLevel.error => LogLevel.error,
-        // The setter early-returns before reaching here, so this branch only
-        // fires from log() / write() being called with nothing as a message
-        // level - which is a programmer error worth surfacing.
-        cli.LogLevel.nothing => throw ArgumentError.value(
-            level,
-            'level',
-            'cli.LogLevel.nothing is a filter sentinel; it cannot be used as a '
-                'message level',
-          ),
-      };
+    cli.LogLevel.debug => LogLevel.debug,
+    cli.LogLevel.info => LogLevel.info,
+    cli.LogLevel.warning => LogLevel.warning,
+    cli.LogLevel.error => LogLevel.error,
+    // The setter early-returns before reaching here, so this branch only
+    // fires from log() / write() being called with nothing as a message
+    // level - which is a programmer error worth surfacing.
+    cli.LogLevel.nothing => throw ArgumentError.value(
+      level,
+      'level',
+      'cli.LogLevel.nothing is a filter sentinel; it cannot be used as a '
+          'message level',
+    ),
+  };
 }

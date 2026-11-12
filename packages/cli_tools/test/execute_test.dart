@@ -9,8 +9,13 @@ import 'test_utils/mock_stdout.dart';
 
 Future<String> compileDriver() async {
   final driverExe = p.join(Directory.systemTemp.path, 'execute_driver.exe');
-  final result = await Process.run(
-      'dart', ['compile', 'exe', 'test/execute_driver.dart', '-o', driverExe]);
+  final result = await Process.run('dart', [
+    'compile',
+    'exe',
+    'test/execute_driver.dart',
+    '-o',
+    driverExe,
+  ]);
   if (result.exitCode != 0) throw StateError('Failed to compile driver');
   return driverExe;
 }
@@ -46,8 +51,10 @@ void main() {
       () async {
         final result = await runDriver('fhasjkhfs');
         expect(result.exitCode, isNot(0));
-        expect(result.stderr,
-            contains(Platform.isWindows ? 'not recognized' : 'not found'));
+        expect(
+          result.stderr,
+          contains(Platform.isWindows ? 'not recognized' : 'not found'),
+        );
       },
     );
 
@@ -56,7 +63,8 @@ void main() {
       () async {
         // Use trap to catch signal in child
         final process = await startDriver(
-            'trap "echo SIGINT; exit 0" INT; echo "Running"; while :; do sleep 0.1; done');
+          'trap "echo SIGINT; exit 0" INT; echo "Running"; while :; do sleep 0.1; done',
+        );
 
         // Collect stdout incrementally
         final stdoutBuffer = StringBuffer();

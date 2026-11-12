@@ -28,13 +28,14 @@ void main() {
       'test',
       'this is a test cli',
       messageOutput: const MessageOutput(),
-      setLogLevel: ({
-        required final CommandRunnerLogLevel parsedLogLevel,
-        final String? commandName,
-      }) {
-        logLevel = parsedLogLevel;
-        parsedCommandName = commandName;
-      },
+      setLogLevel:
+          ({
+            required final CommandRunnerLogLevel parsedLogLevel,
+            final String? commandName,
+          }) {
+            logLevel = parsedLogLevel;
+            parsedCommandName = commandName;
+          },
     );
 
     group('when no flags are provided', () {
@@ -95,13 +96,14 @@ void main() {
     final runner = BetterCommandRunner(
       'test',
       'this is a test cli',
-      setLogLevel: ({
-        required final CommandRunnerLogLevel parsedLogLevel,
-        final String? commandName,
-      }) {
-        logLevel = parsedLogLevel;
-        parsedCommandName = commandName;
-      },
+      setLogLevel:
+          ({
+            required final CommandRunnerLogLevel parsedLogLevel,
+            final String? commandName,
+          }) {
+            logLevel = parsedLogLevel;
+            parsedCommandName = commandName;
+          },
     )..addCommand(MockCommand());
 
     test(
