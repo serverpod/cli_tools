@@ -1,3 +1,5 @@
+import 'dart:io' show exit;
+
 import 'package:cli_tools/better_command_runner.dart';
 import 'package:config/config.dart';
 
@@ -13,7 +15,7 @@ import 'package:config/config.dart';
 /// ```sh
 /// INTERVAL=1s dart run example/simple_command_example.dart show
 /// ```
-Future<int> main(final List<String> args) async {
+Future<void> main(final List<String> args) async {
   final commandRunner = BetterCommandRunner(
     'example',
     'Example CLI command',
@@ -22,11 +24,9 @@ Future<int> main(final List<String> args) async {
 
   try {
     await commandRunner.run(args);
-  } on UsageException catch (e) {
-    print(e);
-    return 1;
+  } on UsageException {
+    exit(1);
   }
-  return 0;
 }
 
 enum ShowOption<V extends Object> implements OptionDefinition<V> {
