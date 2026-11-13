@@ -3,7 +3,7 @@ description: >-
   Wraps an object in a dedicated isolate and forwards method calls to it, so
   timer- or event-loop-driven work (e.g. progress spinners) keeps running even
   when the calling isolate's event loop is blocked. Dependency-free.
-version: 0.1.0
+version: 0.2.0
 repository: https://github.com/serverpod/serverpod
 homepage: https://serverpod.dev
 issue_tracker: https://github.com/serverpod/serverpod/issues
