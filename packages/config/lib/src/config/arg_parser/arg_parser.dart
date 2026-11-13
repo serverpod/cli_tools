@@ -7,6 +7,7 @@ export 'parser.dart'
         ArgParseResult,
         scanAndParseArgs,
         scanAndParseCommands,
+        subcommandRequiredErrorPrefix,
         unknownSubcommandErrorPrefix;
 export 'parser_settings.dart';
 export 'scanner.dart' show optionAwaitingValue;

@@ -15,6 +15,10 @@ import 'suggestions.dart';
 /// is not a known subcommand of a command that has subcommands.
 const String unknownSubcommandErrorPrefix = 'Unknown subcommand: ';
 
+/// The start of the [ArgParseResult.errors] message recorded when a command
+/// that cannot run on its own is invoked without a subcommand.
+const String subcommandRequiredErrorPrefix = 'A subcommand is required under ';
+
 /// Scans the arguments and parses them into an [ArgParseResult]
 /// corresponding to a single set of options.
 ///
@@ -344,7 +348,7 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
       !command.canRunAsLeafCommand &&
       result.child == null &&
       !rejectedSubcommand) {
-    result.errors.add('A subcommand is required under ${command.name}');
+    result.errors.add('$subcommandRequiredErrorPrefix${command.name}');
   }
 
   return result;
