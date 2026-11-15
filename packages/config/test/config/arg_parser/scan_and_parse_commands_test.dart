@@ -231,11 +231,14 @@ void main() {
       expect(parse(['tool']).errors, ['Unknown subcommand: "tool"']);
     });
 
-    test('when the first word is empty then the closest command is suggested', () {
-      expect(parse(['']).errors, [
-        'Unknown subcommand: "" (Did you mean mid?)',
-      ]);
-    });
+    test(
+      'when the first word is empty then the closest command is suggested',
+      () {
+        expect(parse(['']).errors, [
+          'Unknown subcommand: "" (Did you mean mid?)',
+        ]);
+      },
+    );
 
     test('when a branch command receives a positional word '
         'then the error is recorded', () {
