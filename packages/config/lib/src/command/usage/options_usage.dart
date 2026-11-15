@@ -4,6 +4,8 @@ import '../../config/config.dart'
         OptionDefinition,
         FlagOption,
         ComparableValueOption,
+        EnumOption,
+        EnumParser,
         MultiOption,
         addOptionsToReceiver,
         OptionReceiver;
@@ -185,9 +187,7 @@ class OptionsUsageGenerator {
   }
 
   static String? _generateAllowedValuesHelp(final ConfigOptionBase option) {
-    final helpValues = (option.allowedValues ?? [])
-        .map((final v) => option.valueParser.format(v))
-        .toList();
+    final helpValues = _allowedValueNames(option);
     final allowedHelp = option.allowedHelp ?? {};
 
     if (helpValues.isEmpty) {
@@ -213,6 +213,22 @@ class OptionsUsageGenerator {
             '${_annotateDefaultDescription(option, helpValues[i], allowedHelp[helpValues[i]] ?? '')}',
     ];
     return output.join('\n');
+  }
+
+  /// Names listed under an option.
+  ///
+  /// Uses [ConfigOptionBase.allowedValues] when that restriction is set.
+  /// An [EnumOption] without one lists every value its parser accepts.
+  static List<String> _allowedValueNames(final ConfigOptionBase option) {
+    final allowed = option.allowedValues;
+    if (allowed != null) {
+      return allowed.map(option.valueParser.format).toList();
+    }
+    if (option is EnumOption) {
+      final parser = option.valueParser as EnumParser;
+      return parser.enumValues.map(parser.format).toList();
+    }
+    return [];
   }
 
   static String _annotateDefaultDescription(

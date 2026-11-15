@@ -48,8 +48,6 @@ class CompletionActionOption extends EnumOption<CompletionShell>
         enumParser: const EnumParser(CompletionShell.values),
         argName: 'completion',
         helpText: 'Print the shell completion script for the shell.',
-        allowedValues:
-            CompletionShell.values, // TODO: analyze why this is needed
       );
 
   @override

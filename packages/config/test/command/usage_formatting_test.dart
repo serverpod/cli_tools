@@ -711,6 +711,74 @@ void main() {
     );
   });
 
+  group('Given an enum option', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'go',
+        description: 'Go somewhere',
+        options: const [
+          EnumOption(
+            enumParser: EnumParser(_Pace.values),
+            argName: 'pace',
+            helpText: 'How fast to go',
+            defaultsTo: _Pace.slow,
+          ),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test(
+      'when reading usage then the enum values are listed without an allow-list',
+      () {
+        expect(
+          command.usage,
+          _usage(const [
+            'Go somewhere',
+            '',
+            'Usage: tool go [--pace=<pace>]',
+            '',
+            'Options:',
+            '--pace    How fast to go',
+            '          values: [fast, slow (default)]',
+            '',
+            'Run "tool help" to see global options.',
+          ]),
+        );
+      },
+    );
+  });
+
+  group('Given an enum option restricted to a subset', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'go',
+        description: 'Go somewhere',
+        options: const [
+          EnumOption(
+            enumParser: EnumParser(_Pace.values),
+            argName: 'pace',
+            helpText: 'How fast to go',
+            allowedValues: [_Pace.fast],
+          ),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test('when reading usage then only the allowed values are listed', () {
+      expect(
+        command.usage,
+        contains('values: [fast]'),
+      );
+      expect(command.usage, isNot(contains('slow')));
+    });
+  });
+
   group('Given an option with allowed values and a default', () {
     late Command<OptionDefinition, void> command;
 
@@ -1044,6 +1112,8 @@ Command<OptionDefinition, void> _command({
     subcommands: subcommands,
   );
 }
+
+enum _Pace { fast, slow }
 
 class _OverrideUsageCommand extends Command<OptionDefinition, void> {
   @override
