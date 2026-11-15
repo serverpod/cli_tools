@@ -54,22 +54,24 @@ void main() {
     });
 
     for (final shell in CompletionShell.values) {
-      test('when running `completion ${shell.name}` '
-          'then the ${shell.displayName} script for the executable '
-          'is written to the output sink and the runner middleware runs',
-          () async {
-        final result = await runner.run(['completion', shell.name]);
-        expect(result, isNull);
-        expect(
-          out.toString(),
-          shell.script(
-            'comptool',
-            description: runner.usageDefinition.description,
-          ),
-        );
-        expect(err.toString(), isEmpty);
-        expect(trace, ['middleware:comptool']);
-      });
+      test(
+        'when running `completion ${shell.name}` '
+        'then the ${shell.displayName} script for the executable '
+        'is written to the output sink and the runner middleware runs',
+        () async {
+          final result = await runner.run(['completion', shell.name]);
+          expect(result, isNull);
+          expect(
+            out.toString(),
+            shell.script(
+              'comptool',
+              description: runner.usageDefinition.description,
+            ),
+          );
+          expect(err.toString(), isEmpty);
+          expect(trace, ['middleware:comptool']);
+        },
+      );
     }
 
     test('when running `completion` without a shell '
