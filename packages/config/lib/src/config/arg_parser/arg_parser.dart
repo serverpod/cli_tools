@@ -7,5 +7,7 @@ export 'parser.dart'
         ArgParseResult,
         scanAndParseArgs,
         scanAndParseCommands,
+        subcommandRequiredErrorPrefix,
         unknownSubcommandErrorPrefix;
-export 'scanner.dart' show DoubleDashHandling, ScanMode, optionAwaitingValue;
+export 'parser_settings.dart';
+export 'scanner.dart' show optionAwaitingValue;

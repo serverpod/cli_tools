@@ -1,8 +1,11 @@
+import 'dart:async' show FutureOr;
+
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
 import 'arg_parser_bridge.dart';
 import 'arg_parser_facade.dart';
+import 'completion.dart';
 import 'configuration.dart' show Configuration;
 import 'configuration_broker.dart';
 import 'exceptions.dart';
@@ -340,6 +343,67 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
   @override
   ConfigOptionBase<V> get option => this;
 
+  /////////////////////
+  // Command line completion
+
+  /// Returns the command line completion alternatives for a value of this
+  /// option.
+  ///
+  /// Invoked by the command runner when the shell requests completion of a
+  /// value for this option. [context] describes the command line typed so far,
+  /// including the partial [CompletionContext.wordToComplete].
+  ///
+  /// The default implementation offers [allowedValues] when set, with
+  /// descriptions from [allowedHelp]; otherwise the keys of [allowedHelp]
+  /// when set; otherwise it requests native file completion from the shell.
+  ///
+  /// Subclasses override this for type-specific behavior, for example
+  /// [EnumOption] offers the enum names and [DirOption] offers directories.
+  /// A custom option type can override this to offer any alternatives,
+  /// for example names fetched from a server. The implementation may be
+  /// asynchronous, but must be fast and should not throw. If it throws,
+  /// nothing is offered.
+  ///
+  /// The candidates need not be filtered by [CompletionContext.wordToComplete]
+  /// since the shells do that; filtering is still recommended for large sets.
+  FutureOr<CompletionResult> complete(final CompletionContext context) {
+    final candidates = allowedValueCandidates();
+    if (candidates != null) return CompletionResult.values(candidates);
+    return const CompletionResult.files();
+  }
+
+  /// Returns completion candidates for [allowedValues] with descriptions
+  /// from [allowedHelp], or for the keys of [allowedHelp] alone,
+  /// or null if neither is set.
+  @protected
+  List<CompletionCandidate>? allowedValueCandidates() {
+    final allowed = allowedValues;
+    if (allowed != null) return candidatesForValues(allowed);
+
+    final help = allowedHelp;
+    if (help != null) {
+      return [
+        for (final entry in help.entries)
+          CompletionCandidate(entry.key, description: entry.value),
+      ];
+    }
+    return null;
+  }
+
+  /// Returns completion candidates for [values], formatted with
+  /// [valueParser] and described by [allowedHelp] when available.
+  @protected
+  List<CompletionCandidate> candidatesForValues(final Iterable<V> values) {
+    final help = allowedHelp;
+    return [
+      for (final value in values)
+        if (valueParser.format(value) case final formatted)
+          CompletionCandidate(formatted, description: help?[formatted]),
+    ];
+  }
+
+  // TODO: Present arg options including the '--' prefix,
+  //       and {position 0} for positional arguments without a name.
   @override
   String toString() => argName ?? envName ?? '<unnamed option>';
 
@@ -630,6 +694,12 @@ class FlagOption extends ConfigOptionBase<bool> {
       source: ValueSourceType.arg,
     );
   }
+
+  /// A flag takes no value on the command line, so there is nothing to offer.
+  @override
+  FutureOr<CompletionResult> complete(final CompletionContext context) {
+    return const CompletionResult.none();
+  }
 }
 
 /// Parses a list of values from a comma-separated string.
@@ -729,6 +799,26 @@ class MultiOption<T> extends ConfigOptionBase<List<T>> {
         }
       }
     }
+  }
+
+  /// Offers the [allowedElementValues] when set, with descriptions from
+  /// [allowedHelp]; otherwise the keys of [allowedHelp] when set;
+  /// otherwise native file completion.
+  ///
+  /// The command runner completes the element after the last separator,
+  /// when the [MultiParser.separator] is a string.
+  @override
+  FutureOr<CompletionResult> complete(final CompletionContext context) {
+    final allowed = allowedElementValues;
+    if (allowed != null) {
+      final help = allowedHelp;
+      return CompletionResult.values([
+        for (final value in allowed)
+          if (multiParser.elementParser.format(value) case final formatted)
+            CompletionCandidate(formatted, description: help?[formatted]),
+      ]);
+    }
+    return super.complete(context);
   }
 }
 

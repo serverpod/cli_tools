@@ -59,3 +59,15 @@ class InvalidValueException implements Exception {
     return '$runtimeType: $message';
   }
 }
+
+class CommandUsageException extends UsageException {
+  final CommandDefinition command;
+
+  CommandUsageException(final String message, this.command)
+    : super(message, '');
+
+  @override
+  String toString() {
+    return 'Usage error for command: ${command.name}\n$message';
+  }
+}

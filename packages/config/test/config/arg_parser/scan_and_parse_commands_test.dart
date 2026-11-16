@@ -209,10 +209,10 @@ void main() {
       expect(childResult(childResult(result)).command, same(leaf));
     });
 
-    test('when a suggestion alias is used then the error is recorded', () {
+    test('when a suggestion alias is used then that command is suggested', () {
       expect(
         childResult(parse(['mid', 'leave'])).errors,
-        ['Unknown subcommand: "leave"'],
+        ['Unknown subcommand: "leave" (Did you mean leaf?)'],
       );
     });
 
@@ -231,9 +231,14 @@ void main() {
       expect(parse(['tool']).errors, ['Unknown subcommand: "tool"']);
     });
 
-    test('when the first word is empty then the error is recorded', () {
-      expect(parse(['']).errors, ['Unknown subcommand: ""']);
-    });
+    test(
+      'when the first word is empty then the closest command is suggested',
+      () {
+        expect(parse(['']).errors, [
+          'Unknown subcommand: "" (Did you mean mid?)',
+        ]);
+      },
+    );
 
     test('when a branch command receives a positional word '
         'then the error is recorded', () {
@@ -367,7 +372,7 @@ void main() {
         'then that option and the following word are recorded', () {
       expect(childResult(parse(['mid', '-o', 'x'])).errors, [
         'Unknown option: -o',
-        'Unknown subcommand: "x"',
+        'Unknown subcommand: "x" (Did you mean leaf?)',
       ]);
     });
 
@@ -375,7 +380,7 @@ void main() {
         'then that option and its value word are recorded', () {
       expect(childResult(parse(['mid', '--root-only', 'r'])).errors, [
         'Unknown option: --root-only',
-        'Unknown subcommand: "r"',
+        'Unknown subcommand: "r" (Did you mean leaf?)',
       ]);
     });
 
@@ -393,7 +398,7 @@ void main() {
         'then the option and the following word are recorded', () {
       expect(parse(['--output', 'o', 'mid']).errors, [
         'Unknown option: --output',
-        'Unknown subcommand: "o"',
+        'Unknown subcommand: "o" (Did you mean mid?)',
       ]);
     });
 
@@ -433,8 +438,10 @@ void main() {
       ]);
     });
 
-    test('when - is parsed then it is an unknown subcommand', () {
-      expect(parse(['-']).errors, ['Unknown subcommand: "-"']);
+    test('when - is parsed then the closest command is suggested', () {
+      expect(parse(['-']).errors, [
+        'Unknown subcommand: "-" (Did you mean mid?)',
+      ]);
     });
 
     test('when the leaf receives - then it stays positional', () {
@@ -442,6 +449,135 @@ void main() {
         childResult(childResult(parse(['mid', 'leaf', '-']))).positionalWords,
         ['-'],
       );
+    });
+  });
+
+  group('Given commands close to a mistyped name', () {
+    final build = TestCommand(
+      name: 'build',
+      aliasesDefinition: const CommandAliasesDefinition(
+        aliases: ['compile'],
+        suggestionAliases: ['bld'],
+      ),
+    );
+    final built = TestCommand(name: 'built');
+    final hidden = TestCommand(
+      name: 'secret',
+      usageDefinition: const CommandUsageDefinition(hidden: true),
+    );
+    final root = TestCommand(
+      name: 'tool',
+      subcommands: [build, built, hidden],
+    );
+
+    ArgParseResult parse(
+      final List<String> args, {
+      final int suggestionDistanceLimit = 2,
+    }) {
+      return scanAndParseCommands(
+        args,
+        rootCommand: root,
+        settings: ParserSettings(
+          suggestionDistanceLimit: suggestionDistanceLimit,
+        ),
+      );
+    }
+
+    test('when the name is close to several commands '
+        'then they are suggested in order of distance', () {
+      expect(parse(['biuld']).errors, [
+        'Unknown subcommand: "biuld" (Did you mean build, built?)',
+      ]);
+    });
+
+    test('when the name is one edit from an alias '
+        'then that command is suggested', () {
+      expect(parse(['compil']).errors, [
+        'Unknown subcommand: "compil" (Did you mean build?)',
+      ]);
+    });
+
+    test('when the name matches a suggestion alias '
+        'then that command is suggested', () {
+      expect(parse(['bld']).errors, [
+        'Unknown subcommand: "bld" (Did you mean build?)',
+      ]);
+    });
+
+    test('when the name is only close to a hidden command '
+        'then no suggestion is included', () {
+      expect(parse(['secre']).errors, ['Unknown subcommand: "secre"']);
+    });
+
+    test('when suggestions are disabled '
+        'then no suggestion is included', () {
+      expect(
+        parse(['biuld'], suggestionDistanceLimit: 0).errors,
+        ['Unknown subcommand: "biuld"'],
+      );
+    });
+
+    test('when the name is farther than the limit '
+        'then no suggestion is included', () {
+      expect(
+        parse(['bxxld'], suggestionDistanceLimit: 1).errors,
+        ['Unknown subcommand: "bxxld"'],
+      );
+    });
+
+    test('when the limit is raised '
+        'then a farther command is suggested', () {
+      expect(
+        parse(['qqqbuild'], suggestionDistanceLimit: 3).errors,
+        ['Unknown subcommand: "qqqbuild" (Did you mean build?)'],
+      );
+    });
+  });
+
+  group('Given a command whose alias is closer than its name', () {
+    final bata = TestCommand(name: 'bata');
+    final zeta = TestCommand(
+      name: 'zeta',
+      aliasesDefinition: const CommandAliasesDefinition(
+        suggestionAliases: ['beta'],
+      ),
+    );
+    final root = TestCommand(
+      name: 'tool',
+      subcommands: [bata, zeta],
+    );
+
+    test('when the input matches that alias '
+        'then suggestions follow the final distance', () {
+      final result = scanAndParseCommands(
+        ['beta'],
+        rootCommand: root,
+      );
+
+      expect(result.errors, [
+        'Unknown subcommand: "beta" (Did you mean zeta, bata?)',
+      ]);
+    });
+  });
+
+  group('Given commands at the same edit distance', () {
+    final cut = TestCommand(name: 'cut');
+    final bat = TestCommand(name: 'bat');
+    final root = TestCommand(
+      name: 'tool',
+      subcommands: [cut, bat],
+    );
+
+    test('when the input is equally close to both '
+        'then both commands are suggested', () {
+      final result = scanAndParseCommands(
+        ['cat'],
+        rootCommand: root,
+      );
+
+      expect(result.errors, [
+        'Unknown subcommand: "cat" (Did you mean bat, cut?)',
+      ]);
     });
   });
 
@@ -986,7 +1122,7 @@ void main() {
       usageDefinition: const CommandUsageDefinition(description: 'root usage'),
     );
 
-    const passThroughRest = ScanMode(
+    const passThroughRest = ParserSettings(
       doubleDashHandling: DoubleDashHandling.passThroughRest,
     );
 
@@ -994,7 +1130,7 @@ void main() {
       return scanAndParseCommands(
         args,
         rootCommand: root,
-        scanMode: passThroughRest,
+        settings: passThroughRest,
       );
     }
 
@@ -1455,7 +1591,7 @@ void main() {
           final result = scanAndParseCommands(
             ['--', 'leaf'],
             rootCommand: root,
-            scanMode: const ScanMode(
+            settings: const ParserSettings(
               doubleDashHandling: DoubleDashHandling.passThroughRest,
             ),
           );
@@ -1469,7 +1605,7 @@ void main() {
         final result = scanAndParseCommands(
           ['--', 'leaf'],
           rootCommand: root,
-          scanMode: const ScanMode(
+          settings: const ParserSettings(
             doubleDashHandling: DoubleDashHandling.passThroughRest,
           ),
         );
@@ -1524,7 +1660,9 @@ void main() {
     test(
       'when the word version is parsed then it is an unknown subcommand',
       () {
-        expect(parse(['version']).errors, ['Unknown subcommand: "version"']);
+        expect(parse(['version']).errors, [
+          'Unknown subcommand: "version" (Did you mean --version?)',
+        ]);
       },
     );
 

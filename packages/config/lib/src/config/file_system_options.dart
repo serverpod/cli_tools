@@ -1,7 +1,9 @@
+import 'dart:async' show FutureOr;
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
+import 'completion.dart';
 import 'exceptions.dart';
 import 'options.dart';
 
@@ -86,6 +88,12 @@ class DirOption extends ConfigOptionBase<Directory> {
         break;
     }
   }
+
+  /// Offers native directory completion from the shell.
+  @override
+  FutureOr<CompletionResult> complete(final CompletionContext context) {
+    return const CompletionResult.directories();
+  }
 }
 
 class FileParser extends ValueParser<File> {
@@ -155,5 +163,11 @@ class FileOption extends ConfigOptionBase<File> {
         }
         break;
     }
+  }
+
+  /// Offers native file completion from the shell.
+  @override
+  FutureOr<CompletionResult> complete(final CompletionContext context) {
+    return const CompletionResult.files();
   }
 }
