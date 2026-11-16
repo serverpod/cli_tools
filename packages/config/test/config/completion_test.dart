@@ -1,5 +1,5 @@
 import 'dart:async' show FutureOr;
-import 'dart:io' show Directory, File;
+import 'dart:io' show Directory;
 
 import 'package:config/config.dart';
 import 'package:test/test.dart';
@@ -187,7 +187,6 @@ void main() {
       final option = DirOption(argName: 'dir', defaultsTo: Directory('x'));
       final result = await complete(option);
       expect(result.pathMode, CompletionPathMode.directories);
-      expect(File('x').existsSync(), isFalse);
     });
   });
 

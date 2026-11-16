@@ -21,11 +21,14 @@ List<CommandDefinition> similarCommands(
 ) {
   if (suggestionDistanceLimit <= 0) return [];
   final distances = <CommandDefinition, int>{};
-  final candidates = SplayTreeSet<CommandDefinition>(
-    (final a, final b) => distances[a]! - distances[b]!,
-  );
+  final candidates = SplayTreeSet<CommandDefinition>((final a, final b) {
+    final byDistance = distances[a]! - distances[b]!;
+    if (byDistance != 0) return byDistance;
+    return a.name.compareTo(b.name);
+  });
   for (final command in commands) {
     if (command.usageDefinition.hidden) continue;
+    int? bestDistance;
     for (final alias in [
       command.name,
       ...command.aliasesDefinition.aliases,
@@ -33,10 +36,12 @@ List<CommandDefinition> similarCommands(
     ]) {
       final distance = _editDistance(name, alias);
       if (distance <= suggestionDistanceLimit) {
-        distances[command] = math.min(distances[command] ?? distance, distance);
-        candidates.add(command);
+        bestDistance = math.min(bestDistance ?? distance, distance);
       }
     }
+    if (bestDistance == null) continue;
+    distances[command] = bestDistance;
+    candidates.add(command);
   }
   return candidates.toList();
 }

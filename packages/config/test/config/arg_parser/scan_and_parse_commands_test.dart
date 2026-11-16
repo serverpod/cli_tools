@@ -534,6 +534,53 @@ void main() {
     });
   });
 
+  group('Given a command whose alias is closer than its name', () {
+    final bata = TestCommand(name: 'bata');
+    final zeta = TestCommand(
+      name: 'zeta',
+      aliasesDefinition: const CommandAliasesDefinition(
+        suggestionAliases: ['beta'],
+      ),
+    );
+    final root = TestCommand(
+      name: 'tool',
+      subcommands: [bata, zeta],
+    );
+
+    test('when the input matches that alias '
+        'then suggestions follow the final distance', () {
+      final result = scanAndParseCommands(
+        ['beta'],
+        rootCommand: root,
+      );
+
+      expect(result.errors, [
+        'Unknown subcommand: "beta" (Did you mean zeta, bata?)',
+      ]);
+    });
+  });
+
+  group('Given commands at the same edit distance', () {
+    final cut = TestCommand(name: 'cut');
+    final bat = TestCommand(name: 'bat');
+    final root = TestCommand(
+      name: 'tool',
+      subcommands: [cut, bat],
+    );
+
+    test('when the input is equally close to both '
+        'then both commands are suggested', () {
+      final result = scanAndParseCommands(
+        ['cat'],
+        rootCommand: root,
+      );
+
+      expect(result.errors, [
+        'Unknown subcommand: "cat" (Did you mean bat, cut?)',
+      ]);
+    });
+  });
+
   group('Given a root and subcommand with different option types', () {
     final build = _EnumCommand<_BuildOption>(
       name: 'build',
