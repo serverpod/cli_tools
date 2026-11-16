@@ -67,7 +67,7 @@ abstract class AbstractCommand<O extends OptionDefinition, T>
        _builtinSubcommands = List.from(builtinSubcommands ?? []),
        _middlewareChain = MiddlewareChain(middlewares) {
     for (final subcommand in [..._subcommands, ..._builtinSubcommands]) {
-      subcommand._parent = this;
+      subcommand.parent = this;
     }
   }
 
@@ -113,7 +113,13 @@ abstract class AbstractCommand<O extends OptionDefinition, T>
   }
 
   /// Notionally protected; may only be called once.
+  /// Throws a [StateError] if this command already has a parent.
   set parent(final AbstractCommand<OptionDefinition, T> parent) {
+    if (_parent != null) {
+      throw StateError(
+        'Command $name already has the parent command ${_parent?.name}',
+      );
+    }
     _parent = parent;
   }
 
@@ -149,9 +155,11 @@ abstract class AbstractCommand<O extends OptionDefinition, T>
   }
 
   /// Adds a subcommand to this command.
+  ///
+  /// Throws a [StateError] if [subcommand] already has a parent command.
   void addSubcommand(final Command<OptionDefinition, T> subcommand) {
+    subcommand.parent = this;
     _subcommands.add(subcommand);
-    subcommand._parent = this;
   }
 
   /// Returns the subcommands for this command.

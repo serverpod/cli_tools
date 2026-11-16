@@ -205,6 +205,9 @@ abstract class CommandImpl<O extends OptionDefinition, T>
 
   /// Creates a new branch command (i.e. a command with subcommands) via
   /// parameters rather than writing a class and overriding its fields.
+  ///
+  /// If [canRunAsLeafCommand] is true, the command prints its usage when
+  /// it is the last command on the command line, like the command runner.
   static CommandImpl<O, T> branch<O extends OptionDefinition, T>({
     required final String name,
     required final String description,
@@ -231,9 +234,14 @@ abstract class CommandImpl<O extends OptionDefinition, T>
       subcommands: subcommands,
       canRunAsLeafCommand: canRunAsLeafCommand,
       run: (final CommandContext<O, T> context) {
-        throw UnsupportedError(
-          'Branch command ${context.command.name} should not be run()',
-        );
+        final command = context.command;
+        if (!command.canRunAsLeafCommand) {
+          throw UnsupportedError(
+            'Branch command ${command.name} should not be run()',
+          );
+        }
+        command.runner.usageOutput.printUsage(command);
+        return null;
       },
     );
   }

@@ -239,6 +239,68 @@ void main() {
     );
   });
 
+  group('Given a command that is a subcommand of a runner', () {
+    late Command<OptionDefinition, void> build;
+    late CommandRunner<OptionDefinition, void> runner;
+
+    Command<OptionDefinition, void> leaf(final String name) =>
+        CommandImpl.leafWithRunFunction(
+          name: name,
+          description: 'The $name command',
+          run: (final context) {},
+        );
+
+    setUp(() {
+      build = leaf('build');
+      runner = CommandRunner('tool', 'Tools', subcommands: [build]);
+    });
+
+    test(
+      'when it is passed to another runner then a state error is thrown',
+      () {
+        expect(
+          () => CommandRunner<OptionDefinition, void>(
+            'other',
+            'Other tools',
+            subcommands: [build],
+          ),
+          throwsStateError,
+        );
+      },
+    );
+
+    group('when it is added to another command', () {
+      late Command<OptionDefinition, void> other;
+      late Object? error;
+
+      setUp(() {
+        other = leaf('other');
+        error = null;
+        try {
+          other.addSubcommand(build);
+        } catch (e) {
+          error = e;
+        }
+      });
+
+      test('then a state error is thrown', () {
+        expect(error, isStateError);
+      });
+
+      test('then the other command gains no subcommand', () {
+        expect(other.subcommands, isEmpty);
+      });
+
+      test('then it remains a subcommand of the runner', () {
+        expect(build.parent, same(runner));
+      });
+    });
+
+    test('when its parent is set again then a state error is thrown', () {
+      expect(() => build.parent = leaf('other'), throwsStateError);
+    });
+  });
+
   group('Given a command that already has a help command', () {
     late Command help;
 

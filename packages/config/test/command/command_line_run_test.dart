@@ -397,6 +397,77 @@ void main() {
     );
   });
 
+  group('Given a branch defined by parameters that can run as a leaf', () {
+    late List<String> trace;
+    late StringBuffer usageOut;
+    late Command<OptionDefinition, String> remote;
+    late TracingRunner runner;
+
+    setUp(() {
+      trace = [];
+      usageOut = StringBuffer();
+      remote = CommandImpl.branch(
+        name: 'remote',
+        description: 'Manage remotes',
+        canRunAsLeafCommand: true,
+        subcommands: [
+          RecordingCommand(
+            name: 'add',
+            description: 'Add a remote',
+            trace: trace,
+          ),
+        ],
+      );
+      runner = TracingRunner(
+        trace,
+        usageOutput: UsageOutputHandler(
+          sinks: OutputSinks(out: usageOut, err: StringBuffer()),
+        ),
+        subcommands: [remote],
+      );
+    });
+
+    group('when the branch command is the last command', () {
+      late String? result;
+
+      setUp(() async {
+        result = await runner.run(['remote']);
+      });
+
+      test('then usage for the branch command is printed', () {
+        expect(usageOut.toString(), remote.usage);
+      });
+
+      test('then no result is returned', () {
+        expect(result, isNull);
+      });
+
+      test('then no command runs', () {
+        expect(trace, isEmpty);
+      });
+    });
+
+    group('when the nested command line is run', () {
+      late String? result;
+
+      setUp(() async {
+        result = await runner.run(['remote', 'add']);
+      });
+
+      test('then only the nested command runs', () {
+        expect(trace, ['add']);
+      });
+
+      test('then the nested command result is returned', () {
+        expect(result, 'add');
+      });
+
+      test('then no usage is printed', () {
+        expect(usageOut.toString(), isEmpty);
+      });
+    });
+  });
+
   group('Given a command that completes asynchronously', () {
     late List<String> trace;
     late TracingRunner runner;
