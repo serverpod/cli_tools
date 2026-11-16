@@ -51,7 +51,8 @@ void main() {
       'when the handler runs '
       'then the next handler receives null',
       () async {
-        String? received;
+        // Not null, to tell a null argument from a skipped handler.
+        String? received = 'not called';
         final handler = hooks.middleware((final arg) {
           received = arg;
           return 'ok';
@@ -93,7 +94,8 @@ void main() {
       'when the handler runs '
       'then the next handler receives null',
       () async {
-        String? received;
+        // Not null, to tell a null argument from a skipped handler.
+        String? received = 'not called';
         final handler = composer.middleware((final arg) {
           received = arg;
           return 'ok';
@@ -117,7 +119,8 @@ void main() {
         'when the handler runs '
         'then the next handler receives null',
         () async {
-          String? received;
+          // Not null, to tell a null argument from a skipped handler.
+          String? received = 'not called';
           final handler = composer.middleware((final arg) {
             received = arg;
             return 'ok';
