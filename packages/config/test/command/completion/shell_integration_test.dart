@@ -23,12 +23,12 @@ import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 import 'fixtures/completion_cli.dart'
-    show afterRunnerMarker, buildCompletionCli;
+    show afterRunnerMarker, buildCompletionCli, noUsageExceptionVariable;
 
 const _exeName = 'comptool';
 
 /// A wrapper script of the executable, for which completion is installed
-/// with `completion <shell> --command mywrap`.
+/// with `completion --shell <shell> --command mywrap`.
 const _wrapperName = 'mywrap';
 
 /// The shells (and completion frameworks) under test, by executable name.
@@ -147,7 +147,11 @@ void _executableTests(final _Environment env) {
 
     test('when printing a completion script with the completion command '
         'then the process exits right after the script', () async {
-      final result = await env.run(env.exePath, ['completion', 'bash']);
+      final result = await env.run(env.exePath, [
+        'completion',
+        '--shell',
+        'bash',
+      ]);
       expect(
         result.stdout,
         CompletionShell.bash.script(_exeName, description: description),
@@ -155,12 +159,60 @@ void _executableTests(final _Environment env) {
       expect(result.exitCode, 0);
     });
 
+    test('when installing the completion with `completion install` '
+        'then the script is saved, the steps are printed '
+        'and the program continues after the runner', () async {
+      final environment = env.installEnvironment();
+      final result = await env.run(
+        env.exePath,
+        ['completion', 'install', '--shell', 'fish'],
+        environment: environment,
+      );
+      final script = p.join(
+        environment['XDG_CONFIG_HOME']!,
+        'fish',
+        'completions',
+        '$_exeName.fish',
+      );
+      expect(
+        File(script).readAsStringSync(),
+        CompletionShell.fish.script(_exeName, description: description),
+      );
+      expect(
+        result.stdout,
+        'Installing the Fish completion for $_exeName:\n'
+        '  Create directory ${p.dirname(script)}\n'
+        '  Write $script\n'
+        'Fish loads it automatically, no reload needed.\n'
+        '$afterRunnerMarker null\n',
+      );
+    });
+
+    test('when installing the completion with `completion install --dry-run` '
+        'then the steps are printed and nothing is created', () async {
+      final environment = env.installEnvironment();
+      final result = await env.run(
+        env.exePath,
+        ['completion', 'install', '--shell', 'zsh', '--dry-run'],
+        environment: environment,
+      );
+      expect(
+        result.stdout,
+        startsWith(
+          'Installing the Zsh completion for $_exeName '
+          '(dry run, nothing is changed):\n'
+          '  Create directory ',
+        ),
+      );
+      expect(Directory(environment['HOME']!).listSync(), isEmpty);
+    });
+
     test('when the completion script request is invalid '
         'then the usage error is reported and the process does not exit '
         'early', () async {
       final result = await env.run(
         env.exePath,
-        ['completion', 'tcsh'],
+        ['completion', '--shell', 'tcsh'],
         expectSuccess: false,
       );
       expect(result.exitCode, 64);
@@ -168,6 +220,218 @@ void _executableTests(final _Environment env) {
       expect(result.stdout, isNot(contains(afterRunnerMarker)));
     });
   });
+
+  group('Given the fixture CLI run with Fish as the login shell '
+      'where the ancestor processes cannot be inspected', () {
+    final description = buildCompletionCli().usageDefinition.description;
+    // Lazy: the environment is set up after the tests are declared.
+    late final detection = env.detectionEnvironment(
+      loginShell: '/usr/bin/fish',
+    );
+
+    test('when running `completion` without the shell option '
+        'then the script of the detected shell is printed', () async {
+      final result = await env.run(
+        env.exePath,
+        ['completion'],
+        environment: detection,
+      );
+      expect(
+        result.stdout,
+        CompletionShell.fish.script(_exeName, description: description),
+      );
+    });
+
+    test('when running `completion --shell zsh` '
+        'then the script of the given shell is printed', () async {
+      final result = await env.run(
+        env.exePath,
+        ['completion', '--shell', 'zsh'],
+        environment: detection,
+      );
+      expect(
+        result.stdout,
+        CompletionShell.zsh.script(_exeName, description: description),
+      );
+    });
+
+    test('when running `completion --command $_wrapperName` '
+        'without the shell option '
+        'then the script of the detected shell is for the wrapper', () async {
+      final result = await env.run(
+        env.exePath,
+        ['completion', '--command', _wrapperName],
+        environment: detection,
+      );
+      expect(
+        result.stdout,
+        CompletionShell.fish.script(
+          _exeName,
+          description: description,
+          commandName: _wrapperName,
+        ),
+      );
+    });
+
+    group('when running `completion install` without the shell option', () {
+      late Map<String, String> environment;
+      late String script;
+      late _ProcessOutput result;
+
+      setUp(() async {
+        environment = {...env.installEnvironment(), ...detection};
+        script = p.join(
+          environment['XDG_CONFIG_HOME']!,
+          'fish',
+          'completions',
+          '$_exeName.fish',
+        );
+        result = await env.run(
+          env.exePath,
+          ['completion', 'install'],
+          environment: environment,
+        );
+      });
+
+      test('then the script of the detected shell is saved '
+          'where the shell loads it from', () {
+        expect(
+          File(script).readAsStringSync(),
+          CompletionShell.fish.script(_exeName, description: description),
+        );
+      });
+
+      test('then the steps for the detected shell are printed', () {
+        expect(
+          result.stdout,
+          startsWith(
+            'Installing the Fish completion for $_exeName:\n'
+            '  Create directory ${p.dirname(script)}\n'
+            '  Write $script\n',
+          ),
+        );
+      });
+    });
+
+    test('when running `completion install --dry-run` '
+        'without the shell option '
+        'then the steps for the detected shell are printed '
+        'and nothing is created', () async {
+      final environment = {...env.installEnvironment(), ...detection};
+      final result = await env.run(
+        env.exePath,
+        ['completion', 'install', '--dry-run'],
+        environment: environment,
+      );
+      expect(
+        result.stdout,
+        startsWith(
+          'Installing the Fish completion for $_exeName '
+          '(dry run, nothing is changed):\n',
+        ),
+      );
+      expect(Directory(environment['HOME']!).listSync(), isEmpty);
+    });
+  });
+
+  group(
+    'Given the fixture CLI run without a login shell '
+    'where the ancestor processes cannot be inspected',
+    () {
+      late final detection = env.detectionEnvironment(loginShell: '');
+
+      group('when running `completion` without the shell option', () {
+        late _ProcessOutput result;
+
+        setUp(() async {
+          result = await env.run(
+            env.exePath,
+            ['completion'],
+            environment: detection,
+            expectSuccess: false,
+          );
+        });
+
+        test('then a usage error asks for the shell option', () {
+          expect(
+            result.stderr,
+            contains(
+              'completion: Could not detect the shell. '
+              'Specify it with --shell.',
+            ),
+          );
+          expect(result.exitCode, 64);
+        });
+
+        test('then the usage of the command is printed with the error', () {
+          expect(result.stderr, contains('Usage: $_exeName completion'));
+        });
+
+        test('then no script is printed', () {
+          expect(result.stdout, isEmpty);
+        });
+      });
+
+      test('when running `completion install` without the shell option '
+          'then a usage error asks for the shell option '
+          'and nothing is installed', () async {
+        final environment = {...env.installEnvironment(), ...detection};
+        final result = await env.run(
+          env.exePath,
+          ['completion', 'install'],
+          environment: environment,
+          expectSuccess: false,
+        );
+        expect(
+          result.stderr,
+          contains(
+            'install: Could not detect the shell. Specify it with --shell.',
+          ),
+        );
+        expect(result.exitCode, 64);
+        expect(Directory(environment['HOME']!).listSync(), isEmpty);
+      });
+
+      test('when running `completion --shell bash` '
+          'then the script of the given shell is printed', () async {
+        final result = await env.run(
+          env.exePath,
+          ['completion', '--shell', 'bash'],
+          environment: detection,
+        );
+        expect(
+          result.stdout,
+          contains('complete -F __${_exeName}_complete $_exeName'),
+        );
+      });
+
+      test('when running `completion --help` '
+          'then the usage is printed without requiring a shell', () async {
+        final result = await env.run(
+          env.exePath,
+          ['completion', '--help'],
+          environment: detection,
+        );
+        expect(result.stdout, contains('Usage: $_exeName completion'));
+        expect(result.stderr, isEmpty);
+      });
+
+      test('when running `completion` without the shell option '
+          'in a runner that does not throw usage exceptions '
+          'then the error is printed and the runner returns null', () async {
+        final result = await env.run(
+          env.exePath,
+          ['completion'],
+          environment: {...detection, noUsageExceptionVariable: '1'},
+        );
+        expect(result.stderr, contains('Could not detect the shell.'));
+        expect(result.stdout, '$afterRunnerMarker null\n');
+      });
+    },
+    skip: Platform.isWindows
+        ? 'PowerShell is always detected on Windows'
+        : null,
+  );
 }
 
 void _bashTests(
@@ -303,6 +567,48 @@ void _bashTests(
         environment: {'COMPLETION_CMD': _wrapperName},
       );
       expect(result.lines, ['build']);
+    });
+  }, skip: skip);
+
+  group('Given an interactive $bash', () {
+    test(
+      'when running `completion` without the shell option '
+      'then the Bash script is printed, whatever the login shell is',
+      () async {
+        final result = await env.run(
+          bash,
+          ['--noprofile', '--norc', '-i'],
+          stdin: '$_exeName completion\n',
+          environment: {'SHELL': '/bin/zsh'},
+        );
+        expect(
+          result.stdout,
+          contains('complete -F __${_exeName}_complete $_exeName'),
+        );
+      },
+      skip: _skipUnlessProcessesCanBeInspected,
+    );
+
+    test('when the completion is installed with `completion install` '
+        'then a new shell that reads its startup file '
+        'has the completion function registered', () async {
+      final environment = env.installEnvironment();
+      await env.run(
+        env.exePath,
+        ['completion', 'install', '--shell', 'bash'],
+        environment: environment,
+      );
+      // The startup file is the one of login shells on macOS,
+      // and the one of interactive shells elsewhere.
+      final result = await env.run(
+        bash,
+        [Platform.isMacOS ? '-l' : '-i', '-c', 'complete -p $_exeName'],
+        environment: environment,
+      );
+      expect(
+        result.lines,
+        contains('complete -F __${_exeName}_complete $_exeName'),
+      );
     });
   }, skip: skip);
 }
@@ -446,6 +752,86 @@ void _zshTests(
       expect(result.buffer, '$_wrapperName build ');
     });
   }, skip: skip);
+
+  group('Given an interactive Zsh', () {
+    /// The completion function that a new interactive Zsh with the
+    /// [environment] has registered for the executable.
+    Future<String> registeredCompletion(
+      final Map<String, String> environment,
+    ) async {
+      final result = await env.run(
+        zsh!,
+        ['-i', '-c', 'print -r -- "registered:\${_comps[$_exeName]}"'],
+        environment: environment,
+      );
+      return result.lines.last;
+    }
+
+    test(
+      'when running `completion` without the shell option '
+      'then the Zsh script is printed, whatever the login shell is',
+      () async {
+        final result = await env.run(
+          zsh!,
+          ['-f', '-i'],
+          stdin: '$_exeName completion\n',
+          environment: {'SHELL': '/bin/bash'},
+        );
+        expect(result.stdout, contains('#compdef $_exeName'));
+      },
+      skip: _skipUnlessProcessesCanBeInspected,
+    );
+
+    test(
+      'when running `completion` without the shell option '
+      'through a wrapper that is a Bash script '
+      'then the Zsh script is printed',
+      () async {
+        final wrapper = File(p.join(env.binDir.path, 'bashwrap'))
+          ..writeAsStringSync('#!/bin/bash\n$_exeName "\$@"\n');
+        await env.run('chmod', ['+x', wrapper.path]);
+        final result = await env.run(
+          zsh!,
+          ['-f', '-i'],
+          stdin: 'bashwrap completion\n',
+          environment: {'SHELL': '/bin/bash'},
+        );
+        expect(result.stdout, contains('#compdef $_exeName'));
+      },
+      skip:
+          _skipUnlessProcessesCanBeInspected ??
+          (File('/bin/bash').existsSync() ? null : '/bin/bash is missing'),
+    );
+
+    test('when the completion is installed with `completion install` '
+        'in a home directory without a startup file '
+        'then a new shell has the completion registered', () async {
+      final environment = env.installEnvironment();
+      await env.run(
+        env.exePath,
+        ['completion', 'install', '--shell', 'zsh'],
+        environment: environment,
+      );
+      expect(await registeredCompletion(environment), 'registered:_$_exeName');
+    });
+
+    test('when the completion is installed with `completion install` '
+        'and the startup file initializes the completion system '
+        'then a new shell has the completion registered', () async {
+      final environment = env.installEnvironment();
+      final home = environment['HOME']!;
+      File(p.join(home, '.zshrc')).writeAsStringSync(
+        'autoload -Uz compinit\n'
+        'compinit -u -d ${p.join(home, 'zcompdump')}',
+      );
+      await env.run(
+        env.exePath,
+        ['completion', 'install', '--shell', 'zsh'],
+        environment: environment,
+      );
+      expect(await registeredCompletion(environment), 'registered:_$_exeName');
+    });
+  }, skip: skip);
 }
 
 void _fishTests(
@@ -558,6 +944,40 @@ void _fishTests(
     test('when nothing can be completed then nothing is offered', () async {
       expect(await complete('$_exeName build '), isEmpty);
     });
+  }, skip: skip);
+
+  group('Given an interactive Fish', () {
+    test('when the completion is installed with `completion install` '
+        'then completing a subcommand prefix in a new shell '
+        'loads the script and offers the subcommand', () async {
+      final environment = env.installEnvironment();
+      await env.run(
+        env.exePath,
+        ['completion', 'install', '--shell', 'fish'],
+        environment: environment,
+      );
+      final result = await env.run(
+        fish!,
+        ['-c', 'complete -C "$_exeName bu"'],
+        environment: environment,
+      );
+      expect(_values(result.lines), ['build']);
+    });
+
+    test(
+      'when running `completion` without the shell option '
+      'then the Fish script is printed, whatever the login shell is',
+      () async {
+        final result = await env.run(
+          fish!,
+          ['--no-config', '-i'],
+          stdin: '$_exeName completion\n',
+          environment: {'SHELL': '/bin/bash'},
+        );
+        expect(result.stdout, contains('complete -c $_exeName'));
+      },
+      skip: _skipUnlessProcessesCanBeInspected,
+    );
   }, skip: skip);
 }
 
@@ -673,6 +1093,40 @@ void _powershellTests(
       expect(results.map((final r) => r.text.trim()), everyElement(isEmpty));
     });
   }, skip: skip);
+
+  group('Given the PowerShell completion installed '
+      'with `completion install`', () {
+    test(
+      'when completing a subcommand prefix in a new shell '
+      'then the profile loads the script and the subcommand is offered',
+      () async {
+        const line = '$_exeName bu';
+        final environment = env.installEnvironment();
+        await env.run(
+          env.exePath,
+          ['completion', 'install', '--shell', 'powershell'],
+          environment: environment,
+        );
+        final result = await env.run(
+          pwsh!,
+          [
+            '-NonInteractive',
+            '-Command',
+            "(TabExpansion2 -inputScript '$line' -cursorColumn ${line.length})"
+                '.CompletionMatches | '
+                r'ForEach-Object { $_.CompletionText.Trim() }',
+          ],
+          environment: environment,
+        );
+        expect(result.lines, ['build']);
+      },
+      // On Windows the profile is in the documents folder of the user,
+      // wherever the environment says the home directory is.
+      skip: Platform.isWindows
+          ? 'it would change the profile of the user'
+          : null,
+    );
+  }, skip: skip);
 }
 
 void _carapaceTests(
@@ -686,14 +1140,14 @@ void _carapaceTests(
       /// Completes [words] via `carapace <spec> export`,
       /// returning the values with their descriptions.
       Future<List<({String value, String description})>> complete(
-        final List<String> words,
-      ) async {
-        final result = await env.run(carapace!, [
-          _exeName,
-          'export',
-          _exeName,
-          ...words,
-        ]);
+        final List<String> words, {
+        final Map<String, String> environment = const {},
+      }) async {
+        final result = await env.run(
+          carapace!,
+          [_exeName, 'export', _exeName, ...words],
+          environment: environment,
+        );
         final json = jsonDecode(result.stdout) as Map<String, dynamic>;
         return [
           for (final value in json['values'] as List)
@@ -767,6 +1221,18 @@ void _carapaceTests(
       test('when nothing can be completed then nothing is offered', () async {
         expect(await complete(['build', '']), isEmpty);
       });
+
+      test('when the spec is installed with `completion install` instead '
+          'then Carapace completes with it', () async {
+        final environment = env.installEnvironment();
+        await env.run(
+          env.exePath,
+          ['completion', 'install', '--shell', 'carapace'],
+          environment: environment,
+        );
+        final results = await complete(['bu'], environment: environment);
+        expect(results.map((final r) => r.value), ['build']);
+      });
     },
     skip: skip,
   );
@@ -776,6 +1242,20 @@ void _carapaceTests(
 List<String> _values(final List<String> lines) => [
   for (final line in lines) line.split('\t').first,
 ];
+
+/// The reason to skip a test of the shell detection, or null if the
+/// ancestor processes can be inspected with `ps` (which a sandbox may deny).
+final String? _skipUnlessProcessesCanBeInspected = () {
+  if (!Platform.isWindows) {
+    try {
+      final result = Process.runSync('ps', ['-o', 'ppid=', '-p', '$pid']);
+      if (result.exitCode == 0) return null;
+    } on ProcessException {
+      // Not installed.
+    }
+  }
+  return 'the ancestor processes cannot be inspected with ps';
+}();
 
 /// Looks up the executable of [shell] via `CLI_COMPLETION_<SHELL>`
 /// or on the PATH.
@@ -914,13 +1394,14 @@ class _Environment {
 
   Future<void> _generateScripts() async {
     for (final shell in ['bash', 'zsh', 'fish', 'powershell']) {
-      final result = await run(exePath, ['completion', shell]);
+      final result = await run(exePath, ['completion', '--shell', shell]);
       File(scriptPath(shell)).writeAsStringSync(result.stdout);
     }
     if (!Platform.isWindows) {
       for (final shell in ['bash', 'zsh', 'fish']) {
         final result = await run(exePath, [
           'completion',
+          '--shell',
           shell,
           '--command',
           _wrapperName,
@@ -933,7 +1414,7 @@ class _Environment {
     );
     final specs = Directory(p.join(xdgConfigDir.path, 'carapace', 'specs'))
       ..createSync(recursive: true);
-    final spec = await run(exePath, ['completion', 'carapace']);
+    final spec = await run(exePath, ['completion', '--shell', 'carapace']);
     File(p.join(specs.path, '$_exeName.yaml')).writeAsStringSync(spec.stdout);
   }
 
@@ -944,13 +1425,43 @@ class _Environment {
     File(harnessPath('ps_harness.ps1')).writeAsStringSync(_powershellHarness);
   }
 
+  /// Creates an empty home directory to install a completion in, and
+  /// returns the environment variables that locate the installation there,
+  /// whatever they are in the environment of the test.
+  Map<String, String> installEnvironment() {
+    final home = root.createTempSync('home_').path;
+    final dataHome = p.join(home, '.local', 'share');
+    return {
+      'HOME': home,
+      'ZDOTDIR': home,
+      'XDG_CONFIG_HOME': p.join(home, '.config'),
+      'XDG_DATA_HOME': dataHome,
+      'BASH_COMPLETION_USER_DIR': p.join(dataHome, 'bash-completion'),
+    };
+  }
+
+  /// The environment variables that make the shell detection of the fixture
+  /// executable independent of where the tests are run from: `ps` is not on
+  /// the PATH, so the ancestor processes are not inspected, which leaves
+  /// the [loginShell] to detect. An empty [loginShell] is no shell.
+  ///
+  /// (On Windows the ancestor processes are never inspected.)
+  Map<String, String> detectionEnvironment({
+    required final String loginShell,
+  }) => {
+    if (!Platform.isWindows) 'PATH': p.join(root.path, 'no_ps'),
+    'SHELL': loginShell,
+  };
+
   /// Runs [executable] in the working directory with the fixture
   /// executable on the PATH, failing the test on a non-zero exit code
-  /// when [expectSuccess] is set.
+  /// when [expectSuccess] is set. [stdin] is written to its standard input,
+  /// which is then closed.
   Future<_ProcessOutput> run(
     final String executable,
     final List<String> arguments, {
     final Map<String, String> environment = const {},
+    final String? stdin,
     final bool expectSuccess = true,
   }) async {
     final separator = Platform.isWindows ? ';' : ':';
@@ -973,6 +1484,10 @@ class _Environment {
       workingDirectory: workDir.path,
       environment: processEnvironment,
     );
+    if (stdin != null) {
+      process.stdin.write(stdin);
+      await process.stdin.close();
+    }
     final stdout = process.stdout.transform(utf8.decoder).join();
     final stderr = process.stderr.transform(utf8.decoder).join();
     final exitCode = await process.exitCode.timeout(

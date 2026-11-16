@@ -5,7 +5,7 @@
 library;
 
 import 'dart:async' show FutureOr;
-import 'dart:io' show exitCode;
+import 'dart:io' show Platform, exitCode;
 
 import 'package:config/command.dart';
 import 'package:config/config.dart';
@@ -308,9 +308,20 @@ CommandRunner<OptionDefinition, int> buildLeafCompletionCli({
 /// response or script.
 const afterRunnerMarker = '>>> result:';
 
+/// The environment variable that, when set, makes the compiled fixture
+/// report usage errors without throwing a [UsageException].
+const noUsageExceptionVariable = 'COMPTOOL_NO_USAGE_EXCEPTION';
+
 Future<void> main(final List<String> args) async {
   try {
     final result = await buildCompletionCli(
+      usageOutput: Platform.environment.containsKey(noUsageExceptionVariable)
+          ? UsageOutputHandler(
+              exceptionSettings: const UsageExceptionSettings(
+                noUsageException: true,
+              ),
+            )
+          : null,
       completion: const CompletionSettings(exitAfterResponse: true),
     ).run(args);
     print('$afterRunnerMarker $result');

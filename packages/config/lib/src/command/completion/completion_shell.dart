@@ -29,8 +29,8 @@ enum CompletionShell {
   ///
   /// [viaOption] selects how the script is requested from the executable in
   /// the installation instructions of the script header: with the
-  /// `completion <shell>` command (the default) or, for an executable
-  /// without subcommands, with the `--completion <shell>` option.
+  /// `completion --shell <shell>` command (the default) or, for an
+  /// executable without subcommands, with the `--completion <shell>` option.
   ///
   /// [commandName] makes the script complete that command name instead of
   /// [executableName], for a wrapper script that forwards to the executable
@@ -82,7 +82,7 @@ enum CompletionShell {
   }
 
   /// The command line that prints the completion script for this shell:
-  /// `<exe> completion <shell>`, or `<exe> --completion <shell>` if
+  /// `<exe> completion --shell <shell>`, or `<exe> --completion <shell>` if
   /// [viaOption]. With a [commandName], the `completion` command's
   /// `--command <name>` option is added.
   String scriptCommand(
@@ -90,7 +90,7 @@ enum CompletionShell {
     final bool viaOption = false,
     final String? commandName,
   }) {
-    final command = viaOption ? '--completion' : 'completion';
+    final command = viaOption ? '--completion' : 'completion --shell';
     final forCommand = commandName == null || viaOption
         ? ''
         : ' --command $commandName';
@@ -126,7 +126,7 @@ enum CompletionShell {
   }
 
   /// The command that installs the completion script for this shell,
-  /// e.g. `source <(mycli completion bash)`.
+  /// e.g. `source <(mycli completion --shell bash)`.
   ///
   /// See [installLocation] for where to run or add it,
   /// and [scriptCommand] for [viaOption] and [commandName].
@@ -203,7 +203,8 @@ enum CompletionShell {
       CompletionShell.zsh =>
         'Add to ~/.zshrc (after compinit):\n'
             '  $command\n'
-            'or save it once to a directory in \$fpath:\n'
+            'or save it once to a directory in \$fpath '
+            '(then remove ~/.zcompdump* to rebuild the completion cache):\n'
             '  $script > "\${fpath[1]}/_$name"',
       CompletionShell.fish => 'Save it once:\n  $command',
       CompletionShell.powershell =>
@@ -221,11 +222,7 @@ enum CompletionShell {
   /// shell session, e.g. by reloading the shell.
   String get activationInstruction => switch (this) {
     CompletionShell.bash => 'Then reload the shell:\n  exec bash',
-    CompletionShell.zsh =>
-      'Then reload the shell:\n'
-          '  exec zsh\n'
-          '(when saved to \$fpath, first remove ~/.zcompdump* '
-          'to rebuild the completion cache)',
+    CompletionShell.zsh => 'Then reload the shell:\n  exec zsh',
     CompletionShell.fish => 'Fish loads it automatically, no reload needed.',
     CompletionShell.powershell => 'Then reload the profile:\n  . \$PROFILE',
     CompletionShell.carapace => 'Then start a new shell session.',
@@ -233,15 +230,15 @@ enum CompletionShell {
 }
 
 /// Short installation instructions for all shells, one line per shell,
-/// under an `Installation:` heading. Used in the usage of the
-/// `completion` command.
+/// under a [heading]. Used in the usage of the `completion` command.
 String completionInstallationOverview(
   final String executableName, {
   final bool viaOption = false,
+  final String heading = 'Installation:',
 }) {
   const labelWidth = 12;
   return [
-    'Installation:',
+    heading,
     for (final shell in CompletionShell.values)
       '  ${'${shell.displayName}:'.padRight(labelWidth)} '
           '${shell.installInstruction(executableName, viaOption: viaOption)}',

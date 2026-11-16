@@ -73,7 +73,8 @@ executable subcommand --version           # error
 
 `--completion <shell>` is automatically defined in on a runner with no
 subcommands. A runner with subcommands has the `completion` subcommand instead.
-They perform the same thing: Print the completion script for a shell.
+Both print the completion script for a shell. The subcommand can also install
+it, see [Shell completion](#shell-completion).
 
 ### Help
 
@@ -125,20 +126,55 @@ completion for Bash, Zsh, Fish, PowerShell and the
 and requires no work from the CLI developer.
 
 End users install the completion once. A `CommandRunner` with subcommands gets
-a `completion` subcommand that prints the script for a shell:
+a `completion` subcommand, whose `install` subcommand installs the completion
+for the current user:
+
+```sh
+mycli completion install             # for the shell it is run from
+mycli completion install --dry-run   # only print what it would do
+mycli completion install --shell zsh # for a given shell
+```
+
+It prints each change it makes. The script is saved where the shell looks for
+it, and for the shells that need it, lines that load the script are appended
+to the shell's startup file:
+
+| Shell      | Script                                                     | Startup file                            |
+|------------|------------------------------------------------------------|-----------------------------------------|
+| Bash       | `~/.local/share/bash-completion/completions/mycli`         | `~/.bashrc` (macOS: `~/.bash_profile`)  |
+| Zsh        | `~/.local/share/zsh/site-functions/_mycli`                 | `~/.zshrc`                              |
+| Fish       | `~/.config/fish/completions/mycli.fish`                    |                                         |
+| PowerShell | `Completions/mycli.ps1` next to the profile                | `$PROFILE`                              |
+| Carapace   | `carapace/specs/mycli.yaml` in the user config directory   |                                         |
+
+`XDG_DATA_HOME`, `XDG_CONFIG_HOME`, `BASH_COMPLETION_USER_DIR` and `ZDOTDIR`
+are honored. Installing again overwrites the script and leaves a startup file
+that already loads it as it is. In Zsh, the added lines also initialize the
+completion system (`compinit`) if the startup file has not done so.
+
+Without a subcommand, `completion` prints the script instead, for a manual
+installation:
 
 ```sh
 # Bash: add to ~/.bashrc
-source <(mycli completion bash)
+source <(mycli completion --shell bash)
 # Zsh: add to ~/.zshrc after compinit, or save as _mycli in a directory on $fpath
-source <(mycli completion zsh)
+source <(mycli completion --shell zsh)
 # Fish
-mycli completion fish > ~/.config/fish/completions/mycli.fish
+mycli completion --shell fish > ~/.config/fish/completions/mycli.fish
 # PowerShell: add to $PROFILE
-mycli completion powershell | Out-String | Invoke-Expression
+mycli completion --shell powershell | Out-String | Invoke-Expression
 # Carapace: save to the specs directory shown by `carapace --help`
-mycli completion carapace > ~/.config/carapace/specs/mycli.yaml
+mycli completion --shell carapace > ~/.config/carapace/specs/mycli.yaml
 ```
+
+`--shell` and `--command` are persistent options of `completion`, so they may
+be written before or after `install`. When `--shell` is not given, the shell
+is detected (`detectCompletionShell`): it is the nearest ancestor process that
+is a shell the user types in, so a wrapper script of the CLI does not hide the
+shell it was started from. Failing that it is the login shell (`$SHELL`), or
+PowerShell on Windows. If no supported shell is found, a usage error asks for
+`--shell`. Carapace is not a shell and is always given explicitly.
 
 A `CommandRunner` without subcommands has the built-in global option
 `--completion <shell>` instead (listed under "Global options" next to
@@ -155,8 +191,9 @@ comment header of its script; `mycli completion --help` lists them for all
 shells.
 
 For a wrapper script of the CLI (same commands and options under another
-name), generate the script with `--command <name>` and install it for that
-name: `source <(mycli completion bash --command mywrap)`. The script then
+name), install or generate the script with `--command <name>`:
+`mycli completion install --command mywrap`, or
+`source <(mycli completion --shell bash --command mywrap)`. The script then
 completes `mywrap`, while sending the completion requests to `mycli` directly,
 so that nothing the wrapper prints or adds to the arguments can interfere.
 Programs without subcommands can do the same via the API,
@@ -280,7 +317,20 @@ CommandRunner(
 ```
 
 A CLI that defines its own `completion` subcommand takes precedence over the
-built-in one. The built-in global options `--help` and `--completion`
+built-in one. That subcommand can be a `CompletionCommand` with its own
+`CompletionInstaller`:
+
+```dart
+CompletionCommand<int>(
+  installer: CompletionInstaller(environment: {'HOME': sandboxHome}),
+)
+```
+
+The options of the built-in command, `--shell` and `--command`
+(`CompletionOption`) and `--dry-run` (`CompletionInstallOption`),
+must not be the names of global options of the application.
+
+The built-in global options `--help` and `--completion`
 (`BuiltinGlobalOption`) are kept apart from the application's typed
 `globalOptions`, so they are available for any option type without being
 listed; the application's global options must not share their names or

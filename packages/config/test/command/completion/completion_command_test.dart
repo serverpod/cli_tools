@@ -1,7 +1,8 @@
-import 'dart:io' show stderr, stdout;
+import 'dart:io' show Directory, File, stderr, stdout;
 
 import 'package:config/command.dart';
 import 'package:config/config.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 import 'fixtures/completion_cli.dart';
@@ -55,11 +56,15 @@ void main() {
 
     for (final shell in CompletionShell.values) {
       test(
-        'when running `completion ${shell.name}` '
+        'when running `completion --shell ${shell.name}` '
         'then the ${shell.displayName} script for the executable '
         'is written to the output sink and the runner middleware runs',
         () async {
-          final result = await runner.run(['completion', shell.name]);
+          final result = await runner.run([
+            'completion',
+            '--shell',
+            shell.name,
+          ]);
           expect(result, isNull);
           expect(
             out.toString(),
@@ -74,23 +79,46 @@ void main() {
       );
     }
 
-    test('when running `completion` without a shell '
-        'then a usage error is reported', () async {
-      await expectLater(
-        runner.run(['completion']),
-        throwsA(isA<UsageException>()),
-      );
-      expect(err.toString(), contains('shell'));
-    });
-
+    test(
+      'when running `completion` without a shell '
+      'then the script of the shell detected in this environment is printed',
+      () async {
+        await runner.run(['completion']);
+        expect(
+          out.toString(),
+          detectCompletionShell()?.script(
+            'comptool',
+            description: runner.usageDefinition.description,
+          ),
+        );
+      },
+      skip: detectCompletionShell() == null
+          ? 'No shell is detected in this environment'
+          : null,
+    );
     test('when running `completion` with an unknown shell '
         'then a usage error listing the shells is reported', () async {
       await expectLater(
-        runner.run(['completion', 'tcsh']),
+        runner.run(['completion', '--shell', 'tcsh']),
         throwsA(isA<UsageException>()),
       );
       expect(err.toString(), contains('bash'));
       expect(err.toString(), contains('carapace'));
+    });
+
+    test('when running `completion bash` with the shell as an argument '
+        'then it is reported as an unknown subcommand', () async {
+      await expectLater(
+        runner.run(['completion', 'bash']),
+        throwsA(
+          isA<UsageException>().having(
+            (final e) => e.message,
+            'message',
+            contains('Unknown subcommand: "bash"'),
+          ),
+        ),
+      );
+      expect(out.toString(), isEmpty);
     });
 
     test('when running `completion --help` '
@@ -103,24 +131,65 @@ void main() {
       }
       expect(output, contains('Usage: comptool completion'));
       expect(
-        output.indexOf('Installation:'),
-        lessThan(output.indexOf('Usage: comptool completion')),
+        output.indexOf('Manual installation:'),
+        inInclusiveRange(0, output.indexOf('Usage: comptool completion')),
+      );
+    });
+
+    test('when running `completion --help` '
+        'then the install subcommand is described and listed', () async {
+      await runner.run(['completion', '--help']);
+      final output = out.toString();
+      expect(output, contains('run `comptool completion install`'));
+      expect(
+        output,
+        matches(RegExp(r'install +Install the shell completion script')),
+      );
+    });
+
+    test('when running `completion --help` '
+        'then the usage has the persistent options, with and without '
+        'a subcommand', () async {
+      await runner.run(['completion', '--help']);
+      expect(
+        out.toString(),
+        contains(
+          'Usage: comptool completion [--shell=<shell>] '
+          '[--command=<command>] <subcommand> [arguments]\n'
+          '   or: comptool completion [--shell=<shell>] '
+          '[--command=<command>]\n',
+        ),
+      );
+    });
+
+    test('when running `completion install --help` '
+        'then the usage of the install subcommand is printed', () async {
+      await runner.run(['completion', 'install', '--help']);
+      expect(
+        out.toString(),
+        contains('Usage: comptool completion install [--dry-run]'),
       );
     });
 
     test('when running `help completion` '
-        'then its usage is printed although the shell is missing', () async {
+        'then its usage is printed', () async {
       await runner.run(['help', 'completion']);
-      expect(out.toString(), contains('Usage: comptool completion <shell>'));
+      expect(
+        out.toString(),
+        contains('Usage: comptool completion [--shell=<shell>]'),
+      );
       expect(err.toString(), isEmpty);
     });
 
-    test('when running `completion zsh` '
+    test('when running `completion --shell zsh` '
         'then the script header has the installation instructions '
         'for the completion command', () async {
-      await runner.run(['completion', 'zsh']);
+      await runner.run(['completion', '--shell', 'zsh']);
       final output = out.toString();
-      expect(output, contains('# Generated by `comptool completion zsh`.'));
+      expect(
+        output,
+        contains('# Generated by `comptool completion --shell zsh`.'),
+      );
       for (final line
           in CompletionShell.zsh.installInstructions('comptool').split('\n')) {
         expect(output, contains('# $line'));
@@ -128,20 +197,31 @@ void main() {
       expect(output, isNot(contains('--completion')));
     });
 
-    test('when running `completion bash --command mywrap` '
+    test('when running `completion --shell bash --command mywrap` '
         'then the script completes the wrapper name '
         'and sends the requests to the executable directly', () async {
-      await runner.run(['completion', 'bash', '--command', 'mywrap']);
+      await runner.run([
+        'completion',
+        '--shell',
+        'bash',
+        '--command',
+        'mywrap',
+      ]);
       final output = out.toString();
       expect(output, contains('complete -F __mywrap_complete mywrap'));
       expect(output, contains("local cmd='comptool' out"));
       expect(
         output,
-        contains('# Generated by `comptool completion bash --command mywrap`.'),
+        contains(
+          '# Generated by '
+          '`comptool completion --shell bash --command mywrap`.',
+        ),
       );
       expect(
         output,
-        contains('#   source <(comptool completion bash --command mywrap)'),
+        contains(
+          '#   source <(comptool completion --shell bash --command mywrap)',
+        ),
       );
       expect(output, contains('/etc/bash_completion.d/mywrap'));
       expect(output, contains('requested from comptool directly'));
@@ -149,9 +229,15 @@ void main() {
     });
 
     for (final shell in CompletionShell.values) {
-      test('when running `completion ${shell.name} --command mywrap` '
+      test('when running `completion --shell ${shell.name} --command mywrap` '
           'then the ${shell.displayName} script is for the wrapper', () async {
-        await runner.run(['completion', shell.name, '--command', 'mywrap']);
+        await runner.run([
+          'completion',
+          '--shell',
+          shell.name,
+          '--command',
+          'mywrap',
+        ]);
         expect(
           out.toString(),
           CompletionShell.values
@@ -165,9 +251,9 @@ void main() {
       });
     }
 
-    test('when running `completion zsh` '
+    test('when running `completion --shell zsh` '
         'then the script completes the executable as typed', () async {
-      await runner.run(['completion', 'zsh']);
+      await runner.run(['completion', '--shell', 'zsh']);
       expect(out.toString(), contains(r'cmd=${(Q)words[1]}'));
       expect(out.toString(), isNot(contains("cmd='comptool'")));
     });
@@ -228,10 +314,10 @@ void main() {
       ]);
     });
 
-    test('when running `completion bash` '
+    test('when running `completion --shell bash` '
         'then it is an unknown subcommand', () async {
       await expectLater(
-        runner.run(['completion', 'bash']),
+        runner.run(['completion', '--shell', 'bash']),
         throwsA(isA<UsageException>()),
       );
       expect(out.toString(), isEmpty);
@@ -272,9 +358,9 @@ void main() {
       expect(runner.usage, contains('build'));
     });
 
-    test('when running `completion fish` '
+    test('when running `completion --shell fish` '
         'then the script is still printed', () async {
-      await runner.run(['completion', 'fish']);
+      await runner.run(['completion', '--shell', 'fish']);
       expect(out.toString(), CompletionShell.fish.script('comptool'));
     });
 
@@ -282,6 +368,221 @@ void main() {
         'then the completion command is not offered', () async {
       await runner.run(['__complete', '']);
       expect(out.toString(), isNot(contains('completion')));
+    });
+  });
+
+  // The shell detection depends on the processes and the environment the
+  // tests are run in, so here the shell is given. The commands with a
+  // detected shell, or with none, are tested in the shell integration tests,
+  // which control the environment of the fixture executable.
+  group('Given a completion command that installs into a home directory', () {
+    late Directory home;
+
+    String homePath(
+      final String part1, [
+      final String? part2,
+      final String? part3,
+      final String? part4,
+      final String? part5,
+    ]) => p.join(home.path, part1, part2, part3, part4, part5);
+
+    setUp(() {
+      home = Directory.systemTemp.createTempSync('completion_command_test_');
+      runner = buildCompletionCli(
+        usageOutput: usage(),
+        trace: trace,
+        completionOutput: out,
+        completionError: err,
+        extraCommands: [
+          CompletionCommand<int>(
+            installer: CompletionInstaller(environment: {'HOME': home.path}),
+          ),
+        ],
+      );
+    });
+
+    tearDown(() => home.deleteSync(recursive: true));
+
+    group('when running `completion install --shell fish`', () {
+      late String scriptPath;
+      late int? result;
+
+      setUp(() async {
+        scriptPath = homePath(
+          '.config',
+          'fish',
+          'completions',
+          'comptool.fish',
+        );
+        result = await runner.run(['completion', 'install', '--shell', 'fish']);
+      });
+
+      test('then the script of the given shell is saved '
+          'where the shell loads it from', () {
+        expect(
+          File(scriptPath).readAsStringSync(),
+          CompletionShell.fish.script(
+            'comptool',
+            description: runner.usageDefinition.description,
+          ),
+        );
+      });
+
+      test('then the steps are printed, followed by how to activate '
+          'the completion', () {
+        expect(
+          out.toString(),
+          'Installing the Fish completion for comptool:\n'
+          '  Create directory ${p.dirname(scriptPath)}\n'
+          '  Write $scriptPath\n'
+          'Fish loads it automatically, no reload needed.\n',
+        );
+      });
+
+      test('then nothing is printed to the error sink', () {
+        expect(err.toString(), isEmpty);
+      });
+
+      test('then the runner returns null after running its middleware', () {
+        expect(result, isNull);
+        expect(trace, ['middleware:comptool']);
+      });
+    });
+
+    group('when running `completion install --shell fish --dry-run`', () {
+      setUp(() async {
+        await runner.run([
+          'completion',
+          'install',
+          '--shell',
+          'fish',
+          '--dry-run',
+        ]);
+      });
+
+      test('then the steps are printed as a dry run, '
+          'without how to activate the completion', () {
+        final scriptPath = homePath(
+          '.config',
+          'fish',
+          'completions',
+          'comptool.fish',
+        );
+        expect(
+          out.toString(),
+          'Installing the Fish completion for comptool '
+          '(dry run, nothing is changed):\n'
+          '  Create directory ${p.dirname(scriptPath)}\n'
+          '  Write $scriptPath\n',
+        );
+      });
+
+      test('then nothing is created in the home directory', () {
+        expect(home.listSync(), isEmpty);
+      });
+    });
+
+    group('when running `completion --shell zsh install`', () {
+      setUp(() async {
+        await runner.run(['completion', '--shell', 'zsh', 'install']);
+      });
+
+      test('then the script of the given shell is saved', () {
+        expect(
+          File(
+            homePath('.local', 'share', 'zsh', 'site-functions', '_comptool'),
+          ).readAsStringSync(),
+          startsWith('#compdef comptool'),
+        );
+      });
+
+      test('then the startup file of the shell loads the script', () {
+        expect(
+          File(homePath('.zshrc')).readAsStringSync(),
+          contains(p.join('site-functions', '_comptool')),
+        );
+      });
+
+      test('then the added startup file lines are printed', () {
+        expect(
+          out.toString(),
+          contains(
+            '  Create ${homePath('.zshrc')}:\n'
+            '    # comptool shell completion, '
+            'added by `comptool completion install`.\n',
+          ),
+        );
+      });
+    });
+
+    test('when running `completion install --shell zsh --dry-run` '
+        'with the persistent option after the subcommand '
+        'then the steps for the given shell are printed '
+        'and nothing is created', () async {
+      await runner.run([
+        'completion',
+        'install',
+        '--shell',
+        'zsh',
+        '--dry-run',
+      ]);
+      expect(
+        out.toString(),
+        startsWith(
+          'Installing the Zsh completion for comptool '
+          '(dry run, nothing is changed):\n',
+        ),
+      );
+      expect(home.listSync(), isEmpty);
+    });
+
+    test('when running `completion --shell fish install --command mywrap` '
+        'then the script for the wrapper is saved under its name', () async {
+      await runner.run([
+        'completion',
+        '--shell',
+        'fish',
+        'install',
+        '--command',
+        'mywrap',
+      ]);
+      expect(
+        File(
+          homePath('.config', 'fish', 'completions', 'mywrap.fish'),
+        ).readAsStringSync(),
+        CompletionShell.fish.script(
+          'comptool',
+          description: runner.usageDefinition.description,
+          commandName: 'mywrap',
+        ),
+      );
+      expect(
+        out.toString(),
+        startsWith('Installing the Fish completion for mywrap:\n'),
+      );
+    });
+
+    test('when running `completion install --shell fish` twice '
+        'then the second run only writes the script again', () async {
+      await runner.run(['completion', 'install', '--shell', 'fish']);
+      out.clear();
+      await runner.run(['completion', 'install', '--shell', 'fish']);
+      expect(
+        out.toString(),
+        'Installing the Fish completion for comptool:\n'
+        '  Write '
+        '${homePath('.config', 'fish', 'completions', 'comptool.fish')}\n'
+        'Fish loads it automatically, no reload needed.\n',
+      );
+    });
+
+    test('when running `completion install` with an unexpected argument '
+        'then a usage error is reported and nothing is created', () async {
+      await expectLater(
+        runner.run(['completion', 'install', 'fish']),
+        throwsA(isA<UsageException>()),
+      );
+      expect(home.listSync(), isEmpty);
     });
   });
 
@@ -543,7 +844,7 @@ void main() {
           'then the long form contains the install command '
           'and the short form adds the location', () {
         final command = shell.installCommand('my-tool');
-        expect(command, contains('my-tool completion ${shell.name}'));
+        expect(command, contains('my-tool completion --shell ${shell.name}'));
         expect(shell.installInstructions('my-tool'), contains(command));
         final short = shell.installInstruction('my-tool');
         expect(short, startsWith(command));
@@ -566,14 +867,16 @@ void main() {
         expect(
           script,
           contains(
-            'Generated by `my-tool completion ${shell.name} '
+            'Generated by `my-tool completion --shell ${shell.name} '
             '--command wrap`.',
           ),
         );
         expect(
           shell.installCommand('my-tool', commandName: 'wrap'),
           allOf(
-            contains('my-tool completion ${shell.name} --command wrap'),
+            contains(
+              'my-tool completion --shell ${shell.name} --command wrap',
+            ),
             isNot(contains('my-tool.')),
           ),
         );

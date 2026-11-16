@@ -5,8 +5,9 @@ import '../output_sinks.dart';
 /// Completion is enabled by default. It adds:
 /// - a hidden `__complete` request handler that the shell completion scripts
 ///   call to obtain the completion alternatives,
-/// - a `completion <shell>` subcommand that prints the completion script
-///   for a shell, when the runner has subcommands,
+/// - a `completion` subcommand that prints the completion script for a
+///   shell, and installs it with `completion install`, when the runner has
+///   subcommands,
 /// - a `--completion <shell>` global option that does the same, when the
 ///   runner has no subcommands.
 ///

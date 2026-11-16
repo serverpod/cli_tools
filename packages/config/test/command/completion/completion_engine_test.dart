@@ -524,8 +524,18 @@ void main() {
 
   group('Given a completion request for the built-in commands', () {
     test('when completing the completion command argument '
-        'then the shell names are offered', () async {
+        'then the install subcommand is offered', () async {
       final response = await complete(runner, out, ['completion', '']);
+      expect(valuesOf(response), ['install']);
+    });
+
+    test('when completing the shell option of the completion command '
+        'then the shell names are offered', () async {
+      final response = await complete(runner, out, [
+        'completion',
+        '--shell',
+        '',
+      ]);
       expect(valuesOf(response), [
         'bash',
         'zsh',
@@ -534,6 +544,42 @@ void main() {
         'carapace',
       ]);
     });
+
+    test(
+      'when completing the shell option after the install subcommand '
+      'then the shell names are offered since the option is persistent',
+      () async {
+        final response = await complete(runner, out, [
+          'completion',
+          'install',
+          '--shell',
+          '',
+        ]);
+        expect(valuesOf(response), [
+          'bash',
+          'zsh',
+          'fish',
+          'powershell',
+          'carapace',
+        ]);
+      },
+    );
+
+    test(
+      'when completing a dash after the install subcommand '
+      'then its dry-run flag and the persistent options are offered',
+      () async {
+        final response = await complete(runner, out, [
+          'completion',
+          'install',
+          '-',
+        ]);
+        expect(
+          valuesOf(response),
+          containsAll(['--dry-run', '--shell', '--command']),
+        );
+      },
+    );
 
     test('when completing the help command argument '
         'then the non-hidden commands are offered', () async {

@@ -5,7 +5,7 @@ import '../completion_shell.dart' show shellQuote;
 /// The completion requests are sent to the command as typed, or to
 /// [program] if given (when [name] is a wrapper of it).
 ///
-/// The script can be sourced (`source <(exe completion zsh)`) or saved as
+/// The script can be sourced (`source <(exe completion --shell zsh)`) or saved as
 /// `_exe` in a directory on `$fpath` for autoloading.
 String zshCompletionScript(
   final String name,
