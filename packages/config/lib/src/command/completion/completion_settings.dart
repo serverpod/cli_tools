@@ -1,0 +1,49 @@
+import '../output_sinks.dart';
+
+/// Settings for the built-in shell completion support of a `CommandRunner`.
+///
+/// Completion is enabled by default. It adds:
+/// - a hidden `__complete` request handler that the shell completion scripts
+///   call to obtain the completion alternatives,
+/// - a `completion` subcommand that prints the completion script for a
+///   shell, and installs it with `completion install`, when the runner has
+///   subcommands,
+/// - a `--completion <shell>` global option that does the same, when the
+///   runner has no subcommands.
+///
+/// The generated scripts carry their installation instructions in their
+/// comment header, so that they are available for both kinds of runners.
+class CompletionSettings {
+  /// Whether completion support is enabled.
+  final bool enabled;
+
+  /// Whether the `completion` subcommand is hidden from the usage help.
+  final bool hideCommand;
+
+  /// Whether the process exits (with exit code 0) as soon as a completion
+  /// response or a completion script has been written.
+  ///
+  /// False by default: `CommandRunner.run()` then returns null after the
+  /// completion output.
+  ///
+  /// The completion output must be the only output on stdout: anything the
+  /// program prints after `CommandRunner.run()` returns would corrupt the
+  /// response read by the shell, or the script being sourced. Set to true
+  /// to prevent that without requiring the program to check what was run.
+  /// The completion output is flushed before exiting when it is an `IOSink`
+  /// (stdout is).
+  final bool exitAfterResponse;
+
+  /// Where completion responses, scripts, and failure diagnostics are written.
+  final OutputSinks sinks;
+
+  const CompletionSettings({
+    this.enabled = true,
+    this.hideCommand = false,
+    this.exitAfterResponse = false,
+    this.sinks = const OutputSinks(),
+  });
+
+  /// Disables completion support entirely.
+  static const CompletionSettings disabled = CompletionSettings(enabled: false);
+}

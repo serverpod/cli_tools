@@ -1,0 +1,1086 @@
+import 'package:config/command.dart';
+import 'package:config/config.dart';
+import 'package:test/test.dart';
+
+import 'fixtures/completion_cli.dart';
+
+/// The parsed response of a `__complete` request.
+typedef Response = ({List<String> lines, int directive});
+
+/// Runs a `__complete` request on [runner] and parses the response.
+Future<Response> complete(
+  final CommandRunner<OptionDefinition, int> runner,
+  final StringBuffer out,
+  final List<String> words, {
+  final Map<String, String>? env,
+}) async {
+  final result = await runner.run(['__complete', ...words], env: env);
+  expect(result, isNull, reason: 'a completion request runs no command');
+  final lines = out.toString().split('\n');
+  expect(lines.last, isEmpty, reason: 'the response ends with a newline');
+  lines.removeLast();
+  final footer = lines.removeLast();
+  expect(footer, startsWith(':'), reason: 'the response ends with :<N>');
+  return (lines: lines, directive: int.parse(footer.substring(1)));
+}
+
+/// The candidate values of a response, without descriptions.
+List<String> valuesOf(final Response response) =>
+    response.lines.map((final line) => line.split('\t').first).toList();
+
+void main() {
+  late StringBuffer out;
+  late StringBuffer err;
+  late CommandRunner<OptionDefinition, int> runner;
+  late List<String> trace;
+
+  setUp(() {
+    out = StringBuffer();
+    err = StringBuffer();
+    trace = [];
+    runner = buildCompletionCli(
+      usageOutput: UsageOutputHandler(
+        sinks: OutputSinks(out: out, err: err),
+      ),
+      trace: trace,
+      completionOutput: out,
+      completionError: err,
+    );
+  });
+
+  group('Given a completion request for the first word', () {
+    test('when the word is empty then the non-hidden subcommands '
+        'including the built-in completion command are offered '
+        'with the first line of their description', () async {
+      final response = await complete(runner, out, ['']);
+      expect(response.lines, [
+        'build\tBuild the project.',
+        'deploy\tDeploy a bundle to a target.',
+        'export\tExport data in one of the formats.',
+        'version\tDisplay the version.',
+        'db\tDatabase commands.',
+        'completion\tGenerate a shell completion script.',
+      ]);
+      expect(response.directive, CompletionDirective.noFileCompletion);
+    });
+
+    test('when the word is a prefix then only matching subcommands '
+        'are offered', () async {
+      final response = await complete(runner, out, ['d']);
+      expect(valuesOf(response), ['deploy', 'db']);
+    });
+
+    test('when the word is a dash then the global options and the '
+        'option-like command aliases are offered', () async {
+      final response = await complete(runner, out, ['-']);
+      expect(response.lines, [
+        '--help\tPrint this usage information.',
+        '-h\tPrint this usage information.',
+        '--config\tThe configuration file.',
+        '-c\tThe configuration file.',
+        '--verbose\tPrint more.',
+        '--no-verbose\tPrint more.',
+        '--version\tDisplay the version.',
+      ]);
+      expect(response.directive, CompletionDirective.noFileCompletion);
+    });
+
+    test('when the word is a double dash then short options '
+        'are not offered', () async {
+      final response = await complete(runner, out, ['--']);
+      expect(valuesOf(response), [
+        '--help',
+        '--config',
+        '--verbose',
+        '--no-verbose',
+        '--version',
+      ]);
+    });
+
+    test('when the word is a long option prefix '
+        'then only matching options are offered', () async {
+      final response = await complete(runner, out, ['--ver']);
+      expect(valuesOf(response), ['--verbose', '--version']);
+    });
+
+    test('then no command and no middleware is run', () async {
+      await complete(runner, out, ['']);
+      expect(trace, isEmpty);
+    });
+
+    test('when completing an option value '
+        'then the middlewares of the resolved commands run '
+        'and the command does not', () async {
+      await complete(runner, out, ['build', '--mode', '']);
+      expect(trace, ['middleware:comptool']);
+    });
+
+    test('then nothing is written to the error sink', () async {
+      await complete(runner, out, ['']);
+      expect(err.toString(), isEmpty);
+    });
+  });
+
+  group('Given a completion request within a subcommand', () {
+    test('when the word is a dash then the subcommand options, '
+        'and the global options, but not hidden options, '
+        'are offered', () async {
+      final response = await complete(runner, out, ['build', '-']);
+      expect(valuesOf(response), [
+        '--help',
+        '-h',
+        '--config',
+        '-c',
+        '--verbose',
+        '--no-verbose',
+        '--mode',
+        '-m',
+        '--out',
+        '-o',
+        '--tags',
+        '--jobs',
+        '-j',
+        '--project',
+        '--env',
+        '-e',
+        '--spec',
+      ]);
+    });
+
+    test('when an option was already given '
+        'then it is no longer offered', () async {
+      final response = await complete(runner, out, [
+        '--verbose',
+        'build',
+        '--mode',
+        'debug',
+        '-',
+      ]);
+      expect(valuesOf(response), isNot(contains('--mode')));
+      expect(valuesOf(response), isNot(contains('-m')));
+      expect(valuesOf(response), isNot(contains('--verbose')));
+      expect(valuesOf(response), contains('--out'));
+    });
+
+    test('when a multi-option was already given '
+        'then it is still offered', () async {
+      final response = await complete(runner, out, [
+        'build',
+        '--tags',
+        'fast',
+        '--',
+      ]);
+      expect(valuesOf(response), contains('--tags'));
+    });
+
+    test('when the subcommand has no positional options '
+        'and the word is not an option then nothing is offered', () async {
+      final response = await complete(runner, out, ['build', '']);
+      expect(response.lines, isEmpty);
+      expect(response.directive, CompletionDirective.noFileCompletion);
+    });
+
+    test('when the command is nested '
+        'then its subcommands are offered', () async {
+      final response = await complete(runner, out, ['db', '']);
+      expect(response.lines, [
+        'migrate\tRun the migrations.',
+        'seed\tSeed the database.',
+      ]);
+    });
+
+    test('when the command is nested '
+        'then its options are completed', () async {
+      final response = await complete(runner, out, [
+        'db',
+        'migrate',
+        '--steps',
+        '',
+      ]);
+      expect(valuesOf(response), ['1', '5', '10']);
+    });
+  });
+
+  group('Given a completion request for an option value', () {
+    test('when the option is an enum then its values are offered '
+        'with allowed help descriptions', () async {
+      final response = await complete(runner, out, ['build', '--mode', '']);
+      expect(response.lines, [
+        'debug\tDebug build',
+        'profile',
+        'release\tOptimized build',
+      ]);
+      expect(response.directive, CompletionDirective.noFileCompletion);
+    });
+
+    test('when the option is given by abbreviation '
+        'then its values are offered', () async {
+      final response = await complete(runner, out, ['build', '-m', '']);
+      expect(valuesOf(response), ['debug', 'profile', 'release']);
+    });
+
+    test('when the value is attached with an equals sign '
+        'then the bare values are offered', () async {
+      final response = await complete(runner, out, ['build', '--mode=re']);
+      expect(valuesOf(response), ['debug', 'profile', 'release']);
+      expect(response.directive, CompletionDirective.noFileCompletion);
+    });
+
+    test('when the value is attached to a cluster of abbreviations '
+        'then the values of the last option are offered', () async {
+      runner = buildCompletionCli(
+        completionOutput: out,
+        completionError: err,
+        extraCommands: [
+          CommandImpl.leafWithRunFunction(
+            name: 'pack',
+            description: 'Pack the project.',
+            options: const [
+              FlagOption(argName: 'fast', argAbbrev: 'f', negatable: false),
+              modeOption,
+            ],
+            run: (final _) => 0,
+          ),
+        ],
+      );
+      final response = await complete(runner, out, ['pack', '-fm=r']);
+      expect(valuesOf(response), ['debug', 'profile', 'release']);
+      expect(response.directive, CompletionDirective.noFileCompletion);
+    });
+
+    test('when the option is a directory option '
+        'then directory completion is requested', () async {
+      final response = await complete(runner, out, ['build', '--out', '']);
+      expect(response.lines, isEmpty);
+      expect(response.directive, CompletionDirective.filterDirectories);
+    });
+
+    test('when the option is a file option '
+        'then file completion is requested', () async {
+      final response = await complete(runner, out, ['--config', '']);
+      expect(response.lines, isEmpty);
+      expect(response.directive, CompletionDirective.defaultDirective);
+    });
+
+    test('when the option completes files with given extensions '
+        'then extension filtered file completion is requested', () async {
+      final response = await complete(runner, out, ['build', '--spec', '']);
+      expect(response.lines, ['yaml', 'yml']);
+      expect(response.directive, CompletionDirective.filterFileExtensions);
+    });
+
+    test('when the option is an int option without allowed values '
+        'then file completion is requested', () async {
+      final response = await complete(runner, out, ['build', '--jobs', '']);
+      expect(response.lines, isEmpty);
+      expect(response.directive, CompletionDirective.defaultDirective);
+    });
+
+    test('when the option is a multi-option with allowed values '
+        'then the values are offered', () async {
+      final response = await complete(runner, out, ['build', '--tags', '']);
+      expect(valuesOf(response), ['fast', 'slow', 'net']);
+    });
+
+    test('when completing a later element of a multi-option list '
+        'then the earlier elements are kept as prefix', () async {
+      final response = await complete(runner, out, [
+        'build',
+        '--tags',
+        'fast,s',
+      ]);
+      expect(valuesOf(response), ['fast,fast', 'fast,slow', 'fast,net']);
+    });
+
+    test('when the preceding option is a flag '
+        'then the word is not treated as its value', () async {
+      final response = await complete(runner, out, ['--verbose', '']);
+      expect(valuesOf(response), contains('build'));
+    });
+
+    test('when the option is given twice '
+        'then the values are still offered', () async {
+      final response = await complete(runner, out, [
+        'build',
+        '--mode',
+        'debug',
+        '--mode',
+        '',
+      ]);
+      expect(valuesOf(response), ['debug', 'profile', 'release']);
+    });
+
+    test('when the option is an alias '
+        'then the option is still recognized', () async {
+      final response = await complete(runner, out, [
+        'build',
+        '--proj',
+        'p',
+        '--env',
+        '',
+      ]);
+      expect(valuesOf(response), ['p-dev', 'p-prod', '!']);
+    });
+  });
+
+  group('Given a custom option type overriding complete', () {
+    test('when completing its value then the custom candidates are '
+        'offered unfiltered, with the raw values of preceding options '
+        'available in the context', () async {
+      final response = await complete(runner, out, [
+        'build',
+        '--project',
+        'acme',
+        '--env',
+        'x',
+      ]);
+      expect(response.lines, [
+        'acme-dev\tDevelopment',
+        'acme-prod\tProduction',
+        'x!\tEcho',
+      ]);
+    });
+
+    test('when the preceding option is not given '
+        'then the context reports it as not parsed', () async {
+      final response = await complete(runner, out, ['build', '-e', '']);
+      expect(valuesOf(response), ['default-dev', 'default-prod', '!']);
+    });
+
+    test('when the custom completion throws '
+        'then an error response is given '
+        'and the failure is reported on the error sink', () async {
+      final response = await complete(runner, out, [
+        'build',
+        '--project',
+        'boom',
+        '--env',
+        '',
+      ]);
+      expect(response.lines, isEmpty);
+      expect(response.directive, CompletionDirective.error);
+      expect(err.toString(), contains('Completion failed'));
+      expect(err.toString(), contains('completion failure'));
+    });
+  });
+
+  group('Given custom option types that read their own parsed value '
+      'when completing', () {
+    setUp(() {
+      runner = buildCompletionCli(
+        completionOutput: out,
+        completionError: err,
+        extraCommands: [
+          CommandImpl.leafWithRunFunction<OptionDefinition, int>(
+            name: 'probe',
+            description: 'Probe.',
+            options: const [_OwnValueOption(), _OwnValuesOption()],
+            run: (final _) => 0,
+          ),
+        ],
+      );
+    });
+
+    test('when completing the value of the option '
+        'then the option is not reported as parsed', () async {
+      final response = await complete(runner, out, ['probe', '--own', '']);
+      expect(valuesOf(response), ['not parsed']);
+    });
+
+    test(
+      'when completing the value of the option given earlier as well '
+      'then the option is reported as parsed with the earlier value',
+      () async {
+        final response = await complete(runner, out, [
+          'probe',
+          '--own',
+          'first',
+          '--own',
+          '',
+        ]);
+        expect(valuesOf(response), ['parsed: first']);
+      },
+    );
+
+    test('when completing the first value of the multi-option '
+        'then the option is not reported as parsed', () async {
+      final response = await complete(runner, out, ['probe', '--owns', '']);
+      expect(valuesOf(response), ['not parsed']);
+    });
+
+    test(
+      'when completing a later value of the multi-option '
+      'then the option is reported as parsed with the earlier values',
+      () async {
+        final response = await complete(runner, out, [
+          'probe',
+          '--owns',
+          'first',
+          '--owns',
+          '',
+        ]);
+        expect(valuesOf(response), ['parsed: first']);
+      },
+    );
+  });
+
+  group('Given a completion request for positional arguments', () {
+    test('when completing the first positional argument '
+        'then its allowed values are offered', () async {
+      final response = await complete(runner, out, ['deploy', '']);
+      expect(response.lines, [
+        'staging\tStaging servers',
+        'production\tLive servers',
+      ]);
+    });
+
+    test('when completing the second positional argument '
+        'then file completion is requested for the file option', () async {
+      final response = await complete(runner, out, ['deploy', 'staging', '']);
+      expect(response.lines, isEmpty);
+      expect(response.directive, CompletionDirective.defaultDirective);
+    });
+
+    test('when options are interleaved '
+        'then the positional index is unaffected', () async {
+      final response = await complete(runner, out, [
+        'deploy',
+        '--verbose',
+        'staging',
+        '-c',
+        'x.yaml',
+        '',
+      ]);
+      expect(response.directive, CompletionDirective.defaultDirective);
+    });
+
+    test('when all positional arguments are given '
+        'then nothing is offered', () async {
+      final response = await complete(runner, out, [
+        'deploy',
+        'staging',
+        'b.zip',
+        '',
+      ]);
+      expect(response.lines, isEmpty);
+      expect(response.directive, CompletionDirective.noFileCompletion);
+    });
+
+    test('when all positional arguments are given '
+        'and unexpected positional arguments are ignored '
+        'then file completion is requested', () async {
+      runner = buildCompletionCli(
+        usageOutput: UsageOutputHandler(sinks: OutputSinks(out: out)),
+        ignoreUnexpectedPositionalArgs: true,
+        completionOutput: out,
+      );
+      final response = await complete(runner, out, [
+        'deploy',
+        'staging',
+        'b.zip',
+        '',
+      ]);
+      expect(response.directive, CompletionDirective.defaultDirective);
+    });
+
+    test('when completing after a redirection operator '
+        'then file completion is requested '
+        'instead of the command arguments', () async {
+      final response = await complete(runner, out, ['deploy', '>', '']);
+      expect(response.lines, isEmpty);
+      expect(response.directive, CompletionDirective.defaultDirective);
+    });
+
+    test('when completing after > before any command '
+        'then subcommands are not offered', () async {
+      final response = await complete(runner, out, ['>', '']);
+      expect(response.lines, isEmpty);
+      expect(response.directive, CompletionDirective.defaultDirective);
+    });
+
+    test('when the cursor word is a redirection operator without a space '
+        'then file completion is requested', () async {
+      final response = await complete(runner, out, ['build', '>']);
+      expect(response.lines, isEmpty);
+      expect(response.directive, CompletionDirective.defaultDirective);
+    });
+
+    test('when a filename is glued to the redirection operator '
+        'then file completion is requested', () async {
+      final response = await complete(runner, out, ['deploy', '>>st']);
+      expect(response.lines, isEmpty);
+      expect(response.directive, CompletionDirective.defaultDirective);
+    });
+
+    test('when a redirection precedes the cursor word '
+        'then the redirection and its filename are ignored', () async {
+      final response = await complete(runner, out, [
+        '>',
+        'out.txt',
+        'bu',
+      ]);
+      expect(valuesOf(response), ['build']);
+    });
+
+    test('when a redirection follows an option value '
+        'then later options are still completed', () async {
+      final response = await complete(runner, out, [
+        'build',
+        '--jobs',
+        '2',
+        '>',
+        'out.txt',
+        '--mo',
+      ]);
+      expect(valuesOf(response), ['--mode']);
+    });
+
+    test('when the cursor is after a here-document operator '
+        'then it is not treated as a file redirection', () async {
+      final response = await complete(runner, out, ['build', '<<', '']);
+      expect(response.lines, isEmpty);
+      expect(response.directive, CompletionDirective.noFileCompletion);
+    });
+
+    test('when completing after a double dash '
+        'and unexpected positional arguments are ignored '
+        'then file completion is requested', () async {
+      runner = buildCompletionCli(
+        usageOutput: UsageOutputHandler(sinks: OutputSinks(out: out)),
+        ignoreUnexpectedPositionalArgs: true,
+        completionOutput: out,
+      );
+      final response = await complete(runner, out, ['build', '--', '-']);
+      expect(response.lines, isEmpty);
+      expect(response.directive, CompletionDirective.defaultDirective);
+    });
+  });
+
+  group('Given a completion request with usage errors so far', () {
+    test('when an unknown option precedes the word '
+        'then completion still works', () async {
+      final response = await complete(runner, out, [
+        '--bogus',
+        'build',
+        '--mode',
+        '',
+      ]);
+      expect(valuesOf(response), ['debug', 'profile', 'release']);
+    });
+
+    test('when an unknown subcommand precedes the word '
+        'then nothing is offered', () async {
+      final response = await complete(runner, out, ['bogus', '']);
+      expect(response.lines, isEmpty);
+      expect(response.directive, CompletionDirective.noFileCompletion);
+    });
+
+    test('when there are no words at all '
+        'then it is treated as an empty first word', () async {
+      final response = await complete(runner, out, []);
+      expect(valuesOf(response), contains('build'));
+    });
+  });
+
+  group('Given a completion request for the built-in commands', () {
+    test('when completing the completion command argument '
+        'then the install subcommand is offered', () async {
+      final response = await complete(runner, out, ['completion', '']);
+      expect(valuesOf(response), ['install']);
+    });
+
+    test('when completing the shell option of the completion command '
+        'then the shell names are offered', () async {
+      final response = await complete(runner, out, [
+        'completion',
+        '--shell',
+        '',
+      ]);
+      expect(valuesOf(response), [
+        'bash',
+        'zsh',
+        'fish',
+        'powershell',
+        'carapace',
+      ]);
+    });
+
+    test(
+      'when completing the shell option after the install subcommand '
+      'then the shell names are offered since the option is persistent',
+      () async {
+        final response = await complete(runner, out, [
+          'completion',
+          'install',
+          '--shell',
+          '',
+        ]);
+        expect(valuesOf(response), [
+          'bash',
+          'zsh',
+          'fish',
+          'powershell',
+          'carapace',
+        ]);
+      },
+    );
+
+    test(
+      'when completing a dash after the install subcommand '
+      'then its dry-run flag and the persistent options are offered',
+      () async {
+        final response = await complete(runner, out, [
+          'completion',
+          'install',
+          '-',
+        ]);
+        expect(
+          valuesOf(response),
+          containsAll(['--dry-run', '--shell', '--command']),
+        );
+      },
+    );
+
+    test('when completing the help command argument '
+        'then the non-hidden commands are offered', () async {
+      final response = await complete(runner, out, ['help', '']);
+      expect(valuesOf(response), [
+        'build',
+        'deploy',
+        'export',
+        'version',
+        'db',
+        'completion',
+      ]);
+    });
+  });
+
+  group('Given options in mutually exclusive groups', () {
+    test('when none of the group is given '
+        'then all options of the group are offered', () async {
+      final response = await complete(runner, out, ['export', '-']);
+      expect(
+        valuesOf(response),
+        containsAll(['--json', '--yaml', '--stdin']),
+      );
+    });
+
+    test('when an option of the group is given '
+        'then the other options of the group are no longer offered '
+        'while other groups are unaffected', () async {
+      final response = await complete(runner, out, ['export', '--json', '-']);
+      expect(valuesOf(response), isNot(contains('--json')));
+      expect(valuesOf(response), isNot(contains('--yaml')));
+      expect(valuesOf(response), contains('--stdin'));
+    });
+
+    test('when a positional option is in the group '
+        'and no other option of the group is given '
+        'then the positional argument is completed', () async {
+      final response = await complete(runner, out, ['export', '--yaml', '']);
+      expect(response.directive, CompletionDirective.defaultDirective);
+    });
+
+    test('when a positional option is in the group '
+        'and another option of the group is given '
+        'then the positional argument is not completed', () async {
+      final response = await complete(runner, out, ['export', '--stdin', '']);
+      expect(response.lines, isEmpty);
+      expect(response.directive, CompletionDirective.noFileCompletion);
+    });
+
+    test('when the positional option of the group is given '
+        'then the other options of the group are no longer offered', () async {
+      final response = await complete(runner, out, ['export', 'in.txt', '-']);
+      expect(valuesOf(response), isNot(contains('--stdin')));
+      expect(valuesOf(response), contains('--json'));
+    });
+  });
+
+  group('Given a tool without subcommands', () {
+    setUp(() {
+      runner = buildLeafCompletionCli(
+        usageOutput: UsageOutputHandler(
+          sinks: OutputSinks(out: out, err: err),
+        ),
+        completionOutput: out,
+        completionError: err,
+      );
+    });
+
+    test('when completing the first word '
+        'then the positional values are offered', () async {
+      final response = await complete(runner, out, ['']);
+      expect(valuesOf(response), ['staging', 'production']);
+    });
+
+    test('when completing a dash then the options, including the '
+        'completion option and the named positional options, are offered '
+        'and there is no completion command', () async {
+      final response = await complete(runner, out, ['-']);
+      expect(valuesOf(response), [
+        '--help',
+        '-h',
+        '--completion',
+        '--mode',
+        '-m',
+        '--target',
+        '--bundle',
+      ]);
+    });
+
+    test('when completing the value of the completion option '
+        'then the shells are offered', () async {
+      final response = await complete(runner, out, ['--completion', '']);
+      expect(
+        valuesOf(response),
+        CompletionShell.values.map((final shell) => shell.name),
+      );
+    });
+  });
+
+  group('Given middleware that publishes a service while completing', () {
+    const tokenOption = StringOption(
+      argName: 'token',
+      helpText: 'The access token.',
+      mandatory: true,
+    );
+
+    late _CompletionProbe probe;
+
+    setUp(() {
+      probe = _CompletionProbe();
+      trace = [];
+      runner = CommandRunner<OptionDefinition, int>(
+        'worktool',
+        'Completes with resolved context.',
+        globalOptions: [verboseOption, endpointOption],
+        usageOutput: UsageOutputHandler(
+          sinks: OutputSinks(out: out, err: err),
+        ),
+        completion: CompletionSettings(
+          sinks: OutputSinks(out: out, err: err),
+        ),
+        middlewares: [
+          Middlewares.withHooks(
+            onRun: (final ctx) {
+              trace.add('${ctx.command.name}:onRun:${ctx.runMode.name}');
+              if (ctx.isCompletion &&
+                  ctx.leaf().config.options.contains(projectOption)) {
+                final project = ctx.leaf().config.optionalValue(projectOption);
+                ctx.provider.store(_ProjectApi(project ?? 'none'));
+              }
+              return ctx;
+            },
+            onReturn: (final ctx, final result) {
+              trace.add('${ctx.command.name}:onReturn:${ctx.runMode.name}');
+              return result;
+            },
+          ),
+        ],
+        subcommands: [
+          CommandImpl.branch(
+            name: 'db',
+            description: 'Database commands.',
+            middlewares: [
+              Middlewares.onBeforeRun((final ctx) {
+                trace.add('db:onRun:${ctx.runMode.name}');
+              }),
+            ],
+            subcommands: [
+              CommandImpl.leafWithRunFunction(
+                name: 'migrate',
+                description: 'Run the migrations.',
+                options: [stepsOption],
+                middlewares: [
+                  Middlewares.onBeforeRun((final ctx) {
+                    trace.add('migrate:onRun:${ctx.runMode.name}');
+                  }),
+                ],
+                run: (final ctx) {
+                  trace.add('run:${ctx.command.name}:${ctx.runMode.name}');
+                  return 0;
+                },
+              ),
+            ],
+          ),
+          CommandImpl.leafWithRunFunction(
+            name: 'work',
+            description: 'Work on a resource.',
+            options: [
+              projectOption,
+              tokenOption,
+              _ContextNameOption(probe),
+            ],
+            run: (final ctx) {
+              trace.add('run:${ctx.command.name}:${ctx.runMode.name}');
+              return 0;
+            },
+          ),
+        ],
+      );
+    });
+
+    test('when completing an option value '
+        'then middleware runs inside out before completion '
+        'and the command does not run', () async {
+      await complete(runner, out, ['db', 'migrate', '--steps', '']);
+      expect(trace, [
+        'worktool:onRun:completion',
+        'db:onRun:completion',
+        'migrate:onRun:completion',
+        'worktool:onReturn:completion',
+      ]);
+    });
+
+    test('when completing an option value '
+        'then complete reads the resolved configurations '
+        'and the service middleware stored', () async {
+      final response = await complete(
+        runner,
+        out,
+        ['--verbose', 'work', '--project', 'acme', '--name', ''],
+        env: {'ENDPOINT': 'https://example.test'},
+      );
+      expect(valuesOf(response), ['alpha', 'beta', 'seen']);
+      expect(probe.project, 'acme');
+      expect(probe.endpoint, 'https://example.test');
+      expect(probe.verbose, isTrue);
+      expect(probe.apiProject, 'acme');
+      expect(probe.leafMode, CommandRunMode.completion);
+      expect(probe.leafCommand, 'work');
+      expect(probe.rootCommand, 'worktool');
+    });
+
+    test('when a mandatory option is still missing '
+        'then completion still offers the values', () async {
+      final response = await complete(runner, out, ['work', '--name', '']);
+      expect(valuesOf(response), ['alpha', 'beta', 'seen']);
+      expect(err.toString(), isEmpty);
+    });
+
+    test('when the command is run '
+        'then middleware sees execution mode and the command runs', () async {
+      await runner.run([
+        '--verbose',
+        'work',
+        '--project',
+        'acme',
+        '--token',
+        'secret',
+        '--name',
+        'alpha',
+      ]);
+      expect(trace, [
+        'worktool:onRun:execution',
+        'run:work:execution',
+        'worktool:onReturn:execution',
+      ]);
+    });
+  });
+
+  group('Given a CompletionEngine used directly', () {
+    test('when completing then a response object is returned', () async {
+      final engine = CompletionEngine<OptionDefinition, int>(runner);
+      final response = await engine.complete(['build', '--mode', 'd']);
+      expect(response.candidates.map((final c) => c.value), [
+        'debug',
+        'profile',
+        'release',
+      ]);
+      expect(response.directive, CompletionDirective.noFileCompletion);
+      expect(response.allowsFileCompletion, isFalse);
+    });
+
+    test('when the environment is given '
+        'then it is passed on to the completion context', () async {
+      final seen = <String, String>{};
+      final probe = CommandImpl.leafWithRunFunction<OptionDefinition, int>(
+        name: 'probe',
+        description: 'Probe.',
+        options: [_ProbeOption(seen)],
+        run: (final _) => 0,
+      );
+      runner = buildCompletionCli(extraCommands: [probe]);
+      final engine = CompletionEngine<OptionDefinition, int>(runner);
+      await engine.complete(
+        ['probe', '--probe', ''],
+        environment: {'HOME': '/home/x'},
+      );
+      expect(seen, {'HOME': '/home/x'});
+    });
+
+    test('when the completion fails then the error is reported '
+        'to the callback', () async {
+      Object? reported;
+      final engine = CompletionEngine<OptionDefinition, int>(
+        runner,
+        onError: (final error, final _) => reported = error,
+      );
+      final response = await engine.complete([
+        'build',
+        '--project',
+        'boom',
+        '--env',
+        '',
+      ]);
+      expect(response.directive, CompletionDirective.error);
+      expect(reported, isA<StateError>());
+    });
+  });
+
+  group('Given a CompletionResponse', () {
+    test('when formatted then tabs and newlines in candidates '
+        'are replaced', () {
+      const response = CompletionResponse(
+        [CompletionCandidate('a\tb', description: 'line1\nline2')],
+        directive: CompletionDirective.noFileCompletion,
+      );
+      expect(response.format(), 'a b\tline1 line2\n:4\n');
+    });
+
+    test('when formatted then spaces at the ends of a candidate value '
+        'are kept', () {
+      const response = CompletionResponse(
+        [CompletionCandidate(' report.csv ', description: ' A report ')],
+        directive: CompletionDirective.noFileCompletion,
+      );
+      expect(response.format(), ' report.csv \tA report\n:4\n');
+    });
+
+    test('when formatted then tabs and newlines at the ends of a '
+        'candidate value are dropped', () {
+      const response = CompletionResponse(
+        [CompletionCandidate('\treport.csv\r\n')],
+        directive: CompletionDirective.noFileCompletion,
+      );
+      expect(response.format(), 'report.csv\n:4\n');
+    });
+
+    test('when formatted with an empty description '
+        'then no tab is written', () {
+      const response = CompletionResponse(
+        [CompletionCandidate('a', description: '')],
+        directive: CompletionDirective.defaultDirective,
+      );
+      expect(response.format(), 'a\n:0\n');
+    });
+
+    test('when created from a no-space result '
+        'then the no-space directive is combined', () {
+      final response = CompletionResponse.fromResult(
+        CompletionResult.strings(['host:'], noSpace: true),
+      );
+      expect(
+        response.directive,
+        CompletionDirective.noFileCompletion | CompletionDirective.noSpace,
+      );
+    });
+
+    test('when created from a file extensions result '
+        'then the extensions are the candidates', () {
+      final response = CompletionResponse.fromResult(
+        const CompletionResult.files(extensions: ['yaml', 'yml']),
+      );
+      expect(response.candidates.map((final c) => c.value), ['yaml', 'yml']);
+      expect(response.directive, CompletionDirective.filterFileExtensions);
+      expect(response.allowsFileCompletion, isTrue);
+    });
+  });
+}
+
+const endpointOption = StringOption(
+  argName: 'endpoint',
+  envName: 'ENDPOINT',
+  helpText: 'The service endpoint.',
+  defaultsTo: 'http://localhost',
+);
+
+class _ProjectApi {
+  final String project;
+
+  _ProjectApi(this.project);
+}
+
+class _CompletionProbe {
+  String? project;
+  String? endpoint;
+  bool? verbose;
+  String? apiProject;
+  CommandRunMode? leafMode;
+  String? leafCommand;
+  String? rootCommand;
+}
+
+class _ContextNameOption extends StringOption {
+  final _CompletionProbe probe;
+
+  _ContextNameOption(this.probe)
+    : super(
+        argName: 'name',
+        helpText: 'The resource name.',
+        allowedValues: const ['alpha', 'beta'],
+      );
+
+  @override
+  CompletionResult complete(final CompletionContext context) {
+    final leaf = commandContextOf<OptionDefinition, int>(context);
+    final root = leaf?.root();
+    probe.project = leaf?.config.optionalValue(projectOption);
+    probe.endpoint = root?.config.optionalValue(endpointOption);
+    probe.verbose = root?.config.optionalValue(verboseOption);
+    probe.apiProject = leaf?.provider.maybeFetch<_ProjectApi>()?.project;
+    probe.leafMode = leaf?.runMode;
+    probe.leafCommand = leaf?.command.name;
+    probe.rootCommand = root?.command.name;
+    return CompletionResult.strings(['alpha', 'beta', 'seen']);
+  }
+}
+
+/// Offers whether it was parsed, and if so the value it was given.
+class _OwnValueOption extends StringOption {
+  const _OwnValueOption() : super(argName: 'own');
+
+  @override
+  CompletionResult complete(final CompletionContext context) {
+    final args = context.parsedArgs;
+    return CompletionResult.strings([
+      if (args.wasParsed(this))
+        'parsed: ${args.option(this)}'
+      else
+        'not parsed',
+    ]);
+  }
+}
+
+/// Offers whether it was parsed, and if so the values it was given.
+class _OwnValuesOption extends MultiStringOption {
+  const _OwnValuesOption() : super(argName: 'owns');
+
+  @override
+  CompletionResult complete(final CompletionContext context) {
+    final args = context.parsedArgs;
+    return CompletionResult.strings([
+      if (args.wasParsed(this))
+        'parsed: ${args.multiOption(this).join(' ')}'
+      else
+        'not parsed',
+    ]);
+  }
+}
+
+class _ProbeOption extends StringOption {
+  final Map<String, String> seen;
+
+  const _ProbeOption(this.seen) : super(argName: 'probe');
+
+  @override
+  CompletionResult complete(final CompletionContext context) {
+    seen.addAll(context.environment);
+    expect(context.command.name, 'probe');
+    expect(context.commands.first.name, 'comptool');
+    expect(context.precedingWords, ['probe', '--probe']);
+    expect(context.wordToComplete, '');
+    return const CompletionResult.none();
+  }
+}

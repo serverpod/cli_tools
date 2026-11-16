@@ -1,0 +1,1385 @@
+import 'package:config/command.dart';
+import 'package:config/config.dart';
+import 'package:test/test.dart';
+
+void main() {
+  group('Given a command with no options', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(name: 'version', description: 'Show the version');
+      _runner(subcommands: [command]);
+    });
+
+    test('when reading usage then the formatted usage is produced', () {
+      expect(
+        command.usage,
+        _usage(const [
+          'Show the version',
+          '',
+          'Usage: tool version',
+          '',
+          'Run "tool help" to see global options.',
+        ]),
+      );
+    });
+  });
+
+  group('Given a command with a mandatory named option', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'greet',
+        description: 'Greet',
+        options: const [
+          StringOption(argName: 'name', mandatory: true),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test('when reading usage then the formatted usage is produced', () {
+      expect(
+        command.usage,
+        _usage(const [
+          'Greet',
+          '',
+          'Usage: tool greet --name=<name>',
+          '',
+          'Options:',
+          '--name    ',
+          '          (mandatory)',
+          '',
+          'Run "tool help" to see global options.',
+        ]),
+      );
+    });
+  });
+
+  group(
+    'Given a command with an abbreviation, a flag, and a positional option',
+    () {
+      late Command<OptionDefinition, void> command;
+
+      setUp(() {
+        command = _command(
+          name: 'build',
+          description: 'Build the app',
+          aliases: const ['b'],
+          options: const [
+            StringOption(argName: 'target', argAbbrev: 't'),
+            FlagOption(argName: 'release', defaultsTo: false),
+            StringOption(argPos: 0),
+          ],
+        );
+        _runner(subcommands: [command]);
+      });
+
+      test('when reading usage then the formatted usage is produced', () {
+        expect(
+          command.usage,
+          _usage(const [
+            'Build the app',
+            '',
+            'Usage: tool build [<arg0>] [--target=<target>] [--[no-]release]',
+            '',
+            'Options:',
+            '-t, --target      ',
+            '--[no-]release    ',
+            '                  (defaults to false)',
+            '{0}               ',
+            '',
+            'Run "tool help" to see global options.',
+          ]),
+        );
+      });
+    },
+  );
+
+  group('Given a command with an option and a subcommand', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'remote',
+        description: 'Manage remotes',
+        aliases: const ['r'],
+        options: const [
+          StringOption(argName: 'env', argAbbrev: 'e'),
+        ],
+        subcommands: [
+          _command(name: 'add', description: 'Add a remote'),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test('when reading usage then the formatted usage is produced', () {
+      expect(
+        command.usage,
+        _usage(const [
+          'Manage remotes',
+          '',
+          'Usage: tool remote [--env=<env>] <subcommand> [arguments]',
+          '',
+          'Options:',
+          '-e, --env    ',
+          '',
+          'Available subcommands:',
+          '  add   Add a remote',
+          '',
+          'Run "tool help" to see global options.',
+        ]),
+      );
+    });
+  });
+
+  group('Given a command with a mandatory option and a subcommand', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'build',
+        description: 'Build the app',
+        options: const [
+          StringOption(argName: 'target', mandatory: true),
+        ],
+        subcommands: [
+          _command(name: 'version', description: 'Show the version'),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test('when reading usage then the formatted usage is produced', () {
+      expect(
+        command.usage,
+        _usage(const [
+          'Build the app',
+          '',
+          'Usage: tool build --target=<target> <subcommand> [arguments]',
+          '',
+          'Options:',
+          '--target    ',
+          '            (mandatory)',
+          '',
+          'Available subcommands:',
+          '  version   Show the version',
+          '',
+          'Run "tool help" to see global options.',
+        ]),
+      );
+    });
+  });
+
+  group('Given a runner with no subcommands', () {
+    late CommandRunner<OptionDefinition, void> runner;
+
+    setUp(() {
+      runner = _runner();
+    });
+
+    test('when reading usage then the formatted usage is produced', () {
+      expect(
+        runner.usage,
+        _usage(const [
+          'Tools',
+          '',
+          'Usage: tool [global-options]',
+          '',
+          'Global options:',
+          '-h, --help    Print this usage information.',
+          '',
+        ]),
+      );
+    });
+  });
+
+  group('Given a runner with a subcommand', () {
+    late CommandRunner<OptionDefinition, void> runner;
+
+    setUp(() {
+      runner = _runner(
+        subcommands: [
+          _command(name: 'greet', description: 'Greet'),
+        ],
+      );
+    });
+
+    test('when reading usage then the formatted usage is produced', () {
+      expect(
+        runner.usage,
+        _usage(const [
+          'Tools',
+          '',
+          'Usage: tool [global-options] <command> [arguments]',
+          '',
+          'Global options:',
+          '-h, --help    Print this usage information.',
+          '',
+          'Available commands:',
+          '  greet   Greet',
+          '',
+          'Run "tool help <command>" for more information about a command.',
+        ]),
+      );
+    });
+  });
+
+  group('Given a runner with a build command', () {
+    late CommandRunner<OptionDefinition, void> runner;
+
+    setUp(() {
+      runner = _runner(
+        subcommands: [
+          _command(name: 'build', description: 'Build the app'),
+        ],
+      );
+    });
+
+    test('when reading usage then the formatted usage is produced', () {
+      expect(
+        runner.usage,
+        _usage(const [
+          'Tools',
+          '',
+          'Usage: tool [global-options] <command> [arguments]',
+          '',
+          'Global options:',
+          '-h, --help    Print this usage information.',
+          '',
+          'Available commands:',
+          '  build   Build the app',
+          '',
+          'Run "tool help <command>" for more information about a command.',
+        ]),
+      );
+    });
+  });
+
+  group('Given a runner with a mandatory global option', () {
+    late CommandRunner<OptionDefinition, void> runner;
+
+    setUp(() {
+      runner = _runner(
+        globalOptions: const [
+          StringOption(argName: 'verbose', mandatory: true),
+        ],
+        subcommands: [
+          _command(name: 'greet', description: 'Greet'),
+        ],
+      );
+    });
+
+    test('when reading usage then the formatted usage is produced', () {
+      expect(
+        runner.usage,
+        _usage(const [
+          'Tools',
+          '',
+          'Usage: tool [global-options] <command> [arguments]',
+          '',
+          'Global options:',
+          '-h, --help    Print this usage information.',
+          '--verbose     ',
+          '              (mandatory)',
+          '',
+          'Available commands:',
+          '  greet   Greet',
+          '',
+          'Run "tool help <command>" for more information about a command.',
+        ]),
+      );
+    });
+  });
+
+  group('Given a help command for a runner with a hidden command', () {
+    late CommandDefinition help;
+
+    setUp(() {
+      final runner = _runner(
+        subcommands: [
+          _command(name: 'build', description: 'Build the app'),
+          _command(
+            name: 'secret',
+            description: 'Hidden command',
+            hidden: true,
+          ),
+        ],
+      );
+      help = runner.subcommands.firstWhere(
+        (final command) => command.name == 'help',
+      );
+    });
+
+    test('when reading usage then the formatted usage is produced', () {
+      expect(
+        help.usage,
+        _usage(const [
+          'Show help for a command.',
+          '',
+          'Usage: tool help [<command>]',
+          '',
+          'Available subcommands:',
+          '  build   Build the app',
+          '',
+          'Run "tool help" to see global options.',
+        ]),
+      );
+    });
+  });
+
+  group('Given a subcommand with a flag', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'date',
+        description: 'Show the date',
+        options: const [
+          FlagOption(argName: 'utc', negatable: false),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test(
+      'when reading usage then the synopsis includes the parent command',
+      () {
+        expect(
+          command.usage,
+          contains('Usage: tool date [--utc]'),
+        );
+      },
+    );
+  });
+
+  group('Given persistent, positional, and named options', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'copy',
+        description: 'Copy a file',
+        persistentOptions: const [
+          FlagOption(argName: 'verbose', negatable: false),
+        ],
+        options: const [
+          StringOption(argPos: 0, valueHelp: 'file', mandatory: true),
+          StringOption(
+            argName: 'file',
+            argPos: 1,
+            valueHelp: 'dest',
+            mandatory: true,
+          ),
+          StringOption(argName: 'target'),
+          FlagOption(argName: 'color', hideNegatedUsage: true),
+          FlagOption(argName: 'force', negatable: false, mandatory: true),
+          MultiStringOption(argName: 'include', valueHelp: 'path'),
+          MultiStringOption(argName: 'tag', mandatory: true),
+          StringOption(argName: 'secret', hide: true),
+          StringOption(envName: 'COPY_MODE'),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test(
+      'when reading usage then the synopsis orders positionals before names',
+      () {
+        expect(
+          command.usage,
+          contains(
+            'Usage: tool copy <file> <dest> [--verbose] [--target=<target>] '
+            '[--color] --force [--include=<path>]... --tag=<tag>...',
+          ),
+        );
+      },
+    );
+  });
+
+  group('Given a mandatory exclusive group', () {
+    late Command<OptionDefinition, void> command;
+    late CommandRunner<OptionDefinition, void> runner;
+
+    setUp(() {
+      const format = MutuallyExclusive(
+        'format',
+        mode: MutuallyExclusiveMode.mandatory,
+      );
+      const input = MutuallyExclusive(
+        'input',
+        mode: MutuallyExclusiveMode.mandatory,
+      );
+      command = _command(
+        name: 'render',
+        description: 'Render',
+        persistentOptions: const [
+          StringOption(argName: 'stdin', group: input),
+        ],
+        // The positional member of a group is the last positional: when the
+        // named member is given instead, no later positional takes its place.
+        options: const [
+          StringOption(argPos: 0, valueHelp: 'dest', mandatory: true),
+          StringOption(argPos: 1, valueHelp: 'file', group: input),
+          FlagOption(argName: 'verbose', negatable: false),
+          StringOption(argName: 'json', group: format),
+          StringOption(argName: 'text', valueHelp: 'file', group: format),
+        ],
+      );
+      runner = _runner(subcommands: [command]);
+    });
+
+    test(
+      'when reading usage then the group is one required choice',
+      () {
+        expect(
+          command.usage,
+          contains(
+            'Usage: tool render <dest> (<file> | --stdin=<stdin>) [--verbose] '
+            '(--json=<json> | --text=<file>)',
+          ),
+        );
+      },
+    );
+
+    test('when running with the positional member of the group '
+        'then the command line is accepted', () async {
+      await expectLater(
+        runner.run(['render', 'destination', 'source', '--json=value']),
+        completes,
+      );
+    });
+
+    test('when running with the named member of the group '
+        'then the command line is accepted', () async {
+      await expectLater(
+        runner.run(['render', 'destination', '--stdin=source', '--text=value']),
+        completes,
+      );
+    });
+  });
+
+  group('Given an optional exclusive group', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      const format = MutuallyExclusive('format');
+      command = _command(
+        name: 'render',
+        description: 'Render',
+        options: const [
+          FlagOption(argName: 'json', negatable: false, group: format),
+          FlagOption(argName: 'text', negatable: false, group: format),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test(
+      'when reading usage then the group is one optional choice',
+      () {
+        expect(
+          command.usage,
+          contains('Usage: tool render [--json | --text]'),
+        );
+      },
+    );
+  });
+
+  group('Given a runner with long usage text', () {
+    late CommandRunner<OptionDefinition, void> runner;
+
+    setUp(() {
+      runner = _longUsageRunner();
+    });
+
+    test('when reading usage then the text is not wrapped', () {
+      expect(
+        runner.usage,
+        _usage(const [
+          'A command line tool that builds and deploys applications.',
+          '',
+          'Usage: tool [global-options] <command> [arguments]',
+          '',
+          'Global options:',
+          '-h, --help    Print this usage information.',
+          '--verbose     Print extra information while the command is running.',
+          '',
+          'Available commands:',
+          '  build   Build the application from the current sources.',
+          '',
+          'Run "tool help <command>" for more information about a command.',
+          '',
+          'See the documentation for more details about this tool.',
+        ]),
+      );
+    });
+  });
+
+  group('Given a runner with a usage line length', () {
+    late CommandRunner<OptionDefinition, void> runner;
+
+    setUp(() {
+      runner = _longUsageRunner(usageLineLength: 40);
+    });
+
+    test('when reading usage then the text is wrapped to that length', () {
+      expect(
+        runner.usage,
+        _usage(const [
+          'A command line tool that builds and',
+          'deploys applications.',
+          '',
+          'Usage: tool [global-options] <command>',
+          '       [arguments]',
+          '',
+          'Global options:',
+          '-h, --help    Print this usage',
+          '              information.',
+          '--verbose     Print extra information',
+          '              while the command is',
+          '              running.',
+          '',
+          'Available commands:',
+          '  build   Build the application from the',
+          '          current sources.',
+          '',
+          'Run "tool help <command>" for more',
+          'information about a command.',
+          '',
+          'See the documentation for more details',
+          'about this tool.',
+        ]),
+      );
+    });
+  });
+
+  group('Given a subcommand of a runner with a usage line length', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      final runner = _longUsageRunner(usageLineLength: 40);
+      command = runner.subcommands.firstWhere(
+        (final subcommand) => subcommand.name == 'build',
+      );
+    });
+
+    test(
+      'when reading usage then the text is wrapped to the runner length',
+      () {
+        expect(
+          command.usage,
+          _usage(const [
+            'Build the application from the current',
+            'sources.',
+            '',
+            'Usage: tool build [--release]',
+            '',
+            'Options:',
+            '--release    Compile with optimizations',
+            '             for a production release.',
+            '',
+            'Run "tool help" to see global options.',
+          ]),
+        );
+      },
+    );
+  });
+
+  group('Given a subcommand whose synopsis fits the usage line length '
+      'only without the usage prefix', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'copy',
+        description: 'Copy',
+        options: const [
+          StringOption(argName: 'from'),
+          StringOption(argName: 'to'),
+        ],
+      );
+      _runner(subcommands: [command], usageLineLength: 40);
+    });
+
+    test('when reading usage '
+        'then the first synopsis line leaves room for the prefix', () {
+      expect(
+        command.usage,
+        contains(
+          'Usage: tool copy [--from=<from>]\n'
+          '       [--to=<to>]\n',
+        ),
+      );
+    });
+
+    test('when reading usage '
+        'then no line is longer than the line length', () {
+      expect(
+        command.usage.split('\n').map((final line) => line.length),
+        everyElement(lessThanOrEqualTo(40)),
+      );
+    });
+  });
+
+  group('Given a usage line length shorter than ten columns', () {
+    late CommandRunner<OptionDefinition, void> runner;
+
+    setUp(() {
+      runner = _runner(
+        description: 'abcdefghijabcdefghijab',
+        usageLineLength: 1,
+      );
+    });
+
+    test(
+      'when reading usage then a long word is split every ten characters',
+      () {
+        expect(
+          runner.usage,
+          startsWith('abcdefghij\nabcdefghij\nab\n\n'),
+        );
+      },
+    );
+  });
+
+  group('Given a command that can run as a leaf and has a subcommand', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'build',
+        description: 'Build',
+        canRunAsLeafCommand: true,
+        options: const [
+          FlagOption(argName: 'force', negatable: false),
+        ],
+        subcommands: [
+          _command(name: 'version', description: 'Show the version'),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test(
+      'when reading usage then the synopsis has a leaf alternative',
+      () {
+        expect(
+          command.usage,
+          contains(
+            'Usage: tool build [--force] <subcommand> [arguments]\n'
+            '   or: tool build [--force]\n',
+          ),
+        );
+      },
+    );
+  });
+
+  group('Given a command with only hidden options', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'login',
+        description: 'Log in',
+        persistentOptions: const [
+          FlagOption(argName: 'trace', negatable: false, hide: true),
+        ],
+        options: const [
+          StringOption(argName: 'token', hide: true),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test('when reading usage then no option sections are shown', () {
+      expect(
+        command.usage,
+        _usage(const [
+          'Log in',
+          '',
+          'Usage: tool login',
+          '',
+          'Run "tool help" to see global options.',
+        ]),
+      );
+    });
+  });
+
+  group('Given an option set only by a single configuration key', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'deploy',
+        description: 'Deploy',
+        options: const [
+          StringOption(configKey: 'endpoint', helpText: 'Server endpoint'),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test('when reading usage then the option is listed by its key', () {
+      expect(
+        command.usage,
+        _usage(const [
+          'Deploy',
+          '',
+          'Usage: tool deploy',
+          '',
+          'Options:',
+          '{endpoint}    Server endpoint',
+          '              key "endpoint"',
+          '',
+          'Run "tool help" to see global options.',
+        ]),
+      );
+    });
+  });
+
+  group('Given an option with a single and several configuration keys', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'deploy',
+        description: 'Deploy',
+        options: const [
+          StringOption(
+            argName: 'endpoint',
+            configKey: 'endpoint',
+            configKeys: ['server.endpoint'],
+          ),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test('when reading usage then all keys are listed, the single first', () {
+      expect(
+        command.usage,
+        _usage(const [
+          'Deploy',
+          '',
+          'Usage: tool deploy [--endpoint=<endpoint>]',
+          '',
+          'Options:',
+          '--endpoint    ',
+          '              key "endpoint"',
+          '              key "server.endpoint"',
+          '',
+          'Run "tool help" to see global options.',
+        ]),
+      );
+    });
+  });
+
+  group('Given options declared out of alphabetical order', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'build',
+        description: 'Build',
+        options: const [
+          FlagOption(argName: 'zebra', negatable: false),
+          FlagOption(argName: 'alpha', negatable: false),
+          FlagOption(argName: 'middle', negatable: false),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test(
+      'when reading usage then the options stay in declaration order',
+      () {
+        expect(
+          command.usage,
+          _usage(const [
+            'Build',
+            '',
+            'Usage: tool build [--zebra] [--alpha] [--middle]',
+            '',
+            'Options:',
+            '--zebra     ',
+            '--alpha     ',
+            '--middle    ',
+            '',
+            'Run "tool help" to see global options.',
+          ]),
+        );
+      },
+    );
+  });
+
+  group('Given options assigned to option groups', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      const logging = OptionGroup('Logging');
+      const output = OptionGroup('Output');
+      command = _command(
+        name: 'build',
+        description: 'Build',
+        options: const [
+          FlagOption(argName: 'zebra', negatable: false),
+          FlagOption(argName: 'verbose', negatable: false, group: logging),
+          FlagOption(argName: 'alpha', negatable: false),
+          FlagOption(argName: 'json', negatable: false, group: output),
+          FlagOption(argName: 'quiet', negatable: false, group: logging),
+          FlagOption(argName: 'text', negatable: false, group: output),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test(
+      'when reading usage then each group is a headline above its options',
+      () {
+        expect(
+          command.usage,
+          _usage(const [
+            'Build',
+            '',
+            'Usage: tool build [--zebra] [--verbose] [--alpha] [--json] '
+                '[--quiet] [--text]',
+            '',
+            'Options:',
+            '--zebra      ',
+            '--alpha      ',
+            '',
+            'Logging',
+            '--verbose    ',
+            '--quiet      ',
+            '',
+            'Output',
+            '--json       ',
+            '--text       ',
+            '',
+            'Run "tool help" to see global options.',
+          ]),
+        );
+      },
+    );
+  });
+
+  group('Given an enum option', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'go',
+        description: 'Go somewhere',
+        options: const [
+          EnumOption(
+            enumParser: EnumParser(_Pace.values),
+            argName: 'pace',
+            helpText: 'How fast to go',
+            defaultsTo: _Pace.slow,
+          ),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test(
+      'when reading usage then the enum values are listed without an allow-list',
+      () {
+        expect(
+          command.usage,
+          _usage(const [
+            'Go somewhere',
+            '',
+            'Usage: tool go [--pace=<pace>]',
+            '',
+            'Options:',
+            '--pace    How fast to go',
+            '          values: [fast, slow (default)]',
+            '',
+            'Run "tool help" to see global options.',
+          ]),
+        );
+      },
+    );
+  });
+
+  group('Given an enum option restricted to a subset', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'go',
+        description: 'Go somewhere',
+        options: const [
+          EnumOption(
+            enumParser: EnumParser(_Pace.values),
+            argName: 'pace',
+            helpText: 'How fast to go',
+            allowedValues: [_Pace.fast],
+          ),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test('when reading usage then only the allowed values are listed', () {
+      expect(
+        command.usage,
+        contains('values: [fast]'),
+      );
+      expect(command.usage, isNot(contains('slow')));
+    });
+  });
+
+  group('Given an option with allowed values and a default', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'play',
+        description: 'Play a card',
+        options: const [
+          StringOption(
+            argName: 'suit',
+            helpText: 'Like in cards',
+            defaultsTo: 'clubs',
+            allowedValues: ['spades', 'clubs', 'hearts', 'diamonds'],
+          ),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test(
+      'when reading usage then the default value is marked in the list',
+      () {
+        expect(
+          command.usage,
+          _usage(const [
+            'Play a card',
+            '',
+            'Usage: tool play [--suit=<suit>]',
+            '',
+            'Options:',
+            '--suit    Like in cards',
+            '          values: [spades, clubs (default), hearts, diamonds]',
+            '',
+            'Run "tool help" to see global options.',
+          ]),
+        );
+      },
+    );
+  });
+
+  group('Given a multi-option with allowed values and a default', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'play',
+        description: 'Play cards',
+        options: const [
+          MultiStringOption(
+            argName: 'suits',
+            helpText: 'Like in cards',
+            defaultsTo: ['clubs', 'hearts'],
+            allowedValues: ['spades', 'clubs', 'hearts', 'diamonds'],
+          ),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test('when reading usage then the allowed values are listed '
+        'with each default value marked', () {
+      expect(
+        command.usage,
+        contains(
+          'values: [spades, clubs (default), hearts (default), diamonds]',
+        ),
+      );
+    });
+
+    test('when reading usage then the default is not listed on its own', () {
+      expect(command.usage, isNot(contains('defaults to')));
+    });
+  });
+
+  group('Given an option with allowed help and a default', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'play',
+        description: 'Play a card',
+        options: const [
+          StringOption(
+            argName: 'suit',
+            helpText: 'Like in cards',
+            defaultsTo: 'clubs',
+            allowedValues: ['spades', 'clubs', 'diamonds', 'hearts'],
+            allowedHelp: {
+              'spades': 'Swords of a soldier',
+              'clubs': 'Weapons of war',
+              'diamonds': 'Money for this art',
+              'hearts': 'The shape of my heart',
+            },
+          ),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test(
+      'when reading usage then (default) is appended to its description',
+      () {
+        expect(
+          command.usage,
+          _usage(const [
+            'Play a card',
+            '',
+            'Usage: tool play [--suit=<suit>]',
+            '',
+            'Options:',
+            '--suit    Like in cards',
+            '          [spades]    Swords of a soldier',
+            '          [clubs]     Weapons of war (default)',
+            '          [diamonds]  Money for this art',
+            '          [hearts]    The shape of my heart',
+            '',
+            'Run "tool help" to see global options.',
+          ]),
+        );
+      },
+    );
+  });
+
+  group('Given a multi option with several defaults', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'play',
+        description: 'Play a card',
+        options: const [
+          MultiStringOption(
+            argName: 'suit',
+            helpText: 'Like in cards',
+            defaultsTo: ['clubs', 'hearts'],
+            allowedHelp: {
+              'spades': 'Swords of a soldier',
+              'clubs': 'Weapons of war',
+              'diamonds': 'Money for this art',
+              'hearts': 'The shape of my heart',
+            },
+          ),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test(
+      'when reading usage then (default) is appended to each description',
+      () {
+        expect(
+          command.usage,
+          _usage(const [
+            'Play a card',
+            '',
+            'Usage: tool play [--suit=<suit>]...',
+            '',
+            'Options:',
+            '--suit    Like in cards',
+            '          [spades]    Swords of a soldier',
+            '          [clubs]     Weapons of war (default)',
+            '          [diamonds]  Money for this art',
+            '          [hearts]    The shape of my heart (default)',
+            '',
+            'Run "tool help" to see global options.',
+          ]),
+        );
+      },
+    );
+  });
+
+  group('Given an option with a range and a default', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'play',
+        description: 'Play a card',
+        options: const [
+          IntOption(
+            argName: 'count',
+            helpText: 'How many',
+            defaultsTo: 2,
+            min: 1,
+            max: 10,
+          ),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test(
+      'when reading usage then the range includes the default',
+      () {
+        expect(
+          command.usage,
+          _usage(const [
+            'Play a card',
+            '',
+            'Usage: tool play [--count=<integer>]',
+            '',
+            'Options:',
+            '--count    How many',
+            '           integer',
+            '           values: [1 - 10] (defaults to 2)',
+            '',
+            'Run "tool help" to see global options.',
+          ]),
+        );
+      },
+    );
+  });
+
+  group('Given a command with a custom summary and invocation', () {
+    late Command<OptionDefinition, void> command;
+    late CommandRunner<OptionDefinition, void> runner;
+
+    setUp(() {
+      command = _OverrideUsageCommand(
+        name: 'get',
+        usageDefinition: const CommandUsageDefinition(
+          description: 'Download packages.\nMore detail here.',
+          summary: 'Download packages',
+          invocation: 'get <package>',
+        ),
+      );
+      runner = _runner(subcommands: [command]);
+    });
+
+    test('when reading the parent usage then the custom summary is shown', () {
+      expect(
+        runner.usage,
+        _usage(const [
+          'Tools',
+          '',
+          'Usage: tool [global-options] <command> [arguments]',
+          '',
+          'Global options:',
+          '-h, --help    Print this usage information.',
+          '',
+          'Available commands:',
+          '  get   Download packages',
+          '',
+          'Run "tool help <command>" for more information about a command.',
+        ]),
+      );
+    });
+
+    test(
+      'when reading the command usage then the custom invocation is shown',
+      () {
+        expect(
+          command.usage,
+          _usage(const [
+            'Download packages.',
+            'More detail here.',
+            '',
+            'Usage: tool get <package>',
+            '',
+            'Run "tool help" to see global options.',
+          ]),
+        );
+      },
+    );
+  });
+
+  group('Given a nested command with a custom invocation', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _OverrideUsageCommand(
+        name: 'add',
+        usageDefinition: const CommandUsageDefinition(
+          description: 'Add a remote',
+          invocation: 'add <name>',
+        ),
+      );
+      final branch = _command(
+        name: 'remote',
+        description: 'Manage remotes',
+        subcommands: [command],
+      );
+      _runner(subcommands: [branch]);
+    });
+
+    test(
+      'when reading usage then the invocation replaces only this command',
+      () {
+        expect(
+          command.usage,
+          _usage(const [
+            'Add a remote',
+            '',
+            'Usage: tool remote add <name>',
+            '',
+            'Run "tool help" to see global options.',
+          ]),
+        );
+      },
+    );
+  });
+
+  group('Given an option with allowed values, a range, and a default', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'play',
+        description: 'Play a card',
+        options: const [
+          IntOption(
+            argName: 'count',
+            helpText: 'How many',
+            defaultsTo: 2,
+            min: 1,
+            max: 10,
+            allowedValues: [1, 2, 5],
+          ),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test(
+      'when reading usage then only the allowed values are shown',
+      () {
+        expect(
+          command.usage,
+          _usage(const [
+            'Play a card',
+            '',
+            'Usage: tool play [--count=<integer>]',
+            '',
+            'Options:',
+            '--count    How many',
+            '           integer',
+            '           values: [1, 2 (default), 5]',
+            '',
+            'Run "tool help" to see global options.',
+          ]),
+        );
+      },
+    );
+  });
+}
+
+Command<OptionDefinition, void> _command({
+  required final String name,
+  required final String description,
+  final List<String>? aliases,
+  final bool? hidden,
+  final bool canRunAsLeafCommand = false,
+  final List<OptionDefinition>? persistentOptions,
+  final List<OptionDefinition>? options,
+  final List<Command<OptionDefinition, void>>? subcommands,
+}) {
+  return _UsageCommand(
+    name: name,
+    description: description,
+    aliases: aliases,
+    hidden: hidden,
+    canRunAsLeafCommand: canRunAsLeafCommand,
+    persistentOptions: persistentOptions,
+    options: options,
+    subcommands: subcommands,
+  );
+}
+
+enum _Pace { fast, slow }
+
+class _OverrideUsageCommand extends Command<OptionDefinition, void> {
+  @override
+  final String name;
+
+  _OverrideUsageCommand({
+    required this.name,
+    required final CommandUsageDefinition usageDefinition,
+  }) : super(usageDefinition: usageDefinition);
+
+  @override
+  void run(final CommandContext<OptionDefinition, void> context) {}
+}
+
+class _UsageCommand extends CommandImpl<OptionDefinition, void> {
+  _UsageCommand({
+    required super.name,
+    required super.description,
+    super.aliases,
+    super.hidden,
+    super.canRunAsLeafCommand,
+    super.persistentOptions,
+    super.options,
+    super.subcommands,
+  });
+
+  @override
+  void run(final CommandContext<OptionDefinition, void> context) {}
+}
+
+CommandRunner<OptionDefinition, void> _runner({
+  final String description = 'Tools',
+  final List<OptionDefinition>? globalOptions,
+  final List<Command<OptionDefinition, void>>? subcommands,
+  final int? usageLineLength,
+  final String? rootFooter,
+}) {
+  return CommandRunner(
+    'tool',
+    description,
+    globalOptions: globalOptions,
+    subcommands: subcommands,
+    usageLineLength: usageLineLength,
+    rootFooter: rootFooter,
+    // The built-in completion command is covered by the completion tests.
+    completion: CompletionSettings.disabled,
+  );
+}
+
+CommandRunner<OptionDefinition, void> _longUsageRunner({
+  final int? usageLineLength,
+}) {
+  return _runner(
+    description: 'A command line tool that builds and deploys applications.',
+    usageLineLength: usageLineLength,
+    rootFooter: 'See the documentation for more details about this tool.',
+    globalOptions: const [
+      FlagOption(
+        argName: 'verbose',
+        negatable: false,
+        helpText: 'Print extra information while the command is running.',
+      ),
+    ],
+    subcommands: [
+      _command(
+        name: 'build',
+        description: 'Build the application from the current sources.',
+        options: const [
+          FlagOption(
+            argName: 'release',
+            negatable: false,
+            helpText: 'Compile with optimizations for a production release.',
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
+String _usage(final Iterable<String> lines) => '${lines.join('\n')}\n';

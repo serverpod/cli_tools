@@ -1,0 +1,1748 @@
+/// Integration tests running the fixture CLI compiled to an executable:
+/// the completion protocol as a process, and the generated completion
+/// scripts in the real shells.
+///
+/// Each shell's tests run only if the shell is installed. To make them
+/// mandatory (as in CI), list the shells in the environment variable
+/// `CLI_COMPLETION_SHELLS`, e.g. `CLI_COMPLETION_SHELLS=bash,zsh,fish`;
+/// the tests for a listed shell that is not installed then fail.
+/// The shell executables are looked up on the PATH, or can be given
+/// explicitly as `CLI_COMPLETION_BASH`, `CLI_COMPLETION_ZSH`,
+/// `CLI_COMPLETION_FISH`, `CLI_COMPLETION_PWSH` and `CLI_COMPLETION_CARAPACE`.
+///
+/// On Windows, only the process-level tests and the PowerShell tests run;
+/// the other shells' harnesses are POSIX scripts.
+@Timeout(Duration(minutes: 5))
+library;
+
+import 'dart:convert' show jsonDecode, utf8;
+import 'dart:io';
+
+import 'package:config/command.dart' show CompletionShell;
+import 'package:path/path.dart' as p;
+import 'package:test/test.dart';
+
+import 'fixtures/completion_cli.dart'
+    show afterRunnerMarker, buildCompletionCli, noUsageExceptionVariable;
+
+const _exeName = 'comptool';
+
+/// A wrapper script of the executable, for which completion is installed
+/// with `completion --shell <shell> --command mywrap`.
+const _wrapperName = 'mywrap';
+
+/// The shells (and completion frameworks) under test, by executable name.
+const _shells = ['bash', 'zsh', 'fish', 'pwsh', 'carapace'];
+
+/// The shells whose harnesses run on this platform.
+final _platformShells = Platform.isWindows ? const ['pwsh'] : _shells;
+
+void main() {
+  final required = (Platform.environment['CLI_COMPLETION_SHELLS'] ?? '')
+      .split(',')
+      .map((final s) => s.trim())
+      .where((final s) => s.isNotEmpty)
+      .toSet();
+  final installed = {
+    for (final shell in _platformShells) shell: _findShell(shell),
+  };
+  for (final shell in required) {
+    if (installed[shell] == null) {
+      test('Given $shell is required by CLI_COMPLETION_SHELLS '
+          'then it is installed and tested on this platform', () {
+        fail(
+          _platformShells.contains(shell)
+              ? '$shell is not installed or not on the PATH'
+              : '$shell is not tested on ${Platform.operatingSystem}',
+        );
+      });
+    }
+  }
+
+  final env = _Environment();
+
+  setUpAll(() async {
+    await env.setUp();
+  });
+
+  tearDownAll(() {
+    env.tearDown();
+  });
+
+  _executableTests(env);
+
+  String? skipUnless(final String shell) {
+    if (!_platformShells.contains(shell)) {
+      return '$shell is not tested on ${Platform.operatingSystem}';
+    }
+    return installed[shell] == null ? '$shell is not installed' : null;
+  }
+
+  // On macOS, /bin/bash is version 3.2 while a newer Bash is usually
+  // installed elsewhere; test both when they differ.
+  final bashes = <String>{
+    if (installed['bash'] case final String bash) bash,
+    if (Platform.isMacOS && File('/bin/bash').existsSync()) '/bin/bash',
+  };
+  for (final bash in bashes) {
+    _bashTests(env, bash, skip: skipUnless('bash'));
+  }
+  _zshTests(env, installed['zsh'], skip: skipUnless('zsh'));
+  _fishTests(env, installed['fish'], skip: skipUnless('fish'));
+  _powershellTests(env, installed['pwsh'], skip: skipUnless('pwsh'));
+  _carapaceTests(env, installed['carapace'], skip: skipUnless('carapace'));
+}
+
+/// The completion protocol at the process level: the executable prints after
+/// `runner()` returns (see the fixture's `main`), which must not reach the
+/// completion output.
+void _executableTests(final _Environment env) {
+  group('Given the fixture CLI compiled to an executable '
+      'that prints after the runner returns', () {
+    final description = buildCompletionCli().usageDefinition.description;
+
+    test('when running a regular command '
+        'then the output after the runner is printed', () async {
+      final result = await env.run(env.exePath, ['build']);
+      expect(result.stdout, contains(afterRunnerMarker));
+    });
+
+    test('when a completion request goes through the wrapper '
+        'then the response is corrupted, which is why the scripts '
+        'generated for the wrapper bypass it', () async {
+      final result = await env.run(
+        _wrapperName,
+        ['__complete', 'bu'],
+        expectSuccess: false,
+      );
+      expect(result.stdout, startsWith('wrapper noise\n'));
+      expect(result.stdout, isNot(contains('build\t')));
+    }, skip: Platform.isWindows ? 'the wrapper is a POSIX script' : null);
+
+    test(
+      'when serving a completion request '
+      'then the process exits with code 0 right after the response',
+      () async {
+        final result = await env.run(env.exePath, ['__complete', 'bu']);
+        expect(result.stdout, 'build\tBuild the project.\n:4\n');
+        expect(result.exitCode, 0);
+      },
+    );
+
+    test('when a completion request fails '
+        'then the process exits with code 0 right after the error response '
+        'and the failure is reported on stderr', () async {
+      final result = await env.run(env.exePath, [
+        '__complete',
+        'build',
+        '--project',
+        'boom',
+        '--env',
+        '',
+      ]);
+      expect(result.stdout, ':1\n');
+      expect(result.exitCode, 0);
+      expect(result.stderr, contains('Completion failed'));
+    });
+
+    test('when printing a completion script with the completion command '
+        'then the process exits right after the script', () async {
+      final result = await env.run(env.exePath, [
+        'completion',
+        '--shell',
+        'bash',
+      ]);
+      expect(
+        result.stdout,
+        CompletionShell.bash.script(_exeName, description: description),
+      );
+      expect(result.exitCode, 0);
+    });
+
+    test('when installing the completion with `completion install` '
+        'then the script is saved, the steps are printed '
+        'and the program continues after the runner', () async {
+      final environment = env.installEnvironment();
+      final result = await env.run(
+        env.exePath,
+        ['completion', 'install', '--shell', 'fish'],
+        environment: environment,
+      );
+      final script = p.join(
+        environment['XDG_CONFIG_HOME']!,
+        'fish',
+        'completions',
+        '$_exeName.fish',
+      );
+      expect(
+        File(script).readAsStringSync(),
+        CompletionShell.fish.script(_exeName, description: description),
+      );
+      expect(
+        result.stdout,
+        'Installing the Fish completion for $_exeName:\n'
+        '  Create directory ${p.dirname(script)}\n'
+        '  Write $script\n'
+        'Fish loads it automatically, no reload needed.\n'
+        '$afterRunnerMarker null\n',
+      );
+    });
+
+    test('when installing the completion with `completion install --dry-run` '
+        'then the steps are printed and nothing is created', () async {
+      final environment = env.installEnvironment();
+      final result = await env.run(
+        env.exePath,
+        ['completion', 'install', '--shell', 'zsh', '--dry-run'],
+        environment: environment,
+      );
+      expect(
+        result.stdout,
+        startsWith(
+          'Installing the Zsh completion for $_exeName '
+          '(dry run, nothing is changed):\n'
+          '  Create directory ',
+        ),
+      );
+      expect(Directory(environment['HOME']!).listSync(), isEmpty);
+    });
+
+    test('when the completion script request is invalid '
+        'then the usage error is reported and the process does not exit '
+        'early', () async {
+      final result = await env.run(
+        env.exePath,
+        ['completion', '--shell', 'tcsh'],
+        expectSuccess: false,
+      );
+      expect(result.exitCode, 64);
+      expect(result.stderr, contains('"tcsh"'));
+      expect(result.stdout, isNot(contains(afterRunnerMarker)));
+    });
+  });
+
+  group('Given the fixture CLI run with Fish as the login shell '
+      'where the ancestor processes cannot be inspected', () {
+    final description = buildCompletionCli().usageDefinition.description;
+    // Lazy: the environment is set up after the tests are declared.
+    late final detection = env.detectionEnvironment(
+      loginShell: '/usr/bin/fish',
+    );
+
+    test('when running `completion` without the shell option '
+        'then the script of the detected shell is printed', () async {
+      final result = await env.run(
+        env.exePath,
+        ['completion'],
+        environment: detection,
+      );
+      expect(
+        result.stdout,
+        CompletionShell.fish.script(_exeName, description: description),
+      );
+    });
+
+    test('when running `completion --shell zsh` '
+        'then the script of the given shell is printed', () async {
+      final result = await env.run(
+        env.exePath,
+        ['completion', '--shell', 'zsh'],
+        environment: detection,
+      );
+      expect(
+        result.stdout,
+        CompletionShell.zsh.script(_exeName, description: description),
+      );
+    });
+
+    test('when running `completion --command $_wrapperName` '
+        'without the shell option '
+        'then the script of the detected shell is for the wrapper', () async {
+      final result = await env.run(
+        env.exePath,
+        ['completion', '--command', _wrapperName],
+        environment: detection,
+      );
+      expect(
+        result.stdout,
+        CompletionShell.fish.script(
+          _exeName,
+          description: description,
+          commandName: _wrapperName,
+        ),
+      );
+    });
+
+    group('when running `completion install` without the shell option', () {
+      late Map<String, String> environment;
+      late String script;
+      late _ProcessOutput result;
+
+      setUp(() async {
+        environment = {...env.installEnvironment(), ...detection};
+        script = p.join(
+          environment['XDG_CONFIG_HOME']!,
+          'fish',
+          'completions',
+          '$_exeName.fish',
+        );
+        result = await env.run(
+          env.exePath,
+          ['completion', 'install'],
+          environment: environment,
+        );
+      });
+
+      test('then the script of the detected shell is saved '
+          'where the shell loads it from', () {
+        expect(
+          File(script).readAsStringSync(),
+          CompletionShell.fish.script(_exeName, description: description),
+        );
+      });
+
+      test('then the steps for the detected shell are printed', () {
+        expect(
+          result.stdout,
+          startsWith(
+            'Installing the Fish completion for $_exeName:\n'
+            '  Create directory ${p.dirname(script)}\n'
+            '  Write $script\n',
+          ),
+        );
+      });
+    });
+
+    test('when running `completion install --dry-run` '
+        'without the shell option '
+        'then the steps for the detected shell are printed '
+        'and nothing is created', () async {
+      final environment = {...env.installEnvironment(), ...detection};
+      final result = await env.run(
+        env.exePath,
+        ['completion', 'install', '--dry-run'],
+        environment: environment,
+      );
+      expect(
+        result.stdout,
+        startsWith(
+          'Installing the Fish completion for $_exeName '
+          '(dry run, nothing is changed):\n',
+        ),
+      );
+      expect(Directory(environment['HOME']!).listSync(), isEmpty);
+    });
+  });
+
+  group(
+    'Given the fixture CLI run without a login shell '
+    'where the ancestor processes cannot be inspected',
+    () {
+      late final detection = env.detectionEnvironment(loginShell: '');
+
+      group('when running `completion` without the shell option', () {
+        late _ProcessOutput result;
+
+        setUp(() async {
+          result = await env.run(
+            env.exePath,
+            ['completion'],
+            environment: detection,
+            expectSuccess: false,
+          );
+        });
+
+        test('then a usage error asks for the shell option', () {
+          expect(
+            result.stderr,
+            contains(
+              'completion: Could not detect the shell. '
+              'Specify it with --shell.',
+            ),
+          );
+          expect(result.exitCode, 64);
+        });
+
+        test('then the usage of the command is printed with the error', () {
+          expect(result.stderr, contains('Usage: $_exeName completion'));
+        });
+
+        test('then no script is printed', () {
+          expect(result.stdout, isEmpty);
+        });
+      });
+
+      test('when running `completion install` without the shell option '
+          'then a usage error asks for the shell option '
+          'and nothing is installed', () async {
+        final environment = {...env.installEnvironment(), ...detection};
+        final result = await env.run(
+          env.exePath,
+          ['completion', 'install'],
+          environment: environment,
+          expectSuccess: false,
+        );
+        expect(
+          result.stderr,
+          contains(
+            'install: Could not detect the shell. Specify it with --shell.',
+          ),
+        );
+        expect(result.exitCode, 64);
+        expect(Directory(environment['HOME']!).listSync(), isEmpty);
+      });
+
+      test('when running `completion --shell bash` '
+          'then the script of the given shell is printed', () async {
+        final result = await env.run(
+          env.exePath,
+          ['completion', '--shell', 'bash'],
+          environment: detection,
+        );
+        expect(
+          result.stdout,
+          contains('complete -F __${_exeName}_complete $_exeName'),
+        );
+      });
+
+      test('when running `completion --help` '
+          'then the usage is printed without requiring a shell', () async {
+        final result = await env.run(
+          env.exePath,
+          ['completion', '--help'],
+          environment: detection,
+        );
+        expect(result.stdout, contains('Usage: $_exeName completion'));
+        expect(result.stderr, isEmpty);
+      });
+
+      test('when running `completion` without the shell option '
+          'in a runner that does not throw usage exceptions '
+          'then the error is printed and the runner returns null', () async {
+        final result = await env.run(
+          env.exePath,
+          ['completion'],
+          environment: {...detection, noUsageExceptionVariable: '1'},
+        );
+        expect(result.stderr, contains('Could not detect the shell.'));
+        expect(result.stdout, '$afterRunnerMarker null\n');
+      });
+    },
+    skip: Platform.isWindows
+        ? 'PowerShell is always detected on Windows'
+        : null,
+  );
+}
+
+void _bashTests(
+  final _Environment env,
+  final String bash, {
+  required final String? skip,
+}) {
+  group('Given the Bash completion script sourced in $bash', () {
+    /// Completes the last of [words]. The equals sign is a word break,
+    /// as it is by default in Bash, unless [breakAtEquals] is false.
+    Future<List<String>> complete(
+      final List<String> words, {
+      final bool breakAtEquals = true,
+    }) async {
+      final result = await env.run(
+        bash,
+        [
+          env.harnessPath('bash_harness.sh'),
+          env.scriptPath('bash'),
+          ...words,
+        ],
+        environment: {if (!breakAtEquals) 'COMPLETION_NO_EQUALS_BREAK': '1'},
+      );
+      return result.lines;
+    }
+
+    test('when sourced then a completion function is registered '
+        'for the executable', () async {
+      final result = await env.run(bash, [
+        '-c',
+        'source "\$1" && complete -p $_exeName',
+        'bash',
+        env.scriptPath('bash'),
+      ]);
+      expect(
+        result.stdout.trim(),
+        'complete -F __${_exeName}_complete $_exeName',
+      );
+    });
+
+    test('when completing the first word '
+        'then the non-hidden subcommands are offered', () async {
+      expect(await complete(['']), [
+        'build',
+        'deploy',
+        'export',
+        'version',
+        'db',
+        'completion',
+      ]);
+    });
+
+    test('when completing a subcommand prefix '
+        'then only the matching subcommand is offered', () async {
+      expect(await complete(['bu']), ['build']);
+    });
+
+    test('when completing a dash then the options are offered', () async {
+      expect(
+        await complete(['-']),
+        containsAll(['--config', '-c', '--verbose', '--no-verbose', '-h']),
+      );
+    });
+
+    test('when completing an enum option value '
+        'then its values are offered', () async {
+      expect(await complete(['build', '--mode', '']), [
+        'debug',
+        'profile',
+        'release',
+      ]);
+    });
+
+    test('when completing an option value attached with an equals sign '
+        'then the value part is completed', () async {
+      // Bash splits the word at '=' by default.
+      expect(await complete(['build', '--mode', '=', 're']), ['release']);
+    });
+
+    group('when the equals sign is not a word break', () {
+      test('and completing an enum option value attached with an equals sign '
+          'then the option is kept in the offered value', () async {
+        expect(
+          await complete(['build', '--mode=re'], breakAtEquals: false),
+          ['--mode=release'],
+        );
+      });
+
+      test('and completing a file option value attached with an equals sign '
+          'then the option is kept in the offered file', () async {
+        expect(
+          await complete(['--config=f'], breakAtEquals: false),
+          ['--config=f.txt'],
+        );
+      });
+
+      test(
+        'and completing a directory option value attached with an '
+        'equals sign then the option is kept in the offered directory',
+        () async {
+          expect(
+            await complete(['build', '--out=s'], breakAtEquals: false),
+            ['--out=sub'],
+          );
+        },
+      );
+
+      test('and completing a file option value with extensions attached '
+          'with an equals sign then the option is kept in the offered '
+          'files', () async {
+        expect(
+          await complete(['build', '--spec=a'], breakAtEquals: false),
+          ['--spec=a.yaml'],
+        );
+      });
+    });
+
+    test('when completing a later list element of a multi-option '
+        'then the earlier elements are kept', () async {
+      expect(await complete(['build', '--tags', 'fast,s']), [r'fast\,slow']);
+    });
+
+    test('when completing a directory option '
+        'then only directories are offered', () async {
+      expect(await complete(['build', '--out', '']), ['sub']);
+    });
+
+    test('when completing a file option '
+        'then files are offered', () async {
+      expect(await complete(['--config', 'f']), ['f.txt']);
+    });
+
+    test('when completing a file option with extensions '
+        'then only matching files and directories are offered', () async {
+      expect(
+        await complete(['build', '--spec', '']),
+        unorderedEquals(['sub', 'a.yaml', 'b.yml']),
+      );
+    });
+
+    group('when file and directory names have wildcard characters '
+        'that match other names', () {
+      // `w[1]` as a wildcard pattern matches `w1`.
+      late List<FileSystemEntity> entities;
+
+      setUp(() {
+        entities = [
+          File(p.join(env.workDir.path, 'w[1].yaml'))..createSync(),
+          File(p.join(env.workDir.path, 'w1.yaml'))..createSync(),
+          Directory(p.join(env.workDir.path, 'w[1]dir'))..createSync(),
+          Directory(p.join(env.workDir.path, 'w1dir'))..createSync(),
+        ];
+      });
+
+      tearDown(() {
+        for (final entity in entities) {
+          entity.deleteSync();
+        }
+      });
+
+      test('and completing a file option '
+          'then each name is offered as it is', () async {
+        expect(
+          await complete(['--config', 'w']),
+          unorderedEquals(['w[1].yaml', 'w1.yaml', 'w[1]dir', 'w1dir']),
+        );
+      });
+
+      test('and completing a file option with extensions '
+          'then each name is offered as it is', () async {
+        expect(
+          await complete(['build', '--spec', 'w']),
+          unorderedEquals(['w[1].yaml', 'w1.yaml', 'w[1]dir', 'w1dir']),
+        );
+      });
+
+      test('and completing a directory option '
+          'then each name is offered as it is', () async {
+        expect(
+          await complete(['build', '--out', 'w']),
+          unorderedEquals(['w[1]dir', 'w1dir']),
+        );
+      });
+    });
+
+    test('when completing a positional argument '
+        'then its allowed values are offered', () async {
+      expect(await complete(['deploy', '']), ['staging', 'production']);
+    });
+
+    test('when nothing can be completed then nothing is offered', () async {
+      expect(await complete(['build', '']), isEmpty);
+    });
+
+    test('when completing after a redirection operator '
+        'then files are offered instead of command arguments', () async {
+      expect(
+        await complete(['>', '']),
+        unorderedEquals(['f.txt', 'a.yaml', 'b.yml', 'sub']),
+      );
+    });
+
+    test('when completing the redirection operator itself '
+        'then files are offered', () async {
+      expect(
+        await complete(['>']),
+        unorderedEquals(['f.txt', 'a.yaml', 'b.yml', 'sub']),
+      );
+    });
+
+    test('when completing a command word after a redirected file '
+        'then the redirection is ignored', () async {
+      expect(await complete(['>', 'out.txt', 'bu']), ['build']);
+    });
+
+    test('when the script is generated for a wrapper of the executable '
+        'then completing the wrapper asks the executable directly', () async {
+      final result = await env.run(
+        bash,
+        [
+          env.harnessPath('bash_harness.sh'),
+          env.wrapperScriptPath('bash'),
+          'bu',
+        ],
+        environment: {'COMPLETION_CMD': _wrapperName},
+      );
+      expect(result.lines, ['build']);
+    });
+
+    test('when the script is generated for a wrapper path with a space '
+        'then the completion is registered for that path', () async {
+      const wrapper = '/tmp/my wrapper';
+      final script = await env.run(env.exePath, [
+        'completion',
+        '--shell',
+        'bash',
+        '--command',
+        wrapper,
+      ]);
+      final scriptFile = File(p.join(env.scriptDir.path, 'spaced.bash'))
+        ..writeAsStringSync(script.stdout);
+      final result = await env.run(bash, [
+        '-c',
+        'source "\$1" && complete -p "\$2"',
+        'bash',
+        scriptFile.path,
+        wrapper,
+      ]);
+      expect(
+        result.stdout.trim(),
+        startsWith('complete -F ___tmp_my_wrapper_complete '),
+      );
+    });
+  }, skip: skip);
+
+  group('Given an interactive $bash', () {
+    test(
+      'when running `completion` without the shell option '
+      'then the Bash script is printed, whatever the login shell is',
+      () async {
+        final result = await env.run(
+          bash,
+          ['--noprofile', '--norc', '-i'],
+          stdin: '$_exeName completion\n',
+          environment: {'SHELL': '/bin/zsh'},
+        );
+        expect(
+          result.stdout,
+          contains('complete -F __${_exeName}_complete $_exeName'),
+        );
+      },
+      skip: _skipUnlessProcessesCanBeInspected,
+    );
+
+    test('when the completion is installed with `completion install` '
+        'then a new shell that reads its startup file '
+        'has the completion function registered', () async {
+      final environment = env.installEnvironment();
+      await env.run(
+        env.exePath,
+        ['completion', 'install', '--shell', 'bash'],
+        environment: environment,
+      );
+      // The startup file is the one of login shells on macOS,
+      // and the one of interactive shells elsewhere.
+      final result = await env.run(
+        bash,
+        [Platform.isMacOS ? '-l' : '-i', '-c', 'complete -p $_exeName'],
+        environment: environment,
+      );
+      expect(
+        result.lines,
+        contains('complete -F __${_exeName}_complete $_exeName'),
+      );
+    });
+  }, skip: skip);
+}
+
+void _zshTests(
+  final _Environment env,
+  final String? zsh, {
+  required final String? skip,
+}) {
+  group('Given the Zsh completion script in an interactive Zsh', () {
+    /// Types [line] followed by TAB in an interactive zsh, returning the
+    /// resulting command line buffer and the raw terminal output.
+    Future<({String buffer, String output})> completeLine(
+      final String line, {
+      final bool installInFpath = false,
+      final String? script,
+    }) async {
+      final result = await env.run(
+        zsh!,
+        ['-f', env.harnessPath('zsh_harness.zsh'), line],
+        environment: {
+          // The interactive Zsh under test is the same one as the harness.
+          'ZSH_BIN': zsh,
+          'ZSH_INIT': env.harnessPath('zsh_init.zsh'),
+          'ZSH_COMPDUMP': p.join(env.root.path, 'zcompdump'),
+          'ZSH_BUFFER_FILE': p.join(env.root.path, 'zsh_buffer.txt'),
+          'COMPLETION_SCRIPT': script ?? env.scriptPath('zsh'),
+          'COMPLETION_INSTALL': installInFpath ? 'fpath' : 'source',
+          'COMPLETION_FPATH': env.fpathDir.path,
+        },
+      );
+      final buffer = result.lines.firstWhere(
+        (final l) => l.startsWith('BUFFER:'),
+        orElse: () => fail('no buffer in harness output:\n${result.stdout}'),
+      );
+      return (
+        buffer: buffer.substring('BUFFER:'.length),
+        output: result.stdout,
+      );
+    }
+
+    test('when sourced after compinit '
+        'then the completion function is registered', () async {
+      final result = await env.run(zsh!, [
+        '-f',
+        '-c',
+        'autoload -Uz compinit && compinit -u -d "\$1" && source "\$2" && '
+            'print -r -- "\${_comps[$_exeName]}"',
+        'zsh',
+        p.join(env.root.path, 'zcompdump_check'),
+        env.scriptPath('zsh'),
+      ]);
+      expect(result.stdout.trim(), '_$_exeName');
+    });
+
+    test('when completing a unique subcommand prefix '
+        'then the subcommand is inserted', () async {
+      final result = await completeLine('$_exeName bu');
+      expect(result.buffer, '$_exeName build ');
+    });
+
+    test('when installed in fpath and completing a unique subcommand prefix '
+        'then the subcommand is inserted', () async {
+      final result = await completeLine('$_exeName bu', installInFpath: true);
+      expect(result.buffer, '$_exeName build ');
+    });
+
+    test('when completing the first word '
+        'then the subcommands are listed with descriptions', () async {
+      final result = await completeLine('$_exeName ');
+      expect(result.output, contains('build'));
+      expect(result.output, contains('Build the project.'));
+      expect(result.output, contains('deploy'));
+      expect(result.output, contains('completion'));
+      expect(result.output, isNot(contains('internal')));
+    });
+
+    test('when completing an enum option value '
+        'then the values are listed with descriptions', () async {
+      final result = await completeLine('$_exeName build --mode ');
+      expect(result.buffer, '$_exeName build --mode ');
+      expect(result.output, contains('debug'));
+      expect(result.output, contains('Debug build'));
+      expect(result.output, contains('profile'));
+      expect(result.output, contains('release'));
+    });
+
+    test('when completing a unique enum option value '
+        'then it is inserted', () async {
+      final result = await completeLine('$_exeName build --mode re');
+      expect(result.buffer, '$_exeName build --mode release ');
+    });
+
+    test('when completing an option value attached with an equals sign '
+        'then the value is inserted after the option', () async {
+      final result = await completeLine('$_exeName build --mode=re');
+      expect(result.buffer, '$_exeName build --mode=release ');
+    });
+
+    test('when completing a later list element of a multi-option '
+        'then the earlier elements are kept', () async {
+      final result = await completeLine('$_exeName build --tags fast,s');
+      expect(result.buffer, '$_exeName build --tags fast,slow ');
+    });
+
+    test('when completing a value that contains a backslash and a colon '
+        'then the value is inserted whole', () async {
+      // The typed word is `a\:b`, which the fixture offers as `a\:b!`.
+      final result = await completeLine('$_exeName build --env a\\\\:b');
+      expect(result.buffer, '$_exeName build --env a\\\\:b\\! ');
+    });
+
+    test('when completing a directory option '
+        'then the directory is inserted', () async {
+      final result = await completeLine('$_exeName build --out su');
+      expect(result.buffer, '$_exeName build --out sub/');
+    });
+
+    test('when completing a file option then the file is inserted', () async {
+      final result = await completeLine('$_exeName --config f.t');
+      expect(result.buffer, '$_exeName --config f.txt ');
+    });
+
+    test('when completing a file option with extensions '
+        'then the matching file is inserted', () async {
+      final result = await completeLine('$_exeName build --spec a.');
+      expect(result.buffer, '$_exeName build --spec a.yaml ');
+    });
+
+    test('when completing a positional argument '
+        'then its allowed values are listed', () async {
+      final result = await completeLine('$_exeName deploy ');
+      expect(result.output, contains('staging'));
+      expect(result.output, contains('production'));
+    });
+
+    test('when nothing can be completed '
+        'then no files are offered', () async {
+      final result = await completeLine('$_exeName build ');
+      expect(result.buffer, '$_exeName build ');
+      expect(result.output, isNot(contains('f.txt')));
+    });
+
+    test('when the script is generated for a wrapper of the executable '
+        'then completing the wrapper asks the executable directly', () async {
+      final result = await completeLine(
+        '$_wrapperName bu',
+        script: env.wrapperScriptPath('zsh'),
+      );
+      expect(result.buffer, '$_wrapperName build ');
+    });
+  }, skip: skip);
+
+  group('Given an interactive Zsh', () {
+    /// Expects that a new interactive Zsh with the [environment] has the
+    /// completion function registered for the executable.
+    ///
+    /// Zsh does not initialize its completion system if a directory it
+    /// loads functions from is writable by other users (see `compaudit`)
+    /// and it cannot ask the user: its error output tells if that is so.
+    Future<void> expectCompletionRegistered(
+      final Map<String, String> environment,
+    ) async {
+      final result = await env.run(
+        zsh!,
+        ['-i', '-c', 'print -r -- "registered:\${_comps[$_exeName]}"'],
+        environment: environment,
+      );
+      expect(
+        result.lines.last,
+        'registered:_$_exeName',
+        reason: 'Error output of Zsh:\n${result.stderr}',
+      );
+    }
+
+    test(
+      'when running `completion` without the shell option '
+      'then the Zsh script is printed, whatever the login shell is',
+      () async {
+        final result = await env.run(
+          zsh!,
+          ['-f', '-i'],
+          stdin: '$_exeName completion\n',
+          environment: {'SHELL': '/bin/bash'},
+        );
+        expect(result.stdout, contains('#compdef $_exeName'));
+      },
+      skip: _skipUnlessProcessesCanBeInspected,
+    );
+
+    test(
+      'when running `completion` without the shell option '
+      'through a wrapper that is a Bash script '
+      'then the Zsh script is printed',
+      () async {
+        final wrapper = File(p.join(env.binDir.path, 'bashwrap'))
+          ..writeAsStringSync('#!/bin/bash\n$_exeName "\$@"\n');
+        await env.run('chmod', ['+x', wrapper.path]);
+        final result = await env.run(
+          zsh!,
+          ['-f', '-i'],
+          stdin: 'bashwrap completion\n',
+          environment: {'SHELL': '/bin/bash'},
+        );
+        expect(result.stdout, contains('#compdef $_exeName'));
+      },
+      skip:
+          _skipUnlessProcessesCanBeInspected ??
+          (File('/bin/bash').existsSync() ? null : '/bin/bash is missing'),
+    );
+
+    test('when the completion is installed with `completion install` '
+        'in a home directory without a startup file '
+        'then a new shell has the completion registered', () async {
+      final environment = env.installEnvironment();
+      await env.run(
+        env.exePath,
+        ['completion', 'install', '--shell', 'zsh'],
+        environment: environment,
+      );
+      await expectCompletionRegistered(environment);
+    });
+
+    test('when the completion is installed with `completion install` '
+        'and the startup file initializes the completion system '
+        'then a new shell has the completion registered', () async {
+      final environment = env.installEnvironment();
+      final home = environment['HOME']!;
+      File(p.join(home, '.zshrc')).writeAsStringSync(
+        'autoload -Uz compinit\n'
+        'compinit -u -d ${p.join(home, 'zcompdump')}',
+      );
+      await env.run(
+        env.exePath,
+        ['completion', 'install', '--shell', 'zsh'],
+        environment: environment,
+      );
+      await expectCompletionRegistered(environment);
+    });
+  }, skip: skip);
+}
+
+void _fishTests(
+  final _Environment env,
+  final String? fish, {
+  required final String? skip,
+}) {
+  group('Given the Fish completion script sourced in Fish', () {
+    /// Completes [line] with fish's `complete -C`,
+    /// returning the candidates as `value<TAB>description` lines.
+    Future<List<String>> complete(
+      final String line, {
+      final String? script,
+    }) async {
+      final result = await env.run(fish!, [
+        '--no-config',
+        '-c',
+        'source "\$argv[1]"; complete -C "\$argv[2]"',
+        script ?? env.scriptPath('fish'),
+        line,
+      ]);
+      return result.lines;
+    }
+
+    test('when the script is generated for a wrapper of the executable '
+        'then completing the wrapper asks the executable directly', () async {
+      expect(
+        await complete(
+          '$_wrapperName bu',
+          script: env.wrapperScriptPath('fish'),
+        ),
+        ['build\tBuild the project.'],
+      );
+    });
+
+    test('when completing the first word '
+        'then the subcommands are offered with descriptions', () async {
+      final lines = await complete('$_exeName ');
+      expect(
+        lines,
+        containsAll([
+          'build\tBuild the project.',
+          'deploy\tDeploy a bundle to a target.',
+          'completion\tGenerate a shell completion script.',
+        ]),
+      );
+      expect(_values(lines), isNot(contains('internal')));
+    });
+
+    test('when completing a subcommand prefix '
+        'then only the matching subcommand is offered', () async {
+      expect(_values(await complete('$_exeName bu')), ['build']);
+    });
+
+    test('when completing a dash then the options are offered', () async {
+      expect(
+        _values(await complete('$_exeName build -')),
+        containsAll(['-m', '--mode', '--no-verbose', '--config']),
+      );
+    });
+
+    test('when completing an enum option value '
+        'then its values are offered with descriptions', () async {
+      expect(await complete('$_exeName build --mode '), [
+        'debug\tDebug build',
+        'profile',
+        'release\tOptimized build',
+      ]);
+    });
+
+    test('when completing an option value attached with an equals sign '
+        'then the option prefix is kept', () async {
+      expect(_values(await complete('$_exeName build --mode=re')), [
+        '--mode=release',
+      ]);
+    });
+
+    test('when completing a later list element of a multi-option '
+        'then the earlier elements are kept', () async {
+      expect(_values(await complete('$_exeName build --tags fast,s')), [
+        'fast,slow',
+      ]);
+    });
+
+    test('when completing a directory option '
+        'then only directories are offered', () async {
+      expect(_values(await complete('$_exeName build --out ')), ['sub/']);
+    });
+
+    test('when completing a file option then files are offered', () async {
+      expect(_values(await complete('$_exeName --config f')), ['f.txt']);
+    });
+
+    test('when completing a file option with extensions '
+        'then only matching files and directories are offered', () async {
+      expect(
+        _values(await complete('$_exeName build --spec ')),
+        unorderedEquals(['a.yaml', 'b.yml', 'sub/']),
+      );
+    });
+
+    test('when completing a positional argument '
+        'then its allowed values are offered', () async {
+      expect(
+        _values(await complete('$_exeName deploy ')),
+        unorderedEquals(['staging', 'production']),
+      );
+    });
+
+    test('when nothing can be completed then nothing is offered', () async {
+      expect(await complete('$_exeName build '), isEmpty);
+    });
+  }, skip: skip);
+
+  group('Given an interactive Fish', () {
+    test('when the completion is installed with `completion install` '
+        'then completing a subcommand prefix in a new shell '
+        'loads the script and offers the subcommand', () async {
+      final environment = env.installEnvironment();
+      await env.run(
+        env.exePath,
+        ['completion', 'install', '--shell', 'fish'],
+        environment: environment,
+      );
+      final result = await env.run(
+        fish!,
+        ['-c', 'complete -C "$_exeName bu"'],
+        environment: environment,
+      );
+      expect(_values(result.lines), ['build']);
+    });
+
+    test(
+      'when running `completion` without the shell option '
+      'then the Fish script is printed, whatever the login shell is',
+      () async {
+        final result = await env.run(
+          fish!,
+          ['--no-config', '-i'],
+          stdin: '$_exeName completion\n',
+          environment: {'SHELL': '/bin/bash'},
+        );
+        expect(result.stdout, contains('complete -c $_exeName'));
+      },
+      skip: _skipUnlessProcessesCanBeInspected,
+    );
+  }, skip: skip);
+}
+
+void _powershellTests(
+  final _Environment env,
+  final String? pwsh, {
+  required final String? skip,
+}) {
+  group('Given the PowerShell completion script loaded in PowerShell', () {
+    /// Completes [line] with `TabExpansion2`, returning the completion
+    /// results as (text, listItem, type, toolTip) records.
+    Future<List<({String text, String item, String type, String tip})>>
+    complete(final String line) async {
+      final result = await env.run(pwsh!, [
+        '-NoProfile',
+        '-NonInteractive',
+        '-File',
+        env.harnessPath('ps_harness.ps1'),
+        '-Script',
+        env.scriptPath('powershell'),
+        '-Line',
+        line,
+      ]);
+      return [
+        for (final l in result.lines)
+          if (l.split('\t') case [
+            final text,
+            final item,
+            final type,
+            final tip,
+          ])
+            (text: text, item: item, type: type, tip: tip),
+      ];
+    }
+
+    test('when completing the first word '
+        'then the subcommands are offered with tool tips', () async {
+      final results = await complete('$_exeName ');
+      final items = results.map((final r) => r.item);
+      expect(items, containsAll(['build', 'deploy', 'db', 'completion']));
+      expect(items, isNot(contains('internal')));
+      final build = results.firstWhere((final r) => r.item == 'build');
+      expect(build.tip, 'Build the project.');
+      expect(build.type, 'ParameterValue');
+    });
+
+    test('when completing a subcommand prefix '
+        'then only the matching subcommand is offered', () async {
+      final results = await complete('$_exeName bu');
+      expect(results.map((final r) => r.text.trim()), ['build']);
+    });
+
+    test('when completing an enum option value '
+        'then its values are offered', () async {
+      final results = await complete('$_exeName build --mode ');
+      expect(results.map((final r) => r.item), ['debug', 'profile', 'release']);
+      expect(results.last.tip, 'Optimized build');
+    });
+
+    test('when completing an option value attached with an equals sign '
+        'then the option prefix is kept', () async {
+      final results = await complete('$_exeName build --mode=re');
+      expect(results.map((final r) => r.text.trim()), ['--mode=release']);
+    });
+
+    test('when completing a later list element of a multi-option '
+        'then the earlier elements are kept', () async {
+      final results = await complete('$_exeName build --tags fast,s');
+      expect(results.map((final r) => r.item), ['fast,slow']);
+    });
+
+    test('when completing a directory option '
+        'then only directories are offered', () async {
+      final results = await complete('$_exeName build --out ');
+      expect(results.map((final r) => r.item), ['sub']);
+      expect(results.single.type, 'ProviderContainer');
+    });
+
+    test('when completing a file option then files are offered', () async {
+      final results = await complete('$_exeName --config f');
+      expect(results.map((final r) => r.item), ['f.txt']);
+    });
+
+    test('when completing a file option with extensions '
+        'then only matching files and directories are offered', () async {
+      final results = await complete('$_exeName build --spec ');
+      expect(
+        results.map((final r) => r.item),
+        unorderedEquals(['sub', 'a.yaml', 'b.yml']),
+      );
+    });
+
+    test('when completing a path that contains a space '
+        'then the space is escaped in the inserted text', () async {
+      final dir = 'sub${p.separator}';
+      final results = await complete('$_exeName build --spec $dir');
+      expect(results.map((final r) => r.item), ['my spec.yaml']);
+      expect(results.map((final r) => r.text), ['${dir}my` spec.yaml']);
+    });
+
+    test('when completing a positional argument '
+        'then its allowed values are offered', () async {
+      final results = await complete('$_exeName deploy ');
+      expect(
+        results.map((final r) => r.item),
+        unorderedEquals(['staging', 'production']),
+      );
+    });
+
+    test('when nothing can be completed then no files are offered', () async {
+      final results = await complete('$_exeName build ');
+      expect(results.map((final r) => r.item.trim()), isNot(contains('f.txt')));
+      expect(results.map((final r) => r.text.trim()), everyElement(isEmpty));
+    });
+
+    test('when the completion fails then no files are offered', () async {
+      final results = await complete('$_exeName build --project boom --env ');
+      expect(results.map((final r) => r.item.trim()), isNot(contains('f.txt')));
+      expect(results.map((final r) => r.text.trim()), everyElement(isEmpty));
+    });
+
+    test('when completing a directory option and no directory matches '
+        'then no files are offered', () async {
+      final results = await complete('$_exeName build --out f');
+      expect(results.map((final r) => r.item.trim()), isNot(contains('f.txt')));
+      expect(results.map((final r) => r.text.trim()), everyElement(isEmpty));
+    });
+
+    test('when completing a file option with extensions and no file '
+        'or directory matches then no files are offered', () async {
+      final results = await complete('$_exeName build --spec f');
+      expect(results.map((final r) => r.item.trim()), isNot(contains('f.txt')));
+      expect(results.map((final r) => r.text.trim()), everyElement(isEmpty));
+    });
+
+    test('when completing a path with wildcard characters '
+        'then the path is taken literally', () async {
+      // `lit[1]` as a wildcard pattern matches the directory `lit1`.
+      // They are in the working directory, to complete a relative path:
+      // the path of the directory may have a space.
+      final dir = Directory(p.join(env.workDir.path, 'lit[1]'))..createSync();
+      final decoy = Directory(p.join(env.workDir.path, 'lit1'))..createSync();
+      addTearDown(() {
+        dir.deleteSync(recursive: true);
+        decoy.deleteSync(recursive: true);
+      });
+      File(p.join(dir.path, 'c.yaml')).createSync();
+      File(p.join(decoy.path, 'c-decoy.yaml')).createSync();
+      final results = await complete(
+        '$_exeName build --spec lit[1]${p.separator}c',
+      );
+      expect(results.map((final r) => r.item), ['c.yaml']);
+    });
+  }, skip: skip);
+
+  group('Given the PowerShell completion installed '
+      'with `completion install`', () {
+    test(
+      'when completing a subcommand prefix in a new shell '
+      'then the profile loads the script and the subcommand is offered',
+      () async {
+        const line = '$_exeName bu';
+        final environment = env.installEnvironment();
+        await env.run(
+          env.exePath,
+          ['completion', 'install', '--shell', 'powershell'],
+          environment: environment,
+        );
+        final result = await env.run(
+          pwsh!,
+          [
+            '-NonInteractive',
+            '-Command',
+            "(TabExpansion2 -inputScript '$line' -cursorColumn ${line.length})"
+                '.CompletionMatches | '
+                r'ForEach-Object { $_.CompletionText.Trim() }',
+          ],
+          environment: environment,
+        );
+        expect(result.lines, ['build']);
+      },
+      // On Windows the profile is in the documents folder of the user,
+      // wherever the environment says the home directory is.
+      skip: Platform.isWindows
+          ? 'it would change the profile of the user'
+          : null,
+    );
+  }, skip: skip);
+}
+
+void _carapaceTests(
+  final _Environment env,
+  final String? carapace, {
+  required final String? skip,
+}) {
+  group(
+    'Given the Carapace spec installed in the Carapace specs directory',
+    () {
+      /// Completes [words] via `carapace <spec> export`,
+      /// returning the values with their descriptions.
+      Future<List<({String value, String description})>> complete(
+        final List<String> words, {
+        final Map<String, String> environment = const {},
+      }) async {
+        final result = await env.run(
+          carapace!,
+          [_exeName, 'export', _exeName, ...words],
+          environment: environment,
+        );
+        final json = jsonDecode(result.stdout) as Map<String, dynamic>;
+        return [
+          for (final value in json['values'] as List)
+            (
+              value: (value as Map)['value'] as String,
+              description: (value['description'] as String?) ?? '',
+            ),
+        ];
+      }
+
+      test('when detecting the completion framework of the executable '
+          'then Cobra is detected', () async {
+        final result = await env.run(carapace!, ['--detect', _exeName]);
+        // Carapace reports the detected framework on stderr.
+        expect('${result.stdout}${result.stderr}'.trim(), 'cobra');
+      });
+
+      test('when completing the first word '
+          'then the subcommands are offered with descriptions', () async {
+        final results = await complete(['']);
+        expect(
+          results.map((final r) => r.value),
+          containsAll(['build', 'deploy', 'db', 'version', 'completion']),
+        );
+        expect(results.map((final r) => r.value), isNot(contains('internal')));
+        final build = results.firstWhere((final r) => r.value == 'build');
+        expect(build.description, 'Build the project.');
+      });
+
+      test('when completing a subcommand prefix '
+          'then only the matching subcommand is offered', () async {
+        final results = await complete(['bu']);
+        expect(results.map((final r) => r.value), ['build']);
+      });
+
+      test('when completing an enum option value '
+          'then its values are offered', () async {
+        final results = await complete(['build', '--mode', '']);
+        expect(
+          results.map((final r) => r.value),
+          unorderedEquals(['debug', 'profile', 'release']),
+        );
+      });
+
+      test('when completing a later list element of a multi-option '
+          'then the earlier elements are kept', () async {
+        final results = await complete(['build', '--tags', 'fast,s']);
+        expect(results.map((final r) => r.value), ['fast,slow']);
+      });
+
+      test('when completing a directory option '
+          'then only directories are offered', () async {
+        final results = await complete(['build', '--out', '']);
+        expect(results.map((final r) => r.value), ['sub/']);
+      });
+
+      test('when completing a file option then files are offered', () async {
+        final results = await complete(['--config', 'f']);
+        expect(results.map((final r) => r.value), ['f.txt']);
+      });
+
+      test('when completing a file option with extensions '
+          'then only matching files and directories are offered', () async {
+        final results = await complete(['build', '--spec', '']);
+        expect(
+          results.map((final r) => r.value),
+          unorderedEquals(['a.yaml', 'b.yml', 'sub/']),
+        );
+      });
+
+      test('when nothing can be completed then nothing is offered', () async {
+        expect(await complete(['build', '']), isEmpty);
+      });
+
+      test('when the spec is installed with `completion install` instead '
+          'then Carapace completes with it', () async {
+        final environment = env.installEnvironment();
+        await env.run(
+          env.exePath,
+          ['completion', 'install', '--shell', 'carapace'],
+          environment: environment,
+        );
+        final results = await complete(['bu'], environment: environment);
+        expect(results.map((final r) => r.value), ['build']);
+      });
+    },
+    skip: skip,
+  );
+}
+
+/// The values of `value<TAB>description` lines.
+List<String> _values(final List<String> lines) => [
+  for (final line in lines) line.split('\t').first,
+];
+
+/// The reason to skip a test of the shell detection, or null if the
+/// ancestor processes can be inspected with `ps` (which a sandbox may deny).
+final String? _skipUnlessProcessesCanBeInspected = () {
+  if (!Platform.isWindows) {
+    try {
+      final result = Process.runSync('ps', ['-o', 'ppid=', '-p', '$pid']);
+      if (result.exitCode == 0) return null;
+    } on ProcessException {
+      // Not installed.
+    }
+  }
+  return 'the ancestor processes cannot be inspected with ps';
+}();
+
+/// Looks up the executable of [shell] via `CLI_COMPLETION_<SHELL>`
+/// or on the PATH.
+String? _findShell(final String shell) {
+  final explicit =
+      Platform.environment['CLI_COMPLETION_${shell.toUpperCase()}'];
+  if (explicit != null && explicit.isNotEmpty) {
+    return File(explicit).existsSync() ? explicit : null;
+  }
+  final path = Platform.environment['PATH'] ?? '';
+  final extensions = Platform.isWindows ? ['.exe', ''] : [''];
+  for (final dir in path.split(Platform.isWindows ? ';' : ':')) {
+    if (dir.isEmpty) continue;
+    for (final ext in extensions) {
+      final candidate = p.join(dir, '$shell$ext');
+      if (File(candidate).existsSync()) return candidate;
+    }
+  }
+  return null;
+}
+
+class _ProcessOutput {
+  final String stdout;
+  final String stderr;
+  final int exitCode;
+
+  _ProcessOutput(this.stdout, this.stderr, this.exitCode);
+
+  /// The non-empty lines of [stdout], without line terminators.
+  List<String> get lines => [
+    for (final line in stdout.split('\n'))
+      if (line.trim().isNotEmpty)
+        line.endsWith('\r') ? line.substring(0, line.length - 1) : line,
+  ];
+}
+
+/// The compiled fixture executable, the generated completion scripts, the
+/// shell harness scripts, and a working directory with files to complete.
+class _Environment {
+  late final Directory root;
+  late final Directory binDir;
+  late final Directory scriptDir;
+  late final Directory harnessDir;
+  late final Directory workDir;
+  late final Directory fpathDir;
+  late final Directory xdgConfigDir;
+  late final Directory homeDir;
+
+  String get exePath =>
+      p.join(binDir.path, Platform.isWindows ? '$_exeName.exe' : _exeName);
+
+  /// The generated script for [shell]; PowerShell requires a `.ps1` file.
+  String scriptPath(final String shell) => p.join(
+    scriptDir.path,
+    shell == 'powershell' ? '$_exeName.ps1' : '$_exeName.$shell',
+  );
+
+  /// The script for [shell] generated for the wrapper of the executable,
+  /// see [_wrapperName]. POSIX shells only.
+  String wrapperScriptPath(final String shell) =>
+      p.join(scriptDir.path, '$_wrapperName.$shell');
+
+  String harnessPath(final String name) => p.join(harnessDir.path, name);
+
+  Future<void> setUp() async {
+    root = Directory.systemTemp.createTempSync('completion_shell_test_');
+    binDir = Directory(p.join(root.path, 'bin'))..createSync();
+    scriptDir = Directory(p.join(root.path, 'scripts'))..createSync();
+    harnessDir = Directory(p.join(root.path, 'harness'))..createSync();
+    workDir = Directory(p.join(root.path, 'work'))..createSync();
+    fpathDir = Directory(p.join(root.path, 'fpath'))..createSync();
+    homeDir = Directory(p.join(root.path, 'home'))..createSync();
+    xdgConfigDir = Directory(p.join(root.path, 'xdg_config'))..createSync();
+
+    Directory(p.join(workDir.path, 'sub')).createSync();
+    for (final name in ['f.txt', 'a.yaml', 'b.yml']) {
+      File(p.join(workDir.path, name)).createSync();
+    }
+    File(p.join(workDir.path, 'sub', 'my spec.yaml')).createSync();
+
+    await _compileFixture();
+    if (!Platform.isWindows) await _writeWrapper();
+    await _generateScripts();
+    _writeHarnesses();
+  }
+
+  /// Writes a wrapper script of the executable to the bin directory that
+  /// prints to stdout and inserts an argument: completion requests that
+  /// went through it would fail.
+  Future<void> _writeWrapper() async {
+    final wrapper = File(p.join(binDir.path, _wrapperName))
+      ..writeAsStringSync(
+        '#!/bin/sh\n'
+        'echo "wrapper noise"\n'
+        'exec $_exeName --verbose "\$@"\n',
+      );
+    final result = await Process.run('chmod', ['+x', wrapper.path]);
+    if (result.exitCode != 0) fail('chmod failed: ${result.stderr}');
+  }
+
+  void tearDown() {
+    try {
+      root.deleteSync(recursive: true);
+    } on FileSystemException {
+      // Best effort.
+    }
+  }
+
+  Future<void> _compileFixture() async {
+    final fixture = p.join(
+      p.dirname(Platform.script.toFilePath()),
+      'fixtures',
+      'completion_cli.dart',
+    );
+    final source = File(fixture).existsSync()
+        ? fixture
+        : p.join(
+            Directory.current.path,
+            'test',
+            'command',
+            'completion',
+            'fixtures',
+            'completion_cli.dart',
+          );
+    final result = await Process.run(Platform.resolvedExecutable, [
+      'compile',
+      'exe',
+      source,
+      '-o',
+      exePath,
+    ]);
+    if (result.exitCode != 0) {
+      fail('Compiling the fixture failed:\n${result.stdout}\n${result.stderr}');
+    }
+  }
+
+  Future<void> _generateScripts() async {
+    for (final shell in ['bash', 'zsh', 'fish', 'powershell']) {
+      final result = await run(exePath, ['completion', '--shell', shell]);
+      File(scriptPath(shell)).writeAsStringSync(result.stdout);
+    }
+    if (!Platform.isWindows) {
+      for (final shell in ['bash', 'zsh', 'fish']) {
+        final result = await run(exePath, [
+          'completion',
+          '--shell',
+          shell,
+          '--command',
+          _wrapperName,
+        ]);
+        File(wrapperScriptPath(shell)).writeAsStringSync(result.stdout);
+      }
+    }
+    File(p.join(fpathDir.path, '_$_exeName')).writeAsStringSync(
+      File(scriptPath('zsh')).readAsStringSync(),
+    );
+    final specs = Directory(p.join(xdgConfigDir.path, 'carapace', 'specs'))
+      ..createSync(recursive: true);
+    final spec = await run(exePath, ['completion', '--shell', 'carapace']);
+    File(p.join(specs.path, '$_exeName.yaml')).writeAsStringSync(spec.stdout);
+  }
+
+  void _writeHarnesses() {
+    File(harnessPath('bash_harness.sh')).writeAsStringSync(_bashHarness);
+    File(harnessPath('zsh_harness.zsh')).writeAsStringSync(_zshHarness);
+    File(harnessPath('zsh_init.zsh')).writeAsStringSync(_zshInit);
+    File(harnessPath('ps_harness.ps1')).writeAsStringSync(_powershellHarness);
+  }
+
+  /// Creates an empty home directory to install a completion in, and
+  /// returns the environment variables that locate the installation there,
+  /// whatever they are in the environment of the test.
+  Map<String, String> installEnvironment() {
+    final home = root.createTempSync('home_').path;
+    final dataHome = p.join(home, '.local', 'share');
+    return {
+      'HOME': home,
+      'ZDOTDIR': home,
+      'XDG_CONFIG_HOME': p.join(home, '.config'),
+      'XDG_DATA_HOME': dataHome,
+      'BASH_COMPLETION_USER_DIR': p.join(dataHome, 'bash-completion'),
+    };
+  }
+
+  /// The environment variables that make the shell detection of the fixture
+  /// executable independent of where the tests are run from: `ps` is not on
+  /// the PATH, so the ancestor processes are not inspected, which leaves
+  /// the [loginShell] to detect. An empty [loginShell] is no shell.
+  ///
+  /// (On Windows the ancestor processes are never inspected.)
+  Map<String, String> detectionEnvironment({
+    required final String loginShell,
+  }) => {
+    if (!Platform.isWindows) 'PATH': p.join(root.path, 'no_ps'),
+    'SHELL': loginShell,
+  };
+
+  /// Runs [executable] in the working directory with the fixture
+  /// executable on the PATH, failing the test on a non-zero exit code
+  /// when [expectSuccess] is set. [stdin] is written to its standard input,
+  /// which is then closed.
+  Future<_ProcessOutput> run(
+    final String executable,
+    final List<String> arguments, {
+    final Map<String, String> environment = const {},
+    final String? stdin,
+    final bool expectSuccess = true,
+  }) async {
+    final separator = Platform.isWindows ? ';' : ':';
+    final path = '${binDir.path}$separator${Platform.environment['PATH']}';
+    // On Windows the variable may be spelled `Path`; replace it rather than
+    // adding a second, differently cased entry.
+    final processEnvironment = <String, String>{...Platform.environment}
+      ..removeWhere((final key, final _) => key.toUpperCase() == 'PATH')
+      ..addAll({
+        'PATH': path,
+        'HOME': homeDir.path,
+        'TERM': 'xterm',
+        'XDG_CONFIG_HOME': xdgConfigDir.path,
+        'XDG_CACHE_HOME': p.join(root.path, 'xdg_cache'),
+        ...environment,
+      });
+    final process = await Process.start(
+      executable,
+      arguments,
+      workingDirectory: workDir.path,
+      environment: processEnvironment,
+    );
+    if (stdin != null) {
+      process.stdin.write(stdin);
+      await process.stdin.close();
+    }
+    final stdout = process.stdout.transform(utf8.decoder).join();
+    final stderr = process.stderr.transform(utf8.decoder).join();
+    final exitCode = await process.exitCode.timeout(
+      const Duration(seconds: 60),
+      onTimeout: () {
+        process.kill();
+        fail('$executable ${arguments.join(' ')} timed out');
+      },
+    );
+    final output = _ProcessOutput(await stdout, await stderr, exitCode);
+    if (expectSuccess && exitCode != 0) {
+      fail(
+        '$executable ${arguments.join(' ')} failed with exit code $exitCode:\n'
+        '${output.stdout}\n${output.stderr}',
+      );
+    }
+    return output;
+  }
+}
+
+/// Sources the script and calls the completion function the way Bash does,
+/// printing COMPREPLY one entry per line.
+/// Arguments: the script, then the words after the command name;
+/// the last word is the one being completed. The command name is
+/// `$COMPLETION_CMD`, or comptool. With `$COMPLETION_NO_EQUALS_BREAK` set,
+/// the equals sign is not a word break.
+const _bashHarness = r'''
+script=$1; shift
+cmd=${COMPLETION_CMD:-comptool}
+source "$script" || exit 1
+[[ -n $COMPLETION_NO_EQUALS_BREAK ]] && COMP_WORDBREAKS=${COMP_WORDBREAKS//=/}
+COMP_WORDS=("$cmd" "$@")
+COMP_CWORD=$(( ${#COMP_WORDS[@]} - 1 ))
+COMP_LINE="${COMP_WORDS[*]}"
+COMP_POINT=${#COMP_LINE}
+"__${cmd}_complete" "$cmd" "${COMP_WORDS[COMP_CWORD]}" "${COMP_WORDS[COMP_CWORD-1]}"
+printf '%s\n' "${COMPREPLY[@]}"
+''';
+
+/// Sourced in the interactive Zsh under test: sets up the completion system
+/// with the script either sourced or autoloaded from fpath, and binds a key
+/// that saves the command line buffer to a file.
+const _zshInit = r'''
+if [[ $COMPLETION_INSTALL == fpath ]]; then fpath=("$COMPLETION_FPATH" $fpath); fi
+autoload -Uz compinit
+compinit -u -d "$ZSH_COMPDUMP"
+if [[ $COMPLETION_INSTALL != fpath ]]; then source "$COMPLETION_SCRIPT"; fi
+stty columns 200 rows 50
+LISTMAX=10000
+zstyle ':completion:*' menu no
+zstyle ':completion:*' list-colors ''
+__dump() { print -r -- "$BUFFER" > "$ZSH_BUFFER_FILE"; zle kill-whole-line; zle accept-line }
+zle -N __dump
+bindkey '^X^P' __dump
+''';
+
+/// Runs an interactive Zsh (`$ZSH_BIN`) in a pseudo terminal, types the
+/// given line followed by TAB, and prints the resulting buffer and terminal
+/// output.
+const _zshHarness = r'''
+zmodload zsh/zpty || { print 'zsh/zpty unavailable'; exit 2 }
+export PS1='PROMPT> '
+rm -f "$ZSH_BUFFER_FILE"
+zpty z "${(q)ZSH_BIN} -f -i"
+zpty -r z log '*PROMPT>*' || { print 'no prompt'; exit 1 }
+zpty -w z "source '$ZSH_INIT'"
+zpty -r z log '*PROMPT>*' || { print 'no prompt after init'; exit 1 }
+zpty -n -w z "$1"$'\t'$'\C-x\C-p'
+zpty -r z log '*PROMPT>*' || { print 'no prompt after completion'; exit 1 }
+zpty -d z
+print -r -- "BUFFER:$(cat "$ZSH_BUFFER_FILE" 2>/dev/null)"
+print -r -- "LOG:$log"
+''';
+
+/// Loads the script and completes the line with TabExpansion2,
+/// printing one tab-separated line per completion result.
+const _powershellHarness = r'''
+param([string]$Script, [string]$Line)
+$ErrorActionPreference = 'Stop'
+. $Script
+$result = TabExpansion2 -inputScript $Line -cursorColumn $Line.Length
+foreach ($m in $result.CompletionMatches) {
+    "$($m.CompletionText)`t$($m.ListItemText)`t$($m.ResultType)`t$($m.ToolTip)"
+}
+''';
