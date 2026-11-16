@@ -126,11 +126,15 @@ class CompletionEngine<O extends OptionDefinition, T> {
     }
 
     // The word being completed is an option with an attached value:
-    // `--option=val` or `-o=val`. The response contains the bare values,
+    // `--option=val`, `-o=val`, or `-abo=val` where the value belongs to
+    // the last option of the cluster. The response contains the bare values,
     // the shell scripts re-attach the option prefix.
     if (current.startsWith('-') && current.contains('=')) {
       final equals = current.indexOf('=');
-      final option = _findOptionBySpelling(line, current.substring(0, equals));
+      final spelling = optionAwaitingValue(current.substring(0, equals));
+      final option = spelling == null
+          ? null
+          : _findOptionBySpelling(line, spelling);
       if (option == null) return const CompletionResponse.nothing();
       return _completeOptionValue(line, option, current.substring(equals + 1));
     }

@@ -650,6 +650,14 @@ void _powershellTests(
       );
     });
 
+    test('when completing a path that contains a space '
+        'then the space is escaped in the inserted text', () async {
+      final dir = 'sub${p.separator}';
+      final results = await complete('$_exeName build --spec $dir');
+      expect(results.map((final r) => r.item), ['my spec.yaml']);
+      expect(results.map((final r) => r.text), ['${dir}my` spec.yaml']);
+    });
+
     test('when completing a positional argument '
         'then its allowed values are offered', () async {
       final results = await complete('$_exeName deploy ');
@@ -846,6 +854,7 @@ class _Environment {
     for (final name in ['f.txt', 'a.yaml', 'b.yml']) {
       File(p.join(workDir.path, name)).createSync();
     }
+    File(p.join(workDir.path, 'sub', 'my spec.yaml')).createSync();
 
     await _compileFixture();
     if (!Platform.isWindows) await _writeWrapper();

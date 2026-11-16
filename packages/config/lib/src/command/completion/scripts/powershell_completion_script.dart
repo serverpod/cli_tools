@@ -109,6 +109,9 @@ __HEADER__
         [System.Management.Automation.CompletionResult]::new($text, $listText, $type, $toolTip)
     }
 
+    # The characters to escape in the inserted completion text.
+    $escape = '\s|#|@|\$|;|,|''|\{|\}|\(|\)|"|`|\||<|>|&'
+
     # Path completion for directories, or files with the given extensions.
     function Complete-Paths($dirsOnly, $extensions) {
         $dir = [System.IO.Path]::GetDirectoryName($value)
@@ -120,7 +123,7 @@ __HEADER__
             $path = if ($dir) { Join-Path $dir $name } else { $name }
             if ($isDir) { $path += [System.IO.Path]::DirectorySeparatorChar }
             $type = if ($isDir) { 'ProviderContainer' } else { 'ProviderItem' }
-            New-Result "$prefix$path" $name $type $path
+            New-Result ($prefix + ($path -replace $escape, '`$&')) $name $type $path
         }
     }
 
@@ -151,7 +154,6 @@ __HEADER__
         return
     }
 
-    $escape = '\s|#|@|\$|;|,|''|\{|\}|\(|\)|"|`|\||<|>|&'
     foreach ($result in $results) {
         $text = $prefix + ($result.Name -replace $escape, '`$&')
         if ($results.Count -eq 1 -or $mode -eq 'MenuComplete') { $text += $space }

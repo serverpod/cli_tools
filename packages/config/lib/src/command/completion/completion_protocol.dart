@@ -106,11 +106,11 @@ class CompletionResponse {
   String format() {
     final buffer = StringBuffer();
     for (final candidate in candidates) {
-      buffer.write(_sanitize(candidate.value));
+      buffer.write(_sanitizeValue(candidate.value));
       final description = candidate.description;
       if (description != null && description.isNotEmpty) {
         buffer.write('\t');
-        buffer.write(_sanitize(description));
+        buffer.write(_sanitizeDescription(description));
       }
       buffer.writeln();
     }
@@ -118,8 +118,19 @@ class CompletionResponse {
     return buffer.toString();
   }
 
-  /// Values and descriptions must not contain line or field separators.
-  static String _sanitize(final String text) {
-    return text.replaceAll(RegExp(r'[\t\r\n]+'), ' ').trim();
+  /// One or more line or field separators, which values and descriptions
+  /// must not contain.
+  static const _separators = r'[\t\r\n]+';
+
+  /// The value is the text to insert, so the spaces at its ends are kept.
+  /// Separators are dropped at the ends and replaced by a space elsewhere.
+  static String _sanitizeValue(final String text) {
+    return text
+        .replaceAll(RegExp('^$_separators|$_separators\$'), '')
+        .replaceAll(RegExp(_separators), ' ');
+  }
+
+  static String _sanitizeDescription(final String text) {
+    return text.replaceAll(RegExp(_separators), ' ').trim();
   }
 }

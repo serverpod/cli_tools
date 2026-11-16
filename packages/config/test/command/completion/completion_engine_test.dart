@@ -226,6 +226,28 @@ void main() {
       expect(response.directive, CompletionDirective.noFileCompletion);
     });
 
+    test('when the value is attached to a cluster of abbreviations '
+        'then the values of the last option are offered', () async {
+      runner = buildCompletionCli(
+        completionOutput: out,
+        completionError: err,
+        extraCommands: [
+          CommandImpl.leafWithRunFunction(
+            name: 'pack',
+            description: 'Pack the project.',
+            options: const [
+              FlagOption(argName: 'fast', argAbbrev: 'f', negatable: false),
+              modeOption,
+            ],
+            run: (final _) => 0,
+          ),
+        ],
+      );
+      final response = await complete(runner, out, ['pack', '-fm=r']);
+      expect(valuesOf(response), ['debug', 'profile', 'release']);
+      expect(response.directive, CompletionDirective.noFileCompletion);
+    });
+
     test('when the option is a directory option '
         'then directory completion is requested', () async {
       final response = await complete(runner, out, ['build', '--out', '']);
@@ -809,6 +831,24 @@ void main() {
         directive: CompletionDirective.noFileCompletion,
       );
       expect(response.format(), 'a b\tline1 line2\n:4\n');
+    });
+
+    test('when formatted then spaces at the ends of a candidate value '
+        'are kept', () {
+      const response = CompletionResponse(
+        [CompletionCandidate(' report.csv ', description: ' A report ')],
+        directive: CompletionDirective.noFileCompletion,
+      );
+      expect(response.format(), ' report.csv \tA report\n:4\n');
+    });
+
+    test('when formatted then tabs and newlines at the ends of a '
+        'candidate value are dropped', () {
+      const response = CompletionResponse(
+        [CompletionCandidate('\treport.csv\r\n')],
+        directive: CompletionDirective.noFileCompletion,
+      );
+      expect(response.format(), 'report.csv\n:4\n');
     });
 
     test('when formatted with an empty description '
