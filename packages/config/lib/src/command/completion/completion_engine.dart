@@ -86,7 +86,17 @@ class CompletionEngine<O extends OptionDefinition, T> {
   ) async {
     final words = allWords.isEmpty ? const [''] : allWords;
     final current = words.last;
-    final preceding = words.sublist(0, words.length - 1);
+
+    // Shell I/O redirection (`>`, `>>`, `2>`, `>file`, ...) is not a command
+    // argument. The cursor word is a filename, which the shell completes.
+    // Here-documents (`<<`, `<<<`) are not file redirections.
+    if (_isRedirectionTarget(words)) {
+      return const CompletionResponse.files();
+    }
+    // Earlier redirections would otherwise be parsed as arguments.
+    final preceding = _withoutRedirections(
+      words.sublist(0, words.length - 1),
+    );
 
     final parsed = scanAndParseCommands(
       [...preceding, _sentinel],
@@ -341,6 +351,56 @@ class CompletionEngine<O extends OptionDefinition, T> {
     return line.isEmpty ? null : line;
   }
 }
+
+/// Whether the cursor word of [words] is the target of a file redirection.
+///
+/// The target is the cursor word when that word is an operator (`>`, `2>`,
+/// `>>file`) or when the word before it is a bare operator (`> file`).
+bool _isRedirectionTarget(final List<String> words) {
+  if (_redirectionTarget(words.last) != null) return true;
+  return words.length >= 2 && _redirectionTarget(words[words.length - 2]) == '';
+}
+
+/// [words] without file redirections and the filename each one names.
+///
+/// A bare operator consumes the next word (`> out.txt`). An operator glued
+/// to its filename is a single word (`>out.txt`). A file-descriptor prefix
+/// that Bash split off the operator (`2` `>`) is left in place: it cannot
+/// be told apart from a real argument that happens to be a number.
+List<String> _withoutRedirections(final List<String> words) {
+  final kept = <String>[];
+  for (var i = 0; i < words.length; i++) {
+    final target = _redirectionTarget(words[i]);
+    if (target == null) {
+      kept.add(words[i]);
+      continue;
+    }
+    if (target.isEmpty && i + 1 < words.length) i++;
+  }
+  return kept;
+}
+
+/// The filename after a leading file-redirection operator, or null when
+/// [word] is not one.
+///
+/// Empty when [word] is only the operator (`>`, `>>`, `2>`, `>&`).
+/// An optional descriptor prefix (`2`, `{name}`, `&`) is part of the operator.
+/// Here-documents (`<<`, `<<<`) return null.
+///
+/// Kept in agreement with `__FN___redirect_rest` in the Bash script.
+String? _redirectionTarget(final String word) {
+  if (word.startsWith('<<')) return null;
+  final match = _fileRedirection.firstMatch(word);
+  if (match == null) return null;
+  return match[1] ?? '';
+}
+
+/// Longest operator first. The last group is the filename part.
+final _fileRedirection = RegExp(
+  r'^(?:(?:\{[A-Za-z_][A-Za-z0-9_]*\})|\d*|&)?'
+  r'(?:&>>|>>|>&|>\||<>|<&|&>|[<>])'
+  r'(.*)$',
+);
 
 /// The parsed state of the command line preceding the word being completed.
 class _CommandLine {

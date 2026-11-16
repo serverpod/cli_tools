@@ -50,10 +50,30 @@ __FN___init_completion()
     cur=${words[cword]}
 }
 
+# The filename after a leading file-redirection operator, if $1 is one.
+# Prints nothing and returns 0 for a bare operator (`>`, `2>`, `>>`).
+# Returns 1 for ordinary words and for here-documents (`<<`, `<<<`).
+# Kept in agreement with the redirection handling in the completion engine.
+__FN___redirect_rest()
+{
+    case $1 in
+        '<<<'*|'<<'*) return 1 ;;
+    esac
+    local re='^((\{[A-Za-z_][A-Za-z0-9_]*\})|[0-9]*|&)?(&>>|>>|>&|>\||<>|<&|&>|[<>])(.*)$'
+    [[ $1 =~ $re ]] || return 1
+    printf '%s' "${BASH_REMATCH[4]}"
+}
+
 # File name completion: -d for directories only, or a pattern of file name
 # extensions such as 'yaml|yml', or nothing for all files.
 __FN___filedir()
 {
+    # The cursor word may be the operator itself (`><TAB>`) or an operator
+    # glued to a filename (`>file`). Complete the filename part only.
+    local rest
+    if rest=$(__FN___redirect_rest "$cur"); then
+        cur=$rest
+    fi
     if declare -F _filedir >/dev/null 2>&1; then
         if [[ $1 == -d || -z $1 ]]; then
             _filedir "$@"

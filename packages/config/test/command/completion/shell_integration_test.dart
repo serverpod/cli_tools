@@ -270,6 +270,27 @@ void _bashTests(
       expect(await complete(['build', '']), isEmpty);
     });
 
+    test('when completing after a redirection operator '
+        'then files are offered instead of command arguments', () async {
+      expect(
+        await complete(['>', '']),
+        unorderedEquals(['f.txt', 'a.yaml', 'b.yml', 'sub']),
+      );
+    });
+
+    test('when completing the redirection operator itself '
+        'then files are offered', () async {
+      expect(
+        await complete(['>']),
+        unorderedEquals(['f.txt', 'a.yaml', 'b.yml', 'sub']),
+      );
+    });
+
+    test('when completing a command word after a redirected file '
+        'then the redirection is ignored', () async {
+      expect(await complete(['>', 'out.txt', 'bu']), ['build']);
+    });
+
     test('when the script is generated for a wrapper of the executable '
         'then completing the wrapper asks the executable directly', () async {
       final result = await env.run(

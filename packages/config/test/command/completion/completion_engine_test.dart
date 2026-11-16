@@ -401,6 +401,65 @@ void main() {
       expect(response.directive, CompletionDirective.defaultDirective);
     });
 
+    test('when completing after a redirection operator '
+        'then file completion is requested '
+        'instead of the command arguments', () async {
+      final response = await complete(runner, out, ['deploy', '>', '']);
+      expect(response.lines, isEmpty);
+      expect(response.directive, CompletionDirective.defaultDirective);
+    });
+
+    test('when completing after > before any command '
+        'then subcommands are not offered', () async {
+      final response = await complete(runner, out, ['>', '']);
+      expect(response.lines, isEmpty);
+      expect(response.directive, CompletionDirective.defaultDirective);
+    });
+
+    test('when the cursor word is a redirection operator without a space '
+        'then file completion is requested', () async {
+      final response = await complete(runner, out, ['build', '>']);
+      expect(response.lines, isEmpty);
+      expect(response.directive, CompletionDirective.defaultDirective);
+    });
+
+    test('when a filename is glued to the redirection operator '
+        'then file completion is requested', () async {
+      final response = await complete(runner, out, ['deploy', '>>st']);
+      expect(response.lines, isEmpty);
+      expect(response.directive, CompletionDirective.defaultDirective);
+    });
+
+    test('when a redirection precedes the cursor word '
+        'then the redirection and its filename are ignored', () async {
+      final response = await complete(runner, out, [
+        '>',
+        'out.txt',
+        'bu',
+      ]);
+      expect(valuesOf(response), ['build']);
+    });
+
+    test('when a redirection follows an option value '
+        'then later options are still completed', () async {
+      final response = await complete(runner, out, [
+        'build',
+        '--jobs',
+        '2',
+        '>',
+        'out.txt',
+        '--mo',
+      ]);
+      expect(valuesOf(response), ['--mode']);
+    });
+
+    test('when the cursor is after a here-document operator '
+        'then it is not treated as a file redirection', () async {
+      final response = await complete(runner, out, ['build', '<<', '']);
+      expect(response.lines, isEmpty);
+      expect(response.directive, CompletionDirective.noFileCompletion);
+    });
+
     test('when completing after a double dash '
         'and unexpected positional arguments are ignored '
         'then file completion is requested', () async {
