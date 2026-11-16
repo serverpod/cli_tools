@@ -158,6 +158,19 @@ class CompletionInstallCommand<T> extends Command<CompletionInstallOption, T> {
     if (request == null) return null;
     final dryRun = context.config.value(CompletionInstallOption.dryRun);
 
+    // The script is saved in a file named after the command: a path
+    // would name a file elsewhere.
+    final commandName = request.commandName;
+    if (commandName != null &&
+        !CompletionInstaller.isCommandName(commandName)) {
+      _reportUsageError(
+        context,
+        'Cannot install the completion for "$commandName". '
+        'Specify the name of the command with --command, not its path.',
+      );
+      return null;
+    }
+
     final steps = (_installer ?? CompletionInstaller()).plan(
       request.shell,
       name: request.name,
@@ -223,15 +236,10 @@ class _CompletionRequest {
     final config = completion.config;
     final shell = config.optionalValue(CompletionOption.shell);
     if (shell == null) {
-      final exception = runner.usageOutput.onUsageException(
-        CommandUsageException(
-          '${context.command.name}: Could not detect the shell. '
-          'Specify it with --shell.',
-          context.command,
-        ),
-        fromCommand: context.command,
+      _reportUsageError(
+        context,
+        'Could not detect the shell. Specify it with --shell.',
       );
-      if (exception != null) throw exception;
       return null;
     }
     return _CompletionRequest(
@@ -240,6 +248,21 @@ class _CompletionRequest {
       config.optionalValue(CompletionOption.command),
     );
   }
+}
+
+/// Reports the usage error [message] for the command of [context].
+/// Returns if the usage output settings of the runner suppress the
+/// exception.
+void _reportUsageError<T>(
+  final CommandContext<OptionDefinition, T> context,
+  final String message,
+) {
+  final command = context.command;
+  final exception = command.runner.usageOutput.onUsageException(
+    CommandUsageException('${command.name}: $message', command),
+    fromCommand: command,
+  );
+  if (exception != null) throw exception;
 }
 
 /// Writes the completion script of [shell] for [runner] to

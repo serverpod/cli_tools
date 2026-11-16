@@ -1,10 +1,53 @@
+import 'dart:convert' show utf8;
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:config/command.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 const _script = '# the completion script\n';
+
+/// A text encoding with code units of a fixed number of bytes.
+class _FixedWidthEncoding {
+  final String name;
+  final int unitSize;
+  final Endian endian;
+
+  const _FixedWidthEncoding(this.name, this.unitSize, this.endian);
+
+  List<int> encode(final String text) {
+    final units = unitSize == 2 ? text.codeUnits : text.runes.toList();
+    final data = ByteData(units.length * unitSize);
+    for (final (index, unit) in units.indexed) {
+      if (unitSize == 2) {
+        data.setUint16(index * unitSize, unit, endian);
+      } else {
+        data.setUint32(index * unitSize, unit, endian);
+      }
+    }
+    return data.buffer.asUint8List();
+  }
+
+  String decode(final Uint8List bytes) {
+    expect(bytes.length % unitSize, 0, reason: 'whole code units');
+    final data = ByteData.sublistView(bytes);
+    return String.fromCharCodes([
+      for (var i = 0; i < bytes.length; i += unitSize)
+        unitSize == 2 ? data.getUint16(i, endian) : data.getUint32(i, endian),
+    ]);
+  }
+}
+
+const _utf16LittleEndian = _FixedWidthEncoding('UTF-16LE', 2, Endian.little);
+
+/// The encodings that are recognized by their byte order mark.
+const _markedEncodings = [
+  _utf16LittleEndian,
+  _FixedWidthEncoding('UTF-16BE', 2, Endian.big),
+  _FixedWidthEncoding('UTF-32LE', 4, Endian.little),
+  _FixedWidthEncoding('UTF-32BE', 4, Endian.big),
+];
 
 void main() {
   late Directory home;
@@ -233,6 +276,19 @@ void main() {
       expect(String.fromCharCodes(bytes.sublist(4)), contains('source'));
     });
 
+    test('when the startup file is UTF-8 with a byte order mark '
+        'then the lines are appended as UTF-8 after its content', () {
+      const content = [0xef, 0xbb, 0xbf, 0x23, 0x0a];
+      File(inHome('.bashrc')).writeAsBytesSync(content);
+      install(newInstaller(), CompletionShell.bash);
+      final bytes = File(inHome('.bashrc')).readAsBytesSync();
+      expect(bytes.sublist(0, content.length), content);
+      expect(
+        utf8.decode(bytes.sublist(content.length)),
+        startsWith('\n# mytool shell completion, '),
+      );
+    });
+
     group('when the installation has been performed already', () {
       late CompletionInstaller installer;
       late String startupFileContent;
@@ -262,6 +318,108 @@ void main() {
         expect(steps.last.description, startsWith('Append to '));
       });
     });
+  });
+
+  // Windows PowerShell writes UTF-16 with a byte order mark by default,
+  // and PowerShell reads any of these encodings by their byte order mark.
+  for (final encoding in _markedEncodings) {
+    group('Given a PowerShell profile '
+        'in ${encoding.name} with a byte order mark', () {
+      const existing = "# Åke's profile\r\n";
+      const script = '.config/powershell/Completions/mytool.ps1';
+      late File profile;
+
+      setUp(() {
+        profile = File(
+          inHome('.config/powershell/Microsoft.PowerShell_profile.ps1'),
+        );
+        profile.parent.createSync(recursive: true);
+        profile.writeAsBytesSync(encoding.encode('\ufeff$existing'));
+      });
+
+      test('when performing the PowerShell installation '
+          'then the lines are appended in the encoding of the profile', () {
+        install(newInstaller(), CompletionShell.powershell);
+        final path = inHome(script);
+        expect(
+          encoding.decode(profile.readAsBytesSync()),
+          '\ufeff$existing\n'
+          '# mytool shell completion, added by `mytool completion install`.\n'
+          "if (Test-Path -LiteralPath '$path') { . '$path' }\n",
+        );
+      });
+
+      test('when planning the installation after it has been performed '
+          'then the profile is kept', () {
+        install(newInstaller(), CompletionShell.powershell);
+        expect(
+          descriptions(plan(newInstaller(), CompletionShell.powershell)).last,
+          'Keep ${profile.path}, it already loads the script',
+        );
+      });
+    });
+  }
+
+  group('Given a PowerShell profile '
+      'with only the UTF-16 byte order mark', () {
+    test('when performing the PowerShell installation '
+        'then the lines follow the byte order mark directly', () {
+      final profile = File(
+        inHome('.config/powershell/Microsoft.PowerShell_profile.ps1'),
+      );
+      profile.parent.createSync(recursive: true);
+      profile.writeAsBytesSync([0xff, 0xfe]);
+      install(newInstaller(), CompletionShell.powershell);
+      expect(
+        _utf16LittleEndian.decode(profile.readAsBytesSync()),
+        startsWith('\ufeff# mytool shell completion, '),
+      );
+    });
+  });
+
+  group('Given an installer and a name that is not a command name', () {
+    const names = {
+      'an absolute path': '/home/me/bin/mywrap',
+      'a relative path': 'bin/mywrap',
+      'a path to a parent directory': '../mywrap',
+      'a Windows path': r'C:\bin\mywrap',
+      'the current directory': '.',
+      'the parent directory': '..',
+      'empty': '',
+      'a name with a newline': 'my\nwrap',
+    };
+
+    for (final MapEntry(key: description, value: name) in names.entries) {
+      test('when planning an installation for a name that is $description '
+          'then it fails with an argument error', () {
+        for (final shell in CompletionShell.values) {
+          expect(
+            () => plan(newInstaller(), shell, name: name),
+            throwsArgumentError,
+            reason: shell.displayName,
+          );
+        }
+      });
+
+      test('when asking for the script path of a name that is $description '
+          'then it fails with an argument error', () {
+        expect(
+          () => newInstaller().scriptPath(CompletionShell.bash, name),
+          throwsArgumentError,
+        );
+      });
+
+      test('when asking if a name that is $description is a command name '
+          'then it is not', () {
+        expect(CompletionInstaller.isCommandName(name), isFalse);
+      });
+    }
+
+    for (final name in ['mytool', 'my-tool.sh', 'my tool', '_my:tool', '...']) {
+      test('when asking if "$name" is a command name then it is', () {
+        expect(CompletionInstaller.isCommandName(name), isTrue);
+      });
+    }
   });
 
   group('Given an installer with XDG and shell directory variables', () {

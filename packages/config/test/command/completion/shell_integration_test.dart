@@ -572,6 +572,51 @@ void _bashTests(
       );
     });
 
+    group('when file and directory names have wildcard characters '
+        'that match other names', () {
+      // `w[1]` as a wildcard pattern matches `w1`.
+      late List<FileSystemEntity> entities;
+
+      setUp(() {
+        entities = [
+          File(p.join(env.workDir.path, 'w[1].yaml'))..createSync(),
+          File(p.join(env.workDir.path, 'w1.yaml'))..createSync(),
+          Directory(p.join(env.workDir.path, 'w[1]dir'))..createSync(),
+          Directory(p.join(env.workDir.path, 'w1dir'))..createSync(),
+        ];
+      });
+
+      tearDown(() {
+        for (final entity in entities) {
+          entity.deleteSync();
+        }
+      });
+
+      test('and completing a file option '
+          'then each name is offered as it is', () async {
+        expect(
+          await complete(['--config', 'w']),
+          unorderedEquals(['w[1].yaml', 'w1.yaml', 'w[1]dir', 'w1dir']),
+        );
+      });
+
+      test('and completing a file option with extensions '
+          'then each name is offered as it is', () async {
+        expect(
+          await complete(['build', '--spec', 'w']),
+          unorderedEquals(['w[1].yaml', 'w1.yaml', 'w[1]dir', 'w1dir']),
+        );
+      });
+
+      test('and completing a directory option '
+          'then each name is offered as it is', () async {
+        expect(
+          await complete(['build', '--out', 'w']),
+          unorderedEquals(['w[1]dir', 'w1dir']),
+        );
+      });
+    });
+
     test('when completing a positional argument '
         'then its allowed values are offered', () async {
       expect(await complete(['deploy', '']), ['staging', 'production']);
@@ -1205,12 +1250,18 @@ void _powershellTests(
     test('when completing a path with wildcard characters '
         'then the path is taken literally', () async {
       // `lit[1]` as a wildcard pattern matches the directory `lit1`.
-      final dir = Directory(p.join(env.root.path, 'lit[1]'))..createSync();
-      final decoy = Directory(p.join(env.root.path, 'lit1'))..createSync();
+      // They are in the working directory, to complete a relative path:
+      // the path of the directory may have a space.
+      final dir = Directory(p.join(env.workDir.path, 'lit[1]'))..createSync();
+      final decoy = Directory(p.join(env.workDir.path, 'lit1'))..createSync();
+      addTearDown(() {
+        dir.deleteSync(recursive: true);
+        decoy.deleteSync(recursive: true);
+      });
       File(p.join(dir.path, 'c.yaml')).createSync();
       File(p.join(decoy.path, 'c-decoy.yaml')).createSync();
       final results = await complete(
-        '$_exeName build --spec ${dir.path}${p.separator}c',
+        '$_exeName build --spec lit[1]${p.separator}c',
       );
       expect(results.map((final r) => r.item), ['c.yaml']);
     });

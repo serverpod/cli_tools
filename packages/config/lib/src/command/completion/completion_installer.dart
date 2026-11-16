@@ -1,6 +1,7 @@
-import 'dart:convert' show utf8;
+import 'dart:convert' show Utf8Decoder, Utf8Encoder;
 import 'dart:io'
     show Directory, File, FileMode, FileSystemException, Platform, Process;
+import 'dart:typed_data' show ByteData, Endian, Uint8List;
 
 import 'package:path/path.dart' as p;
 
@@ -42,6 +43,10 @@ class CompletionInstallStep {
 /// The XDG base directories are honored where the shell honors them.
 /// An installation can be repeated: the script is overwritten, and a
 /// startup file that already loads it is left as it is.
+///
+/// A startup file is read and appended to in its own encoding: UTF-16 or
+/// UTF-32 if it starts with the byte order mark of that encoding (as a
+/// profile written by Windows PowerShell does), otherwise UTF-8.
 class CompletionInstaller {
   /// The environment variables that determine the installation locations.
   final Map<String, String> environment;
@@ -82,6 +87,31 @@ class CompletionInstaller {
 
   bool get _isMacOS => operatingSystem == 'macos';
 
+  /// Whether a completion can be installed for the command [name].
+  ///
+  /// The script is saved in a file named after the command, which is how
+  /// the shells find it. The name must therefore be the name of the command
+  /// as a file name, not a path to it: not empty, `.` or `..`, and without
+  /// path separators (`/` and `\`) and control characters.
+  static bool isCommandName(final String name) {
+    return name.isNotEmpty &&
+        name != '.' &&
+        name != '..' &&
+        !_notInCommandName.hasMatch(name);
+  }
+
+  static final _notInCommandName = RegExp(r'[/\\\x00-\x1f\x7f]');
+
+  static void _checkCommandName(final String name) {
+    if (isCommandName(name)) return;
+    throw ArgumentError.value(
+      name,
+      'name',
+      'Not a command name to install a completion for: '
+          'it must be a file name without a directory',
+    );
+  }
+
   /// Plans the installation of [script], the completion script of [shell]
   /// for the command [name], and returns its steps in order.
   ///
@@ -93,7 +123,9 @@ class CompletionInstaller {
   /// [executableName] is named in the startup file as the origin of the
   /// lines added to it.
   ///
-  /// Throws a [FileSystemException] if the user's home directory is unknown.
+  /// Throws an [ArgumentError] if [name] is not a command name, see
+  /// [isCommandName], and a [FileSystemException] if the user's home
+  /// directory is unknown.
   List<CompletionInstallStep> plan(
     final CompletionShell shell, {
     required final String name,
@@ -120,7 +152,11 @@ class CompletionInstaller {
 
   /// The file that the completion script of [shell] for the command [name]
   /// is installed as.
+  ///
+  /// Throws an [ArgumentError] if [name] is not a command name, see
+  /// [isCommandName]: as a path it would name a file elsewhere.
   String scriptPath(final CompletionShell shell, final String name) {
+    _checkCommandName(name);
     return switch (shell) {
       CompletionShell.bash => _path.join(
         environment.valueOf('BASH_COMPLETION_USER_DIR') ??
@@ -210,15 +246,19 @@ class CompletionInstaller {
 
   /// Appends [lines] to the startup file at [path],
   /// unless it contains the last line already.
+  ///
+  /// An existing file is read and appended to in its own encoding.
   List<CompletionInstallStep> _addToStartupFile(
     final String path,
     final List<String> lines,
     final Set<String> plannedDirectories,
   ) {
     final file = File(path);
-    final content = file.existsSync()
-        ? utf8.decode(file.readAsBytesSync(), allowMalformed: true)
-        : null;
+    final bytes = file.existsSync() ? file.readAsBytesSync() : null;
+    final encoding = bytes == null
+        ? _TextEncoding.utf8
+        : _TextEncoding.of(bytes);
+    final content = bytes == null ? null : encoding.decode(bytes);
     if (content != null && content.contains(lines.last)) {
       return [
         CompletionInstallStep('Keep $path, it already loads the script', () {}),
@@ -238,8 +278,8 @@ class CompletionInstaller {
           '${content == null ? 'Create' : 'Append to'} $path:',
           for (final line in lines) '  $line',
         ].join('\n'),
-        () => file.writeAsStringSync(
-          '$separator${lines.join('\n')}\n',
+        () => file.writeAsBytesSync(
+          encoding.encode('$separator${lines.join('\n')}\n'),
           mode: FileMode.append,
         ),
       ),
@@ -321,6 +361,80 @@ String? _askPowerShellForProfile() {
     }
   }
   return null;
+}
+
+/// The text encoding of a startup file. The UTF-16 and UTF-32 encodings
+/// are recognized by their byte order mark; a file without one is UTF-8.
+enum _TextEncoding {
+  utf8(1, Endian.little),
+  utf16LittleEndian(2, Endian.little),
+  utf16BigEndian(2, Endian.big),
+  utf32LittleEndian(4, Endian.little),
+  utf32BigEndian(4, Endian.big);
+
+  /// The number of bytes of a code unit.
+  final int _unitSize;
+
+  /// The byte order of a code unit.
+  final Endian _endian;
+
+  const _TextEncoding(this._unitSize, this._endian);
+
+  static const _byteOrderMark = 0xfeff;
+
+  /// The encoding of the file content [bytes].
+  static _TextEncoding of(final Uint8List bytes) {
+    bool startsWith(final List<int> prefix) {
+      if (bytes.length < prefix.length) return false;
+      for (var i = 0; i < prefix.length; i++) {
+        if (bytes[i] != prefix[i]) return false;
+      }
+      return true;
+    }
+
+    // The UTF-32 marks first: the little-endian one starts with the
+    // little-endian mark of UTF-16.
+    if (startsWith(const [0xff, 0xfe, 0x00, 0x00])) return utf32LittleEndian;
+    if (startsWith(const [0x00, 0x00, 0xfe, 0xff])) return utf32BigEndian;
+    if (startsWith(const [0xff, 0xfe])) return utf16LittleEndian;
+    if (startsWith(const [0xfe, 0xff])) return utf16BigEndian;
+    return utf8;
+  }
+
+  /// The text of the file content [bytes], without the byte order mark.
+  /// Malformed content is decoded as far as possible.
+  String decode(final Uint8List bytes) {
+    if (this == utf8) {
+      return const Utf8Decoder(allowMalformed: true).convert(bytes);
+    }
+    final data = ByteData.sublistView(bytes);
+    final units = [
+      for (var i = 0; i + _unitSize <= bytes.length; i += _unitSize)
+        _unitSize == 2
+            ? data.getUint16(i, _endian)
+            : data.getUint32(i, _endian),
+    ];
+    if (units.isNotEmpty && units.first == _byteOrderMark) units.removeAt(0);
+    if (_unitSize == 2) return String.fromCharCodes(units);
+    return String.fromCharCodes([
+      for (final unit in units) unit > 0x10ffff ? 0xfffd : unit,
+    ]);
+  }
+
+  /// The bytes of [text] to append to a file with this encoding.
+  List<int> encode(final String text) {
+    if (this == utf8) return const Utf8Encoder().convert(text);
+    final units = _unitSize == 2 ? text.codeUnits : text.runes.toList();
+    final data = ByteData(units.length * _unitSize);
+    for (var i = 0; i < units.length; i++) {
+      if (_unitSize == 2) {
+        data.setUint16(i * _unitSize, units[i], _endian);
+      } else {
+        data.setUint32(i * _unitSize, units[i], _endian);
+      }
+    }
+    return data.buffer.asUint8List();
+  }
 }
 
 extension on Map<String, String> {

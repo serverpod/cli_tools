@@ -66,6 +66,16 @@ __FN___redirect_rest()
     printf '%s' "${BASH_REMATCH[4]}"
 }
 
+# Appends the lines that compgen prints for the given arguments to COMPREPLY
+# as they are: a file name such as `f[1].txt` is not expanded as a pattern.
+__FN___compgen()
+{
+    local line
+    while IFS= read -r line; do
+        [[ -n $line ]] && COMPREPLY+=("$line")
+    done <<<"$(compgen "$@")"
+}
+
 # File name completion: -d for directories only, or a pattern of file name
 # extensions such as 'yaml|yml', or nothing for all files.
 __FN___filedir()
@@ -85,17 +95,18 @@ __FN___filedir()
         fi
     else
         type compopt &>/dev/null && compopt -o filenames 2>/dev/null
-        local IFS=$'\n' ext
         if [[ $1 == -d ]]; then
-            COMPREPLY+=($(compgen -d -- "$cur"))
+            __FN___compgen -d -- "$cur"
         elif [[ -n $1 ]]; then
-            COMPREPLY+=($(compgen -d -- "$cur"))
-            # IFS is a newline here: split the pattern on newlines.
-            for ext in ${1//|/$'\n'}; do
-                COMPREPLY+=($(compgen -f -X "!*.$ext" -- "$cur"))
+            __FN___compgen -d -- "$cur"
+            local ext
+            local -a exts
+            IFS='|' read -r -a exts <<<"$1"
+            for ext in "${exts[@]}"; do
+                __FN___compgen -f -X "!*.$ext" -- "$cur"
             done
         else
-            COMPREPLY+=($(compgen -f -- "$cur"))
+            __FN___compgen -f -- "$cur"
         fi
     fi
     # The file names replace a whole `--option=value` word when '=' is not

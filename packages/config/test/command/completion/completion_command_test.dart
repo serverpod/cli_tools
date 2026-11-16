@@ -562,6 +562,77 @@ void main() {
       );
     });
 
+    group('when running `completion install --shell bash` '
+        'with the path of a wrapper as the command name', () {
+      const wrapperContent = '#!/bin/sh\nexec comptool "\$@"\n';
+      late File wrapper;
+      late Object? error;
+
+      setUp(() async {
+        wrapper = File(homePath('bin', 'mywrap'));
+        wrapper.parent.createSync();
+        wrapper.writeAsStringSync(wrapperContent);
+        error = null;
+        try {
+          await runner.run([
+            'completion',
+            'install',
+            '--shell',
+            'bash',
+            '--command',
+            wrapper.path,
+          ]);
+        } on UsageException catch (e) {
+          error = e;
+        }
+      });
+
+      test('then a usage error tells to specify the name of the command', () {
+        expect(
+          error,
+          isA<UsageException>().having(
+            (final e) => e.message,
+            'message',
+            'install: Cannot install the completion for "${wrapper.path}". '
+                'Specify the name of the command with --command, '
+                'not its path.',
+          ),
+        );
+      });
+
+      test('then the wrapper is not overwritten', () {
+        expect(wrapper.readAsStringSync(), wrapperContent);
+      });
+
+      test('then nothing is created', () {
+        expect(home.listSync(recursive: true).map((final e) => e.path), [
+          wrapper.parent.path,
+          wrapper.path,
+        ]);
+      });
+
+      test('then no installation is printed', () {
+        expect(out.toString(), isEmpty);
+      });
+    });
+
+    test('when running `completion install --shell zsh --dry-run` '
+        'with a parent directory in the command name '
+        'then a usage error is reported', () async {
+      await expectLater(
+        runner.run([
+          'completion',
+          'install',
+          '--shell',
+          'zsh',
+          '--dry-run',
+          '--command',
+          '../mywrap',
+        ]),
+        throwsA(isA<UsageException>()),
+      );
+    });
+
     test('when running `completion install --shell fish` twice '
         'then the second run only writes the script again', () async {
       await runner.run(['completion', 'install', '--shell', 'fish']);
