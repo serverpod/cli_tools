@@ -190,6 +190,9 @@ OnAnalyticsEvent makeAnalyticsSender(
 }
 
 /// Sends the command name before the command line runs.
+///
+/// Middleware also runs when the shell completes an option value. That is
+/// not a command execution, so no event is sent then.
 class AnalyticsMiddleware extends CommandMiddlewareHooks<GlobalOption, int> {
   final bool Function() analyticsEnabled;
 
@@ -199,6 +202,7 @@ class AnalyticsMiddleware extends CommandMiddlewareHooks<GlobalOption, int> {
   CommandContext<GlobalOption, int> onRun(
     final CommandContext<GlobalOption, int> context,
   ) {
+    if (context.isCompletion) return context;
     makeAnalyticsSender(analyticsEnabled, onAnalyticsEvent)(
       context.root().next?.command.name ?? context.command.name,
     );
@@ -218,12 +222,16 @@ class CommandSpan {
 ///
 /// The stopwatch is stored on [CommandContext.provider] so the middleware
 /// object itself holds no per-run state.
+///
+/// Does nothing when the shell completes an option value: no command runs
+/// then, and anything printed would corrupt the completion response.
 class CommandSpanMiddleware<O extends OptionDefinition, T>
     extends CommandMiddlewareHooks<O, T> {
   const CommandSpanMiddleware();
 
   @override
   CommandContext<O, T> onRun(final CommandContext<O, T> context) {
+    if (context.isCompletion) return context;
     context.provider.store(CommandSpan());
     print('>>> ${context.leaf().command.name} started');
     return context;
@@ -231,6 +239,7 @@ class CommandSpanMiddleware<O extends OptionDefinition, T>
 
   @override
   T? onReturn(final CommandContext<O, T> context, final T? response) {
+    if (context.isCompletion) return response;
     final stopwatch = context.provider.fetch<CommandSpan>().stopwatch..stop();
     print(
       '>>> ${context.leaf().command.name} returned $response '

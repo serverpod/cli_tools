@@ -226,11 +226,38 @@ class ServerOption extends StringOption {
 
 `CompletionContext` provides the word being completed, the preceding words,
 the commands on the command line, and the raw (unvalidated) string values of
-the options already typed, via `context.parsedArgs`. Option values are not
-resolved from environment variables, configuration files or the configuration
-broker, so that completion is fast and never fails. The shell's environment
+the options already typed, via `context.parsedArgs`. The shell's environment
 variables are available as `context.environment` for custom completions that
 need them (e.g. a server URL to fetch the alternatives from).
+
+When the `CommandRunner` completes an option value, it also resolves the
+configurations of the commands typed so far, from the arguments, environment
+variables, configuration files and the configuration broker, like when the
+command line is run. Since the command line is not finished, errors such as
+missing mandatory options are not reported. They stay on
+`CommandContext.config.errors`. `commandContextOf(context)` returns the
+resolved context of the last command, and its `prev` contexts are those of
+the preceding commands:
+
+```dart
+@override
+CompletionResult complete(final CompletionContext context) {
+  final leaf = commandContextOf<OptionDefinition, int>(context);
+  final project = leaf?.config.optionalValue(projectOption);
+  return CompletionResult.strings(resourceNames(project));
+}
+```
+
+The middleware of those commands runs as well, around the `complete` call,
+so that it can prepare what `complete` needs, e.g. store a service on
+`CommandContext.provider`. No command `run` method is called. A middleware
+tells the two apart with `CommandContext.isCompletion`, and should skip
+anything meant only for a command being run, such as analytics or printing:
+output on stdout would end up among the completion alternatives.
+
+Subcommand and option name completion neither resolves configurations nor
+runs middleware. Completion should be fast and should not throw. If resolving
+the configurations, a middleware or `complete` throws, nothing is offered.
 
 Besides `CompletionResult.values(...)` and `.strings(...)`, the result can be
 `CompletionResult.files(extensions: ['yaml', 'yml'])`, `.directories()` or
