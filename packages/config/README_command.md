@@ -65,9 +65,12 @@ besides printing the version information.
 
 ```sh
 executable --version
-executable --version subcommand           # error
-executable subcommand --version           # error
+executable --version subcommand  # prints the version, subcommand is not run
+executable subcommand --version  # the same, when --version is a global option
 ```
+
+The rest of the command line is still parsed, so an unknown subcommand or
+option is an error.
 
 ### Built-in action options
 
@@ -206,12 +209,12 @@ updated. The request and response format is that of Cobra's `__complete`
 command (one `value<TAB>description` line per alternative, then a `:<N>`
 directive line), which is why Carapace can bridge to it.
 
-The completion output must be the only output on stdout. To guarantee this
-without any effort from the program, the process exits with exit code 0 as
-soon as a completion response or script has been written, so that nothing the
-program does after `CommandRunner.runner()` returns (such as printing the
-result) can corrupt it. See `CompletionSettings.exitAfterResponse` below to
-turn that off.
+The completion output must be the only output on stdout. After a completion
+response or script has been written, `CommandRunner.run()` returns null, and
+anything the program then prints (such as the result) would corrupt it. A
+program that does so should set `CompletionSettings.exitAfterResponse`, see
+below: the process then exits with exit code 0 as soon as the completion
+output has been written.
 
 ### What gets completed
 
@@ -311,8 +314,8 @@ CommandRunner(
   completion: CompletionSettings.disabled,
   // Or keep it but leave the completion command out of the usage help:
   // completion: CompletionSettings(hideCommand: true),
-  // Or exit the process instead of returning from runner() after completion
-  // output: CompletionSettings(exitAfterResponse: false),
+  // Or exit the process right after completion output, instead of returning
+  // from run(): completion: CompletionSettings(exitAfterResponse: true),
 );
 ```
 

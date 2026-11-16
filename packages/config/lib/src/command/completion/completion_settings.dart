@@ -23,14 +23,15 @@ class CompletionSettings {
   /// Whether the process exits (with exit code 0) as soon as a completion
   /// response or a completion script has been written.
   ///
-  /// The completion output must be the only output on stdout: anything the
-  /// program prints after `CommandRunner.runner()` returns would corrupt the
-  /// response read by the shell, or the script being sourced. Exiting
-  /// prevents that without requiring the program to check what was run.
+  /// False by default: `CommandRunner.run()` then returns null after the
+  /// completion output.
   ///
-  /// Set to false to make `runner()` return null instead, e.g. when running
-  /// the runner in-process (such as in tests). The completion output is
-  /// flushed before exiting when it is an `IOSink` (stdout is).
+  /// The completion output must be the only output on stdout: anything the
+  /// program prints after `CommandRunner.run()` returns would corrupt the
+  /// response read by the shell, or the script being sourced. Set to true
+  /// to prevent that without requiring the program to check what was run.
+  /// The completion output is flushed before exiting when it is an `IOSink`
+  /// (stdout is).
   final bool exitAfterResponse;
 
   /// Where completion responses, scripts, and failure diagnostics are written.

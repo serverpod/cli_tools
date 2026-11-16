@@ -61,6 +61,9 @@ Future<void> main(final List<String> args) async {
       branchCommand,
     ],
     canRunAsLeafCommand: true,
+    // This example prints after the runner returns, which would corrupt the
+    // output of a shell completion request: exit right after that instead.
+    completion: const CompletionSettings(exitAfterResponse: true),
     usageOutput: UsageOutputHandler(
       addExceptionHandlers: [
         UsageExceptions.simpleHandler(

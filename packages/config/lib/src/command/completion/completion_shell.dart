@@ -85,16 +85,26 @@ enum CompletionShell {
   /// `<exe> completion --shell <shell>`, or `<exe> --completion <shell>` if
   /// [viaOption]. With a [commandName], the `completion` command's
   /// `--command <name>` option is added.
+  ///
+  /// An [executableName] or [commandName] that is not a plain word, such as
+  /// a path with a space, is quoted for this shell.
   String scriptCommand(
     final String executableName, {
     final bool viaOption = false,
     final String? commandName,
   }) {
+    final isPowerShell = this == CompletionShell.powershell;
+    final word = isPowerShell ? powershellWord : shellWord;
+    final quotedExecutable = word(executableName);
+    // PowerShell runs a quoted command name only with the call operator.
+    final executable = isPowerShell && quotedExecutable != executableName
+        ? '& $quotedExecutable'
+        : quotedExecutable;
     final command = viaOption ? '--completion' : 'completion --shell';
     final forCommand = commandName == null || viaOption
         ? ''
-        : ' --command $commandName';
-    return '$executableName $command $name$forCommand';
+        : ' --command ${word(commandName)}';
+    return '$executable $command $name$forCommand';
   }
 
   /// The comment lines for the header of the generated script: what
@@ -259,3 +269,13 @@ String shellIdentifier(final String executableName) {
 String shellQuote(final String value) {
   return "'${value.replaceAll("'", r"'\''")}'";
 }
+
+/// [value] as one word of a command line for POSIX shells and Fish:
+/// as it is if it is a plain word, otherwise quoted with [shellQuote].
+String shellWord(final String value) {
+  return _plainShellWord.hasMatch(value) ? value : shellQuote(value);
+}
+
+/// Words that no supported shell expands or splits. A leading `~` is plain,
+/// so that a path in the home directory stays one.
+final _plainShellWord = RegExp(r'^[A-Za-z0-9_~./][A-Za-z0-9_@%+:,./-]*$');

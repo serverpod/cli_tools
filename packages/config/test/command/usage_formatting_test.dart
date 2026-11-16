@@ -401,6 +401,7 @@ void main() {
 
   group('Given a mandatory exclusive group', () {
     late Command<OptionDefinition, void> command;
+    late CommandRunner<OptionDefinition, void> runner;
 
     setUp(() {
       const format = MutuallyExclusive(
@@ -417,15 +418,17 @@ void main() {
         persistentOptions: const [
           StringOption(argName: 'stdin', group: input),
         ],
+        // The positional member of a group is the last positional: when the
+        // named member is given instead, no later positional takes its place.
         options: const [
-          StringOption(argPos: 0, valueHelp: 'file', group: input),
-          StringOption(argPos: 1, valueHelp: 'dest', mandatory: true),
+          StringOption(argPos: 0, valueHelp: 'dest', mandatory: true),
+          StringOption(argPos: 1, valueHelp: 'file', group: input),
           FlagOption(argName: 'verbose', negatable: false),
           StringOption(argName: 'json', group: format),
           StringOption(argName: 'text', valueHelp: 'file', group: format),
         ],
       );
-      _runner(subcommands: [command]);
+      runner = _runner(subcommands: [command]);
     });
 
     test(
@@ -434,12 +437,28 @@ void main() {
         expect(
           command.usage,
           contains(
-            'Usage: tool render (<file> | --stdin=<stdin>) <dest> [--verbose] '
+            'Usage: tool render <dest> (<file> | --stdin=<stdin>) [--verbose] '
             '(--json=<json> | --text=<file>)',
           ),
         );
       },
     );
+
+    test('when running with the positional member of the group '
+        'then the command line is accepted', () async {
+      await expectLater(
+        runner.run(['render', 'destination', 'source', '--json=value']),
+        completes,
+      );
+    });
+
+    test('when running with the named member of the group '
+        'then the command line is accepted', () async {
+      await expectLater(
+        runner.run(['render', 'destination', '--stdin=source', '--text=value']),
+        completes,
+      );
+    });
   });
 
   group('Given an optional exclusive group', () {
@@ -567,6 +586,42 @@ void main() {
         );
       },
     );
+  });
+
+  group('Given a subcommand whose synopsis fits the usage line length '
+      'only without the usage prefix', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'copy',
+        description: 'Copy',
+        options: const [
+          StringOption(argName: 'from'),
+          StringOption(argName: 'to'),
+        ],
+      );
+      _runner(subcommands: [command], usageLineLength: 40);
+    });
+
+    test('when reading usage '
+        'then the first synopsis line leaves room for the prefix', () {
+      expect(
+        command.usage,
+        contains(
+          'Usage: tool copy [--from=<from>]\n'
+          '       [--to=<to>]\n',
+        ),
+      );
+    });
+
+    test('when reading usage '
+        'then no line is longer than the line length', () {
+      expect(
+        command.usage.split('\n').map((final line) => line.length),
+        everyElement(lessThanOrEqualTo(40)),
+      );
+    });
   });
 
   group('Given a usage line length shorter than ten columns', () {
@@ -917,6 +972,40 @@ void main() {
         );
       },
     );
+  });
+
+  group('Given a multi-option with allowed values and a default', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'play',
+        description: 'Play cards',
+        options: const [
+          MultiStringOption(
+            argName: 'suits',
+            helpText: 'Like in cards',
+            defaultsTo: ['clubs', 'hearts'],
+            allowedValues: ['spades', 'clubs', 'hearts', 'diamonds'],
+          ),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test('when reading usage then the allowed values are listed '
+        'with each default value marked', () {
+      expect(
+        command.usage,
+        contains(
+          'values: [spades, clubs (default), hearts (default), diamonds]',
+        ),
+      );
+    });
+
+    test('when reading usage then the default is not listed on its own', () {
+      expect(command.usage, isNot(contains('defaults to')));
+    });
   });
 
   group('Given an option with allowed help and a default', () {

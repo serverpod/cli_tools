@@ -364,6 +364,66 @@ void main() {
     });
   });
 
+  group('Given custom option types that read their own parsed value '
+      'when completing', () {
+    setUp(() {
+      runner = buildCompletionCli(
+        completionOutput: out,
+        completionError: err,
+        extraCommands: [
+          CommandImpl.leafWithRunFunction<OptionDefinition, int>(
+            name: 'probe',
+            description: 'Probe.',
+            options: const [_OwnValueOption(), _OwnValuesOption()],
+            run: (final _) => 0,
+          ),
+        ],
+      );
+    });
+
+    test('when completing the value of the option '
+        'then the option is not reported as parsed', () async {
+      final response = await complete(runner, out, ['probe', '--own', '']);
+      expect(valuesOf(response), ['not parsed']);
+    });
+
+    test(
+      'when completing the value of the option given earlier as well '
+      'then the option is reported as parsed with the earlier value',
+      () async {
+        final response = await complete(runner, out, [
+          'probe',
+          '--own',
+          'first',
+          '--own',
+          '',
+        ]);
+        expect(valuesOf(response), ['parsed: first']);
+      },
+    );
+
+    test('when completing the first value of the multi-option '
+        'then the option is not reported as parsed', () async {
+      final response = await complete(runner, out, ['probe', '--owns', '']);
+      expect(valuesOf(response), ['not parsed']);
+    });
+
+    test(
+      'when completing a later value of the multi-option '
+      'then the option is reported as parsed with the earlier values',
+      () async {
+        final response = await complete(runner, out, [
+          'probe',
+          '--owns',
+          'first',
+          '--owns',
+          '',
+        ]);
+        expect(valuesOf(response), ['parsed: first']);
+      },
+    );
+  });
+
   group('Given a completion request for positional arguments', () {
     test('when completing the first positional argument '
         'then its allowed values are offered', () async {
@@ -974,6 +1034,38 @@ class _ContextNameOption extends StringOption {
     probe.leafCommand = leaf?.command.name;
     probe.rootCommand = root?.command.name;
     return CompletionResult.strings(['alpha', 'beta', 'seen']);
+  }
+}
+
+/// Offers whether it was parsed, and if so the value it was given.
+class _OwnValueOption extends StringOption {
+  const _OwnValueOption() : super(argName: 'own');
+
+  @override
+  CompletionResult complete(final CompletionContext context) {
+    final args = context.parsedArgs;
+    return CompletionResult.strings([
+      if (args.wasParsed(this))
+        'parsed: ${args.option(this)}'
+      else
+        'not parsed',
+    ]);
+  }
+}
+
+/// Offers whether it was parsed, and if so the values it was given.
+class _OwnValuesOption extends MultiStringOption {
+  const _OwnValuesOption() : super(argName: 'owns');
+
+  @override
+  CompletionResult complete(final CompletionContext context) {
+    final args = context.parsedArgs;
+    return CompletionResult.strings([
+      if (args.wasParsed(this))
+        'parsed: ${args.multiOption(this).join(' ')}'
+      else
+        'not parsed',
+    ]);
   }
 }
 

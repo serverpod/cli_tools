@@ -60,8 +60,8 @@ class CompletionActionOption extends EnumOption<CompletionShell>
     if (completionShell == null) {
       throw StateError('Completion shell value is null');
     }
-    // (Exits the process after writing the script unless
-    // CompletionSettings.exitAfterResponse is false.)
+    // (Exits the process after writing the script if
+    // CompletionSettings.exitAfterResponse is true.)
     return printCompletionScript(
       context.command.runner,
       completionShell,

@@ -218,9 +218,15 @@ class OptionsUsageGenerator {
 
   /// Names listed under an option.
   ///
-  /// Uses [ConfigOptionBase.allowedValues] when that restriction is set.
+  /// Uses [ConfigOptionBase.allowedValues] when that restriction is set,
+  /// which for a [MultiOption] is its [MultiOption.allowedElementValues].
   /// An [EnumOption] without one lists every value its parser accepts.
   static List<String> _allowedValueNames(final ConfigOptionBase option) {
+    if (option is MultiOption) {
+      final elements = option.allowedElementValues;
+      if (elements == null) return [];
+      return elements.map(option.multiParser.elementParser.format).toList();
+    }
     final allowed = option.allowedValues;
     if (allowed != null) {
       return allowed.map(option.valueParser.format).toList();

@@ -496,13 +496,20 @@ class _ChainParsedArgs implements ParsedArgs {
 
   _ChainParsedArgs(this._chain);
 
+  /// Whether [value] was typed, i.e. is not the placeholder for the word
+  /// being completed.
+  static bool _wasTyped(final String? value) =>
+      value != null && value != CompletionEngine._sentinel;
+
+  /// The option whose value is being completed has no value yet, and is
+  /// not parsed unless it was also given earlier on the command line.
   @override
   bool wasParsed(final ConfigOptionBase option) {
     return _chain.any(
       (final result) =>
           result.flagOptions.containsKey(option) ||
-          result.regularOptions.containsKey(option) ||
-          result.multiOptions.containsKey(option),
+          _wasTyped(result.regularOptions[option]) ||
+          (result.multiOptions[option]?.any(_wasTyped) ?? false),
     );
   }
 
@@ -519,7 +526,7 @@ class _ChainParsedArgs implements ParsedArgs {
   String option(final ConfigOptionBase option) {
     for (final result in _chain) {
       final value = result.regularOptions[option];
-      if (value != null && value != CompletionEngine._sentinel) return value;
+      if (value != null && _wasTyped(value)) return value;
     }
     throw StateError('Option ${option.argName} not found');
   }

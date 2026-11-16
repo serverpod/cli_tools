@@ -72,8 +72,10 @@ ___EXE__()
     for line in ${(f)out}; do
         [[ -z $line ]] && continue
         # value<TAB>description becomes value:description for _describe,
-        # with ':' in the value escaped.
+        # which removes one level of backslashes from the value: escape
+        # the backslashes in it, then its ':'.
         comp=${line%%$'\t'*}
+        comp=${comp//\\/\\\\}
         comp=${comp//:/\\:}
         if [[ $line == *$'\t'* ]]; then
             comp="$comp:${line#*$'\t'}"

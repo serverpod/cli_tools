@@ -440,12 +440,21 @@ void _bashTests(
   required final String? skip,
 }) {
   group('Given the Bash completion script sourced in $bash', () {
-    Future<List<String>> complete(final List<String> words) async {
-      final result = await env.run(bash, [
-        env.harnessPath('bash_harness.sh'),
-        env.scriptPath('bash'),
-        ...words,
-      ]);
+    /// Completes the last of [words]. The equals sign is a word break,
+    /// as it is by default in Bash, unless [breakAtEquals] is false.
+    Future<List<String>> complete(
+      final List<String> words, {
+      final bool breakAtEquals = true,
+    }) async {
+      final result = await env.run(
+        bash,
+        [
+          env.harnessPath('bash_harness.sh'),
+          env.scriptPath('bash'),
+          ...words,
+        ],
+        environment: {if (!breakAtEquals) 'COMPLETION_NO_EQUALS_BREAK': '1'},
+      );
       return result.lines;
     }
 
@@ -500,6 +509,44 @@ void _bashTests(
         'then the value part is completed', () async {
       // Bash splits the word at '=' by default.
       expect(await complete(['build', '--mode', '=', 're']), ['release']);
+    });
+
+    group('when the equals sign is not a word break', () {
+      test('and completing an enum option value attached with an equals sign '
+          'then the option is kept in the offered value', () async {
+        expect(
+          await complete(['build', '--mode=re'], breakAtEquals: false),
+          ['--mode=release'],
+        );
+      });
+
+      test('and completing a file option value attached with an equals sign '
+          'then the option is kept in the offered file', () async {
+        expect(
+          await complete(['--config=f'], breakAtEquals: false),
+          ['--config=f.txt'],
+        );
+      });
+
+      test(
+        'and completing a directory option value attached with an '
+        'equals sign then the option is kept in the offered directory',
+        () async {
+          expect(
+            await complete(['build', '--out=s'], breakAtEquals: false),
+            ['--out=sub'],
+          );
+        },
+      );
+
+      test('and completing a file option value with extensions attached '
+          'with an equals sign then the option is kept in the offered '
+          'files', () async {
+        expect(
+          await complete(['build', '--spec=a'], breakAtEquals: false),
+          ['--spec=a.yaml'],
+        );
+      });
     });
 
     test('when completing a later list element of a multi-option '
@@ -568,6 +615,31 @@ void _bashTests(
       );
       expect(result.lines, ['build']);
     });
+
+    test('when the script is generated for a wrapper path with a space '
+        'then the completion is registered for that path', () async {
+      const wrapper = '/tmp/my wrapper';
+      final script = await env.run(env.exePath, [
+        'completion',
+        '--shell',
+        'bash',
+        '--command',
+        wrapper,
+      ]);
+      final scriptFile = File(p.join(env.scriptDir.path, 'spaced.bash'))
+        ..writeAsStringSync(script.stdout);
+      final result = await env.run(bash, [
+        '-c',
+        'source "\$1" && complete -p "\$2"',
+        'bash',
+        scriptFile.path,
+        wrapper,
+      ]);
+      expect(
+        result.stdout.trim(),
+        startsWith('complete -F ___tmp_my_wrapper_complete '),
+      );
+    });
   }, skip: skip);
 
   group('Given an interactive $bash', () {
@@ -630,6 +702,8 @@ void _zshTests(
         zsh!,
         ['-f', env.harnessPath('zsh_harness.zsh'), line],
         environment: {
+          // The interactive Zsh under test is the same one as the harness.
+          'ZSH_BIN': zsh,
           'ZSH_INIT': env.harnessPath('zsh_init.zsh'),
           'ZSH_COMPDUMP': p.join(env.root.path, 'zcompdump'),
           'ZSH_BUFFER_FILE': p.join(env.root.path, 'zsh_buffer.txt'),
@@ -710,6 +784,13 @@ void _zshTests(
         'then the earlier elements are kept', () async {
       final result = await completeLine('$_exeName build --tags fast,s');
       expect(result.buffer, '$_exeName build --tags fast,slow ');
+    });
+
+    test('when completing a value that contains a backslash and a colon '
+        'then the value is inserted whole', () async {
+      // The typed word is `a\:b`, which the fixture offers as `a\:b!`.
+      final result = await completeLine('$_exeName build --env a\\\\:b');
+      expect(result.buffer, '$_exeName build --env a\\\\:b\\! ');
     });
 
     test('when completing a directory option '
@@ -1091,6 +1172,39 @@ void _powershellTests(
       final results = await complete('$_exeName build ');
       expect(results.map((final r) => r.item.trim()), isNot(contains('f.txt')));
       expect(results.map((final r) => r.text.trim()), everyElement(isEmpty));
+    });
+
+    test('when the completion fails then no files are offered', () async {
+      final results = await complete('$_exeName build --project boom --env ');
+      expect(results.map((final r) => r.item.trim()), isNot(contains('f.txt')));
+      expect(results.map((final r) => r.text.trim()), everyElement(isEmpty));
+    });
+
+    test('when completing a directory option and no directory matches '
+        'then no files are offered', () async {
+      final results = await complete('$_exeName build --out f');
+      expect(results.map((final r) => r.item.trim()), isNot(contains('f.txt')));
+      expect(results.map((final r) => r.text.trim()), everyElement(isEmpty));
+    });
+
+    test('when completing a file option with extensions and no file '
+        'or directory matches then no files are offered', () async {
+      final results = await complete('$_exeName build --spec f');
+      expect(results.map((final r) => r.item.trim()), isNot(contains('f.txt')));
+      expect(results.map((final r) => r.text.trim()), everyElement(isEmpty));
+    });
+
+    test('when completing a path with wildcard characters '
+        'then the path is taken literally', () async {
+      // `lit[1]` as a wildcard pattern matches the directory `lit1`.
+      final dir = Directory(p.join(env.root.path, 'lit[1]'))..createSync();
+      final decoy = Directory(p.join(env.root.path, 'lit1'))..createSync();
+      File(p.join(dir.path, 'c.yaml')).createSync();
+      File(p.join(decoy.path, 'c-decoy.yaml')).createSync();
+      final results = await complete(
+        '$_exeName build --spec ${dir.path}${p.separator}c',
+      );
+      expect(results.map((final r) => r.item), ['c.yaml']);
     });
   }, skip: skip);
 
@@ -1512,11 +1626,13 @@ class _Environment {
 /// printing COMPREPLY one entry per line.
 /// Arguments: the script, then the words after the command name;
 /// the last word is the one being completed. The command name is
-/// `$COMPLETION_CMD`, or comptool.
+/// `$COMPLETION_CMD`, or comptool. With `$COMPLETION_NO_EQUALS_BREAK` set,
+/// the equals sign is not a word break.
 const _bashHarness = r'''
 script=$1; shift
 cmd=${COMPLETION_CMD:-comptool}
 source "$script" || exit 1
+[[ -n $COMPLETION_NO_EQUALS_BREAK ]] && COMP_WORDBREAKS=${COMP_WORDBREAKS//=/}
 COMP_WORDS=("$cmd" "$@")
 COMP_CWORD=$(( ${#COMP_WORDS[@]} - 1 ))
 COMP_LINE="${COMP_WORDS[*]}"
@@ -1542,13 +1658,14 @@ zle -N __dump
 bindkey '^X^P' __dump
 ''';
 
-/// Runs an interactive Zsh in a pseudo terminal, types the given line
-/// followed by TAB, and prints the resulting buffer and terminal output.
+/// Runs an interactive Zsh (`$ZSH_BIN`) in a pseudo terminal, types the
+/// given line followed by TAB, and prints the resulting buffer and terminal
+/// output.
 const _zshHarness = r'''
 zmodload zsh/zpty || { print 'zsh/zpty unavailable'; exit 2 }
 export PS1='PROMPT> '
 rm -f "$ZSH_BUFFER_FILE"
-zpty z 'zsh -f -i'
+zpty z "${(q)ZSH_BIN} -f -i"
 zpty -r z log '*PROMPT>*' || { print 'no prompt'; exit 1 }
 zpty -w z "source '$ZSH_INIT'"
 zpty -r z log '*PROMPT>*' || { print 'no prompt after init'; exit 1 }

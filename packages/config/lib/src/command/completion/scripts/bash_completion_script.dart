@@ -1,4 +1,4 @@
-import '../completion_shell.dart' show shellIdentifier, shellQuote;
+import '../completion_shell.dart' show shellIdentifier, shellQuote, shellWord;
 
 /// Generates the Bash completion script for the command [name].
 ///
@@ -22,6 +22,8 @@ String bashCompletionScript(
         program == null ? r'${words[0]}' : shellQuote(program),
       )
       .replaceAll('__FN__', fn)
+      // The command name as an argument of `complete`: one word.
+      .replaceAll('__EXE_WORD__', shellWord(name))
       .replaceAll('__EXE__', name);
 }
 
@@ -74,26 +76,34 @@ __FN___filedir()
     if rest=$(__FN___redirect_rest "$cur"); then
         cur=$rest
     fi
+    local first=${#COMPREPLY[@]} i
     if declare -F _filedir >/dev/null 2>&1; then
         if [[ $1 == -d || -z $1 ]]; then
             _filedir "$@"
         else
             _filedir "@($1)"
         fi
-        return
-    fi
-    type compopt &>/dev/null && compopt -o filenames 2>/dev/null
-    local IFS=$'\n' ext
-    if [[ $1 == -d ]]; then
-        COMPREPLY+=($(compgen -d -- "$cur"))
-    elif [[ -n $1 ]]; then
-        COMPREPLY+=($(compgen -d -- "$cur"))
-        # IFS is a newline here: split the pattern on newlines.
-        for ext in ${1//|/$'\n'}; do
-            COMPREPLY+=($(compgen -f -X "!*.$ext" -- "$cur"))
-        done
     else
-        COMPREPLY+=($(compgen -f -- "$cur"))
+        type compopt &>/dev/null && compopt -o filenames 2>/dev/null
+        local IFS=$'\n' ext
+        if [[ $1 == -d ]]; then
+            COMPREPLY+=($(compgen -d -- "$cur"))
+        elif [[ -n $1 ]]; then
+            COMPREPLY+=($(compgen -d -- "$cur"))
+            # IFS is a newline here: split the pattern on newlines.
+            for ext in ${1//|/$'\n'}; do
+                COMPREPLY+=($(compgen -f -X "!*.$ext" -- "$cur"))
+            done
+        else
+            COMPREPLY+=($(compgen -f -- "$cur"))
+        fi
+    fi
+    # The file names replace a whole `--option=value` word when '=' is not
+    # a word break (see valuePrefix in the caller): keep the option.
+    if [[ -n $valuePrefix ]]; then
+        for ((i = first; i < ${#COMPREPLY[@]}; i++)); do
+            COMPREPLY[i]=$valuePrefix${COMPREPLY[i]}
+        done
     fi
 }
 
@@ -173,12 +183,12 @@ __FN___complete()
     # Bash replaces only the part of the word after the last ':' when ':'
     # is a word break, so remove the part up to it from the values.
     if [[ $cur == *:* && $COMP_WORDBREAKS == *:* ]]; then
-        local prefix=${cur%"${cur##*:}"} i
+        local prefix=$valuePrefix${cur%"${cur##*:}"} i
         for i in "${!COMPREPLY[@]}"; do
             COMPREPLY[i]=${COMPREPLY[i]#"$prefix"}
         done
     fi
 }
 
-complete -F __FN___complete __EXE__
+complete -F __FN___complete __EXE_WORD__
 ''';

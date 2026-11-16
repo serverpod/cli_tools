@@ -900,6 +900,66 @@ void main() {
       );
     });
 
+    test('when making a shell word of a plain name or path '
+        'then it is unchanged', () {
+      expect(shellWord('my-tool'), 'my-tool');
+      expect(shellWord('~/bin/my_tool.sh'), '~/bin/my_tool.sh');
+    });
+
+    test('when making a shell word of a name the shell would split or expand '
+        'then it is quoted', () {
+      expect(shellWord('/opt/My Tools/tool'), "'/opt/My Tools/tool'");
+      expect(shellWord(r'$tool'), r"'$tool'");
+      expect(shellWord(''), "''");
+    });
+
+    test('when generating the script command for an executable path '
+        'with a space then the path is quoted', () {
+      expect(
+        CompletionShell.bash.scriptCommand('/opt/My Tools/tool'),
+        "'/opt/My Tools/tool' completion --shell bash",
+      );
+      expect(
+        CompletionShell.fish.scriptCommand(
+          '/opt/My Tools/tool',
+          viaOption: true,
+        ),
+        "'/opt/My Tools/tool' --completion fish",
+      );
+    });
+
+    test('when generating the PowerShell script command for an executable '
+        'path with a space then the quoted path is run with the call '
+        'operator', () {
+      expect(
+        CompletionShell.powershell.scriptCommand("/opt/My Tool's/tool"),
+        "& '/opt/My Tool''s/tool' completion --shell powershell",
+      );
+    });
+
+    test('when generating the script command for a wrapper name '
+        'with a space then the name is quoted', () {
+      expect(
+        CompletionShell.zsh.scriptCommand('my-tool', commandName: 'my wrap'),
+        "my-tool completion --shell zsh --command 'my wrap'",
+      );
+      expect(
+        CompletionShell.powershell.scriptCommand(
+          'my-tool',
+          commandName: 'my wrap',
+        ),
+        "my-tool completion --shell powershell --command 'my wrap'",
+      );
+    });
+
+    test('when generating the Bash script for a wrapper path with a space '
+        'then the completion is registered for the path as one word', () {
+      expect(
+        CompletionShell.bash.script('my-tool', commandName: '/tmp/my wrapper'),
+        endsWith("complete -F ___tmp_my_wrapper_complete '/tmp/my wrapper'\n"),
+      );
+    });
+
     test('when generating the Bash and Zsh install instructions '
         'then the shell is reloaded with exec', () {
       expect(CompletionShell.bash.activationInstruction, contains('exec bash'));

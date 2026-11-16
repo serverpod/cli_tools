@@ -256,8 +256,9 @@ String _padRight(final String source, final int length) =>
 /// in the input, and indents wrapped lines the same amount.
 ///
 /// If [hangingIndent] is supplied, then that many spaces are added to each
-/// line, except for the first line. This is useful for flowing text with a
-/// heading prefix (e.g. "Usage: "):
+/// line, except for the first line, which leaves room for a prefix of that
+/// width instead. This is useful for flowing text with a heading prefix
+/// (e.g. "Usage: "):
 ///
 /// ```dart
 /// var prefix = "Usage: ";
@@ -279,7 +280,7 @@ String _wrapText(final String text, {final int? length, int? hangingIndent}) {
   hangingIndent ??= 0;
   final splitText = text.split('\n');
   final result = <String>[];
-  for (final line in splitText) {
+  for (final (index, line) in splitText.indexed) {
     var trimmedText = line.trimLeft();
     final leadingWhitespace = line.substring(
       0,
@@ -289,10 +290,13 @@ String _wrapText(final String text, {final int? length, int? hangingIndent}) {
     if (hangingIndent != 0) {
       // When we have a hanging indent, we want to wrap the first line at one
       // width, and the rest at another (offset by hangingIndent), so we wrap
-      // them twice and recombine.
+      // them twice and recombine. The caller writes a prefix as wide as the
+      // hanging indent before the first line of the text, which is as narrow
+      // as the rest.
+      final prefixWidth = index == 0 ? hangingIndent : 0;
       final firstLineWrap = wrapTextAsLines(
         trimmedText,
-        length: length - leadingWhitespace.length,
+        length: length - leadingWhitespace.length - prefixWidth,
       );
       notIndented = [firstLineWrap.removeAt(0)];
       trimmedText = trimmedText.substring(notIndented[0].length).trimLeft();

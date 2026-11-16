@@ -16,14 +16,23 @@ String powershellCompletionScript(
       .replaceAll('__HEADER__', header)
       .replaceAll(
         '__PROGRAM__',
-        program == null ? r'$words[0]' : _quote(program),
+        program == null ? r'$words[0]' : powershellQuote(program),
       )
       .replaceAll('__FN__', fn)
       .replaceAll('__EXE__', name);
 }
 
 /// [value] as a single-quoted PowerShell string literal.
-String _quote(final String value) => "'${value.replaceAll("'", "''")}'";
+String powershellQuote(final String value) =>
+    "'${value.replaceAll("'", "''")}'";
+
+/// [value] as one word of a PowerShell command line: as it is if it is
+/// a plain word, otherwise quoted with [powershellQuote].
+String powershellWord(final String value) {
+  return _plainPowershellWord.hasMatch(value) ? value : powershellQuote(value);
+}
+
+final _plainPowershellWord = RegExp(r'^[A-Za-z0-9_~./\\][A-Za-z0-9_:./\\-]*$');
 
 const _template = r'''
 # powershell completion for __EXE__                         -*- shell-script -*-
@@ -84,7 +93,12 @@ __HEADER__
         $out = @($out | Select-Object -SkipLast 1)
     }
 
-    if (($directive -band $directiveError) -ne 0) { return }
+    # PowerShell completes paths itself when a completer returns nothing.
+    # Returning a single space prevents that (an empty string is rejected
+    # by CompletionResult).
+    $nothing = ' '
+
+    if (($directive -band $directiveError) -ne 0) { $nothing; return }
 
     # When completing `--option=value`, the response holds the bare values
     # which are inserted after the option prefix.
@@ -113,9 +127,16 @@ __HEADER__
     $escape = '\s|#|@|\$|;|,|''|\{|\}|\(|\)|"|`|\||<|>|&'
 
     # Path completion for directories, or files with the given extensions.
+    # The typed path is literal: its directory is listed and the names in it
+    # are matched by prefix, so that no wildcard in it (`[1]`) is expanded.
     function Complete-Paths($dirsOnly, $extensions) {
-        $dir = [System.IO.Path]::GetDirectoryName($value)
-        Get-ChildItem -Path "$value*" -Force -ErrorAction SilentlyContinue | ForEach-Object {
+        $index = $value.LastIndexOfAny([char[]]@('/', '\'))
+        $dir = $value.Substring(0, $index + 1)
+        $leaf = $value.Substring($index + 1)
+        $parent = if ($dir) { $dir } else { '.' }
+        $results = @(Get-ChildItem -LiteralPath $parent -Force -ErrorAction SilentlyContinue | ForEach-Object {
+            $name = $_.Name
+            if (-not $name.StartsWith($leaf, [System.StringComparison]::OrdinalIgnoreCase)) { return }
             $isDir = $_.PSIsContainer
             if ($dirsOnly -and -not $isDir) { return }
             if ($extensions -and -not $isDir -and ($extensions -notcontains $_.Extension.TrimStart('.'))) { return }
@@ -124,7 +145,8 @@ __HEADER__
             if ($isDir) { $path += [System.IO.Path]::DirectorySeparatorChar }
             $type = if ($isDir) { 'ProviderContainer' } else { 'ProviderItem' }
             New-Result ($prefix + ($path -replace $escape, '`$&')) $name $type $path
-        }
+        })
+        if ($results.Count -eq 0) { $nothing } else { $results }
     }
 
     if (($directive -band $directiveFileExt) -ne 0) {
@@ -147,10 +169,8 @@ __HEADER__
     }
 
     if ($results.Count -eq 0) {
-        # Nothing matched: PowerShell completes paths when nothing is
-        # returned. Returning a single space prevents that (an empty
-        # string is rejected by CompletionResult).
-        if (($directive -band $directiveNoFiles) -ne 0) { ' ' }
+        # Nothing matched: PowerShell completes paths, unless disabled.
+        if (($directive -band $directiveNoFiles) -ne 0) { $nothing }
         return
     }
 

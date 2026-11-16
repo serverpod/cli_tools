@@ -264,9 +264,9 @@ Future<void> printCompletionScript(
 /// The usage output sinks are not used. They are for help text, and may
 /// reformat what they write.
 ///
-/// Unless disabled by `CompletionSettings.exitAfterResponse`, the output is
-/// then flushed and the process exits with exit code 0, so that nothing the
-/// program does after `CommandRunner.runner()` can corrupt the output.
+/// If `CompletionSettings.exitAfterResponse` is set, the output is then
+/// flushed and the process exits with exit code 0, so that nothing the
+/// program does after `CommandRunner.run()` can corrupt the output.
 Future<void> writeCompletionOutput(
   final CommandRunner runner,
   final String output,
