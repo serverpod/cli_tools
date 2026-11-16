@@ -91,9 +91,10 @@ abstract class AbstractCommand<O extends OptionDefinition, T>
   /// last command on the command line even if the command line is incomplete.
   ///
   /// {@template acceptsPartialCommandLine}
-  /// Incomplete means that this or the preceding commands
-  /// have configuration errors, such as missing mandatory options, mutually
-  /// exclusive groups without a mandatory choice, or invalid option values.
+  /// Incomplete means that this or the preceding commands have configuration
+  /// errors, such as missing mandatory subcommand, positional arguments,
+  /// options or option values, or mutually exclusive groups without a mandatory
+  /// choice.
   /// These errors remain available in `CommandContext.config.errors`.
   /// Command line parse errors, such as unknown options or subcommands,
   /// are still raised.
