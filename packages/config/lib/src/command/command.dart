@@ -94,6 +94,8 @@ abstract class BridgeCommand<O extends OptionDefinition, T>
         usageFooter: usageFooter,
         category: category,
         hidden: hidden,
+        summary: summary,
+        invocation: _customInvocation,
       );
 
   @override
@@ -132,11 +134,24 @@ abstract class BridgeCommand<O extends OptionDefinition, T>
 
   List<String> get suggestionAliases => const [];
 
+  /// A short description of this command, shown in the parent's usage.
   String get summary => description.split('\n').first;
 
-  String get invocation => subcommands.isNotEmpty
+  /// This command's own invocation, i.e. its name and arguments without
+  /// the parent command names.
+  /// A subclass that overrides this getter with another text gets that text
+  /// in the usage, see [CommandUsageDefinition.invocation].
+  String get invocation => _defaultInvocation;
+
+  String get _defaultInvocation => subcommands.isNotEmpty
       ? '$name <subcommand> [arguments]'
       : '$name [arguments]';
+
+  /// The [invocation] if it is customized, otherwise null.
+  String? get _customInvocation {
+    final invocation = this.invocation;
+    return invocation == _defaultInvocation ? null : invocation;
+  }
 
   bool get takesArguments =>
       allOptions().any((final option) => option.option.argPos != null);

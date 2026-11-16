@@ -622,6 +622,106 @@ void main() {
     );
   });
 
+  group('Given a command with only hidden options', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'login',
+        description: 'Log in',
+        persistentOptions: const [
+          FlagOption(argName: 'trace', negatable: false, hide: true),
+        ],
+        options: const [
+          StringOption(argName: 'token', hide: true),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test('when reading usage then no option sections are shown', () {
+      expect(
+        command.usage,
+        _usage(const [
+          'Log in',
+          '',
+          'Usage: tool login',
+          '',
+          'Run "tool help" to see global options.',
+        ]),
+      );
+    });
+  });
+
+  group('Given an option set only by a single configuration key', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'deploy',
+        description: 'Deploy',
+        options: const [
+          StringOption(configKey: 'endpoint', helpText: 'Server endpoint'),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test('when reading usage then the option is listed by its key', () {
+      expect(
+        command.usage,
+        _usage(const [
+          'Deploy',
+          '',
+          'Usage: tool deploy',
+          '',
+          'Options:',
+          '{endpoint}    Server endpoint',
+          '              key "endpoint"',
+          '',
+          'Run "tool help" to see global options.',
+        ]),
+      );
+    });
+  });
+
+  group('Given an option with a single and several configuration keys', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'deploy',
+        description: 'Deploy',
+        options: const [
+          StringOption(
+            argName: 'endpoint',
+            configKey: 'endpoint',
+            configKeys: ['server.endpoint'],
+          ),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test('when reading usage then all keys are listed, the single first', () {
+      expect(
+        command.usage,
+        _usage(const [
+          'Deploy',
+          '',
+          'Usage: tool deploy [--endpoint=<endpoint>]',
+          '',
+          'Options:',
+          '--endpoint    ',
+          '              key "endpoint"',
+          '              key "server.endpoint"',
+          '',
+          'Run "tool help" to see global options.',
+        ]),
+      );
+    });
+  });
+
   group('Given options declared out of alphabetical order', () {
     late Command<OptionDefinition, void> command;
 

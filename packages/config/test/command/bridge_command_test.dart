@@ -60,6 +60,14 @@ void main() {
       },
     );
 
+    test(
+      'when reading the usage definition '
+      'then the invocation is left to the usage generator',
+      () {
+        expect(command.usageDefinition.invocation, isNull);
+      },
+    );
+
     test('when asked whether it takes arguments then it does not', () {
       expect(command.takesArguments, isFalse);
     });
@@ -275,6 +283,60 @@ void main() {
           expect(result, 'secret');
         });
       });
+    });
+  });
+
+  group('Given a bridge command that overrides summary and invocation', () {
+    late _CustomUsageBridge command;
+    late CommandRunner<OptionDefinition, String> runner;
+
+    setUp(() {
+      command = _CustomUsageBridge();
+      runner = _runner(subcommands: [command]);
+    });
+
+    test('when reading the usage definition then the summary is copied', () {
+      expect(command.usageDefinition.summary, 'Download packages');
+    });
+
+    test(
+      'when reading the usage definition then the invocation is copied',
+      () {
+        expect(command.usageDefinition.invocation, 'get <package>');
+      },
+    );
+
+    test('when reading the runner usage then the summary is shown', () {
+      expect(
+        runner.usage,
+        _usage(const [
+          'Tools',
+          '',
+          'Usage: tool [global-options] <command> [arguments]',
+          '',
+          'Global options:',
+          '-h, --help    Print this usage information.',
+          '',
+          'Available commands:',
+          '  get   Download packages',
+          '',
+          'Run "tool help <command>" for more information about a command.',
+        ]),
+      );
+    });
+
+    test('when reading the command usage then the invocation is shown', () {
+      expect(
+        command.usage,
+        _usage(const [
+          'Download packages.',
+          'More detail here.',
+          '',
+          'Usage: tool get <package>',
+          '',
+          'Run "tool help" to see global options.',
+        ]),
+      );
     });
   });
 
@@ -564,6 +626,23 @@ class _DocumentedBridge extends BridgeCommand<OptionDefinition, String> {
 
   @override
   List<String> get suggestionAliases => const ['bld'];
+
+  @override
+  String? run(final CommandContext<OptionDefinition, String> context) => name;
+}
+
+class _CustomUsageBridge extends BridgeCommand<OptionDefinition, String> {
+  @override
+  String get name => 'get';
+
+  @override
+  String get description => 'Download packages.\nMore detail here.';
+
+  @override
+  String get summary => 'Download packages';
+
+  @override
+  String get invocation => 'get <package>';
 
   @override
   String? run(final CommandContext<OptionDefinition, String> context) => name;

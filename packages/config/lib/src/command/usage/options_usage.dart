@@ -38,6 +38,7 @@ class OptionsUsageGenerator {
         .map((final i) => i.option)
         .where((final o) => !o.hide)
         .toList();
+    if (visibleOptions.isEmpty) return '';
 
     _optionTitles.addEntries(
       visibleOptions.map((final o) => MapEntry(o, _generateOptionTitle(o))),
@@ -108,7 +109,7 @@ class OptionsUsageGenerator {
       return buffer.toString();
     }
 
-    final configKeys = option.configKeys ?? [];
+    final configKeys = option.allConfigKeys;
     if (configKeys.isNotEmpty) {
       final title = configKeys.map((final k) => '{$k}').join(', ');
       buffer.write(title);
@@ -149,7 +150,7 @@ class OptionsUsageGenerator {
   }
 
   static String? _generateConfigKeys(final ConfigOptionBase option) {
-    final configKeys = option.configKeys ?? [];
+    final configKeys = option.allConfigKeys;
     if (configKeys.isEmpty) return null;
     return configKeys.map((final k) => 'key "$k"').join('\n');
   }

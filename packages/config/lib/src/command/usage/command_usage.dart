@@ -65,7 +65,9 @@ String commandUsage(
     )
     ..writeln();
 
-  final persistentOptions = command.allOptions(onlyPersistent: true);
+  final persistentOptions = _visibleOptions(
+    command.allOptions(onlyPersistent: true),
+  );
   if (persistentOptions.isNotEmpty) {
     buffer.writeln(
       getOptionsUsage(
@@ -77,10 +79,11 @@ String commandUsage(
     );
   }
 
-  if (command.options.isNotEmpty) {
+  final options = _visibleOptions(command.options);
+  if (options.isNotEmpty) {
     buffer.writeln(
       getOptionsUsage(
-        command.options,
+        options,
         isSubcommand: isSubcommand,
         isPersistentOptions: false,
         lineLength: lineLength,
@@ -125,6 +128,11 @@ String commandUsage(
   }
   return buffer.toString();
 }
+
+/// The [options] that are listed in the usage, i.e. those not hidden.
+List<OptionDefinition> _visibleOptions(
+  final Iterable<OptionDefinition> options,
+) => options.where((final option) => !option.option.hide).toList();
 
 String getOptionsUsage(
   final List<OptionDefinition> options, {
