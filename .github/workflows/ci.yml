@@ -97,6 +97,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y zsh fish
 
+      # The runner image makes /usr/share writable by everyone. Zsh does not
+      # initialize its completion system from such directories without asking
+      # the user, which it cannot do in the tests.
+      - name: Make the Zsh function directories secure
+        if: runner.os == 'Linux'
+        run: |
+          zsh -fc 'autoload -Uz compaudit; compaudit 2>/dev/null' |
+            xargs -r sudo chmod go-w
+
       - name: Install Carapace
         if: runner.os == 'Linux'
         run: |

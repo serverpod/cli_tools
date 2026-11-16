@@ -835,9 +835,13 @@ void _zshTests(
   }, skip: skip);
 
   group('Given an interactive Zsh', () {
-    /// The completion function that a new interactive Zsh with the
-    /// [environment] has registered for the executable.
-    Future<String> registeredCompletion(
+    /// Expects that a new interactive Zsh with the [environment] has the
+    /// completion function registered for the executable.
+    ///
+    /// Zsh does not initialize its completion system if a directory it
+    /// loads functions from is writable by other users (see `compaudit`)
+    /// and it cannot ask the user: its error output tells if that is so.
+    Future<void> expectCompletionRegistered(
       final Map<String, String> environment,
     ) async {
       final result = await env.run(
@@ -845,7 +849,11 @@ void _zshTests(
         ['-i', '-c', 'print -r -- "registered:\${_comps[$_exeName]}"'],
         environment: environment,
       );
-      return result.lines.last;
+      expect(
+        result.lines.last,
+        'registered:_$_exeName',
+        reason: 'Error output of Zsh:\n${result.stderr}',
+      );
     }
 
     test(
@@ -893,7 +901,7 @@ void _zshTests(
         ['completion', 'install', '--shell', 'zsh'],
         environment: environment,
       );
-      expect(await registeredCompletion(environment), 'registered:_$_exeName');
+      await expectCompletionRegistered(environment);
     });
 
     test('when the completion is installed with `completion install` '
@@ -910,7 +918,7 @@ void _zshTests(
         ['completion', 'install', '--shell', 'zsh'],
         environment: environment,
       );
-      expect(await registeredCompletion(environment), 'registered:_$_exeName');
+      await expectCompletionRegistered(environment);
     });
   }, skip: skip);
 }
