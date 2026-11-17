@@ -177,7 +177,11 @@ class BetterCommandRunner<O extends OptionDefinition, T>
         final analyticsEnabled = await determineAnalyticsSettings(ctx);
         ctx.provider.store(AnalyticsEnabled(analyticsEnabled));
         if (analyticsEnabled) {
-          final commandName = ctx.next?.command.name ?? ctx.command.name;
+          final actionOption = ctx.specifiedActionOptions().firstOrNull;
+          final commandName =
+              actionOption?.option.toString() ??
+              ctx.next?.command.name ??
+              ctx.command.name;
           return sendAnalyticsEvent(
             commandName,
             analyticsPropertiesBuilder(ctx),

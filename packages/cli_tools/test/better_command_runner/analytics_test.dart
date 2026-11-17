@@ -217,7 +217,6 @@ void main() {
         expect(events, hasLength(1));
         expect(events.first, equals('help'));
       },
-      skip: 'Currently not reporting analytics for help invocations',
     );
 
     test(
@@ -230,7 +229,6 @@ void main() {
         expect(events, hasLength(1));
         expect(events.first, equals('help'));
       },
-      skip: 'Currently not reporting analytics for help invocations',
     );
   });
 

@@ -100,7 +100,7 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 100));
       expect(analyticsEvents, hasLength(1));
       expect(analyticsEvents.single, 'help');
-    }, skip: 'Currently not reporting analytics for help invocations');
+    });
 
     test('when running with subcommand `help` '
         'then help analytics is sent', () async {
@@ -109,7 +109,7 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 100));
       expect(analyticsEvents, hasLength(1));
       expect(analyticsEvents.single, 'help');
-    }, skip: 'Currently not reporting analytics for help invocations');
+    });
 
     test('when running with subcommand `mock-command` '
         'then subcommand analytics is sent', () async {
