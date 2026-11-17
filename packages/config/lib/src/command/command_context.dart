@@ -1,5 +1,7 @@
-import '../../config.dart' show OptionDefinition, Configuration;
+import '../../config.dart'
+    show OptionDefinition, Configuration, ValueSourceType;
 import 'abstract_command.dart';
+import 'action_option.dart';
 import 'builtin_global_option.dart';
 import 'context_provider.dart';
 
@@ -83,5 +85,24 @@ class CommandContext<O extends OptionDefinition, T> {
   CommandContext<OptionDefinition, T> leaf() {
     final nextContext = next;
     return nextContext == null ? this : nextContext.leaf();
+  }
+
+  /// Returns the action options of the command that were specified on the
+  /// command line, if any.
+  ///
+  /// If non-empty, the first one is run instead of the command.
+  List<ActionOptionMixin> specifiedActionOptions() {
+    final allArgOptions = [
+      ...config.optionsWhereSource(
+        (final ValueSourceType s) => s == ValueSourceType.arg,
+      ),
+      ...builtinConfig.optionsWhereSource(
+        (final ValueSourceType s) => s == ValueSourceType.arg,
+      ),
+    ];
+    return allArgOptions
+        .map((final option) => option.option)
+        .whereType<ActionOptionMixin>()
+        .toList();
   }
 }

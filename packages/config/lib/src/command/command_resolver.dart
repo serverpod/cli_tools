@@ -1,21 +1,19 @@
-import '../config/arg_parser/arg_parser.dart'
+import '../../config.dart'
     show
         ArgParseResult,
         DoubleDashHandling,
         ParserSettings,
         scanAndParseCommands,
-        subcommandRequiredErrorPrefix;
-import '../config/config.dart'
-    show
+        subcommandRequiredErrorPrefix,
         CommandDefinition,
         OptionDefinition,
         UsageException,
-        CommandUsageException;
-import '../config/output_formatting.dart' show formatConfigError;
+        CommandUsageException,
+        formatConfigError;
 import 'abstract_command.dart';
+import 'action_option.dart';
 import 'command_context.dart';
-import 'command_runner.dart'
-    show CommandRunner, specifiedActionOption, ActionOptionMixin;
+import 'command_runner.dart' show CommandRunner;
 import 'context_provider.dart';
 
 /// Interface for the command resolver, which resolves the configurations for
@@ -166,7 +164,7 @@ class StandardCommandResolver<O extends OptionDefinition, T>
   }
 
   bool _acceptsPartialCommandLine(final CommandContext contexts) {
-    if (specifiedActionOption(contexts)
+    if (_specifiedActionOption(contexts)
         case final ActionOptionMixin actionOption) {
       return actionOption.acceptsPartialCommandLine;
     }
@@ -196,4 +194,16 @@ class StandardCommandResolver<O extends OptionDefinition, T>
       throw CommandUsageException(messages.join('\n'), firstCommandWithErrors);
     }
   }
+}
+
+/// Returns the first of the action options that were specified on the command
+/// line, or null if none.
+ActionOptionMixin? _specifiedActionOption(final CommandContext contexts) {
+  CommandContext? context = contexts;
+  while (context != null) {
+    final actionOption = context.specifiedActionOptions().firstOrNull;
+    if (actionOption != null) return actionOption;
+    context = context.next;
+  }
+  return null;
 }

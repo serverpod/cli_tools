@@ -1,7 +1,6 @@
 import 'dart:async' show FutureOr;
 
-import '../../middleware.dart' show MiddlewareChain, Middleware;
-import '../config/config.dart'
+import '../../config.dart'
     show
         OptionDefinition,
         CommandDefinition,
@@ -9,6 +8,7 @@ import '../config/config.dart'
         ConfigurationBroker,
         ArgParseResult,
         NewParsedArgs;
+import '../../middleware.dart' show MiddlewareChain, Middleware;
 import 'command.dart' show Command;
 import 'command_context.dart';
 import 'command_middleware.dart';

@@ -2,6 +2,7 @@
 /// help, usage output and shell completion.
 library;
 
+export 'action_option.dart';
 export 'builtin_global_option.dart';
 export 'command.dart';
 export 'command_context.dart';

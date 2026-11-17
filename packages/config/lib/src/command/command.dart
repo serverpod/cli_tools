@@ -1,6 +1,6 @@
 import 'dart:async' show FutureOr;
 
-import '../config/config.dart'
+import '../../config.dart'
     show
         OptionDefinition,
         CommandUsageDefinition,
