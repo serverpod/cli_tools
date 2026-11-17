@@ -31,12 +31,13 @@ import 'usage_output.dart';
 ///
 /// Returns the result of the nested middleware chain for the commands on
 /// the command line. Each ancestor's middleware wraps the commands that
-/// follow it. Only the last command's [run] is invoked.
+/// follow it. Only the last command's [run] (or the action option's, if
+/// present) is invoked.
 ///
 /// T is the return type of the run methods of this runner and the commands.
 /// [CommandRunner.run] returns the result of the nested middleware chain.
 /// When each middleware returns the result of its next handler, that is the
-/// result of the last command on the command line.
+/// result of the last command on the command line, or of the action option.
 /// This means that T must match across the runner and all its commands.
 /// Using int as T can be sensible in order to return the exit code that the
 /// command executable should return.
@@ -213,9 +214,13 @@ class CommandRunner<O extends OptionDefinition, T>
   /// middleware returns the result of its next handler, the result is that
   /// of the last command.
   ///
-  /// When `--help`, `-h`, or a `help` command is present on a command
-  /// line, prints usage for the last command and returns `null` without
-  /// running any command.
+  /// An action option ends that chain at the command that defined it.
+  /// Middleware runs up through that command, and the option runs instead of
+  /// any command.
+  ///
+  /// When `--help` or `-h` is present, prints usage for the last command
+  /// and returns `null` without running any command. Middleware still runs
+  /// through the runner, which defines `--help`.
   ///
   /// To make a subcommand which is named like an option, simply define it, for example:
   /// ```dart
@@ -380,8 +385,8 @@ class CommandRunner<O extends OptionDefinition, T>
     );
   }
 
-  /// Runs the command line, i.e. the middlewares of the commands on the command
-  /// line and run the tail command.
+  /// Runs the command line: the middlewares of the commands on the command
+  /// line, then the tail command or an action option.
   FutureOr<T?> runCommandLine(final CommandContext<O, T> contexts) {
     return _runNested(contexts);
   }
@@ -390,26 +395,31 @@ class CommandRunner<O extends OptionDefinition, T>
   ///
   /// The first command's middleware is the outermost span. Each following
   /// command's middleware runs inside the previous command's middleware.
-  /// Only the last command's [run] is invoked.
+  /// Only the last command's [run] or the action option's [run] is invoked.
   FutureOr<T?> _runNested(
     final CommandContext<OptionDefinition, T> context,
   ) {
-    final next = context.next == null
-        ? null
-        : (final CommandContext<OptionDefinition, T> forwarded) {
-            // (forwarded context may have been replaced by a middleware)
-            final next = forwarded.next;
-            if (next == null) {
-              throw StateError(
-                '${forwarded.command.name} has no following command.',
-              );
-            }
-            return _runNested(next);
-          };
-
     final actionOption = _specifiedActionOptions(context).firstOrNull;
     if (actionOption != null) {
-      return actionOption.run(context);
+      return context.command.runCommand(
+        context,
+        runNextCommand: (final forwarded) => actionOption.run(forwarded),
+      );
+    }
+
+    if (context.next == null) {
+      return context.command.runCommand(context);
+    }
+
+    FutureOr<T?> next(final CommandContext<OptionDefinition, T> forwarded) {
+      // (forwarded context may have been replaced by a middleware)
+      final next = forwarded.next;
+      if (next == null) {
+        throw StateError(
+          '${forwarded.command.name} has no following command.',
+        );
+      }
+      return _runNested(next);
     }
 
     return context.command.runCommand(context, runNextCommand: next);
@@ -458,7 +468,6 @@ mixin ActionOptionMixin {
   bool get acceptsPartialCommandLine => true;
 
   /// Runs this action option.
-  ///
   /// [context] is the context of the command that defined this action option.
   FutureOr<R?> run<O extends OptionDefinition, R>(
     final CommandContext<O, R> context,

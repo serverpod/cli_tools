@@ -928,9 +928,13 @@ void main() {
       },
     );
 
-    test('when --help is passed then middleware does not run', () {
-      expect(trace, isEmpty);
-    });
+    test(
+      'when --help is passed '
+      'then the runner middleware runs',
+      () {
+        expect(trace, ['root']);
+      },
+    );
   });
 
   group('Given middleware on the runner and its subcommands', () {
@@ -991,9 +995,9 @@ void main() {
 
     test(
       'when --help follows the subcommand '
-      'then no middleware runs',
+      'then only the runner middleware runs',
       () {
-        expect(trace, isEmpty);
+        expect(trace, ['root-middleware']);
       },
     );
   });
