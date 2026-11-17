@@ -1,20 +1,20 @@
 import 'dart:async' show Future, FutureOr;
 import 'dart:io' show Platform, stderr;
 
-import '../config/arg_parser/arg_parser.dart'
-    show CommandAliasesDefinition, CommandDefinition, CommandUsageDefinition;
-import '../config/config.dart'
+import '../../config.dart'
     show
-        OptionDefinition,
+        CommandAliasesDefinition,
+        CommandDefinition,
+        CommandUsageDefinition,
         Configuration,
+        OptionDefinition,
         UsageException,
         ParsedArgs,
         ConfigOptionBase,
         FlagOption,
         MultiOption,
         ArgParseResult,
-        NewParsedArgs,
-        ValueSourceType;
+        NewParsedArgs;
 import 'abstract_command.dart';
 import 'builtin_global_option.dart';
 import 'command_context.dart';
@@ -399,7 +399,7 @@ class CommandRunner<O extends OptionDefinition, T>
   FutureOr<T?> _runNested(
     final CommandContext<OptionDefinition, T> context,
   ) {
-    final actionOption = _specifiedActionOptions(context).firstOrNull;
+    final actionOption = context.specifiedActionOptions().firstOrNull;
     if (actionOption != null) {
       return context.command.runCommand(
         context,
@@ -455,51 +455,6 @@ class CommandRunner<O extends OptionDefinition, T>
 /// This is the protocol of Cobra's `__complete` command, which is understood
 /// by third-party completion engines such as Carapace.
 const String _completeRequestCommand = '__complete';
-
-/// ActionOptionMixin can be added to an option definition to make CommandRunner
-/// run it as an "action option" when it is specified on the command line.
-mixin ActionOptionMixin {
-  /// Whether this action option accepts a partial command line,
-  /// i.e. runs even if the command line is incomplete.
-  ///
-  /// True by default for action options.
-  ///
-  /// {@macro acceptsPartialCommandLine}
-  bool get acceptsPartialCommandLine => true;
-
-  /// Runs this action option.
-  /// [context] is the context of the command that defined this action option.
-  FutureOr<R?> run<O extends OptionDefinition, R>(
-    final CommandContext<O, R> context,
-  );
-}
-
-ActionOptionMixin? specifiedActionOption(final CommandContext contexts) {
-  CommandContext? context = contexts;
-  while (context != null) {
-    final actionOption = _specifiedActionOptions(context).firstOrNull;
-    if (actionOption != null) return actionOption;
-    context = context.next;
-  }
-  return null;
-}
-
-List<ActionOptionMixin> _specifiedActionOptions(
-  final CommandContext context,
-) {
-  final allArgOptions = [
-    ...context.config.optionsWhereSource(
-      (final ValueSourceType s) => s == ValueSourceType.arg,
-    ),
-    ...context.builtinConfig.optionsWhereSource(
-      (final ValueSourceType s) => s == ValueSourceType.arg,
-    ),
-  ];
-  return allArgOptions
-      .map((final option) => option.option)
-      .whereType<ActionOptionMixin>()
-      .toList();
-}
 
 class OriginalCommandLine {
   final List<String> args;

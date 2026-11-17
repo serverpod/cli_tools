@@ -1,9 +1,9 @@
 import 'dart:async' show FutureOr;
 
-import '../config/config.dart'
+import '../../config.dart'
     show ConfigOptionBase, EnumOption, EnumParser, FlagOption, OptionDefinition;
+import 'action_option.dart';
 import 'command_context.dart';
-import 'command_runner.dart' show ActionOptionMixin;
 import 'completion/completion.dart' show printCompletionScript;
 import 'completion/completion_shell.dart' show CompletionShell;
 import 'help_command.dart' show printCommandUsage;
@@ -23,7 +23,7 @@ enum BuiltinGlobalOption<V extends Object> implements OptionDefinition<V> {
   final ConfigOptionBase<V> option;
 }
 
-class HelpActionOption extends FlagOption with ActionOptionMixin {
+class HelpActionOption extends FlagOption with ActionOptionMixin<bool> {
   const HelpActionOption()
     : super(
         argName: 'help',
@@ -42,7 +42,7 @@ class HelpActionOption extends FlagOption with ActionOptionMixin {
 }
 
 class CompletionActionOption extends EnumOption<CompletionShell>
-    with ActionOptionMixin {
+    with ActionOptionMixin<CompletionShell> {
   const CompletionActionOption()
     : super(
         enumParser: const EnumParser(CompletionShell.values),

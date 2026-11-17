@@ -1,7 +1,7 @@
 import 'dart:async' show FutureOr;
 
+import '../../config.dart' show OptionDefinition;
 import '../../middleware.dart';
-import '../config/config.dart' show OptionDefinition;
 import 'command_context.dart';
 
 typedef CommandHandler<O extends OptionDefinition, T> =

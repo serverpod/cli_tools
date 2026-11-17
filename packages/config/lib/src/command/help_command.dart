@@ -2,7 +2,7 @@ import 'dart:async' show FutureOr;
 
 import 'package:collection/collection.dart';
 
-import '../config/config.dart'
+import '../../config.dart'
     show OptionDefinition, CommandUsageDefinition, CommandAliasesDefinition;
 import 'abstract_command.dart' show AbstractCommand;
 import 'command.dart' show Command;

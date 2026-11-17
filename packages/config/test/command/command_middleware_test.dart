@@ -1426,6 +1426,48 @@ void main() {
     });
   });
 
+  group('Given an action option enum that is itself the action', () {
+    late List<String> trace;
+    late CommandRunner<OptionDefinition, String> runner;
+
+    setUp(() {
+      trace = [];
+      _enumActionTrace = trace;
+      runner = CommandRunner<OptionDefinition, String>(
+        'tool',
+        'Tools',
+        globalOptions: [_EnumVersionOption.version],
+        subcommands: [
+          RecordingCommand<OptionDefinition>(
+            name: 'project',
+            description: 'Manage projects',
+            trace: trace,
+          ),
+        ],
+      );
+    });
+
+    tearDown(() {
+      _enumActionTrace = null;
+    });
+
+    group('when --version is passed', () {
+      late String? result;
+
+      setUp(() async {
+        result = await runner.run(['--version', 'project']);
+      });
+
+      test('then that enum runs and the subcommand does not', () {
+        expect(trace, ['enum-version']);
+      });
+
+      test('then the runner returns the enum action result', () {
+        expect(result, 'enum-version');
+      });
+    });
+  });
+
   group('Given an action option defined on a leaf command', () {
     late List<String> trace;
     late CommandRunner<OptionDefinition, String> runner;
@@ -1496,7 +1538,26 @@ CommandMiddleware<O, String> _traceMiddleware<O extends OptionDefinition>(
   };
 }
 
-class _VersionAction extends FlagOption with ActionOptionMixin {
+List<String>? _enumActionTrace;
+
+enum _EnumVersionOption<V extends Object> with ActionOptionMixin<V> {
+  version(FlagOption(argName: 'version', negatable: false));
+
+  const _EnumVersionOption(this.option);
+
+  @override
+  final ConfigOptionBase<V> option;
+
+  @override
+  FutureOr<R?> run<O extends OptionDefinition, R>(
+    final CommandContext<O, R> context,
+  ) {
+    _enumActionTrace?.add('enum-version');
+    return 'enum-version' as R?;
+  }
+}
+
+class _VersionAction extends FlagOption with ActionOptionMixin<bool> {
   _VersionAction(this.trace) : super(argName: 'version', negatable: false);
 
   final List<String> trace;
