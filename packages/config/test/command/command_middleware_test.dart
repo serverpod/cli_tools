@@ -1496,7 +1496,7 @@ CommandMiddleware<O, String> _traceMiddleware<O extends OptionDefinition>(
   };
 }
 
-class _VersionAction extends FlagOption with ActionOptionMixin {
+class _VersionAction extends FlagOption with ActionOptionMixin<bool> {
   _VersionAction(this.trace) : super(argName: 'version', negatable: false);
 
   final List<String> trace;

@@ -92,7 +92,7 @@ Future<void> main(final List<String> args) async {
 }
 
 /// `--version` / `-v`: prints the version instead of running a subcommand.
-class VersionActionOption extends FlagOption with ActionOptionMixin {
+class VersionActionOption extends FlagOption with ActionOptionMixin<bool> {
   /// Creates the version action option.
   const VersionActionOption()
     : super(

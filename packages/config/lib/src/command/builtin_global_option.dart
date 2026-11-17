@@ -23,7 +23,7 @@ enum BuiltinGlobalOption<V extends Object> implements OptionDefinition<V> {
   final ConfigOptionBase<V> option;
 }
 
-class HelpActionOption extends FlagOption with ActionOptionMixin {
+class HelpActionOption extends FlagOption with ActionOptionMixin<bool> {
   const HelpActionOption()
     : super(
         argName: 'help',
@@ -42,7 +42,7 @@ class HelpActionOption extends FlagOption with ActionOptionMixin {
 }
 
 class CompletionActionOption extends EnumOption<CompletionShell>
-    with ActionOptionMixin {
+    with ActionOptionMixin<CompletionShell> {
   const CompletionActionOption()
     : super(
         enumParser: const EnumParser(CompletionShell.values),

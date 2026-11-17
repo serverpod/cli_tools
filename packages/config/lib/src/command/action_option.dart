@@ -5,7 +5,10 @@ import 'command_context.dart';
 
 /// ActionOptionMixin can be added to an option definition to make CommandRunner
 /// run it as an "action option" when it is specified on the command line.
-mixin ActionOptionMixin {
+///
+/// As a convenience, access the full option object via the inherited [option]
+/// getter.
+mixin ActionOptionMixin<V> implements OptionDefinition<V> {
   /// Whether this action option accepts a partial command line,
   /// i.e. runs even if the command line is incomplete.
   ///
