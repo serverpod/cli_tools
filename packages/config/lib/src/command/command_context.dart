@@ -101,7 +101,7 @@ class CommandContext<O extends OptionDefinition, T> {
       ),
     ];
     return allArgOptions
-        .map((final option) => option.option)
+        .map((final o) => o is ActionOptionMixin ? o : o.option)
         .whereType<ActionOptionMixin>()
         .toList();
   }
