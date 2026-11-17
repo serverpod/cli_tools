@@ -1,3 +1,5 @@
+import 'dart:async' show FutureOr;
+
 import 'package:config/command.dart';
 import 'package:config/config.dart';
 import 'package:test/test.dart';
@@ -1322,6 +1324,190 @@ void main() {
       });
     },
   );
+
+  group('Given an action option defined on the runner', () {
+    late List<String> trace;
+    late CommandRunner<OptionDefinition, String> runner;
+
+    setUp(() {
+      trace = [];
+      runner = CommandRunner<OptionDefinition, String>(
+        'tool',
+        'Tools',
+        globalOptions: [_VersionAction(trace)],
+        middlewares: [_traceMiddleware(trace, 'root')],
+        subcommands: [
+          RecordingCommand<OptionDefinition>(
+            name: 'project',
+            description: 'Manage projects',
+            trace: trace,
+            middlewares: [_traceMiddleware(trace, 'project')],
+          ),
+        ],
+      );
+    });
+
+    group('when --version precedes a subcommand', () {
+      late String? result;
+
+      setUp(() async {
+        result = await runner.run(['--version', 'project']);
+      });
+
+      test(
+        'then middleware runs through the runner '
+        'and the subcommand does not run',
+        () {
+          expect(trace, [
+            'root-before',
+            'version',
+            'root-after',
+          ]);
+        },
+      );
+
+      test('then the runner returns the wrapped action result', () {
+        expect(result, 'root:version');
+      });
+    });
+  });
+
+  group('Given an action option defined on a branch command', () {
+    late List<String> trace;
+    late CommandRunner<OptionDefinition, String> runner;
+
+    setUp(() {
+      trace = [];
+      final list = RecordingCommand<OptionDefinition>(
+        name: 'list',
+        description: 'List projects',
+        trace: trace,
+        middlewares: [_traceMiddleware(trace, 'list')],
+      );
+      final project = CommandImpl.branch<OptionDefinition, String>(
+        name: 'project',
+        description: 'Manage projects',
+        persistentOptions: [_VersionAction(trace)],
+        middlewares: [_traceMiddleware(trace, 'project')],
+        subcommands: [list],
+      );
+      runner = CommandRunner<OptionDefinition, String>(
+        'tool',
+        'Tools',
+        middlewares: [_traceMiddleware(trace, 'root')],
+        subcommands: [project],
+      );
+    });
+
+    group('when --version follows a nested subcommand', () {
+      late String? result;
+
+      setUp(() async {
+        result = await runner.run(['project', 'list', '--version']);
+      });
+
+      test(
+        'then middleware runs through the branch '
+        'and the nested command does not run',
+        () {
+          expect(trace, [
+            'root-before',
+            'project-before',
+            'version',
+            'project-after',
+            'root-after',
+          ]);
+        },
+      );
+
+      test('then the runner returns the wrapped action result', () {
+        expect(result, 'root:project:version');
+      });
+    });
+  });
+
+  group('Given an action option defined on a leaf command', () {
+    late List<String> trace;
+    late CommandRunner<OptionDefinition, String> runner;
+
+    setUp(() {
+      trace = [];
+      final list = RecordingCommand<OptionDefinition>(
+        name: 'list',
+        description: 'List projects',
+        trace: trace,
+        options: [_VersionAction(trace)],
+        middlewares: [_traceMiddleware(trace, 'list')],
+      );
+      final project = RecordingCommand<OptionDefinition>(
+        name: 'project',
+        description: 'Manage projects',
+        trace: trace,
+        middlewares: [_traceMiddleware(trace, 'project')],
+        subcommands: [list],
+      );
+      runner = CommandRunner<OptionDefinition, String>(
+        'tool',
+        'Tools',
+        middlewares: [_traceMiddleware(trace, 'root')],
+        subcommands: [project],
+      );
+    });
+
+    group('when --version is passed to that command', () {
+      late String? result;
+
+      setUp(() async {
+        result = await runner.run(['project', 'list', '--version']);
+      });
+
+      test(
+        'then middleware runs through the leaf '
+        'and the leaf command does not run',
+        () {
+          expect(trace, [
+            'root-before',
+            'project-before',
+            'list-before',
+            'version',
+            'list-after',
+            'project-after',
+            'root-after',
+          ]);
+        },
+      );
+
+      test('then the runner returns the wrapped action result', () {
+        expect(result, 'root:project:list:version');
+      });
+    });
+  });
+}
+
+CommandMiddleware<O, String> _traceMiddleware<O extends OptionDefinition>(
+  final List<String> trace,
+  final String label,
+) {
+  return (final next) => (final context) {
+    trace.add('$label-before');
+    final result = next(context);
+    trace.add('$label-after');
+    return '$label:$result';
+  };
+}
+
+class _VersionAction extends FlagOption with ActionOptionMixin {
+  _VersionAction(this.trace) : super(argName: 'version', negatable: false);
+
+  final List<String> trace;
+
+  @override
+  FutureOr<R?> run<O extends OptionDefinition, R>(
+    final CommandContext<O, R> context,
+  ) {
+    trace.add('version');
+    return 'version' as R?;
+  }
 }
 
 class _MarkerProvider implements ContextProvider {
