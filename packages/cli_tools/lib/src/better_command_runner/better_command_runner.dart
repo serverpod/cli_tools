@@ -49,6 +49,7 @@ typedef SetLogLevel =
 /// A function type for tracking events.
 typedef OnAnalyticsEvent =
     void Function(
+      CommandContext? context,
       String event,
       Map<String, dynamic> properties,
     );
@@ -167,11 +168,13 @@ class BetterCommandRunner<O extends OptionDefinition, T>
        ) {
     this.usageOutput.addUsageExceptionHandler(
       UsageExceptions.simpleHandler(
-        (_, _, _) => sendAnalyticsEvent('invalid'),
+        (_, _, _) => sendAnalyticsEvent(null, 'invalid'),
       ),
     );
+
     final analyticsPropertiesBuilder =
         buildAnalyticsProperties ?? buildCommandLinePropertiesForAnalytics;
+
     addMiddleware(
       Middlewares.onBeforeRun((final ctx) async {
         final analyticsEnabled = await determineAnalyticsSettings(ctx);
@@ -183,12 +186,14 @@ class BetterCommandRunner<O extends OptionDefinition, T>
               ctx.next?.command.name ??
               ctx.command.name;
           return sendAnalyticsEvent(
+            ctx,
             commandName,
             analyticsPropertiesBuilder(ctx),
           );
         }
       }),
     );
+
     addMiddleware(
       Middlewares.onBeforeRun(
         (final ctx) => setLogLevel?.call(
@@ -197,6 +202,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
         ),
       ),
     );
+
     if (onBeforeRunCommand case final OnBeforeRunCommand onBeforeRun) {
       addMiddleware(Middlewares.onBeforeRun((final ctx) => onBeforeRun(this)));
     }
@@ -221,6 +227,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     );
   }
 
+  /// Bridges the legacy [MessageOutput] to the new [UsageOutputHandler].
   static UsageOutputHandler _makeUsageOutputHandler(
     final UsageOutputHandler? usageOutput,
     final MessageOutput? messageOutput,
@@ -245,6 +252,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
 
   /// The [MessageOutput] for the command runner.
   /// It is also used for the commands unless they have their own.
+  @Deprecated('See usageOutput instead')
   MessageOutput? get messageOutput => _messageOutput;
 
   /// Adds a list of commands to the command runner.
@@ -263,15 +271,22 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   OnAnalyticsEvent? get onAnalyticsEvent => _onAnalyticsEvent;
 
   /// Sends an analytics event, provided the analytics are enabled.
-  /// Invoked from BetterCommandRunner upon command execution
-  /// with the event name, or command name if applicable.
-  /// Can be overridden to customize the event sending behavior.
+  /// On configuration resolution errors it is invoked with a null context,
+  /// on command execution it is invoked with the context.
+  ///
+  /// It calls the [onAnalyticsEvent] callback with the event name, or command
+  /// name if applicable, and silently ignores any errors thrown by the callback.
+  ///
+  /// Can be overridden to customize this error handling behavior.
+  /// For modifying event sending behavior it is recommended to adapt the
+  /// [onAnalyticsEvent] callback.
   void sendAnalyticsEvent(
+    final CommandContext? context,
     final String event, [
     final Map<String, dynamic> properties = const {},
   ]) {
     try {
-      onAnalyticsEvent?.call(event, properties);
+      onAnalyticsEvent?.call(context, event, properties);
     } catch (_) {
       // Silently ignore analytics sending errors to not disrupt the main flow
     }

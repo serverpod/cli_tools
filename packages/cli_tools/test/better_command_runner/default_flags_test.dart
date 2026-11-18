@@ -6,7 +6,7 @@ void main() {
     final runner = BetterCommandRunner(
       'test',
       'test description',
-      onAnalyticsEvent: (final event, final _) {},
+      onAnalyticsEvent: (final _, final _, final _) {},
       messageOutput: const MessageOutput(),
     );
 

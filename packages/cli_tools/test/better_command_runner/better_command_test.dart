@@ -61,7 +61,7 @@ void main() {
     final runner = BetterCommandRunner(
       'test',
       'test project',
-      onAnalyticsEvent: (final e, final _) => analyticsEvents.add(e),
+      onAnalyticsEvent: (final _, final e, final _) => analyticsEvents.add(e),
       messageOutput: messageOutput,
     )..addCommand(betterCommand);
 
@@ -153,7 +153,7 @@ void main() {
     final runner = BetterCommandRunner(
       'test',
       'test project',
-      onAnalyticsEvent: (final e, final _) => analyticsEvents.add(e),
+      onAnalyticsEvent: (final _, final e, final _) => analyticsEvents.add(e),
       globalOptions: <OptionDefinition>[],
       messageOutput: messageOutput,
     )..addCommand(betterCommand);

@@ -102,7 +102,7 @@ void main() {
       runner = BetterCommandRunner(
         'test',
         'this is a test cli',
-        onAnalyticsEvent: (final event, final properties) {},
+        onAnalyticsEvent: (final _, final _, final _) {},
         messageOutput: const MessageOutput(),
       );
       await runner.run(const [], provider: provider);
@@ -124,7 +124,7 @@ void main() {
       runner = BetterCommandRunner(
         'test',
         'this is a test cli',
-        onAnalyticsEvent: (final event, final _) => events.add(event),
+        onAnalyticsEvent: (final _, final event, final _) => events.add(event),
         messageOutput: const MessageOutput(),
       );
     });
@@ -238,7 +238,7 @@ void main() {
       runner = BetterCommandRunner(
         'test',
         'this is a test cli',
-        onAnalyticsEvent: (final event, final _) => events.add(event),
+        onAnalyticsEvent: (final _, final event, final _) => events.add(event),
         messageOutput: const MessageOutput(),
       )..addCommand(MockCommand());
     });
@@ -300,7 +300,7 @@ void main() {
         runner = BetterCommandRunner(
           'test',
           'this is a test cli',
-          onAnalyticsEvent: (final event, final _) => events.add(event),
+          onAnalyticsEvent: (final _, final event, final _) => events.add(event),
           messageOutput: const MessageOutput(),
           completion: CompletionSettings(
             exitAfterResponse: false,
@@ -330,7 +330,7 @@ void main() {
       runner = BetterCommandRunner(
         'test',
         'this is a test cli',
-        onAnalyticsEvent: (final event, final _) => events.add(event),
+        onAnalyticsEvent: (final _, final event, final _) => events.add(event),
         messageOutput: const MessageOutput(),
       )..addCommand(command);
     });
