@@ -20,7 +20,8 @@ import 'options.dart';
 /// UTC.
 ///
 /// When [dateOnly] is true, a time part is rejected. The result is local
-/// midnight on that calendar date.
+/// midnight on that calendar date. A local midnight that falls on a different
+/// calendar day, which can happen when a time zone skips that day, is rejected.
 class DateTimeParser extends ValueParser<DateTime> {
   /// When true, only a calendar date is accepted.
   final bool dateOnly;
@@ -103,6 +104,15 @@ class DateTimeParser extends ValueParser<DateTime> {
             millisecond,
             microsecond,
           );
+    if (dateOnly &&
+        (parsed.year != year || parsed.month != month || parsed.day != day)) {
+      throw FormatException(
+        _invalid(
+          value,
+          'that calendar date does not exist in the local time zone',
+        ),
+      );
+    }
     if (!hasZone || zoneSign == null || (zoneHour == 0 && zoneMinute == 0)) {
       return parsed;
     }
@@ -253,8 +263,12 @@ class DateTimeParser extends ValueParser<DateTime> {
 /// instants. A parsed value with no offset is local, and one with `Z` or
 /// a numeric offset is UTC.
 ///
-/// Set [dateOnly] to accept only a calendar date. The value help then
-/// describes that date (`YYYY-MM-DD`) instead of a timestamp.
+/// Set [dateOnly] to accept only a calendar date. The value is local
+/// midnight on that date, including a typed default or configuration value:
+/// its year, month, and day are kept and the time of day is not part of the
+/// value. Allowed values match on that calendar date, so a UTC date and a
+/// local date on the same day are the same choice. The value help then
+/// describes the date (`YYYY-MM-DD`) instead of a timestamp.
 class DateTimeOption extends ComparableValueOption<DateTime> {
   /// When true, only a calendar date (`YYYY-MM-DD`) is accepted.
   final bool dateOnly;
@@ -289,6 +303,40 @@ class DateTimeOption extends ComparableValueOption<DateTime> {
          valueHelp:
              valueHelp ?? (dateOnly ? 'YYYY-MM-DD' : 'YYYY-MM-DDTHH:MM:SSZ'),
        );
+
+  /// Date-only allowed values are calendar dates. A UTC midnight and the
+  /// local midnight of the same day are the same choice, which is also what
+  /// completion offers.
+  @override
+  bool allowsValue(final DateTime value) {
+    if (!dateOnly) return super.allowsValue(value);
+    final allowed = allowedValues;
+    if (allowed == null) return true;
+    return allowed.any(
+      (final candidate) =>
+          candidate.year == value.year &&
+          candidate.month == value.month &&
+          candidate.day == value.day,
+    );
+  }
+
+  /// A date-only value is local midnight on its calendar date.
+  ///
+  /// Throws [FormatException] when that local midnight would fall on a
+  /// different day.
+  @override
+  DateTime canonicalize(final DateTime value) {
+    if (!dateOnly) return value;
+    final local = DateTime(value.year, value.month, value.day);
+    if (local.year != value.year ||
+        local.month != value.month ||
+        local.day != value.day) {
+      throw FormatException(
+        '${valueParser.format(value)} does not exist in the local time zone',
+      );
+    }
+    return local;
+  }
 }
 
 /// The time units supported by the [DurationParser].

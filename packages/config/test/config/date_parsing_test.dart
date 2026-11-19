@@ -233,6 +233,32 @@ void main() {
     test('when formatting then only the calendar date is shown', () {
       expect(parser.format(DateTime.utc(2026, 8, 1, 15)), '2026-08-01');
     });
+
+    test(
+      'when local midnight falls on another day then the date is rejected',
+      () {
+        // Samoa skipped 2011-12-30. Other zones still have that midnight.
+        const input = '2011-12-30';
+        final local = DateTime(2011, 12, 30);
+        final shifted =
+            local.year != 2011 || local.month != 12 || local.day != 30;
+        if (!shifted) {
+          expect(parser.parse(input), local);
+          return;
+        }
+        expect(
+          () => parser.parse(input),
+          throwsA(
+            isA<FormatException>().having(
+              (final e) => e.message,
+              'message',
+              'Invalid date "$input": '
+                  'that calendar date does not exist in the local time zone',
+            ),
+          ),
+        );
+      },
+    );
   });
 
   group('Given a DateTimeOption', () {
@@ -334,6 +360,126 @@ void main() {
         'Invalid value for option `before` <YYYY-MM-DDTHH:MM:SSZ>: '
             '2026-08-02T00:00:00 is above the maximum '
             '(2026-08-01T00:00:00Z)',
+      ]);
+    });
+  });
+
+  group('Given a timestamp option with a default time', () {
+    final option = DateTimeOption(
+      argName: 'before',
+      defaultsTo: DateTime.utc(2026, 8, 1, 15),
+    );
+
+    test('when resolving with no arguments then the time is kept', () {
+      final config = Configuration.resolve(
+        options: [option],
+        args: const [],
+      );
+      expect(config.value(option), DateTime.utc(2026, 8, 1, 15));
+    });
+  });
+
+  group('Given a date-only option', () {
+    final on = DateTimeOption(
+      argName: 'on',
+      dateOnly: true,
+      defaultsTo: DateTime.utc(2026, 8, 1, 15),
+    );
+
+    test(
+      'when the default has a time then the value is that calendar date',
+      () {
+        final config = Configuration.resolve(
+          options: [on],
+          args: const [],
+        );
+        expect(config.value(on), DateTime(2026, 8, 1));
+      },
+    );
+
+    test(
+      'when the default is local midnight then the value is that midnight',
+      () {
+        final option = DateTimeOption(
+          argName: 'on',
+          dateOnly: true,
+          defaultsTo: DateTime(2026, 8, 1),
+        );
+        final config = Configuration.resolve(
+          options: [option],
+          args: const [],
+        );
+        expect(config.value(option), DateTime(2026, 8, 1));
+      },
+    );
+
+    test(
+      'when the default calendar date does not exist locally '
+      'then it is rejected',
+      () {
+        // Samoa skipped 2011-12-30. Other zones still have that midnight.
+        final local = DateTime(2011, 12, 30);
+        final shifted =
+            local.year != 2011 || local.month != 12 || local.day != 30;
+        final option = DateTimeOption(
+          argName: 'on',
+          dateOnly: true,
+          defaultsTo: DateTime.utc(2011, 12, 30),
+        );
+        final config = Configuration.resolveNoExcept(
+          options: [option],
+          args: const [],
+        );
+        if (!shifted) {
+          expect(config.value(option), DateTime(2011, 12, 30));
+          return;
+        }
+        expect(config.errors, [
+          'Invalid value for option `on` <YYYY-MM-DD>: '
+              '2011-12-30 does not exist in the local time zone',
+        ]);
+      },
+    );
+  });
+
+  group('Given a date-only option with allowed dates', () {
+    final on = DateTimeOption(
+      argName: 'on',
+      dateOnly: true,
+      mandatory: true,
+      allowedValues: [
+        DateTime.utc(2026, 8, 1),
+        DateTime(2026, 9, 1),
+      ],
+    );
+
+    test(
+      'when passed the calendar date of a UTC entry then it is accepted',
+      () {
+        final config = Configuration.resolve(
+          options: [on],
+          args: ['--on', '2026-08-01'],
+        );
+        expect(config.value(on), DateTime(2026, 8, 1));
+      },
+    );
+
+    test('when passed a local-midnight entry then it is accepted', () {
+      final config = Configuration.resolve(
+        options: [on],
+        args: ['--on', '2026-09-01'],
+      );
+      expect(config.value(on), DateTime(2026, 9, 1));
+    });
+
+    test('when passed another calendar date then it is rejected', () {
+      final config = Configuration.resolveNoExcept(
+        options: [on],
+        args: ['--on', '2026-10-01'],
+      );
+      expect(config.errors, [
+        'Invalid value for option `on` <YYYY-MM-DD>: '
+            '`2026-10-01 00:00:00.000` is not an allowed value for option `on`',
       ]);
     });
   });

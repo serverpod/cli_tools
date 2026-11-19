@@ -53,6 +53,19 @@ Future<CompletionResult> complete(final OptionDefinition option) async {
 }
 
 void main() {
+  group('Given a date-only option with a UTC allowed value', () {
+    final option = DateTimeOption(
+      argName: 'on',
+      dateOnly: true,
+      allowedValues: [DateTime.utc(2026, 8, 1)],
+    );
+
+    test('when completing then the calendar date is offered', () async {
+      final result = await complete(option);
+      expect(result.candidates, [const CompletionCandidate('2026-08-01')]);
+    });
+  });
+
   group('Given a StringOption without allowed values', () {
     const option = StringOption(argName: 'name');
 
