@@ -220,6 +220,54 @@ void main() {
       expect(parse(['nope']).errors, ['Unknown subcommand: "nope"']);
     });
 
+    test(
+      'when an unknown subcommand is followed by an unknown option '
+      'then the subcommand error is recorded first',
+      () {
+        expect(parse(['nope', '--missing']).errors, [
+          'Unknown subcommand: "nope"',
+          'Unknown option: --missing',
+        ]);
+      },
+    );
+
+    test(
+      'when an unknown subcommand is followed by an unknown short option '
+      'then both errors are recorded',
+      () {
+        expect(parse(['nope', '-q']).errors, [
+          'Unknown subcommand: "nope"',
+          'Unknown option: -q',
+        ]);
+      },
+    );
+
+    test(
+      'when an unknown option is followed by an unknown subcommand '
+      'then the subcommand error is still recorded',
+      () {
+        expect(parse(['--missing', 'nope']).errors, [
+          'Unknown option: --missing',
+          'Unknown subcommand: "nope"',
+        ]);
+      },
+    );
+
+    test(
+      "when a misspelled nested command is followed by that command's option "
+      'then the subcommand error is recorded before the option error',
+      () {
+        expect(
+          childResult(parse(['mid', 'leave', '--output', 'file'])).errors,
+          [
+            'Unknown subcommand: "leave" (Did you mean leaf?)',
+            'Unknown option: --output',
+            'Unknown subcommand: "file"',
+          ],
+        );
+      },
+    );
+
     test('when a nested word is unknown then the error is on that command', () {
       expect(
         childResult(parse(['mid', 'nope'])).errors,

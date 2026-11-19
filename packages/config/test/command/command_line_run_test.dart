@@ -93,6 +93,77 @@ void main() {
       });
     });
 
+    group(
+      'when an unrecognized subcommand is followed by an invalid option',
+      () {
+        late UsageException? error;
+
+        setUp(() async {
+          error = await _captureUsageError(
+            () => runner.run(['wrong-subcommand', '--wrong-option']),
+          );
+        });
+
+        test('then the subcommand error is shown before the option error', () {
+          expect(
+            error?.message,
+            'tool: Unknown subcommand: "wrong-subcommand"\n'
+            'tool: Unknown option: --wrong-option.',
+          );
+        });
+
+        test('then no command runs', () {
+          expect(trace, isEmpty);
+        });
+      },
+    );
+
+    group(
+      'when an invalid option precedes an unrecognized subcommand',
+      () {
+        late UsageException? error;
+
+        setUp(() async {
+          error = await _captureUsageError(
+            () => runner.run(['--wrong-option', 'wrong-subcommand']),
+          );
+        });
+
+        test('then both errors are shown', () {
+          expect(
+            error?.message,
+            'tool: Unknown option: --wrong-option.\n'
+            'tool: Unknown subcommand: "wrong-subcommand"',
+          );
+        });
+
+        test('then no command runs', () {
+          expect(trace, isEmpty);
+        });
+      },
+    );
+
+    group(
+      'when a misspelled subcommand is followed by an unknown short option',
+      () {
+        late UsageException? error;
+
+        setUp(() async {
+          error = await _captureUsageError(
+            () => runner.run(['biuld', '-x']),
+          );
+        });
+
+        test('then the subcommand error is shown before the option error', () {
+          expect(
+            error?.message,
+            'tool: Unknown subcommand: "biuld" (Did you mean build?)\n'
+            'tool: Unknown option: -x.',
+          );
+        });
+      },
+    );
+
     group('when the leaf command receives an extra positional argument', () {
       late UsageException? error;
 
@@ -113,6 +184,58 @@ void main() {
         expect(trace, isEmpty);
       });
     });
+  });
+
+  group('Given a build command that accepts an output option', () {
+    late List<String> trace;
+    late TracingRunner runner;
+
+    setUp(() {
+      trace = [];
+      runner = TracingRunner(
+        trace,
+        usageOutput: noUsageErrorOutput,
+        subcommands: [
+          RecordingCommand(
+            name: 'build',
+            description: 'Build the app',
+            trace: trace,
+            options: const [
+              StringOption(argName: 'output'),
+            ],
+          ),
+        ],
+      );
+    });
+
+    group(
+      'when the subcommand is misspelled and that option is passed',
+      () {
+        late UsageException? error;
+
+        setUp(() async {
+          error = await _captureUsageError(
+            () => runner.run(['biuld', '--output', 'app']),
+          );
+        });
+
+        test(
+          'then the subcommand error is shown before the option error',
+          () {
+            expect(
+              error?.message,
+              'tool: Unknown subcommand: "biuld" (Did you mean build?)\n'
+              'tool: Unknown option: --output.\n'
+              'tool: Unknown subcommand: "app"',
+            );
+          },
+        );
+
+        test('then no command runs', () {
+          expect(trace, isEmpty);
+        });
+      },
+    );
   });
 
   group('Given a runner that can run as a leaf', () {
