@@ -16,7 +16,13 @@ class StringParser extends ValueParser<String> {
 }
 
 /// String value configuration option.
+///
+/// If [requireNonEmpty] is true and the input is an empty string,
+/// the validation throws a [FormatException].
 class StringOption extends ConfigOptionBase<String> {
+  /// When true, an empty string is rejected as an invalid value.
+  final bool requireNonEmpty;
+
   const StringOption({
     super.argName,
     super.argAliases,
@@ -28,6 +34,7 @@ class StringOption extends ConfigOptionBase<String> {
     super.fromCustom,
     super.fromDefault,
     super.defaultsTo,
+    super.defaultValueHelp,
     super.helpText,
     super.valueHelp,
     super.allowedHelp,
@@ -36,9 +43,20 @@ class StringOption extends ConfigOptionBase<String> {
     super.customValidator,
     super.mandatory,
     super.hide,
+    this.requireNonEmpty = false,
   }) : super(
          valueParser: const StringParser(),
        );
+
+  @override
+  @mustCallSuper
+  void validateValue(final String value) {
+    super.validateValue(value);
+
+    if (requireNonEmpty && value.isEmpty) {
+      throw const FormatException('Value must not be empty');
+    }
+  }
 }
 
 /// Convenience class for multi-value configuration option for strings.
@@ -54,6 +72,7 @@ class MultiStringOption extends MultiOption<String> {
     super.fromCustom,
     super.fromDefault,
     super.defaultsTo,
+    super.defaultValueHelp,
     super.helpText,
     super.valueHelp,
     super.allowedHelp,
@@ -77,6 +96,7 @@ class MultiStringOption extends MultiOption<String> {
     super.fromCustom,
     super.fromDefault,
     super.defaultsTo,
+    super.defaultValueHelp,
     super.helpText,
     super.valueHelp,
     super.allowedHelp,
@@ -144,6 +164,7 @@ class EnumOption<E extends Enum> extends ConfigOptionBase<E> {
     super.fromCustom,
     super.fromDefault,
     super.defaultsTo,
+    super.defaultValueHelp,
     super.helpText,
     super.valueHelp,
     super.allowedHelp,
@@ -192,6 +213,7 @@ class ComparableValueOption<V extends Comparable> extends ConfigOptionBase<V> {
     super.fromCustom,
     super.fromDefault,
     super.defaultsTo,
+    super.defaultValueHelp,
     super.helpText,
     super.valueHelp,
     super.allowedHelp,
@@ -210,20 +232,31 @@ class ComparableValueOption<V extends Comparable> extends ConfigOptionBase<V> {
     super.validateValue(value);
 
     final mininum = min;
-    if (mininum != null && value.compareTo(mininum) < 0) {
+    if (mininum != null && valueIsBelow(value, mininum)) {
       throw FormatException(
         '${valueParser.format(value)} is below the minimum '
         '(${valueParser.format(mininum)})',
       );
     }
     final maximum = max;
-    if (maximum != null && value.compareTo(maximum) > 0) {
+    if (maximum != null && valueIsAbove(value, maximum)) {
       throw FormatException(
         '${valueParser.format(value)} is above the maximum '
         '(${valueParser.format(maximum)})',
       );
     }
   }
+
+  /// Whether [value] is ordered before [limit].
+  ///
+  /// [DoubleOption] uses numeric comparison so that `-0.0` and `0.0`,
+  /// which compare equal, are both inside a bound of zero.
+  @protected
+  bool valueIsBelow(final V value, final V limit) => value.compareTo(limit) < 0;
+
+  /// Whether [value] is ordered after [limit].
+  @protected
+  bool valueIsAbove(final V value, final V limit) => value.compareTo(limit) > 0;
 }
 
 class IntParser extends ValueParser<int> {
@@ -250,6 +283,7 @@ class IntOption extends ComparableValueOption<int> {
     super.fromCustom,
     super.fromDefault,
     super.defaultsTo,
+    super.defaultValueHelp,
     super.helpText,
     super.valueHelp = 'integer',
     super.allowedHelp,
@@ -263,198 +297,68 @@ class IntOption extends ComparableValueOption<int> {
   }) : super(valueParser: const IntParser());
 }
 
-/// Parses a date string into a [DateTime] object.
-/// Throws [FormatException] if parsing failed.
-///
-/// This implementation is more forgiving than [DateTime.parse].
-/// In addition to the standard T and space separators between
-/// date and time it also allows \[-_/:t\].
-class DateTimeParser extends ValueParser<DateTime> {
-  const DateTimeParser();
+class DoubleParser extends ValueParser<double> {
+  const DoubleParser();
 
   @override
-  DateTime parse(final String value) {
-    final val = DateTime.tryParse(value);
-    if (val != null) return val;
-    if (value.length >= 11 && '-_/:t'.contains(value[10])) {
-      final val = DateTime.tryParse(
-        '${value.substring(0, 10)}T${value.substring(11)}',
+  double parse(final String value) {
+    return double.parse(value);
+  }
+}
+
+/// Floating-point value configuration option.
+///
+/// Supports minimum and maximum range checking.
+/// An integer string such as `1` is parsed as `1.0`. A whole number stored
+/// as an integer by a configuration file is the same value.
+///
+/// `NaN` is rejected when [min] or [max] is set, because it is not ordered
+/// relative to a bound. `-0.0` is inside a bound of `0.0`.
+class DoubleOption extends ComparableValueOption<double> {
+  const DoubleOption({
+    super.argName,
+    super.argAliases,
+    super.argAbbrev,
+    super.argPos,
+    super.envName,
+    super.configKey,
+    super.configKeys,
+    super.fromCustom,
+    super.fromDefault,
+    super.defaultsTo,
+    super.defaultValueHelp,
+    super.helpText,
+    super.valueHelp = 'number',
+    super.allowedHelp,
+    super.group,
+    super.allowedValues,
+    super.customValidator,
+    super.mandatory,
+    super.hide,
+    super.min,
+    super.max,
+  }) : super(valueParser: const DoubleParser());
+
+  /// JSON and YAML store whole numbers as integers.
+  @override
+  double? valueFromConfig(final Object value) {
+    if (value is int) return value.toDouble();
+    return super.valueFromConfig(value);
+  }
+
+  @override
+  void validateValue(final double value) {
+    if (value.isNaN && (min != null || max != null)) {
+      throw FormatException(
+        '${valueParser.format(value)} is not a valid number',
       );
-      if (val != null) return val;
     }
-    throw FormatException('Invalid date-time "$value"');
-  }
-}
-
-/// Date-time value configuration option.
-///
-/// Supports minimum and maximum range checking.
-class DateTimeOption extends ComparableValueOption<DateTime> {
-  const DateTimeOption({
-    super.argName,
-    super.argAliases,
-    super.argAbbrev,
-    super.argPos,
-    super.envName,
-    super.configKey,
-    super.configKeys,
-    super.fromCustom,
-    super.fromDefault,
-    super.defaultsTo,
-    super.helpText,
-    super.valueHelp = 'YYYY-MM-DDtHH:MM:SSz',
-    super.allowedHelp,
-    super.group,
-    super.allowedValues,
-    super.customValidator,
-    super.mandatory,
-    super.hide,
-    super.min,
-    super.max,
-  }) : super(valueParser: const DateTimeParser());
-}
-
-/// The time units supported by the [DurationParser].
-enum DurationUnit {
-  microseconds('us'),
-  milliseconds('ms'),
-  seconds('s'),
-  minutes('m'),
-  hours('h'),
-  days('d');
-
-  final String suffix;
-
-  const DurationUnit(this.suffix);
-}
-
-/// Parses a duration string into a [Duration] object.
-///
-/// The input string must be a number followed by an optional unit
-/// which is one of: seconds (s), minutes (m), hours (h), days (d),
-/// milliseconds (ms), or microseconds (us).
-/// If no unit is specified, the [defaultUnit] is assumed, which is in
-/// seconds if not specified otherwise.
-/// Examples:
-/// - `10`, equivalent to `10s`
-/// - `10m`
-/// - `10h`
-/// - `10d`
-/// - `10ms`
-/// - `10us`
-///
-/// Throws [FormatException] if parsing failed.
-class DurationParser extends ValueParser<Duration> {
-  final DurationUnit defaultUnit;
-
-  const DurationParser({this.defaultUnit = DurationUnit.seconds});
-
-  @override
-  Duration parse(final String value) {
-    // integer followed by an optional unit (s, m, h, d, ms, us)
-    const pattern = r'^(-?\d+)(ms|us|[smhd])?$';
-    final regex = RegExp(pattern);
-    final match = regex.firstMatch(value);
-
-    if (match == null || match.groupCount != 2) {
-      throw FormatException('Invalid duration value "$value"');
-    }
-    final valueStr = match.group(1);
-    final unit = _determineUnit(match.group(2));
-    final val = int.parse(valueStr ?? '');
-    return switch (unit) {
-      DurationUnit.seconds => Duration(seconds: val),
-      DurationUnit.minutes => Duration(minutes: val),
-      DurationUnit.hours => Duration(hours: val),
-      DurationUnit.days => Duration(days: val),
-      DurationUnit.milliseconds => Duration(milliseconds: val),
-      DurationUnit.microseconds => Duration(microseconds: val),
-    };
-  }
-
-  DurationUnit _determineUnit(final String? suffix) {
-    if (suffix == null) return defaultUnit;
-
-    return DurationUnit.values.firstWhere(
-      (final unit) => unit.suffix == suffix,
-      orElse: () => throw FormatException('Invalid duration unit "$suffix".'),
-    );
+    super.validateValue(value);
   }
 
   @override
-  String format(final Duration value) {
-    if (value == Duration.zero) return '0s';
+  bool valueIsBelow(final double value, final double limit) => value < limit;
 
-    final sign = value.isNegative ? '-' : '';
-    final d = _unitStr(value.inDays, null, 'd');
-    final h = _unitStr(value.inHours, 24, 'h');
-    final m = _unitStr(value.inMinutes, 60, 'm');
-    final s = _unitStr(value.inSeconds, 60, 's');
-    final ms = _unitStr(value.inMilliseconds, 1000, 'ms');
-    final us = _unitStr(value.inMicroseconds, 1000, 'us');
-
-    return '$sign$d$h$m$s$ms$us';
-  }
-
-  static String _unitStr(final int value, final int? mod, final String unit) {
-    final absValue = value.abs();
-    if (mod == null) {
-      return absValue > 0 ? '$absValue$unit' : '';
-    }
-    return absValue % mod > 0 ? '${absValue.remainder(mod)}$unit' : '';
-  }
-}
-
-/// Duration value configuration option.
-///
-/// Supports minimum and maximum range checking.
-class DurationOption extends ComparableValueOption<Duration> {
-  const DurationOption({
-    super.argName,
-    super.argAliases,
-    super.argAbbrev,
-    super.argPos,
-    super.envName,
-    super.configKey,
-    super.configKeys,
-    super.fromCustom,
-    super.fromDefault,
-    super.defaultsTo,
-    super.helpText,
-    super.valueHelp = 'integer[us|ms|s|m|h|d]',
-    super.allowedHelp,
-    super.group,
-    super.allowedValues,
-    super.customValidator,
-    super.mandatory,
-    super.hide,
-    super.min,
-    super.max,
-  }) : super(valueParser: const DurationParser());
-
-  /// Creates a DurationOption with a custom duration parser,
-  /// e.g. with a specific default unit.
-  const DurationOption.custom({
-    required final DurationParser parser,
-    super.argName,
-    super.argAliases,
-    super.argAbbrev,
-    super.argPos,
-    super.envName,
-    super.configKey,
-    super.configKeys,
-    super.fromCustom,
-    super.fromDefault,
-    super.defaultsTo,
-    super.helpText,
-    super.valueHelp = 'integer[us|ms|s|m|h|d]',
-    super.allowedHelp,
-    super.group,
-    super.allowedValues,
-    super.customValidator,
-    super.mandatory,
-    super.hide,
-    super.min,
-    super.max,
-  }) : super(valueParser: parser);
+  @override
+  bool valueIsAbove(final double value, final double limit) => value > limit;
 }

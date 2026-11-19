@@ -16,6 +16,7 @@ export 'config_source_provider.dart';
 export 'configuration.dart';
 export 'configuration_broker.dart';
 export 'configuration_parser.dart';
+export 'date_time_options.dart';
 export 'exceptions.dart';
 export 'file_system_options.dart';
 export 'multi_config_source.dart';

@@ -86,7 +86,12 @@ class OldParsedArgs implements ParsedArgs {
 String oldUsage(final Iterable<OptionDefinition> options) {
   final parser = ArgParser();
   final argOptions = options.where((final o) => o.option.argName != null);
-  addOptionsToParser(argOptions, parser, addGroupSeparators: true);
+  addOptionsToParser(
+    argOptions,
+    parser,
+    addGroupSeparators: true,
+    usageOnly: true,
+  );
   return parser.usage;
 }
 
@@ -94,8 +99,12 @@ void addOptionsToParser(
   final Iterable<OptionDefinition> argNameOpts,
   final ArgParser argParser, {
   final bool addGroupSeparators = false,
+  final bool usageOnly = false,
 }) {
-  final receiver = _ArgParserOptionCollection(argParser);
+  final receiver = _ArgParserOptionCollection(
+    argParser,
+    usageOnly: usageOnly,
+  );
   addOptionsToReceiver(
     argNameOpts,
     receiver,
@@ -105,8 +114,12 @@ void addOptionsToParser(
 
 class _ArgParserOptionCollection implements OptionReceiver {
   final ArgParser argParser;
+  final bool usageOnly;
 
-  _ArgParserOptionCollection(this.argParser);
+  _ArgParserOptionCollection(
+    this.argParser, {
+    required this.usageOnly,
+  });
 
   @override
   void addSeparator(final String separator) {
@@ -115,11 +128,15 @@ class _ArgParserOptionCollection implements OptionReceiver {
 
   @override
   void addOption(final OptionDefinition option) {
-    _addToArgParser(option, argParser);
+    _addToArgParser(option, argParser, usageOnly: usageOnly);
   }
 }
 
-void _addToArgParser(final OptionDefinition option, final ArgParser argParser) {
+void _addToArgParser(
+  final OptionDefinition option,
+  final ArgParser argParser, {
+  required final bool usageOnly,
+}) {
   final opt = option.option;
   final argName = opt.argName;
   if (argName == null) {
@@ -131,8 +148,8 @@ void _addToArgParser(final OptionDefinition option, final ArgParser argParser) {
       argParser.addFlag(
         argName,
         abbr: opt.argAbbrev,
-        help: opt.helpText,
-        defaultsTo: opt.defaultValue(),
+        help: _flagHelp(opt, usageOnly: usageOnly),
+        defaultsTo: _flagDefault(opt, usageOnly: usageOnly),
         negatable: opt.negatable,
         hideNegatedUsage: opt.hideNegatedUsage,
         hide: opt.hide,
@@ -149,9 +166,7 @@ void _addToArgParser(final OptionDefinition option, final ArgParser argParser) {
           opt.multiParser.elementParser.format,
         ),
         allowedHelp: opt.allowedHelp,
-        defaultsTo: opt.defaultValue()?.map(
-          opt.multiParser.elementParser.format,
-        ),
+        defaultsTo: _legacyMultiDefaults(opt, usageOnly: usageOnly),
         hide: opt.hide,
         splitCommas: opt.multiParser.separator == ',',
         aliases: opt.argAliases ?? const [],
@@ -165,10 +180,80 @@ void _addToArgParser(final OptionDefinition option, final ArgParser argParser) {
         valueHelp: opt.valueHelpString(),
         allowed: opt.allowedValues?.map(opt.valueParser.format),
         allowedHelp: opt.allowedHelp,
-        defaultsTo: opt.defaultValueString(),
+        defaultsTo: _legacyDefaultString(opt, usageOnly: usageOnly),
         mandatory: opt.mandatory,
         hide: opt.hide,
         aliases: opt.argAliases ?? const [],
       );
   }
+}
+
+/// Help text for a flag on the legacy parser.
+///
+/// [package:args] prints `(defaults to on)` from the boolean default and has
+/// no slot for custom default text. Usage-only parsers put
+/// [FlagOption.defaultValueHelp] in the help and omit that boolean line.
+/// Parsers used to parse arguments keep [FlagOption.helpText] unchanged.
+String? _flagHelp(final FlagOption opt, {required final bool usageOnly}) {
+  final help = opt.helpText;
+  if (!usageOnly) return help;
+  final custom = opt.defaultValueHelp;
+  if (custom == null) return help;
+  final line = '(defaults to $custom)';
+  if (help == null || help.isEmpty) return line;
+  return '$help\n$line';
+}
+
+/// Boolean default stored on the legacy parser.
+///
+/// A usage-only parser passes null when custom default text is shown, so
+/// [package:args] does not also print `(defaults to on)`. A parser that
+/// reads arguments keeps the real boolean.
+bool? _flagDefault(final FlagOption opt, {required final bool usageOnly}) {
+  if (usageOnly && opt.defaultValueHelp != null) return null;
+  return opt.defaultValue();
+}
+
+/// Default string stored on the legacy parser.
+///
+/// Allowed values are matched against the formatted default to mark it,
+/// so a custom help string is used only when there is nothing to match.
+/// That help string is usage text: parsers that read arguments store the
+/// formatted value instead, so an omitted option does not come back as the
+/// help text.
+String? _legacyDefaultString(
+  final ConfigOptionBase opt, {
+  required final bool usageOnly,
+}) {
+  if (opt.allowedValues != null || opt.allowedHelp != null) {
+    final value = opt.defaultValue();
+    if (value == null) return null;
+    return opt.valueParser.format(value);
+  }
+  if (!usageOnly) {
+    final value = opt.defaultValue();
+    if (value == null) return null;
+    return opt.valueParser.format(value);
+  }
+  return opt.defaultValueString();
+}
+
+/// Default list stored on the legacy parser for a [MultiOption].
+///
+/// Same rule as [_legacyDefaultString]: custom help text is only stored on
+/// a parser that exists to render usage.
+Iterable<String>? _legacyMultiDefaults(
+  final MultiOption opt, {
+  required final bool usageOnly,
+}) {
+  final marksAllowed =
+      opt.allowedElementValues != null || opt.allowedHelp != null;
+  final help = opt.defaultValueHelp;
+  if (usageOnly &&
+      !marksAllowed &&
+      help != null &&
+      opt.defaultValue() != null) {
+    return [help];
+  }
+  return opt.defaultValue()?.map(opt.multiParser.elementParser.format);
 }

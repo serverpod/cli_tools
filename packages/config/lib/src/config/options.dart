@@ -206,6 +206,12 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
   final V Function()? fromDefault;
   final V? defaultsTo;
 
+  /// Usage text for the default, shown instead of the formatted actual default value.
+  /// Set this when the actual default value is not what users should read.
+  /// For example, a computed directory can be shown as `<package-root>/lib/` rather
+  /// than its absolute path.
+  final String? defaultValueHelp;
+
   final String? helpText;
   final String? valueHelp;
   final Map<String, String>? allowedHelp;
@@ -228,6 +234,7 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
     this.fromCustom,
     this.fromDefault,
     this.defaultsTo,
+    this.defaultValueHelp,
     this.helpText,
     this.valueHelp,
     this.allowedHelp,
@@ -252,10 +259,13 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
     return (df != null ? df() : defaultsTo);
   }
 
+  /// The default value as shown in usage.
+  /// [defaultValueHelp] when set, otherwise the formatted [defaultValue].
+  /// Returns null when the option has no default.
   String? defaultValueString() {
     final defValue = defaultValue();
     if (defValue == null) return null;
-    return valueParser.format(defValue);
+    return defaultValueHelp ?? valueParser.format(defValue);
   }
 
   String? valueHelpString() {
@@ -320,6 +330,12 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
         "Mandatory options can't have default values",
       );
     }
+    if (defaultValueHelp != null && fromDefault == null && defaultsTo == null) {
+      throw OptionDefinitionError(
+        this,
+        'defaultValueHelp requires defaultsTo or fromDefault',
+      );
+    }
   }
 
   /// Validates the parsed value,
@@ -338,6 +354,13 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
 
     customValidator?.call(value);
   }
+
+  /// The value stored after [validateValue] has accepted [value].
+  ///
+  /// The default returns [value]. A date-only option maps the value onto
+  /// local midnight on the same calendar date.
+  @internal
+  V valueToStore(final V value) => value;
 
   /// Returns self.
   @override
@@ -486,6 +509,11 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
     final error = validateOptionValue(res.value);
     if (error != null) return res.copyWithError(error);
 
+    final accepted = res.value;
+    if (accepted != null) {
+      final stored = valueToStore(accepted);
+      if (stored != accepted) return res.copyWithValue(stored);
+    }
     return res;
   }
 
@@ -550,6 +578,17 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
     );
   }
 
+  /// A configuration value that is already a [V], or null when it is not.
+  ///
+  /// String values are parsed separately. Subclasses may accept other native
+  /// values that mean the same thing, such as an integer for a double option.
+  /// A null return is reported as a type error.
+  @protected
+  V? valueFromConfig(final Object value) {
+    if (value is V) return value as V;
+    return null;
+  }
+
   OptionResolutionImpl<V>? _resolveConfigValue(
     final Configuration cfg,
     final ConfigurationBroker? configBroker,
@@ -570,9 +609,10 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
         source: ValueSourceType.config,
       );
     }
-    if (value is V) {
+    final native = valueFromConfig(value);
+    if (native != null) {
       return OptionResolutionImpl(
-        value: value as V,
+        value: native,
         source: ValueSourceType.config,
       );
     }
@@ -666,6 +706,7 @@ class FlagOption extends ConfigOptionBase<bool> {
     super.fromCustom,
     super.fromDefault,
     super.defaultsTo,
+    super.defaultValueHelp,
     super.helpText,
     super.valueHelp,
     super.group,
@@ -757,6 +798,7 @@ class MultiOption<T> extends ConfigOptionBase<List<T>> {
     super.fromCustom,
     super.fromDefault,
     super.defaultsTo,
+    super.defaultValueHelp,
     super.helpText,
     super.valueHelp,
     super.allowedHelp,

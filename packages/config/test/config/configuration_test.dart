@@ -1,3 +1,4 @@
+import 'package:args/args.dart';
 import 'package:config/config.dart';
 import 'package:test/test.dart';
 
@@ -214,6 +215,92 @@ void main() async {
     );
   });
 
+  group('Given a single-value date option', () {
+    const from = DateTimeOption(
+      argName: 'from',
+      dateOnly: true,
+      mandatory: true,
+    );
+
+    test(
+      'when --from value is repeated '
+      'then it reports that the option cannot be specified more than once',
+      () {
+        expect(
+          () => Configuration.resolve(
+            options: [from],
+            args: ['--from', '2026-01-01', '--from', '2026-02-01'],
+          ),
+          throwsA(
+            isA<UsageException>().having(
+              (final e) => e.message,
+              'message',
+              'Option --from cannot be specified more than once.',
+            ),
+          ),
+        );
+      },
+    );
+
+    test(
+      'when --from=value is repeated '
+      'then it reports that the option cannot be specified more than once',
+      () {
+        expect(
+          () => Configuration.resolve(
+            options: [from],
+            args: ['--from=2026-01-01', '--from=2026-02-01'],
+          ),
+          throwsA(
+            isA<UsageException>().having(
+              (final e) => e.message,
+              'message',
+              'Option --from cannot be specified more than once.',
+            ),
+          ),
+        );
+      },
+    );
+
+    test(
+      'when a separate value is followed by an attached value '
+      'then it reports that the option cannot be specified more than once',
+      () {
+        expect(
+          () => Configuration.resolve(
+            options: [from],
+            args: ['--from', '2026-01-01', '--from=2026-02-01'],
+          ),
+          throwsA(
+            isA<UsageException>().having(
+              (final e) => e.message,
+              'message',
+              'Option --from cannot be specified more than once.',
+            ),
+          ),
+        );
+      },
+    );
+
+    test('when --from value appears once then that date is used', () {
+      final config = Configuration.resolve(
+        options: [from],
+        args: ['--from', '2026-01-01'],
+      );
+
+      expect(config.value(from), DateTime(2026, 1, 1));
+    });
+
+    test('when --from=value appears once then that date is used', () {
+      final config = Configuration.resolve(
+        options: [from],
+        args: ['--from=2026-02-01'],
+      );
+
+      expect(config.value(from), DateTime(2026, 2, 1));
+    });
+  });
+
   group('Given a configuration option with a defaultsTo value', () {
     const projectIdOpt = StringOption(
       argName: 'project',
@@ -275,6 +362,161 @@ void main() async {
         configBroker: _TestConfigBroker({}),
       );
       expect(config.value(projectIdOpt), equals('constDefaultValue'));
+    });
+  });
+
+  group('Given an option with defaultValueHelp', () {
+    const projectIdOpt = StringOption(
+      argName: 'project',
+      defaultsTo: 'constDefaultValue',
+      defaultValueHelp: '<project>',
+    );
+
+    test('then the usage text replaces the formatted default', () {
+      expect(projectIdOpt.defaultValueString(), '<project>');
+    });
+
+    test('when getting the usage then the custom text is shown', () {
+      expect(
+        [projectIdOpt].usage,
+        equals('--project    (defaults to "<project>")'),
+      );
+    });
+
+    test('when resolving with no arguments then the value is unchanged', () {
+      final config = Configuration.resolve(
+        options: [projectIdOpt],
+        args: const [],
+      );
+
+      expect(config.value(projectIdOpt), 'constDefaultValue');
+    });
+
+    test(
+      'when the legacy parser reads no arguments '
+      'then the result is the configured default',
+      () {
+        final parser = ArgParser();
+        prepareOptionsForParsing([projectIdOpt], parser);
+
+        expect(parser.parse(const []).option('project'), 'constDefaultValue');
+      },
+    );
+  });
+
+  group('Given defaultValueHelp and allowed values', () {
+    const suit = StringOption(
+      argName: 'suit',
+      helpText: 'Like in cards',
+      defaultsTo: 'clubs',
+      defaultValueHelp: 'the black suit',
+      allowedValues: ['spades', 'clubs', 'hearts', 'diamonds'],
+    );
+
+    test('when getting the usage then the formatted default stays marked', () {
+      expect(
+        [suit].usage,
+        equals(
+          '--suit    Like in cards\n'
+          '          [spades, clubs (default), hearts, diamonds]',
+        ),
+      );
+    });
+  });
+
+  group('Given defaultValueHelp without a default value', () {
+    const option = StringOption(
+      argName: 'name',
+      defaultValueHelp: '<name>',
+    );
+
+    test('when validating the definition then it throws', () {
+      expect(
+        () => validateOptions([option]),
+        throwsA(
+          isA<OptionDefinitionError>().having(
+            (final e) => e.message,
+            'message',
+            'defaultValueHelp requires defaultsTo or fromDefault',
+          ),
+        ),
+      );
+    });
+  });
+
+  group('Given a multi option with defaultValueHelp', () {
+    const suits = MultiStringOption(
+      argName: 'suit',
+      defaultsTo: ['clubs', 'hearts'],
+      defaultValueHelp: 'the red and black suits',
+    );
+
+    test('when getting the usage then the custom text is shown', () {
+      expect(
+        [suits].usage,
+        equals('--suit    (defaults to "the red and black suits")'),
+      );
+    });
+
+    test(
+      'when the legacy parser reads no arguments '
+      'then the result is the configured defaults',
+      () {
+        final parser = ArgParser();
+        prepareOptionsForParsing([suits], parser);
+
+        expect(
+          parser.parse(const []).multiOption('suit'),
+          ['clubs', 'hearts'],
+        );
+      },
+    );
+  });
+
+  group('Given a flag with defaultValueHelp', () {
+    const color = FlagOption(
+      argName: 'color',
+      helpText: 'Colorize output',
+      defaultsTo: true,
+      defaultValueHelp: 'when stdout is a terminal',
+    );
+
+    test('when getting the usage then the custom text is shown', () {
+      expect(
+        [color].usage,
+        equals(
+          '--[no-]color    Colorize output\n'
+          '                (defaults to when stdout is a terminal)',
+        ),
+      );
+    });
+
+    test(
+      'when the legacy parser reads no arguments then the flag stays on',
+      () {
+        final parser = ArgParser();
+        prepareOptionsForParsing([color], parser);
+
+        expect(parser.parse(const []).flag('color'), isTrue);
+      },
+    );
+  });
+
+  group('Given a flag without defaultValueHelp', () {
+    const verbose = FlagOption(
+      argName: 'verbose',
+      helpText: 'Emit more logs',
+      defaultsTo: true,
+    );
+
+    test('when getting the usage then the boolean default is shown', () {
+      expect(
+        [verbose].usage,
+        equals(
+          '--[no-]verbose    Emit more logs\n'
+          '                  (defaults to on)',
+        ),
+      );
     });
   });
 

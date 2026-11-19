@@ -15,8 +15,8 @@ import 'package:config/config.dart';
 ///
 /// Command line usage:
 /// ```sh
-///     --until=<YYYY-MM-DDtHH:MM:SSz>             The end timestamp of the series
-///                                                (defaults to "2025-08-08 12:06:49.611906")
+///     --until=<YYYY-MM-DDTHH:MM:SSZ>             The end timestamp of the series
+///                                                (defaults to "2025-08-08T12:06:49.611906")
 ///     -l, --length=<integer>                     The number of elements in the series
 ///     -i, --interval=<integer[us|ms|s|m|h|d]>    The interval between the series elements
 /// ```

@@ -8,6 +8,131 @@ enum AnimalEnum {
 }
 
 void main() async {
+  group('Given a StringOption', () {
+    const typedOpt = StringOption(argName: 'name');
+
+    test('when passed an empty argument then it is parsed correctly', () async {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        args: ['--name', ''],
+      );
+      expect(config.optionalValue(typedOpt), equals(''));
+    });
+  });
+
+  group('Given a StringOption that rejects empty strings', () {
+    const typedOpt = StringOption(
+      argName: 'name',
+      envName: 'NAME',
+      configKey: 'name',
+      requireNonEmpty: true,
+    );
+
+    test(
+      'when passed a non-empty value then it is parsed correctly',
+      () async {
+        final config = Configuration.resolveNoExcept(
+          options: [typedOpt],
+          args: ['--name', 'alice'],
+        );
+        expect(config.optionalValue(typedOpt), equals('alice'));
+      },
+    );
+
+    test('when passed an empty argument then it reports an error', () async {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        args: ['--name', ''],
+      );
+
+      expect(config.errors, hasLength(1));
+      expect(
+        config.errors.single,
+        equals('Invalid value for option `name`: Value must not be empty'),
+      );
+    });
+
+    test('when passed an empty env var then it reports an error', () async {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        env: <String, String>{'NAME': ''},
+      );
+
+      expect(config.errors, hasLength(1));
+      expect(
+        config.errors.single,
+        equals('Invalid value for option `name`: Value must not be empty'),
+      );
+    });
+
+    test(
+      'when passed an empty config value then it reports an error',
+      () async {
+        final config = Configuration.resolveNoExcept(
+          options: [typedOpt],
+          configBroker: _TestConfigBroker({'name': ''}),
+        );
+
+        expect(config.errors, hasLength(1));
+        expect(
+          config.errors.single,
+          equals('Invalid value for option `name`: Value must not be empty'),
+        );
+      },
+    );
+
+    test(
+      'when passed a whitespace value then it is parsed correctly',
+      () async {
+        final config = Configuration.resolveNoExcept(
+          options: [typedOpt],
+          args: ['--name', ' '],
+        );
+        expect(config.optionalValue(typedOpt), equals(' '));
+      },
+    );
+
+    test('when passed no value then it stays unset', () async {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        args: [],
+      );
+      expect(config.errors, isEmpty);
+      expect(config.optionalValue(typedOpt), isNull);
+    });
+
+    test('when the default is empty then it reports an error', () async {
+      const option = StringOption(
+        argName: 'name',
+        defaultsTo: '',
+        requireNonEmpty: true,
+      );
+      final config = Configuration.resolveNoExcept(
+        options: [option],
+        args: [],
+      );
+
+      expect(config.errors, hasLength(1));
+      expect(
+        config.errors.single,
+        equals('Invalid value for option `name`: Value must not be empty'),
+      );
+    });
+
+    test('when the default is non-empty then it is used', () async {
+      const option = StringOption(
+        argName: 'name',
+        defaultsTo: 'fallback',
+        requireNonEmpty: true,
+      );
+      final config = Configuration.resolveNoExcept(
+        options: [option],
+        args: [],
+      );
+      expect(config.optionalValue(option), equals('fallback'));
+    });
+  });
+
   group('Given an EnumOption', () {
     const typedOpt = EnumOption(
       argName: 'animal',
@@ -204,6 +329,274 @@ void main() async {
         );
       },
     );
+  });
+
+  group('Given a DoubleOption', () {
+    const typedOpt = DoubleOption(
+      argName: 'number',
+      mandatory: true,
+    );
+
+    test(
+      'when passed a fractional value then it is parsed correctly',
+      () async {
+        final config = Configuration.resolveNoExcept(
+          options: [typedOpt],
+          args: ['--number', '1.5'],
+          env: <String, String>{},
+        );
+        expect(config.value(typedOpt), equals(1.5));
+      },
+    );
+
+    test(
+      'when passed an integer value then it is parsed as a double',
+      () async {
+        final config = Configuration.resolveNoExcept(
+          options: [typedOpt],
+          args: ['--number', '2'],
+          env: <String, String>{},
+        );
+        final value = config.value(typedOpt);
+        expect(value, equals(2.0));
+        expect(value, isA<double>());
+      },
+    );
+
+    test(
+      'when passed a valid negative value then it is parsed correctly',
+      () async {
+        final config = Configuration.resolveNoExcept(
+          options: [typedOpt],
+          args: ['--number', '-1.25'],
+          env: <String, String>{},
+        );
+        expect(config.value(typedOpt), equals(-1.25));
+      },
+    );
+
+    test('when passed a non-number value then it reports an error', () async {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        args: ['--number', 'unicorn'],
+        env: <String, String>{},
+      );
+
+      expect(config.errors, hasLength(1));
+      expect(
+        config.errors.single,
+        contains('Invalid value for option `number` <number>'),
+      );
+    });
+  });
+
+  group('Given a ranged DoubleOption', () {
+    const typedOpt = DoubleOption(
+      argName: 'number',
+      mandatory: true,
+      min: 0.5,
+      max: 1.5,
+    );
+
+    test('when passed a valid value then it is parsed correctly', () async {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        args: ['--number', '1.0'],
+        env: <String, String>{},
+      );
+      expect(config.value(typedOpt), equals(1.0));
+    });
+
+    test(
+      'when passed a value less than the range then it reports an error',
+      () async {
+        final config = Configuration.resolveNoExcept(
+          options: [typedOpt],
+          args: ['--number', '0.4'],
+          env: <String, String>{},
+        );
+
+        expect(config.errors, hasLength(1));
+        expect(
+          config.errors.single,
+          equals(
+            'Invalid value for option `number` <number>: '
+            '0.4 is below the minimum (0.5)',
+          ),
+        );
+      },
+    );
+
+    test(
+      'when passed a value greater than the range then it reports an error',
+      () async {
+        final config = Configuration.resolveNoExcept(
+          options: [typedOpt],
+          args: ['--number', '1.6'],
+          env: <String, String>{},
+        );
+
+        expect(config.errors, hasLength(1));
+        expect(
+          config.errors.single,
+          equals(
+            'Invalid value for option `number` <number>: '
+            '1.6 is above the maximum (1.5)',
+          ),
+        );
+      },
+    );
+  });
+
+  group('Given a DoubleOption read from configuration', () {
+    const typedOpt = DoubleOption(
+      argName: 'number',
+      configKey: 'number',
+      mandatory: true,
+    );
+
+    test('when the value is an integer then it resolves as a double', () {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        configBroker: _TestConfigBroker({'number': 2}),
+      );
+
+      final value = config.value(typedOpt);
+      expect(value, equals(2.0));
+      expect(value, isA<double>());
+    });
+
+    test('when the value is a double then it resolves as that double', () {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        configBroker: _TestConfigBroker({'number': 1.5}),
+      );
+
+      expect(config.value(typedOpt), equals(1.5));
+    });
+
+    test('when the value is a string integer then it resolves as a double', () {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        configBroker: _TestConfigBroker({'number': '2'}),
+      );
+
+      expect(config.value(typedOpt), equals(2.0));
+    });
+
+    test('when the value is not a number then it reports a type error', () {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        configBroker: _TestConfigBroker({'number': true}),
+      );
+
+      expect(config.errors, [
+        'option `number` value true is of type bool, not double.',
+      ]);
+    });
+  });
+
+  group('Given a DoubleOption with only a minimum', () {
+    const typedOpt = DoubleOption(
+      argName: 'number',
+      mandatory: true,
+      min: 0.0,
+    );
+
+    test('when passed negative zero then it is accepted', () {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        args: ['--number', '-0.0'],
+      );
+
+      expect(config.errors, isEmpty);
+      expect(config.value(typedOpt), equals(0.0));
+    });
+
+    test('when passed positive zero then it is accepted', () {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        args: ['--number', '0.0'],
+      );
+
+      expect(config.value(typedOpt), equals(0.0));
+    });
+
+    test('when passed a negative value then it is below the minimum', () {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        args: ['--number', '-0.1'],
+      );
+
+      expect(config.errors, [
+        'Invalid value for option `number` <number>: '
+            '-0.1 is below the minimum (0.0)',
+      ]);
+    });
+
+    test('when passed NaN then it is rejected', () {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        args: ['--number', 'NaN'],
+      );
+
+      expect(config.errors, [
+        'Invalid value for option `number` <number>: '
+            'NaN is not a valid number',
+      ]);
+    });
+
+    test('when the default is NaN then it is rejected', () {
+      const nanDefault = DoubleOption(
+        argName: 'number',
+        defaultsTo: double.nan,
+        min: 0.0,
+      );
+      final config = Configuration.resolveNoExcept(
+        options: [nanDefault],
+        args: const [],
+      );
+
+      expect(config.errors, [
+        'Invalid value for option `number` <number>: '
+            'NaN is not a valid number',
+      ]);
+    });
+  });
+
+  group('Given a DoubleOption with only a maximum of zero', () {
+    const typedOpt = DoubleOption(
+      argName: 'number',
+      mandatory: true,
+      max: 0.0,
+    );
+
+    test('when passed negative zero then it is accepted', () {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        args: ['--number', '-0.0'],
+      );
+
+      expect(config.errors, isEmpty);
+      expect(config.value(typedOpt), equals(0.0));
+    });
+  });
+
+  group('Given a DoubleOption with no numeric bounds', () {
+    const typedOpt = DoubleOption(
+      argName: 'number',
+      mandatory: true,
+    );
+
+    test('when passed NaN then it is accepted', () {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        args: ['--number', 'NaN'],
+      );
+
+      expect(config.errors, isEmpty);
+      expect(config.value(typedOpt).isNaN, isTrue);
+    });
   });
 
   group('Given a ranged DurationOption', () {

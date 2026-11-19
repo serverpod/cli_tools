@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:config/command.dart';
 import 'package:config/config.dart';
 import 'package:test/test.dart';
@@ -1101,6 +1103,142 @@ void main() {
             'Run "tool help" to see global options.',
           ]),
         );
+      },
+    );
+  });
+
+  group('Given an option with custom default help text', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'write',
+        description: 'Write output',
+        options: const [
+          StringOption(
+            argName: 'output-dir',
+            argAbbrev: 'd',
+            helpText: 'Override the directory to write the Dart source file to',
+            defaultsTo: '/Users/myself/dev/cli_tools/packages/cli_tools',
+            defaultValueHelp: '<package-root>/packages/cli_tools/',
+          ),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test('when reading usage then the custom text is shown', () {
+      expect(
+        command.usage,
+        _usage(const [
+          'Write output',
+          '',
+          'Usage: tool write [--output-dir=<output-dir>]',
+          '',
+          'Options:',
+          '-d, --output-dir    '
+              'Override the directory to write the Dart source file to',
+          '                    (defaults to <package-root>/packages/cli_tools/)',
+          '',
+          'Run "tool help" to see global options.',
+        ]),
+      );
+    });
+  });
+
+  group('Given a directory option with custom default help text', () {
+    late DirOption option;
+
+    setUp(() {
+      option = DirOption(
+        argName: 'output-dir',
+        defaultsTo: Directory('/tmp/generated'),
+        defaultValueHelp: '<package-root>/lib/',
+      );
+    });
+
+    test('when reading usage then the path description is shown', () {
+      final command = _command(
+        name: 'write',
+        description: 'Write output',
+        options: [option],
+      );
+      _runner(subcommands: [command]);
+
+      expect(command.usage, contains('(defaults to <package-root>/lib/)'));
+      expect(command.usage, isNot(contains('/tmp/generated')));
+    });
+
+    test(
+      'when resolving with no arguments then the directory is unchanged',
+      () {
+        final config = Configuration.resolve(
+          options: [option],
+          args: const [],
+        );
+
+        expect(config.value(option).path, '/tmp/generated');
+      },
+    );
+  });
+
+  group('Given a ranged option with custom default help text', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'play',
+        description: 'Play a card',
+        options: const [
+          IntOption(
+            argName: 'count',
+            helpText: 'How many',
+            defaultsTo: 2,
+            min: 1,
+            max: 10,
+            defaultValueHelp: 'a pair',
+          ),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test('when reading usage then the range uses the custom text', () {
+      expect(
+        command.usage,
+        contains('values: [1 - 10] (defaults to a pair)'),
+      );
+    });
+  });
+
+  group('Given allowed values and custom default help text', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = _command(
+        name: 'play',
+        description: 'Play a card',
+        options: const [
+          StringOption(
+            argName: 'suit',
+            helpText: 'Like in cards',
+            defaultsTo: 'clubs',
+            defaultValueHelp: 'the black suit',
+            allowedValues: ['spades', 'clubs', 'hearts', 'diamonds'],
+          ),
+        ],
+      );
+      _runner(subcommands: [command]);
+    });
+
+    test(
+      'when reading usage then the formatted default stays marked in the list',
+      () {
+        expect(
+          command.usage,
+          contains('values: [spades, clubs (default), hearts, diamonds]'),
+        );
+        expect(command.usage, isNot(contains('the black suit')));
       },
     );
   });

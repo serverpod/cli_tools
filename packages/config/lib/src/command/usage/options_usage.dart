@@ -265,7 +265,7 @@ class OptionsUsageGenerator {
       final format = option.multiParser.elementParser.format;
       return def.any((final element) => format(element) == value);
     }
-    return option.defaultValueString() == value;
+    return option.valueParser.format(def) == value;
   }
 }
 
