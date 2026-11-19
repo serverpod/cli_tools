@@ -214,6 +214,92 @@ void main() async {
     );
   });
 
+  group('Given a single-value date option', () {
+    const from = DateTimeOption(
+      argName: 'from',
+      dateOnly: true,
+      mandatory: true,
+    );
+
+    test(
+      'when --from value is repeated '
+      'then it reports that the option cannot be specified more than once',
+      () {
+        expect(
+          () => Configuration.resolve(
+            options: [from],
+            args: ['--from', '2026-01-01', '--from', '2026-02-01'],
+          ),
+          throwsA(
+            isA<UsageException>().having(
+              (final e) => e.message,
+              'message',
+              'Option --from cannot be specified more than once.',
+            ),
+          ),
+        );
+      },
+    );
+
+    test(
+      'when --from=value is repeated '
+      'then it reports that the option cannot be specified more than once',
+      () {
+        expect(
+          () => Configuration.resolve(
+            options: [from],
+            args: ['--from=2026-01-01', '--from=2026-02-01'],
+          ),
+          throwsA(
+            isA<UsageException>().having(
+              (final e) => e.message,
+              'message',
+              'Option --from cannot be specified more than once.',
+            ),
+          ),
+        );
+      },
+    );
+
+    test(
+      'when a separate value is followed by an attached value '
+      'then it reports that the option cannot be specified more than once',
+      () {
+        expect(
+          () => Configuration.resolve(
+            options: [from],
+            args: ['--from', '2026-01-01', '--from=2026-02-01'],
+          ),
+          throwsA(
+            isA<UsageException>().having(
+              (final e) => e.message,
+              'message',
+              'Option --from cannot be specified more than once.',
+            ),
+          ),
+        );
+      },
+    );
+
+    test('when --from value appears once then that date is used', () {
+      final config = Configuration.resolve(
+        options: [from],
+        args: ['--from', '2026-01-01'],
+      );
+
+      expect(config.value(from), DateTime(2026, 1, 1));
+    });
+
+    test('when --from=value appears once then that date is used', () {
+      final config = Configuration.resolve(
+        options: [from],
+        args: ['--from=2026-02-01'],
+      );
+
+      expect(config.value(from), DateTime(2026, 2, 1));
+    });
+  });
+
   group('Given a configuration option with a defaultsTo value', () {
     const projectIdOpt = StringOption(
       argName: 'project',

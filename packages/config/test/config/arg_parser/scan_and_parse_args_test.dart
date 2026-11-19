@@ -596,6 +596,38 @@ void main() {
       );
     });
 
+    test('when it is specified twice with attached values '
+        'then the error is recorded', () {
+      expect(
+        parse(['--name=ada', '--name=grace']).errors,
+        ['Option --name cannot be specified more than once'],
+      );
+    });
+
+    test('when it is specified twice with attached values '
+        'then the first value is kept', () {
+      expect(
+        parse(['--name=ada', '--name=grace']).regularOptions[name],
+        'ada',
+      );
+    });
+
+    test('when a separate value is followed by an attached value '
+        'then the error is recorded', () {
+      expect(
+        parse(['--name', 'ada', '--name=grace']).errors,
+        ['Option --name cannot be specified more than once'],
+      );
+    });
+
+    test('when a separate value is followed by an attached value '
+        'then the first value is kept', () {
+      expect(
+        parse(['--name', 'ada', '--name=grace']).regularOptions[name],
+        'ada',
+      );
+    });
+
     test('when the name and an alias are both passed '
         'then the error is recorded', () {
       expect(
