@@ -566,6 +566,17 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
     );
   }
 
+  /// A configuration value that is already a [V], or null when it is not.
+  ///
+  /// String values are parsed separately. Subclasses may accept other native
+  /// values that mean the same thing, such as an integer for a double option.
+  /// A null return is reported as a type error.
+  @protected
+  V? valueFromConfig(final Object value) {
+    if (value is V) return value as V;
+    return null;
+  }
+
   OptionResolutionImpl<V>? _resolveConfigValue(
     final Configuration cfg,
     final ConfigurationBroker? configBroker,
@@ -586,9 +597,10 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
         source: ValueSourceType.config,
       );
     }
-    if (value is V) {
+    final native = valueFromConfig(value);
+    if (native != null) {
       return OptionResolutionImpl(
-        value: value as V,
+        value: native,
         source: ValueSourceType.config,
       );
     }

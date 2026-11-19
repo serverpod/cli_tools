@@ -448,6 +448,157 @@ void main() async {
     );
   });
 
+  group('Given a DoubleOption read from configuration', () {
+    const typedOpt = DoubleOption(
+      argName: 'number',
+      configKey: 'number',
+      mandatory: true,
+    );
+
+    test('when the value is an integer then it resolves as a double', () {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        configBroker: _TestConfigBroker({'number': 2}),
+      );
+
+      final value = config.value(typedOpt);
+      expect(value, equals(2.0));
+      expect(value, isA<double>());
+    });
+
+    test('when the value is a double then it resolves as that double', () {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        configBroker: _TestConfigBroker({'number': 1.5}),
+      );
+
+      expect(config.value(typedOpt), equals(1.5));
+    });
+
+    test('when the value is a string integer then it resolves as a double', () {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        configBroker: _TestConfigBroker({'number': '2'}),
+      );
+
+      expect(config.value(typedOpt), equals(2.0));
+    });
+
+    test('when the value is not a number then it reports a type error', () {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        configBroker: _TestConfigBroker({'number': true}),
+      );
+
+      expect(config.errors, [
+        'option `number` value true is of type bool, not double.',
+      ]);
+    });
+  });
+
+  group('Given a DoubleOption with only a minimum', () {
+    const typedOpt = DoubleOption(
+      argName: 'number',
+      mandatory: true,
+      min: 0.0,
+    );
+
+    test('when passed negative zero then it is accepted', () {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        args: ['--number', '-0.0'],
+      );
+
+      expect(config.errors, isEmpty);
+      expect(config.value(typedOpt), equals(0.0));
+    });
+
+    test('when passed positive zero then it is accepted', () {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        args: ['--number', '0.0'],
+      );
+
+      expect(config.value(typedOpt), equals(0.0));
+    });
+
+    test('when passed a negative value then it is below the minimum', () {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        args: ['--number', '-0.1'],
+      );
+
+      expect(config.errors, [
+        'Invalid value for option `number` <number>: '
+            '-0.1 is below the minimum (0.0)',
+      ]);
+    });
+
+    test('when passed NaN then it is rejected', () {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        args: ['--number', 'NaN'],
+      );
+
+      expect(config.errors, [
+        'Invalid value for option `number` <number>: '
+            'NaN is not a valid number',
+      ]);
+    });
+
+    test('when the default is NaN then it is rejected', () {
+      const nanDefault = DoubleOption(
+        argName: 'number',
+        defaultsTo: double.nan,
+        min: 0.0,
+      );
+      final config = Configuration.resolveNoExcept(
+        options: [nanDefault],
+        args: const [],
+      );
+
+      expect(config.errors, [
+        'Invalid value for option `number` <number>: '
+            'NaN is not a valid number',
+      ]);
+    });
+  });
+
+  group('Given a DoubleOption with only a maximum of zero', () {
+    const typedOpt = DoubleOption(
+      argName: 'number',
+      mandatory: true,
+      max: 0.0,
+    );
+
+    test('when passed negative zero then it is accepted', () {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        args: ['--number', '-0.0'],
+      );
+
+      expect(config.errors, isEmpty);
+      expect(config.value(typedOpt), equals(0.0));
+    });
+  });
+
+  group('Given a DoubleOption with no numeric bounds', () {
+    const typedOpt = DoubleOption(
+      argName: 'number',
+      mandatory: true,
+    );
+
+    test('when passed NaN then it is accepted', () {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        args: ['--number', 'NaN'],
+      );
+
+      expect(config.errors, isEmpty);
+      expect(config.value(typedOpt).isNaN, isTrue);
+    });
+  });
+
   group('Given a ranged DurationOption', () {
     const typedOpt = DurationOption(
       argName: 'duration',

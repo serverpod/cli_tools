@@ -232,20 +232,31 @@ class ComparableValueOption<V extends Comparable> extends ConfigOptionBase<V> {
     super.validateValue(value);
 
     final mininum = min;
-    if (mininum != null && value.compareTo(mininum) < 0) {
+    if (mininum != null && valueIsBelow(value, mininum)) {
       throw FormatException(
         '${valueParser.format(value)} is below the minimum '
         '(${valueParser.format(mininum)})',
       );
     }
     final maximum = max;
-    if (maximum != null && value.compareTo(maximum) > 0) {
+    if (maximum != null && valueIsAbove(value, maximum)) {
       throw FormatException(
         '${valueParser.format(value)} is above the maximum '
         '(${valueParser.format(maximum)})',
       );
     }
   }
+
+  /// Whether [value] is ordered before [limit].
+  ///
+  /// [DoubleOption] uses numeric comparison so that `-0.0` and `0.0`,
+  /// which compare equal, are both inside a bound of zero.
+  @protected
+  bool valueIsBelow(final V value, final V limit) => value.compareTo(limit) < 0;
+
+  /// Whether [value] is ordered after [limit].
+  @protected
+  bool valueIsAbove(final V value, final V limit) => value.compareTo(limit) > 0;
 }
 
 class IntParser extends ValueParser<int> {
@@ -298,7 +309,11 @@ class DoubleParser extends ValueParser<double> {
 /// Floating-point value configuration option.
 ///
 /// Supports minimum and maximum range checking.
-/// An integer string such as `1` is parsed as `1.0`.
+/// An integer string such as `1` is parsed as `1.0`. A whole number stored
+/// as an integer by a configuration file is the same value.
+///
+/// `NaN` is rejected when [min] or [max] is set, because it is not ordered
+/// relative to a bound. `-0.0` is inside a bound of `0.0`.
 class DoubleOption extends ComparableValueOption<double> {
   const DoubleOption({
     super.argName,
@@ -323,4 +338,27 @@ class DoubleOption extends ComparableValueOption<double> {
     super.min,
     super.max,
   }) : super(valueParser: const DoubleParser());
+
+  /// JSON and YAML store whole numbers as integers.
+  @override
+  double? valueFromConfig(final Object value) {
+    if (value is int) return value.toDouble();
+    return super.valueFromConfig(value);
+  }
+
+  @override
+  void validateValue(final double value) {
+    if (value.isNaN && (min != null || max != null)) {
+      throw FormatException(
+        '${valueParser.format(value)} is not a valid number',
+      );
+    }
+    super.validateValue(value);
+  }
+
+  @override
+  bool valueIsBelow(final double value, final double limit) => value < limit;
+
+  @override
+  bool valueIsAbove(final double value, final double limit) => value > limit;
 }
