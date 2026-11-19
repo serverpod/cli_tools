@@ -1036,13 +1036,13 @@ void main() {
         'when the leaf option value is completed '
         'then the leaf occurrence supplies the values',
         () async {
-          final shared = StringOption(
+          const shared = StringOption(
             argName: 'opt',
-            allowedValues: const ['a'],
+            allowedValues: ['a'],
           );
-          final middleOpt = StringOption(
+          const middleOpt = StringOption(
             argName: 'opt',
-            allowedValues: const ['b'],
+            allowedValues: ['b'],
           );
           final engine = CompletionEngine<OptionDefinition, int>(
             TestCommand(

@@ -1035,8 +1035,8 @@ void main() {
   group(
     'Given one option object that is persistent on the root and the leaf',
     () {
-      final shared = StringOption(argName: 'opt', helpText: 'shared');
-      final middleOpt = StringOption(argName: 'opt', helpText: 'middle');
+      const shared = StringOption(argName: 'opt', helpText: 'shared');
+      const middleOpt = StringOption(argName: 'opt', helpText: 'middle');
       final nested = TestCommand(name: 'nested');
       final leaf = TestCommand(
         name: 'leaf',
@@ -1092,7 +1092,7 @@ void main() {
     'Given one option object that is persistent on the root '
     'and non-persistent on the leaf',
     () {
-      final shared = StringOption(argName: 'opt', helpText: 'shared');
+      const shared = StringOption(argName: 'opt', helpText: 'shared');
       final leaf = TestCommand(name: 'leaf', options: [shared]);
       final root = TestCommand(
         name: 'tool',
