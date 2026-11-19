@@ -1033,6 +1033,102 @@ void main() {
   );
 
   group(
+    'Given one option object that is persistent on the root and the leaf',
+    () {
+      final shared = StringOption(argName: 'opt', helpText: 'shared');
+      final middleOpt = StringOption(argName: 'opt', helpText: 'middle');
+      final nested = TestCommand(name: 'nested');
+      final leaf = TestCommand(
+        name: 'leaf',
+        persistentOptions: [shared],
+        subcommands: [nested],
+      );
+      final middle = TestCommand(
+        name: 'middle',
+        persistentOptions: [middleOpt],
+        subcommands: [leaf],
+      );
+      final root = TestCommand(
+        name: 'tool',
+        persistentOptions: [shared],
+        subcommands: [middle],
+      );
+
+      ArgParseResult parse(final List<String> args) {
+        return scanAndParseCommands(args, rootCommand: root);
+      }
+
+      test(
+        'when the option is set under a command below the leaf '
+        'then the leaf receives it',
+        () {
+          final result = parse(['middle', 'leaf', 'nested', '--opt', 'leaf']);
+          final middleResult = childResult(result);
+          final leafResult = childResult(middleResult);
+
+          expect(leafResult.regularOptions[shared], 'leaf');
+          expect(middleResult.regularOptions, isNot(contains(middleOpt)));
+          expect(result.regularOptions, isNot(contains(shared)));
+        },
+      );
+
+      test(
+        'when the option is set on the middle command '
+        'then the middle option receives it',
+        () {
+          final result = parse(['middle', '--opt', 'mid', 'leaf', 'nested']);
+
+          expect(childResult(result).regularOptions[middleOpt], 'mid');
+          expect(
+            childResult(childResult(result)).regularOptions,
+            isNot(contains(shared)),
+          );
+        },
+      );
+    },
+  );
+
+  group(
+    'Given one option object that is persistent on the root '
+    'and non-persistent on the leaf',
+    () {
+      final shared = StringOption(argName: 'opt', helpText: 'shared');
+      final leaf = TestCommand(name: 'leaf', options: [shared]);
+      final root = TestCommand(
+        name: 'tool',
+        persistentOptions: [shared],
+        subcommands: [leaf],
+      );
+
+      ArgParseResult parse(final List<String> args) {
+        return scanAndParseCommands(args, rootCommand: root);
+      }
+
+      test(
+        'when the option is set on the root and on the leaf '
+        'then each command keeps its own value',
+        () {
+          final result = parse(['--opt', 'root', 'leaf', '--opt', 'local']);
+
+          expect(result.regularOptions[shared], 'root');
+          expect(childResult(result).regularOptions[shared], 'local');
+        },
+      );
+
+      test(
+        'when the option is set only on the leaf '
+        'then the root does not receive it',
+        () {
+          final result = parse(['leaf', '--opt', 'local']);
+
+          expect(result.regularOptions, isNot(contains(shared)));
+          expect(childResult(result).regularOptions[shared], 'local');
+        },
+      );
+    },
+  );
+
+  group(
     'Given a negatable persistent flag shadowed by a subcommand flag',
     () {
       const inherited = FlagOption(

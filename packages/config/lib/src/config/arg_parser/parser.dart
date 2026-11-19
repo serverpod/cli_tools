@@ -216,18 +216,30 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
     ...?options,
   ];
 
+  // Spread keeps ancestor registration order. Re-inserting an option this
+  // command also defines moves that key to the end, so a later command sees
+  // it as the latest registration. Updating the value in place would leave
+  // an earlier key ahead of options registered in between.
   final persistentOwners = <ConfigOptionBase, ArgParseResult<O>>{
     ...?inheritedPersistentOwners,
-    if (command != null) ...{
-      for (final option in command.allOptions(onlyPersistent: true))
-        option.option: result,
-    },
   };
+  if (command != null) {
+    for (final option in command.allOptions(onlyPersistent: true)) {
+      persistentOwners.remove(option.option);
+      persistentOwners[option.option] = result;
+    }
+  }
 
   final allOptions = <ConfigOptionBase>[
     ...?inheritedPersistentOwners?.keys,
     for (final option in ownOptions) option.option,
   ];
+  // The same option object can be persistent on an ancestor and declared
+  // again here. The declaration on this command owns values written here,
+  // including when this declaration is not itself persistent.
+  final ownOptionBases = <ConfigOptionBase>{
+    for (final option in ownOptions) option.option,
+  };
 
   final possibleOptionNames = <String, ConfigOptionBase>{};
   final possibleOptionAbbrevs = <String, ConfigOptionBase>{};
@@ -260,7 +272,12 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
         if (option != null) {
           _assignOption(
             result: result,
-            target: persistentOwners[option] ?? result,
+            target: _optionTarget(
+              option,
+              ownOptionBases: ownOptionBases,
+              persistentOwners: persistentOwners,
+              result: result,
+            ),
             option: option,
             scannedArgs: scannedArgs,
             name: arg.string,
@@ -285,7 +302,12 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
         if (option != null) {
           _assignOption(
             result: result,
-            target: persistentOwners[option] ?? result,
+            target: _optionTarget(
+              option,
+              ownOptionBases: ownOptionBases,
+              persistentOwners: persistentOwners,
+              result: result,
+            ),
             option: option,
             scannedArgs: scannedArgs,
             name: arg.string,
@@ -356,6 +378,20 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
   }
 
   return result;
+}
+
+/// Where a parsed option's value is recorded.
+///
+/// An option declared on [result]'s command is recorded there. An inherited
+/// persistent option is recorded on the command that registered it.
+ArgParseResult<O> _optionTarget<O extends OptionDefinition>(
+  final ConfigOptionBase option, {
+  required final Set<ConfigOptionBase> ownOptionBases,
+  required final Map<ConfigOptionBase, ArgParseResult<O>> persistentOwners,
+  required final ArgParseResult<O> result,
+}) {
+  if (ownOptionBases.contains(option)) return result;
+  return persistentOwners[option] ?? result;
 }
 
 String _unknownSubcommandError<O extends OptionDefinition>(

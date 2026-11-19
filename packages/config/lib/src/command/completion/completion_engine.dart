@@ -469,21 +469,34 @@ class _CommandLine {
   /// The options in scope at the leaf command: its own options and the
   /// persistent options, built-in or not, of it and its ancestors.
   ///
-  /// A nearer option may take one spelling of an ancestor option and leave
-  /// the others. [spellings] records which option each spelling refers to.
+  /// Each option object is listed once, for offering candidates. [spellings]
+  /// is built from every occurrence, so a later command that reuses an option
+  /// object still owns the spellings it defines.
   Iterable<ConfigOptionBase> get visibleOptions sync* {
     final seen = <ConfigOptionBase>{};
-    for (final command in commands) {
-      for (final option in command.allOptions(onlyPersistent: true)) {
-        if (seen.add(option.option)) yield option.option;
-      }
-    }
-    for (final option in leafCommand.options) {
-      if (seen.add(option.option)) yield option.option;
+    for (final option in _optionsInPrecedenceOrder()) {
+      if (seen.add(option)) yield option;
     }
   }
 
-  late final _VisibleSpellings spellings = _VisibleSpellings(visibleOptions);
+  /// Persistent options from the root toward the leaf, then the leaf's own
+  /// options. Repeated option objects are kept, in the order they are declared.
+  Iterable<ConfigOptionBase> _optionsInPrecedenceOrder() sync* {
+    final chain = commands;
+    for (var i = 0; i < chain.length; i++) {
+      final isLeaf = i == chain.length - 1;
+      final definitions = isLeaf
+          ? chain[i].allOptions()
+          : chain[i].allOptions(onlyPersistent: true);
+      for (final definition in definitions) {
+        yield definition.option;
+      }
+    }
+  }
+
+  late final _VisibleSpellings spellings = _VisibleSpellings(
+    _optionsInPrecedenceOrder(),
+  );
 
   bool wasParsed(final ConfigOptionBase option) {
     return chain.any(

@@ -1028,6 +1028,56 @@ void main() {
     );
   });
 
+  group(
+    'Given the same option object on the root and the leaf, '
+    'with another option of that name between them',
+    () {
+      test(
+        'when the leaf option value is completed '
+        'then the leaf occurrence supplies the values',
+        () async {
+          final shared = StringOption(
+            argName: 'opt',
+            allowedValues: const ['a'],
+          );
+          final middleOpt = StringOption(
+            argName: 'opt',
+            allowedValues: const ['b'],
+          );
+          final engine = CompletionEngine<OptionDefinition, int>(
+            TestCommand(
+              name: 'tool',
+              persistentOptions: [shared],
+              subcommands: [
+                TestCommand(
+                  name: 'middle',
+                  persistentOptions: [middleOpt],
+                  subcommands: [
+                    TestCommand(
+                      name: 'leaf',
+                      persistentOptions: [shared],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+
+          final response = await engine.complete([
+            'middle',
+            'leaf',
+            '--opt=',
+          ]);
+
+          expect(
+            [for (final candidate in response.candidates) candidate.value],
+            ['a'],
+          );
+        },
+      );
+    },
+  );
+
   group('Given a CompletionResponse', () {
     test('when formatted then tabs and newlines in candidates '
         'are replaced', () {
