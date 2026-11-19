@@ -2,6 +2,7 @@ import 'package:config/command.dart';
 import 'package:config/config.dart';
 import 'package:test/test.dart';
 
+import '../../config/arg_parser/arg_parser_test_support.dart';
 import 'fixtures/completion_cli.dart';
 
 /// The parsed response of a `__complete` request.
@@ -928,6 +929,154 @@ void main() {
       expect(reported, isA<StateError>());
     });
   });
+
+  group('Given a subcommand option that shadows a global option', () {
+    const globalOpt = StringOption(
+      argName: 'opt',
+      argAbbrev: 'o',
+      helpText: 'global',
+    );
+    const localOpt = StringOption(argName: 'opt', helpText: 'local');
+    const branchOpt = StringOption(argName: 'opt', helpText: 'branch');
+    const midOpt = StringOption(argName: 'opt', helpText: 'middle');
+
+    late CompletionEngine<OptionDefinition, int> engine;
+
+    setUp(() {
+      final shadowed = TestCommand(name: 'build', options: [localOpt]);
+      final branch = TestCommand(
+        name: 'group',
+        persistentOptions: [branchOpt],
+        subcommands: [TestCommand(name: 'leaf')],
+      );
+      final open = TestCommand(
+        name: 'open',
+        options: [midOpt],
+        subcommands: [TestCommand(name: 'leaf')],
+      );
+      engine = CompletionEngine(
+        TestCommand(
+          name: 'tool',
+          persistentOptions: [globalOpt],
+          subcommands: [shadowed, branch, open],
+        ),
+      );
+    });
+
+    test(
+      'when completing after the subcommand '
+      'then the subcommand name is offered and the global abbreviation remains',
+      () async {
+        final response = await engine.complete(['build', '-']);
+
+        expect(
+          response.candidates
+              .where((final c) => c.value == '--opt')
+              .single
+              .description,
+          'local',
+        );
+        expect(
+          response.candidates
+              .where((final c) => c.value == '-o')
+              .single
+              .description,
+          'global',
+        );
+      },
+    );
+
+    test(
+      'when completing after a nested command '
+      'then the nearest name is offered and the global abbreviation remains',
+      () async {
+        final response = await engine.complete(['group', 'leaf', '-']);
+
+        expect(
+          response.candidates
+              .where((final c) => c.value == '--opt')
+              .single
+              .description,
+          'branch',
+        );
+        expect(
+          response.candidates
+              .where((final c) => c.value == '-o')
+              .single
+              .description,
+          'global',
+        );
+      },
+    );
+
+    test(
+      'when a non-persistent option shadows only the middle command '
+      'then the global option is offered on the nested command',
+      () async {
+        final response = await engine.complete(['open', 'leaf', '-']);
+        final values = [for (final c in response.candidates) c.value];
+
+        expect(values, containsAll(['--opt', '-o']));
+        expect(
+          response.candidates
+              .where((final c) => c.value == '--opt')
+              .single
+              .description,
+          'global',
+        );
+      },
+    );
+  });
+
+  group(
+    'Given the same option object on the root and the leaf, '
+    'with another option of that name between them',
+    () {
+      test(
+        'when the leaf option value is completed '
+        'then the leaf occurrence supplies the values',
+        () async {
+          const shared = StringOption(
+            argName: 'opt',
+            allowedValues: ['a'],
+          );
+          const middleOpt = StringOption(
+            argName: 'opt',
+            allowedValues: ['b'],
+          );
+          final engine = CompletionEngine<OptionDefinition, int>(
+            TestCommand(
+              name: 'tool',
+              persistentOptions: [shared],
+              subcommands: [
+                TestCommand(
+                  name: 'middle',
+                  persistentOptions: [middleOpt],
+                  subcommands: [
+                    TestCommand(
+                      name: 'leaf',
+                      persistentOptions: [shared],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+
+          final response = await engine.complete([
+            'middle',
+            'leaf',
+            '--opt=',
+          ]);
+
+          expect(
+            [for (final candidate in response.candidates) candidate.value],
+            ['a'],
+          );
+        },
+      );
+    },
+  );
 
   group('Given a CompletionResponse', () {
     test('when formatted then tabs and newlines in candidates '

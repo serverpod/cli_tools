@@ -685,16 +685,306 @@ void main() {
   group(
     'Given a persistent option and a subcommand option of the same name',
     () {
-      const inherited = FlagOption(
-        argName: 'verbose',
+      const inherited = StringOption(
+        argName: 'opt',
+        argAbbrev: 'o',
         helpText: 'inherited',
       );
-      const local = FlagOption(argName: 'verbose', helpText: 'local');
+      const local = StringOption(argName: 'opt', helpText: 'local');
       final leaf = TestCommand(name: 'leaf', options: [local]);
       final root = TestCommand(
         name: 'tool',
         persistentOptions: [inherited],
         subcommands: [leaf],
+      );
+
+      ArgParseResult parse(final List<String> args) {
+        return scanAndParseCommands(args, rootCommand: root);
+      }
+
+      test('when the command tree is parsed then parsing succeeds', () {
+        expect(parse(<String>[]).command, same(root));
+      });
+
+      test(
+        'when both options are set '
+        'then each value is recorded on its own command',
+        () {
+          final result = parse(['--opt', '3', 'leaf', '--opt', 'foo']);
+
+          expect(result.regularOptions[inherited], '3');
+          expect(childResult(result).regularOptions[local], 'foo');
+        },
+      );
+
+      test(
+        'when only the subcommand option is set '
+        'then the persistent option is unset',
+        () {
+          final result = parse(['leaf', '--opt', 'foo']);
+
+          expect(result.regularOptions, isNot(contains(inherited)));
+          expect(childResult(result).regularOptions[local], 'foo');
+        },
+      );
+
+      test(
+        'when the persistent abbreviation is used before the subcommand '
+        'then the persistent option is set',
+        () {
+          final result = parse(['-o', '3', 'leaf']);
+
+          expect(result.regularOptions[inherited], '3');
+        },
+      );
+
+      test(
+        'when the persistent abbreviation is used after the subcommand '
+        'then the persistent option is set',
+        () {
+          final result = parse(['leaf', '-o', '3']);
+
+          expect(result.regularOptions[inherited], '3');
+          expect(
+            childResult(result).regularOptions,
+            isNot(contains(local)),
+          );
+        },
+      );
+    },
+  );
+
+  group(
+    'Given a subcommand persistent option that reuses an inherited name',
+    () {
+      const inherited = StringOption(argName: 'opt', helpText: 'inherited');
+      const local = StringOption(argName: 'opt', helpText: 'local');
+      final nested = TestCommand(name: 'nested');
+      final leaf = TestCommand(
+        name: 'leaf',
+        persistentOptions: [local],
+        subcommands: [nested],
+      );
+      final root = TestCommand(
+        name: 'tool',
+        persistentOptions: [inherited],
+        subcommands: [leaf],
+      );
+
+      ArgParseResult parse(final List<String> args) {
+        return scanAndParseCommands(args, rootCommand: root);
+      }
+
+      test('when the command tree is parsed then parsing succeeds', () {
+        expect(parse(<String>[]).command, same(root));
+      });
+
+      test(
+        'when the option is set on the root and on the subcommand '
+        'then each command keeps its own value',
+        () {
+          final result = parse(['--opt', '3', 'leaf', '--opt', 'foo']);
+
+          expect(result.regularOptions[inherited], '3');
+          expect(childResult(result).regularOptions[local], 'foo');
+        },
+      );
+
+      test(
+        'when the option is set after a nested command '
+        'then the subcommand persistent option receives it',
+        () {
+          final result = parse(['leaf', 'nested', '--opt', 'foo']);
+
+          expect(result.regularOptions, isNot(contains(inherited)));
+          expect(childResult(result).regularOptions[local], 'foo');
+          expect(childResult(result).child!.errors, isEmpty);
+        },
+      );
+    },
+  );
+
+  group(
+    'Given a non-persistent option that shadows an ancestor on one command',
+    () {
+      const inherited = StringOption(argName: 'opt', helpText: 'inherited');
+      const local = StringOption(argName: 'opt', helpText: 'local');
+      final nested = TestCommand(name: 'nested');
+      final leaf = TestCommand(
+        name: 'leaf',
+        options: [local],
+        subcommands: [nested],
+      );
+      final root = TestCommand(
+        name: 'tool',
+        persistentOptions: [inherited],
+        subcommands: [leaf],
+      );
+
+      ArgParseResult parse(final List<String> args) {
+        return scanAndParseCommands(args, rootCommand: root);
+      }
+
+      test(
+        'when the option is set on the shadowing command '
+        'then that command receives it',
+        () {
+          final result = parse(['leaf', '--opt', 'foo', 'nested']);
+
+          expect(result.regularOptions, isNot(contains(inherited)));
+          expect(childResult(result).regularOptions[local], 'foo');
+        },
+      );
+
+      test(
+        'when the option is set on a further nested command '
+        'then the ancestor persistent option receives it',
+        () {
+          final result = parse(['leaf', 'nested', '--opt', '3']);
+
+          expect(result.regularOptions[inherited], '3');
+          expect(
+            childResult(result).regularOptions,
+            isNot(contains(local)),
+          );
+        },
+      );
+    },
+  );
+
+  group(
+    'Given a subcommand option that reuses a shadowed abbreviation',
+    () {
+      const inherited = StringOption(
+        argName: 'opt',
+        argAbbrev: 'o',
+        helpText: 'inherited',
+      );
+      const local = StringOption(
+        argName: 'opt',
+        argAbbrev: 'o',
+        helpText: 'local',
+      );
+      final leaf = TestCommand(name: 'leaf', options: [local]);
+      final root = TestCommand(
+        name: 'tool',
+        persistentOptions: [inherited],
+        subcommands: [leaf],
+      );
+
+      test(
+        'when the abbreviation is used after the subcommand '
+        'then the subcommand option is set',
+        () {
+          final result = scanAndParseCommands(
+            ['leaf', '-o', 'foo'],
+            rootCommand: root,
+          );
+
+          expect(childResult(result).regularOptions[local], 'foo');
+          expect(result.regularOptions, isNot(contains(inherited)));
+        },
+      );
+    },
+  );
+
+  group(
+    'Given a subcommand option that reuses an inherited alias',
+    () {
+      const inherited = StringOption(
+        argName: 'color',
+        argAliases: ['colour'],
+      );
+      const local = StringOption(argName: 'colour');
+      final leaf = TestCommand(name: 'leaf', options: [local]);
+      final root = TestCommand(
+        name: 'tool',
+        persistentOptions: [inherited],
+        subcommands: [leaf],
+      );
+
+      ArgParseResult parse(final List<String> args) {
+        return scanAndParseCommands(args, rootCommand: root);
+      }
+
+      test('when the command tree is parsed then parsing succeeds', () {
+        expect(parse(<String>[]).command, same(root));
+      });
+
+      test(
+        'when the alias is used after the subcommand '
+        'then the subcommand option is set',
+        () {
+          final result = parse(['leaf', '--colour', 'red']);
+
+          expect(childResult(result).regularOptions[local], 'red');
+          expect(result.regularOptions, isNot(contains(inherited)));
+        },
+      );
+
+      test(
+        'when the persistent name is used after the subcommand '
+        'then the persistent option is set',
+        () {
+          final result = parse(['leaf', '--color', 'blue']);
+
+          expect(result.regularOptions[inherited], 'blue');
+          expect(
+            childResult(result).regularOptions,
+            isNot(contains(local)),
+          );
+        },
+      );
+    },
+  );
+
+  group(
+    'Given a subcommand alias that reuses an inherited name',
+    () {
+      const inherited = StringOption(argName: 'opt', argAbbrev: 'o');
+      const local = StringOption(argName: 'mode', argAliases: ['opt']);
+      final leaf = TestCommand(name: 'leaf', options: [local]);
+      final root = TestCommand(
+        name: 'tool',
+        persistentOptions: [inherited],
+        subcommands: [leaf],
+      );
+
+      ArgParseResult parse(final List<String> args) {
+        return scanAndParseCommands(args, rootCommand: root);
+      }
+
+      test(
+        'when the shared name is used after the subcommand '
+        'then the subcommand option is set',
+        () {
+          final result = parse(['leaf', '--opt', 'foo']);
+
+          expect(childResult(result).regularOptions[local], 'foo');
+          expect(result.regularOptions, isNot(contains(inherited)));
+        },
+      );
+
+      test(
+        'when the persistent abbreviation is used after the subcommand '
+        'then the persistent option is set',
+        () {
+          final result = parse(['leaf', '-o', '3']);
+
+          expect(result.regularOptions[inherited], '3');
+        },
+      );
+    },
+  );
+
+  group(
+    'Given a command with a persistent option and a regular option '
+    'of the same name',
+    () {
+      final root = TestCommand(
+        name: 'tool',
+        persistentOptions: const [StringOption(argName: 'opt')],
+        options: const [StringOption(argName: 'opt')],
       );
 
       test('when the command tree is parsed then parsing fails', () {
@@ -704,7 +994,7 @@ void main() {
             isA<OptionDefinitionError>().having(
               (final e) => e.toString(),
               'toString',
-              contains('Duplicate argument name: verbose'),
+              contains('Duplicate argument name: opt'),
             ),
           ),
         );
@@ -713,32 +1003,176 @@ void main() {
   );
 
   group(
-    'Given a subcommand persistent option that reuses an inherited name',
+    'Given a persistent option and a subcommand option '
+    'that share an environment name',
     () {
-      const inherited = FlagOption(
-        argName: 'verbose',
+      const inherited = StringOption(
+        argName: 'opt',
+        envName: 'OPT',
         helpText: 'inherited',
       );
-      const local = FlagOption(argName: 'verbose', helpText: 'local');
-      final leaf = TestCommand(name: 'leaf', persistentOptions: [local]);
+      const local = StringOption(
+        argName: 'opt',
+        envName: 'OPT',
+        helpText: 'local',
+      );
+      final leaf = TestCommand(name: 'leaf', options: [local]);
       final root = TestCommand(
         name: 'tool',
         persistentOptions: [inherited],
         subcommands: [leaf],
       );
 
-      test('when the command tree is parsed then parsing fails', () {
+      test('when the command tree is parsed then parsing succeeds', () {
         expect(
-          () => scanAndParseCommands(<String>[], rootCommand: root),
-          throwsA(
-            isA<OptionDefinitionError>().having(
-              (final e) => e.toString(),
-              'toString',
-              contains('Duplicate argument name: verbose'),
-            ),
-          ),
+          scanAndParseCommands(<String>[], rootCommand: root).command,
+          same(root),
         );
       });
+    },
+  );
+
+  group(
+    'Given one option object that is persistent on the root and the leaf',
+    () {
+      const shared = StringOption(argName: 'opt', helpText: 'shared');
+      const middleOpt = StringOption(argName: 'opt', helpText: 'middle');
+      final nested = TestCommand(name: 'nested');
+      final leaf = TestCommand(
+        name: 'leaf',
+        persistentOptions: [shared],
+        subcommands: [nested],
+      );
+      final middle = TestCommand(
+        name: 'middle',
+        persistentOptions: [middleOpt],
+        subcommands: [leaf],
+      );
+      final root = TestCommand(
+        name: 'tool',
+        persistentOptions: [shared],
+        subcommands: [middle],
+      );
+
+      ArgParseResult parse(final List<String> args) {
+        return scanAndParseCommands(args, rootCommand: root);
+      }
+
+      test(
+        'when the option is set under a command below the leaf '
+        'then the leaf receives it',
+        () {
+          final result = parse(['middle', 'leaf', 'nested', '--opt', 'leaf']);
+          final middleResult = childResult(result);
+          final leafResult = childResult(middleResult);
+
+          expect(leafResult.regularOptions[shared], 'leaf');
+          expect(middleResult.regularOptions, isNot(contains(middleOpt)));
+          expect(result.regularOptions, isNot(contains(shared)));
+        },
+      );
+
+      test(
+        'when the option is set on the middle command '
+        'then the middle option receives it',
+        () {
+          final result = parse(['middle', '--opt', 'mid', 'leaf', 'nested']);
+
+          expect(childResult(result).regularOptions[middleOpt], 'mid');
+          expect(
+            childResult(childResult(result)).regularOptions,
+            isNot(contains(shared)),
+          );
+        },
+      );
+    },
+  );
+
+  group(
+    'Given one option object that is persistent on the root '
+    'and non-persistent on the leaf',
+    () {
+      const shared = StringOption(argName: 'opt', helpText: 'shared');
+      final leaf = TestCommand(name: 'leaf', options: [shared]);
+      final root = TestCommand(
+        name: 'tool',
+        persistentOptions: [shared],
+        subcommands: [leaf],
+      );
+
+      ArgParseResult parse(final List<String> args) {
+        return scanAndParseCommands(args, rootCommand: root);
+      }
+
+      test(
+        'when the option is set on the root and on the leaf '
+        'then each command keeps its own value',
+        () {
+          final result = parse(['--opt', 'root', 'leaf', '--opt', 'local']);
+
+          expect(result.regularOptions[shared], 'root');
+          expect(childResult(result).regularOptions[shared], 'local');
+        },
+      );
+
+      test(
+        'when the option is set only on the leaf '
+        'then the root does not receive it',
+        () {
+          final result = parse(['leaf', '--opt', 'local']);
+
+          expect(result.regularOptions, isNot(contains(shared)));
+          expect(childResult(result).regularOptions[shared], 'local');
+        },
+      );
+    },
+  );
+
+  group(
+    'Given a negatable persistent flag shadowed by a subcommand flag',
+    () {
+      const inherited = FlagOption(
+        argName: 'verbose',
+        negatable: true,
+        helpText: 'inherited',
+      );
+      const local = FlagOption(
+        argName: 'verbose',
+        negatable: true,
+        helpText: 'local',
+      );
+      final leaf = TestCommand(name: 'leaf', options: [local]);
+      final root = TestCommand(
+        name: 'tool',
+        persistentOptions: [inherited],
+        subcommands: [leaf],
+      );
+
+      ArgParseResult parse(final List<String> args) {
+        return scanAndParseCommands(args, rootCommand: root);
+      }
+
+      test(
+        'when the root flag is negated and the subcommand flag is set '
+        'then each flag has its own value',
+        () {
+          final result = parse(['--no-verbose', 'leaf', '--verbose']);
+
+          expect(result.flagOptions[inherited], isFalse);
+          expect(childResult(result).flagOptions[local], isTrue);
+        },
+      );
+
+      test(
+        'when the negation is written after the subcommand '
+        'then the subcommand flag is negated',
+        () {
+          final result = parse(['leaf', '--no-verbose']);
+
+          expect(result.flagOptions, isNot(contains(inherited)));
+          expect(childResult(result).flagOptions[local], isFalse);
+        },
+      );
     },
   );
 
@@ -754,18 +1188,125 @@ void main() {
         subcommands: [leaf],
       );
 
-      test('when the command tree is parsed then parsing fails', () {
-        expect(
-          () => scanAndParseCommands(<String>[], rootCommand: root),
-          throwsA(
-            isA<OptionDefinitionError>().having(
-              (final e) => e.toString(),
-              'toString',
-              contains('Duplicate argument abbreviation: v'),
-            ),
-          ),
-        );
+      ArgParseResult parse(final List<String> args) {
+        return scanAndParseCommands(args, rootCommand: root);
+      }
+
+      test('when the command tree is parsed then parsing succeeds', () {
+        expect(parse(<String>[]).command, same(root));
       });
+
+      test(
+        'when the abbreviation is used after the subcommand '
+        'then the subcommand option is set',
+        () {
+          final result = parse(['leaf', '-v']);
+
+          expect(childResult(result).flagOptions[local], isTrue);
+          expect(result.flagOptions, isNot(contains(inherited)));
+        },
+      );
+
+      test(
+        'when the persistent name is used after the subcommand '
+        'then the persistent option is set',
+        () {
+          final result = parse(['leaf', '--verbose']);
+
+          expect(result.flagOptions[inherited], isTrue);
+          expect(
+            childResult(result).flagOptions,
+            isNot(contains(local)),
+          );
+        },
+      );
+    },
+  );
+
+  group(
+    'Given a negatable persistent flag and a subcommand option '
+    'that reuses only its name',
+    () {
+      const inherited = FlagOption(argName: 'verbose', negatable: true);
+      const local = FlagOption(argName: 'verbose', negatable: false);
+      final leaf = TestCommand(name: 'leaf', options: [local]);
+      final root = TestCommand(
+        name: 'tool',
+        persistentOptions: [inherited],
+        subcommands: [leaf],
+      );
+
+      ArgParseResult parse(final List<String> args) {
+        return scanAndParseCommands(args, rootCommand: root);
+      }
+
+      test(
+        'when --verbose is written after the subcommand '
+        'then the subcommand flag is set',
+        () {
+          final result = parse(['leaf', '--verbose']);
+
+          expect(childResult(result).flagOptions[local], isTrue);
+          expect(result.flagOptions, isNot(contains(inherited)));
+        },
+      );
+
+      test(
+        'when --no-verbose is written after the subcommand '
+        'then the persistent flag is negated',
+        () {
+          final result = parse(['leaf', '--no-verbose']);
+
+          expect(result.flagOptions[inherited], isFalse);
+          expect(
+            childResult(result).flagOptions,
+            isNot(contains(local)),
+          );
+        },
+      );
+    },
+  );
+
+  group(
+    "Given a subcommand option named like a persistent flag's no- form",
+    () {
+      const inherited = FlagOption(argName: 'verbose', negatable: true);
+      const local = StringOption(argName: 'no-verbose');
+      final leaf = TestCommand(name: 'leaf', options: [local]);
+      final root = TestCommand(
+        name: 'tool',
+        persistentOptions: [inherited],
+        subcommands: [leaf],
+      );
+
+      ArgParseResult parse(final List<String> args) {
+        return scanAndParseCommands(args, rootCommand: root);
+      }
+
+      test(
+        'when --no-verbose is written after the subcommand '
+        'then the subcommand option is set',
+        () {
+          final result = parse(['leaf', '--no-verbose', 'off']);
+
+          expect(childResult(result).regularOptions[local], 'off');
+          expect(result.flagOptions, isNot(contains(inherited)));
+        },
+      );
+
+      test(
+        'when --verbose is written after the subcommand '
+        'then the persistent flag is set',
+        () {
+          final result = parse(['leaf', '--verbose']);
+
+          expect(result.flagOptions[inherited], isTrue);
+          expect(
+            childResult(result).regularOptions,
+            isNot(contains(local)),
+          );
+        },
+      );
     },
   );
 

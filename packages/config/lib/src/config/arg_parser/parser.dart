@@ -211,19 +211,35 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
   final result = ArgParseResult<O>(command: command, parent: parent);
   var rejectedSubcommand = false;
 
+  final ownOptions = <OptionDefinition>[
+    ...?command?.allOptions(),
+    ...?options,
+  ];
+
+  // Spread keeps ancestor registration order. Re-inserting an option this
+  // command also defines moves that key to the end, so a later command sees
+  // it as the latest registration. Updating the value in place would leave
+  // an earlier key ahead of options registered in between.
   final persistentOwners = <ConfigOptionBase, ArgParseResult<O>>{
     ...?inheritedPersistentOwners,
-    if (command != null) ...{
-      for (final option in command.allOptions(onlyPersistent: true))
-        option.option: result,
-    },
   };
+  if (command != null) {
+    for (final option in command.allOptions(onlyPersistent: true)) {
+      persistentOwners.remove(option.option);
+      persistentOwners[option.option] = result;
+    }
+  }
 
-  final allOptions = [
-    ...?command?.options,
-    ...?options,
-    ...persistentOwners.keys,
+  final allOptions = <ConfigOptionBase>[
+    ...?inheritedPersistentOwners?.keys,
+    for (final option in ownOptions) option.option,
   ];
+  // The same option object can be persistent on an ancestor and declared
+  // again here. The declaration on this command owns values written here,
+  // including when this declaration is not itself persistent.
+  final ownOptionBases = <ConfigOptionBase>{
+    for (final option in ownOptions) option.option,
+  };
 
   final possibleOptionNames = <String, ConfigOptionBase>{};
   final possibleOptionAbbrevs = <String, ConfigOptionBase>{};
@@ -256,7 +272,12 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
         if (option != null) {
           _assignOption(
             result: result,
-            target: persistentOwners[option] ?? result,
+            target: _optionTarget(
+              option,
+              ownOptionBases: ownOptionBases,
+              persistentOwners: persistentOwners,
+              result: result,
+            ),
             option: option,
             scannedArgs: scannedArgs,
             name: arg.string,
@@ -281,7 +302,12 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
         if (option != null) {
           _assignOption(
             result: result,
-            target: persistentOwners[option] ?? result,
+            target: _optionTarget(
+              option,
+              ownOptionBases: ownOptionBases,
+              persistentOwners: persistentOwners,
+              result: result,
+            ),
             option: option,
             scannedArgs: scannedArgs,
             name: arg.string,
@@ -352,6 +378,20 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
   }
 
   return result;
+}
+
+/// Where a parsed option's value is recorded.
+///
+/// An option declared on [result]'s command is recorded there. An inherited
+/// persistent option is recorded on the command that registered it.
+ArgParseResult<O> _optionTarget<O extends OptionDefinition>(
+  final ConfigOptionBase option, {
+  required final Set<ConfigOptionBase> ownOptionBases,
+  required final Map<ConfigOptionBase, ArgParseResult<O>> persistentOwners,
+  required final ArgParseResult<O> result,
+}) {
+  if (ownOptionBases.contains(option)) return result;
+  return persistentOwners[option] ?? result;
 }
 
 String _unknownSubcommandError<O extends OptionDefinition>(
@@ -426,14 +466,17 @@ void _validateCommandsAndOptions<O extends OptionDefinition>(
   final CommandDefinition<O> command, {
   final List<OptionDefinition> inheritedPersistentOptions = const [],
 }) {
-  final visibleOptions = <OptionDefinition>[
-    ...inheritedPersistentOptions,
-    ...command.allOptions(),
-  ];
-  validateOptions(visibleOptions);
+  final ownOptions = command.allOptions();
+  validateOptions(ownOptions);
 
   _rejectPositionalPersistentOptions(command);
 
+  // Ancestors first, so a spelling defined on this command replaces the same
+  // spelling of an inherited persistent option.
+  final visibleOptions = <OptionDefinition>[
+    ...inheritedPersistentOptions,
+    ...ownOptions,
+  ];
   final subcommands = command.subcommands;
   if (subcommands.isNotEmpty) {
     _rejectDuplicateSubcommandNames(command.name, subcommands);
@@ -476,10 +519,10 @@ void _rejectDuplicateSubcommandNames(
 /// Rejects a subcommand name or alias in option syntax that matches an
 /// option visible on [commandName].
 ///
-/// Visible options are the command's own options and every persistent option
-/// inherited from its ancestors. A command may still define an option whose spelling
-/// matches its own name: that option is parsed only after the command is
-/// selected.
+/// Visible spellings are the command's own option spellings and every
+/// persistent spelling inherited from its ancestors that this command does not
+/// repeat. A command may still define an option whose spelling matches its own
+/// name: that option is parsed only after the command is selected.
 void _rejectOptionLikeSubcommandCollisions<O extends OptionDefinition>(
   final String commandName,
   final List<O> options,
