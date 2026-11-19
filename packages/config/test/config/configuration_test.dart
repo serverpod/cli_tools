@@ -1,3 +1,4 @@
+import 'package:args/args.dart';
 import 'package:config/config.dart';
 import 'package:test/test.dart';
 
@@ -390,6 +391,17 @@ void main() async {
 
       expect(config.value(projectIdOpt), 'constDefaultValue');
     });
+
+    test(
+      'when the legacy parser reads no arguments '
+      'then the result is the configured default',
+      () {
+        final parser = ArgParser();
+        prepareOptionsForParsing([projectIdOpt], parser);
+
+        expect(parser.parse(const []).option('project'), 'constDefaultValue');
+      },
+    );
   });
 
   group('Given defaultValueHelp and allowed values', () {
@@ -443,6 +455,67 @@ void main() async {
       expect(
         [suits].usage,
         equals('--suit    (defaults to "the red and black suits")'),
+      );
+    });
+
+    test(
+      'when the legacy parser reads no arguments '
+      'then the result is the configured defaults',
+      () {
+        final parser = ArgParser();
+        prepareOptionsForParsing([suits], parser);
+
+        expect(
+          parser.parse(const []).multiOption('suit'),
+          ['clubs', 'hearts'],
+        );
+      },
+    );
+  });
+
+  group('Given a flag with defaultValueHelp', () {
+    const color = FlagOption(
+      argName: 'color',
+      helpText: 'Colorize output',
+      defaultsTo: true,
+      defaultValueHelp: 'when stdout is a terminal',
+    );
+
+    test('when getting the usage then the custom text is shown', () {
+      expect(
+        [color].usage,
+        equals(
+          '--[no-]color    Colorize output\n'
+          '                (defaults to when stdout is a terminal)',
+        ),
+      );
+    });
+
+    test(
+      'when the legacy parser reads no arguments then the flag stays on',
+      () {
+        final parser = ArgParser();
+        prepareOptionsForParsing([color], parser);
+
+        expect(parser.parse(const []).flag('color'), isTrue);
+      },
+    );
+  });
+
+  group('Given a flag without defaultValueHelp', () {
+    const verbose = FlagOption(
+      argName: 'verbose',
+      helpText: 'Emit more logs',
+      defaultsTo: true,
+    );
+
+    test('when getting the usage then the boolean default is shown', () {
+      expect(
+        [verbose].usage,
+        equals(
+          '--[no-]verbose    Emit more logs\n'
+          '                  (defaults to on)',
+        ),
       );
     });
   });
