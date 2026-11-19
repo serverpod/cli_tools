@@ -355,6 +355,13 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
     customValidator?.call(value);
   }
 
+  /// The value stored after [validateValue] has accepted [value].
+  ///
+  /// The default returns [value]. A date-only option maps the value onto
+  /// local midnight on the same calendar date.
+  @internal
+  V valueToStore(final V value) => value;
+
   /// Returns self.
   @override
   ConfigOptionBase<V> get option => this;
@@ -502,6 +509,11 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
     final error = validateOptionValue(res.value);
     if (error != null) return res.copyWithError(error);
 
+    final accepted = res.value;
+    if (accepted != null) {
+      final stored = valueToStore(accepted);
+      if (stored != accepted) return res.copyWithValue(stored);
+    }
     return res;
   }
 

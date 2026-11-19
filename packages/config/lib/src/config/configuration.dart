@@ -376,7 +376,11 @@ class Configuration<O extends OptionDefinition> {
 
     final error = option.option.validateOptionValue(value);
     if (error != null) return resolution.copyWithError(error);
-    return resolution;
+    if (value == null) return resolution;
+
+    final stored = option.option.valueToStore(value);
+    if (stored == value) return resolution;
+    return resolution.copyWithValue(stored);
   }
 
   void _validateGroups(

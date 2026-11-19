@@ -1,8 +1,4 @@
-import 'arg_parser_facade.dart' show ParsedArgs;
-import 'configuration.dart' show Configuration;
-import 'configuration_broker.dart';
 import 'exceptions.dart';
-import 'option_resolution_impl.dart';
 import 'option_types.dart';
 import 'options.dart';
 
@@ -269,7 +265,8 @@ class DateTimeParser extends ValueParser<DateTime> {
 /// a numeric offset is UTC.
 ///
 /// Set [dateOnly] to accept only a calendar date. The value is local
-/// midnight on that date, including a typed default or configuration value:
+/// midnight on that date, including a typed default, preset, or configuration
+/// value:
 /// its year, month, and day are kept and the time of day is not part of the
 /// value. Allowed values match on that calendar date, so a UTC date and a
 /// local date on the same day are the same choice. The value help then
@@ -345,27 +342,11 @@ class DateTimeOption extends ComparableValueOption<DateTime> {
     }
   }
 
+  /// A date-only value is stored as local midnight on its calendar date.
   @override
-  OptionResolutionImpl<DateTime> resolveValue(
-    final Configuration cfg, {
-    final ParsedArgs? args,
-    final Iterator<String>? posArgs,
-    final Map<String, String>? env,
-    final ConfigurationBroker? configBroker,
-  }) {
-    final resolved = super.resolveValue(
-      cfg,
-      args: args,
-      posArgs: posArgs,
-      env: env,
-      configBroker: configBroker,
-    );
-    if (!dateOnly || resolved.error != null) return resolved;
-    final value = resolved.value;
-    if (value == null) return resolved;
-    final local = _localCalendarDate(value);
-    if (local == value) return resolved;
-    return resolved.copyWithValue(local);
+  DateTime valueToStore(final DateTime value) {
+    if (!dateOnly) return value;
+    return _localCalendarDate(value);
   }
 
   /// Local midnight on [value]'s calendar date.

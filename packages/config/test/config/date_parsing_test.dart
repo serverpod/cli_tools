@@ -397,6 +397,26 @@ void main() {
       },
     );
 
+    test('when a preset has a time then the value is that calendar date', () {
+      const option = DateTimeOption(argName: 'on', dateOnly: true);
+      final config = Configuration.fromValues(
+        values: {option: DateTime.utc(2026, 8, 1, 15)},
+      );
+
+      expect(config.errors, isEmpty);
+      expect(config.optionalValue(option), DateTime(2026, 8, 1));
+    });
+
+    test('when a timestamp preset has a time then that time is kept', () {
+      const option = DateTimeOption(argName: 'before');
+      final instant = DateTime.utc(2026, 8, 1, 15);
+      final config = Configuration.fromValues(
+        values: {option: instant},
+      );
+
+      expect(config.optionalValue(option), instant);
+    });
+
     test(
       'when the default is local midnight then the value is that midnight',
       () {
