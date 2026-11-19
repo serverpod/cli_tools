@@ -206,6 +206,12 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
   final V Function()? fromDefault;
   final V? defaultsTo;
 
+  /// Usage text for the default, shown instead of the formatted actual default value.
+  /// Set this when the actual default value is not what users should read.
+  /// For example, a computed directory can be shown as `<package-root>/lib/` rather
+  /// than its absolute path.
+  final String? defaultValueHelp;
+
   final String? helpText;
   final String? valueHelp;
   final Map<String, String>? allowedHelp;
@@ -228,6 +234,7 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
     this.fromCustom,
     this.fromDefault,
     this.defaultsTo,
+    this.defaultValueHelp,
     this.helpText,
     this.valueHelp,
     this.allowedHelp,
@@ -252,10 +259,13 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
     return (df != null ? df() : defaultsTo);
   }
 
+  /// The default value as shown in usage.
+  /// [defaultValueHelp] when set, otherwise the formatted [defaultValue].
+  /// Returns null when the option has no default.
   String? defaultValueString() {
     final defValue = defaultValue();
     if (defValue == null) return null;
-    return valueParser.format(defValue);
+    return defaultValueHelp ?? valueParser.format(defValue);
   }
 
   String? valueHelpString() {
@@ -318,6 +328,12 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
       throw OptionDefinitionError(
         this,
         "Mandatory options can't have default values",
+      );
+    }
+    if (defaultValueHelp != null && fromDefault == null && defaultsTo == null) {
+      throw OptionDefinitionError(
+        this,
+        'defaultValueHelp requires defaultsTo or fromDefault',
       );
     }
   }
@@ -666,6 +682,7 @@ class FlagOption extends ConfigOptionBase<bool> {
     super.fromCustom,
     super.fromDefault,
     super.defaultsTo,
+    super.defaultValueHelp,
     super.helpText,
     super.valueHelp,
     super.group,
@@ -757,6 +774,7 @@ class MultiOption<T> extends ConfigOptionBase<List<T>> {
     super.fromCustom,
     super.fromDefault,
     super.defaultsTo,
+    super.defaultValueHelp,
     super.helpText,
     super.valueHelp,
     super.allowedHelp,

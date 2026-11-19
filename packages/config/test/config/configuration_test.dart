@@ -364,6 +364,89 @@ void main() async {
     });
   });
 
+  group('Given an option with defaultValueHelp', () {
+    const projectIdOpt = StringOption(
+      argName: 'project',
+      defaultsTo: 'constDefaultValue',
+      defaultValueHelp: '<project>',
+    );
+
+    test('then the usage text replaces the formatted default', () {
+      expect(projectIdOpt.defaultValueString(), '<project>');
+    });
+
+    test('when getting the usage then the custom text is shown', () {
+      expect(
+        [projectIdOpt].usage,
+        equals('--project    (defaults to "<project>")'),
+      );
+    });
+
+    test('when resolving with no arguments then the value is unchanged', () {
+      final config = Configuration.resolve(
+        options: [projectIdOpt],
+        args: const [],
+      );
+
+      expect(config.value(projectIdOpt), 'constDefaultValue');
+    });
+  });
+
+  group('Given defaultValueHelp and allowed values', () {
+    const suit = StringOption(
+      argName: 'suit',
+      helpText: 'Like in cards',
+      defaultsTo: 'clubs',
+      defaultValueHelp: 'the black suit',
+      allowedValues: ['spades', 'clubs', 'hearts', 'diamonds'],
+    );
+
+    test('when getting the usage then the formatted default stays marked', () {
+      expect(
+        [suit].usage,
+        equals(
+          '--suit    Like in cards\n'
+          '          [spades, clubs (default), hearts, diamonds]',
+        ),
+      );
+    });
+  });
+
+  group('Given defaultValueHelp without a default value', () {
+    const option = StringOption(
+      argName: 'name',
+      defaultValueHelp: '<name>',
+    );
+
+    test('when validating the definition then it throws', () {
+      expect(
+        () => validateOptions([option]),
+        throwsA(
+          isA<OptionDefinitionError>().having(
+            (final e) => e.message,
+            'message',
+            'defaultValueHelp requires defaultsTo or fromDefault',
+          ),
+        ),
+      );
+    });
+  });
+
+  group('Given a multi option with defaultValueHelp', () {
+    const suits = MultiStringOption(
+      argName: 'suit',
+      defaultsTo: ['clubs', 'hearts'],
+      defaultValueHelp: 'the red and black suits',
+    );
+
+    test('when getting the usage then the custom text is shown', () {
+      expect(
+        [suits].usage,
+        equals('--suit    (defaults to "the red and black suits")'),
+      );
+    });
+  });
+
   group('Given a configuration option with multiple configKeys', () {
     const projectIdOpt = StringOption(
       configKeys: ['primary:/projectId', 'fallback:/projectId'],

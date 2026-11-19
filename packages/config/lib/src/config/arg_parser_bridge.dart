@@ -149,9 +149,7 @@ void _addToArgParser(final OptionDefinition option, final ArgParser argParser) {
           opt.multiParser.elementParser.format,
         ),
         allowedHelp: opt.allowedHelp,
-        defaultsTo: opt.defaultValue()?.map(
-          opt.multiParser.elementParser.format,
-        ),
+        defaultsTo: _legacyMultiDefaults(opt),
         hide: opt.hide,
         splitCommas: opt.multiParser.separator == ',',
         aliases: opt.argAliases ?? const [],
@@ -165,10 +163,38 @@ void _addToArgParser(final OptionDefinition option, final ArgParser argParser) {
         valueHelp: opt.valueHelpString(),
         allowed: opt.allowedValues?.map(opt.valueParser.format),
         allowedHelp: opt.allowedHelp,
-        defaultsTo: opt.defaultValueString(),
+        defaultsTo: _legacyDefaultString(opt),
         mandatory: opt.mandatory,
         hide: opt.hide,
         aliases: opt.argAliases ?? const [],
       );
   }
+}
+
+/// Default string stored on the legacy parser.
+///
+/// Allowed values are matched against the formatted default to mark it,
+/// so [ConfigOptionBase.defaultValueString] is used only when there is
+/// nothing to match.
+String? _legacyDefaultString(final ConfigOptionBase opt) {
+  if (opt.allowedValues != null || opt.allowedHelp != null) {
+    final value = opt.defaultValue();
+    if (value == null) return null;
+    return opt.valueParser.format(value);
+  }
+  return opt.defaultValueString();
+}
+
+/// Default list stored on the legacy parser for a [MultiOption].
+///
+/// Same rule as [_legacyDefaultString]: a custom help string replaces the
+/// formatted defaults only when no allowed value would be marked from them.
+Iterable<String>? _legacyMultiDefaults(final MultiOption opt) {
+  final marksAllowed =
+      opt.allowedElementValues != null || opt.allowedHelp != null;
+  final help = opt.defaultValueHelp;
+  if (!marksAllowed && help != null && opt.defaultValue() != null) {
+    return [help];
+  }
+  return opt.defaultValue()?.map(opt.multiParser.elementParser.format);
 }
