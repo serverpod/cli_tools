@@ -237,7 +237,7 @@ The library provides a rich set of typed options out of the box. All option type
 
 | Value Type | Option Class | Additional Settings | Description |
 |------|-------|---------------------|-------------|
-| String | `StringOption` | None | String values |
+| String | `StringOption` | `requireNonEmpty` | Whether a non-empty string is required |
 | Boolean | `FlagOption` | `negatable` | Whether the flag can be negated |
 | Integer | `IntOption` | `min`<br>`max` | Minimum allowed value<br>Maximum allowed value |
 | DateTime | `DateTimeOption` | `min`<br>`max` | Minimum allowed date/time<br>Maximum allowed date/time |

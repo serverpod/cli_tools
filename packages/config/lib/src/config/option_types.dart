@@ -16,7 +16,13 @@ class StringParser extends ValueParser<String> {
 }
 
 /// String value configuration option.
+///
+/// If [requireNonEmpty] is true and the input is an empty string,
+/// the validation throws a [FormatException].
 class StringOption extends ConfigOptionBase<String> {
+  /// When true, an empty string is rejected as an invalid value.
+  final bool requireNonEmpty;
+
   const StringOption({
     super.argName,
     super.argAliases,
@@ -36,9 +42,20 @@ class StringOption extends ConfigOptionBase<String> {
     super.customValidator,
     super.mandatory,
     super.hide,
+    this.requireNonEmpty = false,
   }) : super(
          valueParser: const StringParser(),
        );
+
+  @override
+  @mustCallSuper
+  void validateValue(final String value) {
+    super.validateValue(value);
+
+    if (requireNonEmpty && value.isEmpty) {
+      throw const FormatException('Value must not be empty');
+    }
+  }
 }
 
 /// Convenience class for multi-value configuration option for strings.

@@ -8,6 +8,131 @@ enum AnimalEnum {
 }
 
 void main() async {
+  group('Given a StringOption', () {
+    const typedOpt = StringOption(argName: 'name');
+
+    test('when passed an empty argument then it is parsed correctly', () async {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        args: ['--name', ''],
+      );
+      expect(config.optionalValue(typedOpt), equals(''));
+    });
+  });
+
+  group('Given a StringOption that rejects empty strings', () {
+    const typedOpt = StringOption(
+      argName: 'name',
+      envName: 'NAME',
+      configKey: 'name',
+      requireNonEmpty: true,
+    );
+
+    test(
+      'when passed a non-empty value then it is parsed correctly',
+      () async {
+        final config = Configuration.resolveNoExcept(
+          options: [typedOpt],
+          args: ['--name', 'alice'],
+        );
+        expect(config.optionalValue(typedOpt), equals('alice'));
+      },
+    );
+
+    test('when passed an empty argument then it reports an error', () async {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        args: ['--name', ''],
+      );
+
+      expect(config.errors, hasLength(1));
+      expect(
+        config.errors.single,
+        equals('Invalid value for option `name`: Value must not be empty'),
+      );
+    });
+
+    test('when passed an empty env var then it reports an error', () async {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        env: <String, String>{'NAME': ''},
+      );
+
+      expect(config.errors, hasLength(1));
+      expect(
+        config.errors.single,
+        equals('Invalid value for option `name`: Value must not be empty'),
+      );
+    });
+
+    test(
+      'when passed an empty config value then it reports an error',
+      () async {
+        final config = Configuration.resolveNoExcept(
+          options: [typedOpt],
+          configBroker: _TestConfigBroker({'name': ''}),
+        );
+
+        expect(config.errors, hasLength(1));
+        expect(
+          config.errors.single,
+          equals('Invalid value for option `name`: Value must not be empty'),
+        );
+      },
+    );
+
+    test(
+      'when passed a whitespace value then it is parsed correctly',
+      () async {
+        final config = Configuration.resolveNoExcept(
+          options: [typedOpt],
+          args: ['--name', ' '],
+        );
+        expect(config.optionalValue(typedOpt), equals(' '));
+      },
+    );
+
+    test('when passed no value then it stays unset', () async {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        args: [],
+      );
+      expect(config.errors, isEmpty);
+      expect(config.optionalValue(typedOpt), isNull);
+    });
+
+    test('when the default is empty then it reports an error', () async {
+      const option = StringOption(
+        argName: 'name',
+        defaultsTo: '',
+        requireNonEmpty: true,
+      );
+      final config = Configuration.resolveNoExcept(
+        options: [option],
+        args: [],
+      );
+
+      expect(config.errors, hasLength(1));
+      expect(
+        config.errors.single,
+        equals('Invalid value for option `name`: Value must not be empty'),
+      );
+    });
+
+    test('when the default is non-empty then it is used', () async {
+      const option = StringOption(
+        argName: 'name',
+        defaultsTo: 'fallback',
+        requireNonEmpty: true,
+      );
+      final config = Configuration.resolveNoExcept(
+        options: [option],
+        args: [],
+      );
+      expect(config.optionalValue(option), equals('fallback'));
+    });
+  });
+
   group('Given an EnumOption', () {
     const typedOpt = EnumOption(
       argName: 'animal',
