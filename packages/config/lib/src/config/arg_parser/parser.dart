@@ -211,6 +211,11 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
   final result = ArgParseResult<O>(command: command, parent: parent);
   var rejectedSubcommand = false;
 
+  final ownOptions = <OptionDefinition>[
+    ...?command?.allOptions(),
+    ...?options,
+  ];
+
   final persistentOwners = <ConfigOptionBase, ArgParseResult<O>>{
     ...?inheritedPersistentOwners,
     if (command != null) ...{
@@ -219,10 +224,9 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
     },
   };
 
-  final allOptions = [
-    ...?command?.options,
-    ...?options,
-    ...persistentOwners.keys,
+  final allOptions = <ConfigOptionBase>[
+    ...?inheritedPersistentOwners?.keys,
+    for (final option in ownOptions) option.option,
   ];
 
   final possibleOptionNames = <String, ConfigOptionBase>{};
@@ -426,14 +430,17 @@ void _validateCommandsAndOptions<O extends OptionDefinition>(
   final CommandDefinition<O> command, {
   final List<OptionDefinition> inheritedPersistentOptions = const [],
 }) {
-  final visibleOptions = <OptionDefinition>[
-    ...inheritedPersistentOptions,
-    ...command.allOptions(),
-  ];
-  validateOptions(visibleOptions);
+  final ownOptions = command.allOptions();
+  validateOptions(ownOptions);
 
   _rejectPositionalPersistentOptions(command);
 
+  // Ancestors first, so a spelling defined on this command replaces the same
+  // spelling of an inherited persistent option.
+  final visibleOptions = <OptionDefinition>[
+    ...inheritedPersistentOptions,
+    ...ownOptions,
+  ];
   final subcommands = command.subcommands;
   if (subcommands.isNotEmpty) {
     _rejectDuplicateSubcommandNames(command.name, subcommands);
@@ -476,10 +483,10 @@ void _rejectDuplicateSubcommandNames(
 /// Rejects a subcommand name or alias in option syntax that matches an
 /// option visible on [commandName].
 ///
-/// Visible options are the command's own options and every persistent option
-/// inherited from its ancestors. A command may still define an option whose spelling
-/// matches its own name: that option is parsed only after the command is
-/// selected.
+/// Visible spellings are the command's own option spellings and every
+/// persistent spelling inherited from its ancestors that this command does not
+/// repeat. A command may still define an option whose spelling matches its own
+/// name: that option is parsed only after the command is selected.
 void _rejectOptionLikeSubcommandCollisions<O extends OptionDefinition>(
   final String commandName,
   final List<O> options,

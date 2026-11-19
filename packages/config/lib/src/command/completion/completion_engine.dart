@@ -180,21 +180,17 @@ class CompletionEngine<O extends OptionDefinition, T> {
 
   /// Finds the option visible on the leaf command that is spelled
   /// `--name`, `--alias`, or `-x`.
+  ///
+  /// A nearer option wins when it repeats that spelling.
   ConfigOptionBase? _findOptionBySpelling(
     final _CommandLine line,
     final String spelling,
   ) {
-    for (final option in line.visibleOptions) {
-      if (spelling.startsWith('--')) {
-        final name = spelling.substring(2);
-        if (option.argName == name) return option;
-        if (option.argAliases?.contains(name) == true) return option;
-        if (option is FlagOption && name == 'no-${option.argName}') {
-          return option;
-        }
-      } else if (spelling.length == 2 && spelling.startsWith('-')) {
-        if (option.argAbbrev == spelling[1]) return option;
-      }
+    if (spelling.startsWith('--')) {
+      return line.spellings.names[spelling.substring(2)];
+    }
+    if (spelling.length == 2 && spelling.startsWith('-')) {
+      return line.spellings.abbrevs[spelling[1]];
     }
     return null;
   }
@@ -256,6 +252,7 @@ class CompletionEngine<O extends OptionDefinition, T> {
   ) {
     final includeShort = !current.startsWith('--');
     final candidates = <CompletionCandidate>[];
+    final spellings = line.spellings;
 
     for (final option in line.visibleOptions) {
       final name = option.argName;
@@ -264,16 +261,23 @@ class CompletionEngine<O extends OptionDefinition, T> {
       if (line.isExcluded(option)) continue;
 
       final description = _firstLine(option.helpText);
-      candidates.add(CompletionCandidate('--$name', description: description));
+      if (spellings.ownsName(option, name)) {
+        candidates.add(
+          CompletionCandidate('--$name', description: description),
+        );
+      }
       if (option is FlagOption &&
           option.negatable &&
-          !option.hideNegatedUsage) {
+          !option.hideNegatedUsage &&
+          spellings.ownsName(option, 'no-$name')) {
         candidates.add(
           CompletionCandidate('--no-$name', description: description),
         );
       }
       final abbrev = option.argAbbrev;
-      if (includeShort && abbrev != null) {
+      if (includeShort &&
+          abbrev != null &&
+          spellings.ownsAbbrev(option, abbrev)) {
         candidates.add(
           CompletionCandidate('-$abbrev', description: description),
         );
@@ -406,6 +410,42 @@ final _fileRedirection = RegExp(
   r'(.*)$',
 );
 
+/// Which option each command-line spelling refers to.
+///
+/// Options are registered from the root toward the leaf. A later option
+/// replaces only the spellings it defines: argument name, aliases, the
+/// `--no-` form of a negatable flag, and abbreviation.
+class _VisibleSpellings {
+  final Map<String, ConfigOptionBase> names = {};
+  final Map<String, ConfigOptionBase> abbrevs = {};
+
+  _VisibleSpellings(final Iterable<ConfigOptionBase> options) {
+    for (final option in options) {
+      final name = option.argName;
+      if (name != null) {
+        names[name] = option;
+        if (option is FlagOption && option.negatable) {
+          names['no-$name'] = option;
+        }
+      }
+      final aliases = option.argAliases;
+      if (aliases != null) {
+        for (final alias in aliases) {
+          names[alias] = option;
+        }
+      }
+      final abbrev = option.argAbbrev;
+      if (abbrev != null) abbrevs[abbrev] = option;
+    }
+  }
+
+  bool ownsName(final ConfigOptionBase option, final String name) =>
+      identical(names[name], option);
+
+  bool ownsAbbrev(final ConfigOptionBase option, final String abbrev) =>
+      identical(abbrevs[abbrev], option);
+}
+
 /// The parsed state of the command line preceding the word being completed.
 class _CommandLine {
   final List<ArgParseResult> chain;
@@ -426,8 +466,11 @@ class _CommandLine {
     for (final result in chain) _commandOf(result),
   ];
 
-  /// The options that can be given at the leaf command: its own options
-  /// and the persistent options, built-in or not, of it and its ancestors.
+  /// The options in scope at the leaf command: its own options and the
+  /// persistent options, built-in or not, of it and its ancestors.
+  ///
+  /// A nearer option may take one spelling of an ancestor option and leave
+  /// the others. [spellings] records which option each spelling refers to.
   Iterable<ConfigOptionBase> get visibleOptions sync* {
     final seen = <ConfigOptionBase>{};
     for (final command in commands) {
@@ -439,6 +482,8 @@ class _CommandLine {
       if (seen.add(option.option)) yield option.option;
     }
   }
+
+  late final _VisibleSpellings spellings = _VisibleSpellings(visibleOptions);
 
   bool wasParsed(final ConfigOptionBase option) {
     return chain.any(

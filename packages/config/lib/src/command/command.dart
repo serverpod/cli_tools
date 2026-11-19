@@ -21,7 +21,9 @@ import 'usage_generator.dart'
 ///
 /// All commands can have options. For a branch command, the options are
 /// "persistent", i.e. they are available anywhere to the right on the command
-/// line (across any subcommands). Leaf command options can be positional,
+/// line (across any subcommands). A later command shadows an identical
+/// spelling, so its `--opt` hides an ancestor's `--opt`.
+/// Leaf command options can be positional,
 /// i.e. directly as values without being prefixed by an option name.
 /// (Branch commands can't have positional options as they would conflict with
 /// subcommand names.)

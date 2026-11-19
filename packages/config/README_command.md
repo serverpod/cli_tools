@@ -27,12 +27,35 @@ code reentrant, which also makes it easier to write tests.
 ## Persistent options
 
 A persistent option belongs to the command that defines it and may be written
-anywhere after that command on the command line, including after its subcommands.
-The value is recorded on the defining command's context where it can be read by
-that command as well as its successor commands.
+anywhere after that command on the command line, including after its subcommands,
+unless a later command shadows that spelling. The value is recorded on the
+defining command's context where it can be read by that command as well as its
+successor commands.
+
+Shadowing is per spelling. A subcommand's `--opt` hides an ancestor's `--opt`
+and leaves the ancestor's abbreviation, unless the subcommand defines that
+abbreviation too. An alias or a `--no-` form hides the same string on the
+ancestor and no other spelling.
+
+```sh
+executable --opt=3 subcommand --opt=foo
+executable subcommand --opt=foo
+executable subcommand -o 3
+```
+
+The first sets the ancestor's `--opt` to `3` and the subcommand's `--opt` to
+`foo`. The second sets only the subcommand's option. When the ancestor's
+`--opt` also has `-o` and the subcommand does not, the third sets the ancestor's
+option. Options of one command still cannot share a spelling.
+
+A non-persistent option hides those spellings only on the command that defines
+it, so a further nested command sees the ancestor spellings again. A persistent
+option hides them for that command and every command below it, until another
+option shadows them. Environment variable names are not part of this: each
+command resolves its own configuration.
 
 Global options are the root command's persistent options, so they are valid
-anywhere on the command line:
+anywhere on the command line, except where a later command shadows them:
 
 ```sh
 executable --verbose subcommand

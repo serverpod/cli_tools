@@ -145,7 +145,8 @@ class CommandRunner<O extends OptionDefinition, T>
   ///
   /// [globalOptions] is the list of global options.
   /// Global options are "persistent" which means they are valid anywhere on the
-  /// command line.
+  /// command line. A subcommand shadows an identical spelling of a global
+  /// option, and leaves the global option's other spellings in place.
   ///
   /// The built-in global option `--help` / `-h` is available in addition,
   /// as is `--completion <shell>` for a runner without subcommands,

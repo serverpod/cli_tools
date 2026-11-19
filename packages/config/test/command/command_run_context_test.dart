@@ -933,6 +933,71 @@ void main() {
       },
     );
   });
+
+  group(
+    'Given a global option and a subcommand option of the same name',
+    () {
+      const globalOpt = StringOption(argName: 'opt', helpText: 'global');
+      const localOpt = StringOption(argName: 'opt', helpText: 'local');
+
+      late CommandContext rootContext;
+      late CommandContext leafContext;
+
+      Future<void> run(final List<String> args) async {
+        final command = CommandImpl.leafWithRunFunction<OptionDefinition, void>(
+          name: 'build',
+          description: 'Build the app',
+          options: [localOpt],
+          run: (final runContext) {
+            leafContext = runContext;
+            rootContext = runContext.root();
+          },
+        );
+        final runner = CommandRunner(
+          'tool',
+          'Tools',
+          globalOptions: [globalOpt],
+          subcommands: [command],
+        );
+        await runner.run(args);
+      }
+
+      group('when both options are set', () {
+        setUp(() async {
+          await run(['--opt', '3', 'build', '--opt', 'foo']);
+        });
+
+        test('then the root configuration has the global value', () {
+          expect(rootContext.config.optionalValue(globalOpt), '3');
+        });
+
+        test('then the subcommand configuration has its own value', () {
+          expect(leafContext.config.optionalValue(localOpt), 'foo');
+        });
+
+        test('then the subcommand does not own the global option', () {
+          expect(
+            () => leafContext.config.optionalValue(globalOpt),
+            throwsArgumentError,
+          );
+        });
+      });
+
+      group('when only the subcommand option is set', () {
+        setUp(() async {
+          await run(['build', '--opt', 'foo']);
+        });
+
+        test('then the global option is unset', () {
+          expect(rootContext.config.optionalValue(globalOpt), isNull);
+        });
+
+        test('then the subcommand configuration has its value', () {
+          expect(leafContext.config.optionalValue(localOpt), 'foo');
+        });
+      });
+    },
+  );
 }
 
 /// Middleware class whose type arguments are inferred from the runner.
