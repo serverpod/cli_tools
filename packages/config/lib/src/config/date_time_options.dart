@@ -1,3 +1,8 @@
+import 'arg_parser_facade.dart' show ParsedArgs;
+import 'configuration.dart' show Configuration;
+import 'configuration_broker.dart';
+import 'exceptions.dart';
+import 'option_resolution_impl.dart';
 import 'option_types.dart';
 import 'options.dart';
 
@@ -304,39 +309,81 @@ class DateTimeOption extends ComparableValueOption<DateTime> {
              valueHelp ?? (dateOnly ? 'YYYY-MM-DD' : 'YYYY-MM-DDTHH:MM:SSZ'),
        );
 
-  /// Date-only allowed values are calendar dates. A UTC midnight and the
-  /// local midnight of the same day are the same choice, which is also what
-  /// completion offers.
+  /// A date-only value is checked and stored as local midnight on its
+  /// calendar date. Allowed values match that date, so a UTC date and a
+  /// local date on the same day are the same choice.
   @override
-  bool allowsValue(final DateTime value) {
-    if (!dateOnly) return super.allowsValue(value);
+  void validateValue(final DateTime value) {
+    if (!dateOnly) {
+      super.validateValue(value);
+      return;
+    }
+    final local = _localCalendarDate(value);
     final allowed = allowedValues;
-    if (allowed == null) return true;
-    return allowed.any(
-      (final candidate) =>
-          candidate.year == value.year &&
-          candidate.month == value.month &&
-          candidate.day == value.day,
-    );
+    if (allowed != null &&
+        !allowed.any(
+          (final candidate) => _sameCalendarDate(candidate, local),
+        )) {
+      throw InvalidValueException(
+        '`$local` is not an allowed value for ${qualifiedString()}',
+      );
+    }
+    customValidator?.call(local);
+    final minimum = min;
+    if (minimum != null && local.compareTo(minimum) < 0) {
+      throw FormatException(
+        '${valueParser.format(local)} is below the minimum '
+        '(${valueParser.format(minimum)})',
+      );
+    }
+    final maximum = max;
+    if (maximum != null && local.compareTo(maximum) > 0) {
+      throw FormatException(
+        '${valueParser.format(local)} is above the maximum '
+        '(${valueParser.format(maximum)})',
+      );
+    }
   }
 
-  /// A date-only value is local midnight on its calendar date.
-  ///
-  /// Throws [FormatException] when that local midnight would fall on a
-  /// different day.
   @override
-  DateTime canonicalize(final DateTime value) {
-    if (!dateOnly) return value;
+  OptionResolutionImpl<DateTime> resolveValue(
+    final Configuration cfg, {
+    final ParsedArgs? args,
+    final Iterator<String>? posArgs,
+    final Map<String, String>? env,
+    final ConfigurationBroker? configBroker,
+  }) {
+    final resolved = super.resolveValue(
+      cfg,
+      args: args,
+      posArgs: posArgs,
+      env: env,
+      configBroker: configBroker,
+    );
+    if (!dateOnly || resolved.error != null) return resolved;
+    final value = resolved.value;
+    if (value == null) return resolved;
+    final local = _localCalendarDate(value);
+    if (local == value) return resolved;
+    return resolved.copyWithValue(local);
+  }
+
+  /// Local midnight on [value]'s calendar date.
+  ///
+  /// Throws [FormatException] when that midnight would fall on another day.
+  static DateTime _localCalendarDate(final DateTime value) {
     final local = DateTime(value.year, value.month, value.day);
-    if (local.year != value.year ||
-        local.month != value.month ||
-        local.day != value.day) {
+    if (!_sameCalendarDate(local, value)) {
       throw FormatException(
-        '${valueParser.format(value)} does not exist in the local time zone',
+        '${DateTimeParser._calendarDate(value)} does not exist '
+        'in the local time zone',
       );
     }
     return local;
   }
+
+  static bool _sameCalendarDate(final DateTime a, final DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 }
 
 /// The time units supported by the [DurationParser].

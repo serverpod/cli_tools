@@ -338,24 +338,6 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
     }
   }
 
-  /// Whether [value] is one of [allowedValues].
-  ///
-  /// True when [allowedValues] is not set. Subclasses may match by a
-  /// coarser rule than [Object.==], for example a calendar date.
-  @protected
-  bool allowsValue(final V value) {
-    final allowed = allowedValues;
-    if (allowed == null) return true;
-    return allowed.contains(value);
-  }
-
-  /// The value used for validation and for the resolved result.
-  ///
-  /// The default returns [value]. A subclass can map a typed value onto the
-  /// same form as a parsed string, and throw [FormatException] when it cannot.
-  @protected
-  V canonicalize(final V value) => value;
-
   /// Validates the parsed value,
   /// throwing a [FormatException] if the value is invalid,
   /// or a [InvalidValueException] if the value is invalid for other reasons.
@@ -364,7 +346,7 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
   /// If they do, they must also call the super implementation.
   @mustCallSuper
   void validateValue(final V value) {
-    if (!allowsValue(value)) {
+    if (allowedValues?.contains(value) == false) {
       throw InvalidValueException(
         '`$value` is not an allowed value for ${qualifiedString()}',
       );
@@ -510,20 +492,6 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
         res = res.copyWithValue(
           option.option.valueParser.parse(stringValue),
         );
-      } on FormatException catch (e) {
-        return res.copyWithError(
-          _makeFormatErrorMessage(e),
-        );
-      }
-    }
-
-    final parsed = res.value;
-    if (parsed != null) {
-      try {
-        final canonical = canonicalize(parsed);
-        if (canonical != parsed) {
-          res = res.copyWithValue(canonical);
-        }
       } on FormatException catch (e) {
         return res.copyWithError(
           _makeFormatErrorMessage(e),
