@@ -6,6 +6,9 @@ analyzer:
   errors:
     inference_failure_on_instance_creation: ignore
     inference_failure_on_function_invocation: ignore
+    # Dart 3.9 reports these as infos. The compatibility shim and its tests
+    # still call the deprecated members.
+    deprecated_member_use_from_same_package: ignore
 
 linter:
   rules:

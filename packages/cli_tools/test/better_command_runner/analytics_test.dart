@@ -300,7 +300,8 @@ void main() {
         runner = BetterCommandRunner(
           'test',
           'this is a test cli',
-          onAnalyticsEvent: (final _, final event, final _) => events.add(event),
+          onAnalyticsEvent: (final _, final event, final _) =>
+              events.add(event),
           messageOutput: const MessageOutput(),
           completion: CompletionSettings(
             exitAfterResponse: false,
