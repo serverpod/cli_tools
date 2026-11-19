@@ -285,3 +285,42 @@ class IntOption extends ComparableValueOption<int> {
     super.max,
   }) : super(valueParser: const IntParser());
 }
+
+class DoubleParser extends ValueParser<double> {
+  const DoubleParser();
+
+  @override
+  double parse(final String value) {
+    return double.parse(value);
+  }
+}
+
+/// Floating-point value configuration option.
+///
+/// Supports minimum and maximum range checking.
+/// An integer string such as `1` is parsed as `1.0`.
+class DoubleOption extends ComparableValueOption<double> {
+  const DoubleOption({
+    super.argName,
+    super.argAliases,
+    super.argAbbrev,
+    super.argPos,
+    super.envName,
+    super.configKey,
+    super.configKeys,
+    super.fromCustom,
+    super.fromDefault,
+    super.defaultsTo,
+    super.defaultValueHelp,
+    super.helpText,
+    super.valueHelp = 'number',
+    super.allowedHelp,
+    super.group,
+    super.allowedValues,
+    super.customValidator,
+    super.mandatory,
+    super.hide,
+    super.min,
+    super.max,
+  }) : super(valueParser: const DoubleParser());
+}

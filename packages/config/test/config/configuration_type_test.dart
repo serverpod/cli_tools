@@ -331,6 +331,123 @@ void main() async {
     );
   });
 
+  group('Given a DoubleOption', () {
+    const typedOpt = DoubleOption(
+      argName: 'number',
+      mandatory: true,
+    );
+
+    test(
+      'when passed a fractional value then it is parsed correctly',
+      () async {
+        final config = Configuration.resolveNoExcept(
+          options: [typedOpt],
+          args: ['--number', '1.5'],
+          env: <String, String>{},
+        );
+        expect(config.value(typedOpt), equals(1.5));
+      },
+    );
+
+    test(
+      'when passed an integer value then it is parsed as a double',
+      () async {
+        final config = Configuration.resolveNoExcept(
+          options: [typedOpt],
+          args: ['--number', '2'],
+          env: <String, String>{},
+        );
+        final value = config.value(typedOpt);
+        expect(value, equals(2.0));
+        expect(value, isA<double>());
+      },
+    );
+
+    test(
+      'when passed a valid negative value then it is parsed correctly',
+      () async {
+        final config = Configuration.resolveNoExcept(
+          options: [typedOpt],
+          args: ['--number', '-1.25'],
+          env: <String, String>{},
+        );
+        expect(config.value(typedOpt), equals(-1.25));
+      },
+    );
+
+    test('when passed a non-number value then it reports an error', () async {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        args: ['--number', 'unicorn'],
+        env: <String, String>{},
+      );
+
+      expect(config.errors, hasLength(1));
+      expect(
+        config.errors.single,
+        contains('Invalid value for option `number` <number>'),
+      );
+    });
+  });
+
+  group('Given a ranged DoubleOption', () {
+    const typedOpt = DoubleOption(
+      argName: 'number',
+      mandatory: true,
+      min: 0.5,
+      max: 1.5,
+    );
+
+    test('when passed a valid value then it is parsed correctly', () async {
+      final config = Configuration.resolveNoExcept(
+        options: [typedOpt],
+        args: ['--number', '1.0'],
+        env: <String, String>{},
+      );
+      expect(config.value(typedOpt), equals(1.0));
+    });
+
+    test(
+      'when passed a value less than the range then it reports an error',
+      () async {
+        final config = Configuration.resolveNoExcept(
+          options: [typedOpt],
+          args: ['--number', '0.4'],
+          env: <String, String>{},
+        );
+
+        expect(config.errors, hasLength(1));
+        expect(
+          config.errors.single,
+          equals(
+            'Invalid value for option `number` <number>: '
+            '0.4 is below the minimum (0.5)',
+          ),
+        );
+      },
+    );
+
+    test(
+      'when passed a value greater than the range then it reports an error',
+      () async {
+        final config = Configuration.resolveNoExcept(
+          options: [typedOpt],
+          args: ['--number', '1.6'],
+          env: <String, String>{},
+        );
+
+        expect(config.errors, hasLength(1));
+        expect(
+          config.errors.single,
+          equals(
+            'Invalid value for option `number` <number>: '
+            '1.6 is above the maximum (1.5)',
+          ),
+        );
+      },
+    );
+  });
+
   group('Given a ranged DurationOption', () {
     const typedOpt = DurationOption(
       argName: 'duration',
