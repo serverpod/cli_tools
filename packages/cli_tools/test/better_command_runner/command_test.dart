@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:args/command_runner.dart';
 import 'package:cli_tools/better_command_runner.dart';
+import 'package:config/config.dart';
 import 'package:test/test.dart';
 
-class MockCommand extends Command<void> {
+class MockCommand extends BetterCommand<OptionDefinition, void> {
   void Function()? onRun;
   static String commandName = 'mock-command';
   List<String> trackedOptions = [];
@@ -14,22 +14,25 @@ class MockCommand extends Command<void> {
   String get description => 'Mock command used for testing';
 
   @override
-  void run() {
+  void runWithConfig(final Configuration<OptionDefinition> commandConfig) {
     onRun?.call();
-    trackedOptions.add(argResults!['name'] as String);
     numberOfRuns++;
+    trackedOptions.add(commandConfig.findValueOf(argName: 'name') as String);
   }
 
   @override
   String get name => commandName;
 
-  MockCommand({this.onRun}) {
-    argParser.addOption(
-      'name',
-      defaultsTo: 'serverpod',
-      allowed: <String>['serverpod', 'stockholm'],
-    );
-  }
+  MockCommand({this.onRun})
+    : super(
+        options: [
+          const StringOption(
+            argName: 'name',
+            defaultsTo: 'serverpod',
+            allowedValues: ['serverpod', 'stockholm'],
+          ),
+        ],
+      );
 }
 
 void main() {
@@ -83,15 +86,12 @@ void main() {
     });
 
     test(
-      'when running registered command with invalid option then command is never run.',
+      'when running registered command with invalid option '
+      'then a usage exception is thrown and the command is never run.',
       () async {
         final args = [MockCommand.commandName, '--name', 'invalid'];
 
-        try {
-          await runner.run(args);
-        } catch (_) {
-          // ignore any exceptions.
-        }
+        await expectLater(runner.run(args), throwsA(isA<UsageException>()));
         expect(mockCommand.numberOfRuns, equals(0));
       },
     );

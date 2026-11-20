@@ -45,3 +45,10 @@ melos:
       run: dart test
       exec:
         concurrency: 1
+
+    publish:quiver:
+      description: >
+        Publish config and cli_tools to Quiver as <version>-preview-<branch>.<n>,
+        using the current git branch. Uses a stored dart pub token, or PUB_TOKEN
+        when none is configured. Usage: melos run publish:quiver
+      run: bash tool/publish_to_quiver.sh

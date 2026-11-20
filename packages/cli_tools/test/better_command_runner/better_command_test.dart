@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cli_tools/better_command_runner.dart';
+import 'package:config/command.dart' show CommandContext;
 import 'package:config/config.dart';
 import 'package:test/test.dart';
 
@@ -37,7 +38,7 @@ class MockCommand extends BetterCommand {
   String get name => commandName;
 
   @override
-  Future<void> run() async {}
+  Future<void> run(final CommandContext context) async {}
 
   @override
   FutureOr? runWithConfig(final Configuration<OptionDefinition> commandConfig) {
@@ -60,7 +61,7 @@ void main() {
     final runner = BetterCommandRunner(
       'test',
       'test project',
-      onAnalyticsEvent: (final e, final _) => analyticsEvents.add(e),
+      onAnalyticsEvent: (final _, final e, final _) => analyticsEvents.add(e),
       messageOutput: messageOutput,
     )..addCommand(betterCommand);
 
@@ -78,7 +79,7 @@ void main() {
       expect(
         infos.single,
         stringContainsInOrder([
-          'Usage: test <command> [arguments]',
+          'Usage: test [global-options] <command> [arguments]',
           'Global options:',
           '-h, --help',
           'Print this usage information.',
@@ -152,7 +153,7 @@ void main() {
     final runner = BetterCommandRunner(
       'test',
       'test project',
-      onAnalyticsEvent: (final e, final _) => analyticsEvents.add(e),
+      onAnalyticsEvent: (final _, final e, final _) => analyticsEvents.add(e),
       globalOptions: <OptionDefinition>[],
       messageOutput: messageOutput,
     )..addCommand(betterCommand);
@@ -174,7 +175,7 @@ void main() {
           infos.single,
           allOf(
             stringContainsInOrder([
-              'Usage: test <command> [arguments]',
+              'Usage: test [global-options] <command> [arguments]',
               'Global options:',
               '-h, --help',
               'Print this usage information.',
@@ -218,7 +219,7 @@ void main() {
         infos.single,
         allOf(
           stringContainsInOrder([
-            'Usage: test <command> [arguments]',
+            'Usage: test [global-options] <command> [arguments]',
             'Global options:',
             '-h, --help',
             'Print this usage information.',
@@ -269,7 +270,7 @@ void main() {
         expect(
           infos.single,
           stringContainsInOrder([
-            'Usage: test <command> [arguments]',
+            'Usage: test [global-options] <command> [arguments]',
             'Global options:',
             '-h, --help',
             'Print this usage information.',
@@ -279,7 +280,7 @@ void main() {
             'Prints additional information useful for development. Overrides --q, --quiet.',
             '-a, --[no-]analytics',
             'Toggles if analytics data is sent.',
-            '--age=<integer>',
+            '--age',
             'Required age',
             'Available commands:',
             'mock-command',
@@ -300,7 +301,7 @@ void main() {
         expect(
           infos.single,
           stringContainsInOrder([
-            'Usage: test <command> [arguments]',
+            'Usage: test [global-options] <command> [arguments]',
             'Global options:',
             '-h, --help',
             'Print this usage information.',
@@ -310,7 +311,7 @@ void main() {
             'Prints additional information useful for development. Overrides --q, --quiet.',
             '-a, --[no-]analytics',
             'Toggles if analytics data is sent.',
-            '--age=<integer>',
+            '--age',
             'Required age',
             'Available commands:',
             'mock-command',
@@ -331,9 +332,7 @@ void main() {
         expect(
           infos.single,
           stringContainsInOrder([
-            'Usage: test mock-command [arguments]',
-            '-h, --help',
-            'Print this usage information.',
+            'Usage: test mock-command [--name=<name>]',
             '--name',
             '[serverpod (default), stockholm]',
           ]),

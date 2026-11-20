@@ -1,8 +1,6 @@
 import 'dart:async' show FutureOr;
-import 'dart:io' show Platform;
 
-import 'package:args/args.dart';
-import 'package:args/command_runner.dart';
+import 'package:config/command.dart';
 import 'package:config/config.dart';
 
 import 'better_command_runner.dart';
@@ -12,25 +10,15 @@ import 'better_command_runner.dart';
 /// The [BetterCommand] class uses the config library to provide
 /// a more enhanced command line interface for running commands and handling
 /// command line arguments, environment variables, and configuration.
-abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
+abstract class BetterCommand<O extends OptionDefinition, T>
+    extends BridgeCommand<O, T> {
   static const _defaultMessageOutput = MessageOutput(usageLogger: print);
 
   final MessageOutput? _messageOutput;
-  final ArgParser _argParser;
-
-  /// The environment variables used for configuration resolution.
-  final Map<String, String> envVariables;
-
-  /// The option definitions for this command.
-  final List<O> options;
 
   /// Creates a new instance of [BetterCommand].
   ///
-  /// - [messageOutput] is an optional [MessageOutput] object used to pass specific log messages.
-  /// - [wrapTextColumn] is the column width for wrapping text in the command line interface.
   /// - [options] is a list of options, empty by default.
-  /// - [env] is an optional map of environment variables. If not set then
-  ///   [Platform.environment] will be used.
   ///
   /// [messageOutput] is optional and will default to the
   /// value of the command runner (if any).
@@ -57,16 +45,16 @@ abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
   /// }
   /// ```
   BetterCommand({
+    super.options = const [],
+    @Deprecated('Unused, use usageOutput in BetterCommandRunner')
     final MessageOutput? messageOutput = _defaultMessageOutput,
+    @Deprecated('Unused, use wrapTextColumn parameter in BetterCommandRunner')
     final int? wrapTextColumn,
-    this.options = const [],
+    @Deprecated('Unused, see BetterCommandRunner')
     final Map<String, String>? env,
-  }) : _messageOutput = messageOutput,
-       _argParser = ArgParser(usageLineLength: wrapTextColumn),
-       envVariables = env ?? Platform.environment {
-    prepareOptionsForParsing(options, argParser);
-  }
+  }) : _messageOutput = messageOutput;
 
+  @Deprecated('Unused, see usageOutput parameter in BetterCommandRunner')
   MessageOutput? get messageOutput {
     if (_messageOutput != _defaultMessageOutput) {
       return _messageOutput;
@@ -77,59 +65,15 @@ abstract class BetterCommand<O extends OptionDefinition, T> extends Command<T> {
     return _messageOutput;
   }
 
-  @override
-  BetterCommand<OptionDefinition, T>? get parent =>
-      super.parent as BetterCommand<OptionDefinition, T>?;
-
-  @override
-  BetterCommandRunner<OptionDefinition, T>? get runner =>
-      super.runner as BetterCommandRunner<OptionDefinition, T>?;
-
-  @override
-  ArgParser get argParser => _argParser;
-
-  @override
-  void printUsage() {
-    messageOutput?.logUsage(usage);
-  }
-
   /// Runs this command.
-  /// Resolves the configuration (args, env, etc) and runs the command
-  /// subclass via [runWithConfig].
-  ///
-  /// If there are errors resolving the configuration,
-  /// a UsageException is thrown with appropriate error messages.
-  ///
-  /// Subclasses should override [runWithConfig],
-  /// unless they want to handle the configuration resolution themselves.
+  /// The default implementation runs the command subclass via [runWithConfig].
   @override
-  FutureOr<T>? run() {
-    final config = resolveConfiguration(argResults);
-
-    if (config.errors.isNotEmpty) {
-      final buffer = StringBuffer();
-      final errors = config.errors.map(formatConfigError);
-      buffer.writeAll(errors, '\n');
-      usageException(buffer.toString());
-    }
-
+  FutureOr<T?> run(final CommandContext<O, T> context) {
+    final config = context.config;
     return runWithConfig(config);
-  }
-
-  /// Resolves the configuration for this command.
-  ///
-  /// This method can be overridden to change the configuration resolution
-  /// behavior.
-  Configuration<O> resolveConfiguration(final ArgResults? argResults) {
-    return Configuration.resolveNoExcept(
-      options: options,
-      // ignore: deprecated_member_use
-      argResults: argResults,
-      env: envVariables,
-    );
   }
 
   /// Runs this command with the resolved configuration (option values).
   /// Subclasses should override this method.
-  FutureOr<T>? runWithConfig(final Configuration<O> commandConfig);
+  FutureOr<T?> runWithConfig(final Configuration<O> commandConfig);
 }
