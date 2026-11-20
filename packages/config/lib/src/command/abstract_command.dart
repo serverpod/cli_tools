@@ -23,9 +23,6 @@ abstract class AbstractCommand<O extends OptionDefinition, T>
   /// The usage string generator for this command.
   final UsageGenerator usageGenerator;
 
-  /// If non-null, specifies the line length for usage output wrapping.
-  int? usageLineLength;
-
   @override
   final List<O> persistentOptions;
 
@@ -53,7 +50,6 @@ abstract class AbstractCommand<O extends OptionDefinition, T>
   /// is defined. The `help` command is always built in, as the last one.
   AbstractCommand({
     required this.usageGenerator,
-    this.usageLineLength,
     final List<O>? persistentOptions,
     final List<O>? options,
     final List<Command<OptionDefinition, T>>? subcommands,

@@ -188,7 +188,6 @@ class CommandRunner<O extends OptionDefinition, T>
     super.subcommands,
     super.middlewares,
     super.canRunAsLeafCommand,
-    super.usageLineLength,
     final UsageGenerator? usageGenerator,
     final bool? ignoreUnexpectedPositionalArgs,
     final ParserSettings? parserSettings,
@@ -260,7 +259,7 @@ class CommandRunner<O extends OptionDefinition, T>
   ///
   /// Throws [UsageException] if any configuration input including arguments,
   /// environment variables, and configuration files is invalid,
-  /// unless [CommandUsageSettings.noUsageException] is true.
+  /// unless [UsageExceptionSettings.noUsageException] is true.
   Future<T?> run(
     final Iterable<String> args, {
     final Map<String, String>? env,
