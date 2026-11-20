@@ -901,16 +901,27 @@ void _zshTests(
       );
     }
 
+    /// Runs [command] in an interactive Zsh (`zsh -f -i`) whose login shell
+    /// is Bash, and returns the terminal output.
+    ///
+    /// The command is typed on a pseudo terminal. An interactive Zsh that
+    /// has a controlling terminal reads that terminal, not a pipe, so
+    /// writing the command to stdin and closing it never reaches the shell:
+    /// it waits for a keypress until the test times out. The inner shell's
+    /// command line stays `zsh -f -i`, which is a shell the user types in.
+    Future<_ProcessOutput> runTypedCommand(final String command) {
+      return env.run(
+        zsh!,
+        ['-f', env.harnessPath('zsh_command.zsh'), command],
+        environment: {'ZSH_BIN': zsh, 'SHELL': '/bin/bash'},
+      );
+    }
+
     test(
       'when running `completion` without the shell option '
       'then the Zsh script is printed, whatever the login shell is',
       () async {
-        final result = await env.run(
-          zsh!,
-          ['-f', '-i'],
-          stdin: '$_exeName completion\n',
-          environment: {'SHELL': '/bin/bash'},
-        );
+        final result = await runTypedCommand('$_exeName completion');
         expect(result.stdout, contains('#compdef $_exeName'));
       },
       skip: _skipUnlessProcessesCanBeInspected,
@@ -924,12 +935,7 @@ void _zshTests(
         final wrapper = File(p.join(env.binDir.path, 'bashwrap'))
           ..writeAsStringSync('#!/bin/bash\n$_exeName "\$@"\n');
         await env.run('chmod', ['+x', wrapper.path]);
-        final result = await env.run(
-          zsh!,
-          ['-f', '-i'],
-          stdin: 'bashwrap completion\n',
-          environment: {'SHELL': '/bin/bash'},
-        );
+        final result = await runTypedCommand('bashwrap completion');
         expect(result.stdout, contains('#compdef $_exeName'));
       },
       skip:
@@ -1594,6 +1600,7 @@ class _Environment {
   void _writeHarnesses() {
     File(harnessPath('bash_harness.sh')).writeAsStringSync(_bashHarness);
     File(harnessPath('zsh_harness.zsh')).writeAsStringSync(_zshHarness);
+    File(harnessPath('zsh_command.zsh')).writeAsStringSync(_zshCommandHarness);
     File(harnessPath('zsh_init.zsh')).writeAsStringSync(_zshInit);
     File(harnessPath('ps_harness.ps1')).writeAsStringSync(_powershellHarness);
   }
@@ -1715,6 +1722,22 @@ zstyle ':completion:*' list-colors ''
 __dump() { print -r -- "$BUFFER" > "$ZSH_BUFFER_FILE"; zle kill-whole-line; zle accept-line }
 zle -N __dump
 bindkey '^X^P' __dump
+''';
+
+/// Runs an interactive Zsh (`$ZSH_BIN -f -i`) in a pseudo terminal, types
+/// the command given as the first argument, and prints the terminal output.
+///
+/// A pipe is not enough: with a controlling terminal, interactive Zsh reads
+/// the terminal and ignores the pipe.
+const _zshCommandHarness = r'''
+zmodload zsh/zpty || { print 'zsh/zpty unavailable'; exit 2 }
+export PS1='PROMPT> '
+zpty z "${(q)ZSH_BIN} -f -i"
+zpty -r z log '*PROMPT>*' || { print 'no prompt'; exit 1 }
+zpty -w z "$1"
+zpty -r z log '*PROMPT>*' || { print 'no prompt after command'; exit 1 }
+zpty -d z
+print -r -- "$log"
 ''';
 
 /// Runs an interactive Zsh (`$ZSH_BIN`) in a pseudo terminal, types the
