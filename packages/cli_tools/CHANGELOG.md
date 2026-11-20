@@ -1,3 +1,10 @@
+## 0.15.0-beta.0
+
+> Note: This release has breaking changes.
+
+ - **FEAT**(command): Accept arguments after -- via parser settings ([#141](https://github.com/serverpod/cli_tools/issues/141)). ([d31d015a](https://github.com/serverpod/cli_tools/commit/d31d015a8b4ade6b2f949506776066f72b998fb9))
+ - **BREAKING** **FEAT**(cli_tools): Upgrade BetterCommandRunner to the new Command framework ([#142](https://github.com/serverpod/cli_tools/issues/142)). ([4ea8aa00](https://github.com/serverpod/cli_tools/commit/4ea8aa00d1a04f292aa6331e4d0179e94108b6c7))
+
 ## 0.14.0
 
 > Note: This release has breaking changes.
