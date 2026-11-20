@@ -13,7 +13,7 @@ environment:
 resolution: workspace
 
 dependencies:
-  cli_tools: ^0.14.0
+  cli_tools: ^0.15.0-beta.0
   serverpod_logging: ^0.2.0
 
 dev_dependencies:
