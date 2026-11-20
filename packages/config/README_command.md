@@ -144,6 +144,70 @@ The built-ins `--help`, the `help` command, and `--completion` accept an
 incomplete line.
 A custom command opts in by overriding `acceptsPartialCommandLine`.
 
+## Parser settings and extra positional arguments
+
+`CommandRunner` has two independent settings for arguments that are not
+options of the command being parsed.
+
+### `ParserSettings`
+
+`CommandRunner.parserSettings` is passed through to the parser.
+The default is `ParserSettings()`.
+
+`doubleDashHandling` decides what a standalone `--` means:
+
+- `DoubleDashHandling.noSpecialHandling`, the default. `--` is an unexpected
+  value, and parsing continues. A later `--flag` is still parsed as an option.
+- `DoubleDashHandling.passThroughRest`. Parsing stops at `--`. Every argument
+  after it is left unparsed, so it is not an option, a subcommand, or an
+  option value. A `--` that is consumed as an option value does not stop
+  parsing, and a later `--` still does.
+
+`suggestionDistanceLimit` is the maximum edit distance for "Did you mean"
+command suggestions. The default is 2. Set it to 0 to disable suggestions.
+
+### `ignoreUnexpectedPositionalArgs`
+
+A positional word that matches no positional option is unexpected.
+Arguments left unparsed after `--` count as such words.
+
+When `ignoreUnexpectedPositionalArgs` is false, the default, those words
+fail the run and are reported as a usage error.
+
+When it is true, they do not fail the run. Positional options take words
+in position order, including words that followed `--`. Anything left is
+`Configuration.remainingPosArgs` on the command where parsing of those
+words stopped.
+
+Accepting a tail of arguments uses both settings. `passThroughRest` stops
+option parsing, and `ignoreUnexpectedPositionalArgs` keeps the unparsed
+words instead of failing:
+
+```dart
+import 'package:config/command.dart';
+import 'package:config/config.dart';
+
+final runner = CommandRunner<OptionDefinition, void>(
+  'tool',
+  'Tools',
+  parserSettings: const ParserSettings(
+    doubleDashHandling: DoubleDashHandling.passThroughRest,
+  ),
+  ignoreUnexpectedPositionalArgs: true,
+);
+```
+
+```sh
+tool build -q -- --some --remaining --args
+```
+
+`-q` is parsed as a flag of `build`. In that command,
+`context.config.remainingPosArgs` is
+`['--some', '--remaining', '--args']`.
+
+If `build` declares a positional option, that option takes the first of
+those words, and only the unused ones stay in `remainingPosArgs`.
+
 ## Shell completion
 
 The `CommandRunner` in `package:config/command.dart` has built-in command line

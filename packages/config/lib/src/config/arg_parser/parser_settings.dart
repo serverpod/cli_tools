@@ -2,9 +2,8 @@ enum DoubleDashHandling {
   /// No special handling means it is treated as any other word.
   noSpecialHandling,
 
-  /// When `--` is not taken as an option value, leave the following
-  /// arguments unparsed. A `--` used as a value does not start this,
-  /// so a later `--` still can.
+  /// Every argument after a `--` is left unparsed, unless the `--` is consumed
+  /// as an option value (in which case a later `--` still stops parsing).
   passThroughRest,
 }
 

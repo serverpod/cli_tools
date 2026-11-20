@@ -188,6 +188,7 @@ CommandRunner<OptionDefinition, int> buildCompletionCli({
   final StringSink? completionOutput,
   final StringSink? completionError,
   final bool ignoreUnexpectedPositionalArgs = false,
+  final ParserSettings parserSettings = const ParserSettings(),
   final List<String>? trace,
   final List<Command<OptionDefinition, int>> extraCommands = const [],
 }) {
@@ -210,6 +211,7 @@ CommandRunner<OptionDefinition, int> buildCompletionCli({
       errorOutput: completionError,
     ),
     ignoreUnexpectedPositionalArgs: ignoreUnexpectedPositionalArgs,
+    parserSettings: parserSettings,
     middlewares: [
       Middlewares.onBeforeRun((final ctx) {
         trace?.add('middleware:${ctx.command.name}');
