@@ -20,7 +20,7 @@ dependencies:
   args: ^2.7.0
   async: ^2.10.0
   ci: ^0.1.0
-  config: ^0.10.0
+  config: ^1.0.0-beta.0
   http: '>=0.13.0 <2.0.0'
   path: ^1.8.2
   pub_api_client: '>=2.4.0 <4.0.0'
