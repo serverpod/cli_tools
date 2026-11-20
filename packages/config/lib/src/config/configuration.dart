@@ -86,6 +86,10 @@ class Configuration<O extends OptionDefinition> {
   ///
   /// If [presetValues] is provided, the values present will override the other sources,
   /// including if they are null.
+  ///
+  /// If [ignoreUnexpectedPositionalArgs] is true, unexpected positional
+  /// arguments will be ignored, and available as [remainingPosArgs].
+  /// If false they will be reported as errors.
   /// {@endtemplate}
   ///
   /// This does not throw upon value parsing or validation errors,
