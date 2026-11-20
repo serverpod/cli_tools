@@ -1,3 +1,12 @@
+## 1.0.0-beta.0
+
+ - **FEAT**(command): Accept arguments after -- via parser settings ([#145](https://github.com/serverpod/cli_tools/issues/145)). ([df6feaef](https://github.com/serverpod/cli_tools/commit/df6feaefae37b0b142a9b6580b4828513184cd2a))
+ - **FEAT**(command): Subcommands now shadow parents' options ([#138](https://github.com/serverpod/cli_tools/issues/138)). ([ac22c745](https://github.com/serverpod/cli_tools/commit/ac22c7452e4657c95a9130658868bc6ed61edc6e))
+ - **FEAT**(command): New CommandRunner framework ([#134](https://github.com/serverpod/cli_tools/issues/134)). ([b628aa8f](https://github.com/serverpod/cli_tools/commit/b628aa8f1d1400f97b33016b7e3bf8054c1b683a))
+ - **FEAT**(config): Improvements to options parsing and error handling ([#139](https://github.com/serverpod/cli_tools/issues/139)). ([4791ea17](https://github.com/serverpod/cli_tools/commit/4791ea171ac4a4cc7c943659673a234f7243b467))
+ - **FEAT**(config): Prepare config for new CommandRunner framework ([#133](https://github.com/serverpod/cli_tools/issues/133)). ([dec5d7e0](https://github.com/serverpod/cli_tools/commit/dec5d7e01de441e71b772f136b05d8f8d293acbf))
+ - **DOCS**(config): Introducing command framework ([#146](https://github.com/serverpod/cli_tools/issues/146)). ([589e868e](https://github.com/serverpod/cli_tools/commit/589e868ef9ac992216bec1d8d2a23b0f18c08bb8))
+
 ## 0.10.0
 
 > Note: This release has breaking changes.
