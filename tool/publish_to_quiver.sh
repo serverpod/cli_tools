@@ -10,8 +10,9 @@
 # The channel is preview-<branch>, where <branch> is the current git branch
 # (for example preview-main or preview-new-better-command).
 # Authentication uses the credential from `dart pub token add` for the
-# registry. PUB_TOKEN (or QUIVER_TOKEN) is used only when no credential is
-# configured. Requires curl, jq, git, and dart.
+# registry. PUB_TOKEN (or QUIVER_TOKEN) is used when no credential is
+# configured. A stored credential that names PUB_TOKEN still needs that
+# variable exported. Requires curl, jq, git, and dart.
 
 set -euo pipefail
 
@@ -69,9 +70,13 @@ copy_package() {
   local dest="$2"
   local path rel count=0
   while IFS= read -r -d '' path; do
+    # git ls-files --cached still lists files deleted in the working tree.
+    if [[ ! -e "${ROOT}/${path}" && ! -L "${ROOT}/${path}" ]]; then
+      continue
+    fi
     rel="${path#packages/${package}/}"
     mkdir -p "${dest}/$(dirname "$rel")"
-    cp -p "$path" "${dest}/${rel}"
+    cp -p "${ROOT}/${path}" "${dest}/${rel}"
     count=$((count + 1))
   done < <(git -C "$ROOT" ls-files -z --cached --others --exclude-standard -- "packages/${package}")
   if (( count == 0 )); then
@@ -213,11 +218,12 @@ main() {
   require_command git
   require_command dart
 
+  if [[ -z "${PUB_TOKEN:-}" && -n "${QUIVER_TOKEN:-}" ]]; then
+    export PUB_TOKEN="$QUIVER_TOKEN"
+  fi
+
   local add_token_from_env=false
   if ! registry_has_token; then
-    if [[ -z "${PUB_TOKEN:-}" && -n "${QUIVER_TOKEN:-}" ]]; then
-      export PUB_TOKEN="$QUIVER_TOKEN"
-    fi
     if [[ -z "${PUB_TOKEN:-}" ]]; then
       echo "No pub token is configured for ${REGISTRY}." >&2
       echo "Run: dart pub token add ${REGISTRY}" >&2
