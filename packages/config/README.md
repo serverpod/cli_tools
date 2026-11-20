@@ -6,6 +6,51 @@ The config package is a significant extension to the args package and enables
 typed options, environment variables and configuration files as input, and
 better error reporting.
 
+## New command framework!
+
+As of 1.0.0, the new Config command framework is released!
+
+It has a lot of API similarity with the legacy `args` package's CommandRunner and
+Command, but it has been redesigned and rewritten from scratch.
+
+### New completion engine
+
+The primary new feature is a highly capable and built-in completion engine.
+
+- Supports `bash`, `zsh`, `fish`, `powershell`, and `carapace` out of the box
+- Completion is built-in, so it does not need reinstallation whenever the executable is upgraded, it always has the latest command and option layout
+- Completion is type sensitive, so an option that takes an enum or other list of values will only complete to the valid values
+- Custom completion is easy to add. It can for example connect to an external API to fetch completion alternatives
+
+For end users, installing completions is now as easy as running:
+
+```sh
+my-command completion install
+```
+
+And best of all, no extra effort is needed for the command developer to enable
+or maintain completions, and for end users the completions are always up-to-date
+when they install new versions of the command.
+
+### New usage generator
+
+It has a revamped usage generator with a proper invocation synopsis, for example:
+
+```sh
+$ scloud deploy -h
+Deploy a Serverpod project to the cloud.
+
+Usage: scloud deploy <project> [--concurrency=<integer>] [--wet-run] [--show-files] [--redeploy] [--output=<output>] [--[no-]await] [--dart-version=<dart-version>]
+…
+```
+
+### Well defined and modular behavior
+
+The new CommandRunner and Command classes are designed with consistency,
+composabilty, extensibility, and ease of use in mind. 
+
+[README_command.md](README_command.md)
+
 ## Overview
 
 The config library is a significant extension to the Dart args package.
