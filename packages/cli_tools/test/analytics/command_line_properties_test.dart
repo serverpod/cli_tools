@@ -59,7 +59,9 @@ void main() {
       runner = CommandRunner<OptionDefinition, void>(
         'tool',
         'test cli',
-        ignoreUnexpectedPositionalArgs: true,
+        parserSettings: const ParserSettings(
+          doubleDashHandling: DoubleDashHandling.passThroughRest,
+        ),
         subcommands: [_createLeafCommand()],
       );
     });
