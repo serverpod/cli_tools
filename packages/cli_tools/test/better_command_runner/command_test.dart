@@ -16,8 +16,8 @@ class MockCommand extends BetterCommand<OptionDefinition, void> {
   @override
   void runWithConfig(final Configuration<OptionDefinition> commandConfig) {
     onRun?.call();
-    trackedOptions.add(commandConfig.findValueOf(argName: 'name') as String);
     numberOfRuns++;
+    trackedOptions.add(commandConfig.findValueOf(argName: 'name') as String);
   }
 
   @override
@@ -86,15 +86,12 @@ void main() {
     });
 
     test(
-      'when running registered command with invalid option then command is never run.',
+      'when running registered command with invalid option '
+      'then a usage exception is thrown and the command is never run.',
       () async {
         final args = [MockCommand.commandName, '--name', 'invalid'];
 
-        try {
-          await runner.run(args);
-        } catch (_) {
-          // ignore any exceptions.
-        }
+        await expectLater(runner.run(args), throwsA(isA<UsageException>()));
         expect(mockCommand.numberOfRuns, equals(0));
       },
     );
