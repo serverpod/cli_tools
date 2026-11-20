@@ -132,6 +132,26 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   ///   final ConfigOptionBase<V> option;
   /// }
   /// ```
+  ///
+  /// ## Arguments after `--`
+  ///
+  /// To keep arguments written after `--`, pass [parserSettings] with
+  /// [DoubleDashHandling.passThroughRest] and set
+  /// [ignoreUnexpectedPositionalArgs] to true. `runWithConfig` reads them
+  /// from [Configuration.remainingPosArgs]:
+  ///
+  /// ```dart
+  /// BetterCommandRunner<OptionDefinition, void>(
+  ///   'tool',
+  ///   'Tools',
+  ///   parserSettings: const ParserSettings(
+  ///     doubleDashHandling: DoubleDashHandling.passThroughRest,
+  ///   ),
+  ///   ignoreUnexpectedPositionalArgs: true,
+  /// );
+  /// // tool build -q -- --some --remaining
+  /// // commandConfig.remainingPosArgs == ['--some', '--remaining']
+  /// ```
   BetterCommandRunner(
     super.executableName,
     super.description, {
