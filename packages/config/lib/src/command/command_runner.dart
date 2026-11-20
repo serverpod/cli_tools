@@ -14,6 +14,8 @@ import '../../config.dart'
         FlagOption,
         MultiOption,
         ArgParseResult,
+        DoubleDashHandling,
+        ParserSettings,
         NewParsedArgs;
 import 'abstract_command.dart';
 import 'builtin_global_option.dart';
@@ -113,21 +115,14 @@ class CommandRunner<O extends OptionDefinition, T>
       const CommandAliasesDefinition();
 
   /// Whether a positional argument that matches no positional option is allowed.
-  /// If true, such arguments are included in [Configuration.remainingPosArgs]
-  /// of the last command's configuration.
-  /// This also enables the `--` double dash argument, which stops parsing of
-  /// the command line and instead puts the following arguments in
-  /// [Configuration.remainingPosArgs] of the last parsed command.
   ///
-  /// When false, the default, those arguments are included in the
-  /// [UsageException] thrown before any command runs.
+  /// When true, such arguments are included in [Configuration.remainingPosArgs]
+  /// of the command that received them and do not fail the run.
+  /// When false (default) they are reported as a usage error.
   final bool ignoreUnexpectedPositionalArgs;
 
-  /// The maximum edit distance allowed when suggesting possible intended
-  /// commands.
-  ///
-  /// Set to `0` in order to disable suggestions, defaults to `2`.
-  final int suggestionDistanceLimit;
+  /// Settings for scanning and parsing the command line.
+  final ParserSettings parserSettings;
 
   /// The settings and behavior for the usage output -
   /// controls the help output and the usage exception output.
@@ -157,7 +152,28 @@ class CommandRunner<O extends OptionDefinition, T>
   ///
   /// [middlewares] is a list of middlewares that will be added to the runner.
   ///
-  /// [ignoreUnexpectedPositionalArgs] is a boolean that determines whether unexpected positional arguments should be ignored.
+  /// [ignoreUnexpectedPositionalArgs] when true keeps positional arguments
+  /// that match no positional option on [Configuration.remainingPosArgs].
+  /// Defaults to false, which reports them as a usage error.
+  ///
+  /// [parserSettings] controls parsing and defaults to [ParserSettings].
+  /// To keep arguments written after `--`, pass
+  /// [DoubleDashHandling.passThroughRest] and set
+  /// [ignoreUnexpectedPositionalArgs] to true. The command that received
+  /// them reads the list from [Configuration.remainingPosArgs]:
+  ///
+  /// ```dart
+  /// CommandRunner<OptionDefinition, void>(
+  ///   'tool',
+  ///   'Tools',
+  ///   parserSettings: const ParserSettings(
+  ///     doubleDashHandling: DoubleDashHandling.passThroughRest,
+  ///   ),
+  ///   ignoreUnexpectedPositionalArgs: true,
+  /// );
+  /// // tool build -q -- --some --remaining
+  /// // context.config.remainingPosArgs == ['--some', '--remaining']
+  /// ```
   ///
   /// [rootFooter] is a string that will be added to the runner's usage footer.
   ///
@@ -174,7 +190,7 @@ class CommandRunner<O extends OptionDefinition, T>
     super.usageLineLength,
     final UsageGenerator? usageGenerator,
     final bool? ignoreUnexpectedPositionalArgs,
-    final int? suggestionDistanceLimit,
+    final ParserSettings? parserSettings,
     final UsageOutputHandler? usageOutput,
     final CompletionSettings? completion,
   }) : usageDefinition = CommandUsageDefinition(
@@ -184,7 +200,7 @@ class CommandRunner<O extends OptionDefinition, T>
        usageOutput = usageOutput ?? UsageOutputHandler(),
        completion = completion ?? const CompletionSettings(),
        ignoreUnexpectedPositionalArgs = ignoreUnexpectedPositionalArgs ?? false,
-       suggestionDistanceLimit = suggestionDistanceLimit ?? 2,
+       parserSettings = parserSettings ?? const ParserSettings(),
        super(
          usageGenerator: usageGenerator ?? const StandardRunnerUsageGenerator(),
          persistentOptions: globalOptions,
@@ -307,6 +323,7 @@ class CommandRunner<O extends OptionDefinition, T>
       this,
       resolver: resolver,
       ignoreUnexpectedPositionalArgs: ignoreUnexpectedPositionalArgs,
+      parserSettings: parserSettings,
       onError: (final error, final stackTrace) {
         completion.sinks.err.writeln(
           'Completion failed: $error\n$stackTrace',

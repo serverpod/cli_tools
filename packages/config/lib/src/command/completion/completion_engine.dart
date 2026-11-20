@@ -3,7 +3,6 @@ import 'dart:async' show FutureOr;
 import '../../config/arg_parser/arg_parser.dart'
     show
         ArgParseResult,
-        DoubleDashHandling,
         ParserSettings,
         optionAwaitingValue,
         scanAndParseCommands,
@@ -39,6 +38,9 @@ class CompletionEngine<O extends OptionDefinition, T> {
   /// See `CommandRunner.ignoreUnexpectedPositionalArgs`.
   final bool ignoreUnexpectedPositionalArgs;
 
+  /// See `CommandRunner.parserSettings`.
+  final ParserSettings parserSettings;
+
   /// Receives a diagnostic message when a completion request fails.
   final void Function(Object error, StackTrace stackTrace)? onError;
 
@@ -53,6 +55,7 @@ class CompletionEngine<O extends OptionDefinition, T> {
     this.rootCommand, {
     this.resolver,
     this.ignoreUnexpectedPositionalArgs = false,
+    this.parserSettings = const ParserSettings(),
     this.onError,
   });
 
@@ -101,11 +104,7 @@ class CompletionEngine<O extends OptionDefinition, T> {
     final parsed = scanAndParseCommands(
       [...preceding, _sentinel],
       rootCommand: rootCommand,
-      settings: ParserSettings(
-        doubleDashHandling: ignoreUnexpectedPositionalArgs
-            ? DoubleDashHandling.passThroughRest
-            : DoubleDashHandling.noSpecialHandling,
-      ),
+      settings: parserSettings,
     );
     final chain = parsed.toList();
     final line = _CommandLine(

@@ -1,8 +1,6 @@
 import '../../config.dart'
     show
         ArgParseResult,
-        DoubleDashHandling,
-        ParserSettings,
         scanAndParseCommands,
         subcommandRequiredErrorPrefix,
         CommandDefinition,
@@ -61,12 +59,7 @@ class StandardCommandResolver<O extends OptionDefinition, T>
     final argParseResult = scanAndParseCommands(
       args,
       rootCommand: runner,
-      settings: ParserSettings(
-        doubleDashHandling: runner.ignoreUnexpectedPositionalArgs
-            ? DoubleDashHandling.passThroughRest
-            : DoubleDashHandling.noSpecialHandling,
-        suggestionDistanceLimit: runner.suggestionDistanceLimit,
-      ),
+      settings: runner.parserSettings,
     );
 
     final contextChain = resolveNext(

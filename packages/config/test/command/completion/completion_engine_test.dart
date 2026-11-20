@@ -544,11 +544,13 @@ void main() {
     });
 
     test('when completing after a double dash '
-        'and unexpected positional arguments are ignored '
+        'and arguments after -- are passed through '
         'then file completion is requested', () async {
       runner = buildCompletionCli(
         usageOutput: UsageOutputHandler(sinks: OutputSinks(out: out)),
-        ignoreUnexpectedPositionalArgs: true,
+        parserSettings: const ParserSettings(
+          doubleDashHandling: DoubleDashHandling.passThroughRest,
+        ),
         completionOutput: out,
       );
       final response = await complete(runner, out, ['build', '--', '-']);
