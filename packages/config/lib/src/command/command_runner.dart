@@ -155,11 +155,12 @@ class CommandRunner<O extends OptionDefinition, T>
   /// [ignoreUnexpectedPositionalArgs] when true keeps positional arguments
   /// that match no positional option on [Configuration.remainingPosArgs].
   /// Defaults to false, which reports them as a usage error.
+  /// If not provided, it defaults to true if [parserSettings.doubleDashHandling]
+  /// is [DoubleDashHandling.passThroughRest].
   ///
   /// [parserSettings] controls parsing and defaults to [ParserSettings].
-  /// To keep arguments written after `--`, pass
-  /// [DoubleDashHandling.passThroughRest] and set
-  /// [ignoreUnexpectedPositionalArgs] to true. The command that received
+  /// To accept arguments written after `--`, pass
+  /// [DoubleDashHandling.passThroughRest]. The command that received
   /// them reads the list from [Configuration.remainingPosArgs]:
   ///
   /// ```dart
@@ -199,7 +200,10 @@ class CommandRunner<O extends OptionDefinition, T>
        ),
        usageOutput = usageOutput ?? UsageOutputHandler(),
        completion = completion ?? const CompletionSettings(),
-       ignoreUnexpectedPositionalArgs = ignoreUnexpectedPositionalArgs ?? false,
+       ignoreUnexpectedPositionalArgs =
+           ignoreUnexpectedPositionalArgs ??
+           parserSettings?.doubleDashHandling ==
+               DoubleDashHandling.passThroughRest,
        parserSettings = parserSettings ?? const ParserSettings(),
        super(
          usageGenerator: usageGenerator ?? const StandardRunnerUsageGenerator(),
@@ -382,7 +386,7 @@ class CommandRunner<O extends OptionDefinition, T>
       parsedArgs: parsedArgs,
       env: env,
       configBroker: configBroker(prevContext),
-      ignoreUnexpectedPositionalArgs: runner.ignoreUnexpectedPositionalArgs,
+      ignoreUnexpectedPositionalArgs: ignoreUnexpectedPositionalArgs,
     );
 
     // Note, parse errors and positional arguments of [parsedArgs] belong to the

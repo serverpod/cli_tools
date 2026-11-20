@@ -207,8 +207,6 @@ tool build -q -- --some --remaining --args
 
 If `build` declares a positional option, that option takes the first of
 those words, and only the unused ones stay in `remainingPosArgs`.
-`BetterCommand.runWithConfig` receives the same configuration, so the list
-there is `commandConfig.remainingPosArgs`.
 
 ## Shell completion
 
