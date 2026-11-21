@@ -23,6 +23,7 @@ class CommandMiddlewareComposer<O extends OptionDefinition, T>
     super.onRun,
     super.onReturn,
     super.onError,
+    super.onFinally,
   });
 }
 
@@ -33,11 +34,13 @@ abstract class Middlewares {
     final OnRun<CommandContext<O, T>>? onRun,
     final OnReturn<T?, CommandContext<O, T>>? onReturn,
     final OnError<T?, CommandContext<O, T>>? onError,
+    final OnFinally<CommandContext<O, T>>? onFinally,
   }) {
     return CommandMiddlewareComposer<O, T>(
       onRun: onRun,
       onReturn: onReturn,
       onError: onError,
+      onFinally: onFinally,
     ).middleware;
   }
 
@@ -80,5 +83,14 @@ abstract class Middlewares {
     final OnError<T?, CommandContext<O, T>> onError,
   ) {
     return withHooks(onError: onError);
+  }
+
+  /// Creates a [CommandMiddleware] with the given [onFinally] hook.
+  ///
+  /// See [MiddlewareHooks.onFinally].
+  static CommandMiddleware<O, T> onFinally<O extends OptionDefinition, T>(
+    final OnFinally<CommandContext<O, T>> onFinally,
+  ) {
+    return withHooks(onFinally: onFinally);
   }
 }

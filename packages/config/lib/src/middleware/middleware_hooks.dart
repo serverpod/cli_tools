@@ -16,13 +16,19 @@ class MiddlewareHooks<R, A> {
   Handler<FutureOr<R>, A> middleware(final Handler<FutureOr<R>, A> next) {
     return (final A arg) async {
       final useArg = await onRun(arg);
-      final R response;
       try {
-        response = await next(useArg);
-      } catch (error, stackTrace) {
-        return await onError(error, stackTrace, useArg);
+        final R response;
+        try {
+          response = await next(useArg);
+        } catch (error, stackTrace) {
+          return await onError(error, stackTrace, useArg);
+        }
+        return await onReturn(useArg, response);
+      } finally {
+        try {
+          await onFinally(useArg);
+        } catch (_) {}
       }
-      return await onReturn(useArg, response);
     };
   }
 
@@ -49,10 +55,8 @@ class MiddlewareHooks<R, A> {
 
   /// Hook method that is called if the next handler throws.
   ///
-  /// Returns the same type as the next handler's return type.
-  ///
-  /// If it throws, the call chain is aborted
-  /// and the exception propagates to the caller.
+  /// If it returns a value, this handler completes normally with that value.
+  /// Otherwise the exception propagates to the caller.
   FutureOr<R> onError(
     final Object error,
     final StackTrace stackTrace,
@@ -60,12 +64,19 @@ class MiddlewareHooks<R, A> {
   ) {
     Error.throwWithStackTrace(error, stackTrace);
   }
+
+  /// Hook method that is called after the next handler returns or throws,
+  /// after the [onReturn] / [onError] hook has run.
+  ///
+  /// Errors thrown from this method are ignored.
+  FutureOr<void> onFinally(final A arg) {}
 }
 
 typedef OnRun<A> = FutureOr<A> Function(A arg);
 typedef OnReturn<R, A> = FutureOr<R> Function(A arg, R response);
 typedef OnError<R, A> =
     FutureOr<R> Function(Object error, StackTrace stackTrace, A arg);
+typedef OnFinally<A> = FutureOr<void> Function(A arg);
 
 /// Helper class for easy composition with hook functions.
 ///
@@ -82,28 +93,29 @@ class MiddlewareComposer<R, A> extends MiddlewareHooks<R, A> {
   final OnRun<A>? _onRun;
   final OnReturn<R, A>? _onReturn;
   final OnError<R, A>? _onError;
+  final OnFinally<A>? _onFinally;
 
   /// Compose a middleware with one or more hook functions.
   const MiddlewareComposer({
     final OnRun<A>? onRun,
     final OnReturn<R, A>? onReturn,
     final OnError<R, A>? onError,
+    final OnFinally<A>? onFinally,
   }) : _onRun = onRun,
        _onReturn = onReturn,
-       _onError = onError;
+       _onError = onError,
+       _onFinally = onFinally;
 
   @override
   FutureOr<A> onRun(final A arg) {
-    final onRun = _onRun;
-    if (onRun == null) return arg;
-    return onRun(arg);
+    if (_onRun == null) return arg;
+    return _onRun(arg);
   }
 
   @override
   FutureOr<R> onReturn(final A arg, final R response) {
-    final onReturn = _onReturn;
-    if (onReturn == null) return response;
-    return onReturn(arg, response);
+    if (_onReturn == null) return response;
+    return _onReturn(arg, response);
   }
 
   @override
@@ -116,5 +128,12 @@ class MiddlewareComposer<R, A> extends MiddlewareHooks<R, A> {
       return _onError.call(error, stackTrace, arg);
     }
     Error.throwWithStackTrace(error, stackTrace);
+  }
+
+  @override
+  FutureOr<void> onFinally(final A arg) {
+    if (_onFinally != null) {
+      return _onFinally(arg);
+    }
   }
 }
