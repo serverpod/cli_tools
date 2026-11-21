@@ -218,12 +218,13 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     );
 
     addMiddleware(
-      Middlewares.onBeforeRun(
-        (final ctx) => setLogLevel?.call(
+      Middlewares.onBeforeRun((final ctx) {
+        if (ctx.runMode == CommandRunMode.completion) return;
+        setLogLevel?.call(
           parsedLogLevel: _determineLogLevel(ctx.config),
           commandName: ctx.next?.command.name,
-        ),
-      ),
+        );
+      }),
     );
 
     if (onBeforeRunCommand case final OnBeforeRunCommand onBeforeRun) {
