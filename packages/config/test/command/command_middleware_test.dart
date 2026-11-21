@@ -1105,6 +1105,378 @@ void main() {
     });
   });
 
+  group('Given Middlewares.onFinally with a synchronous callback', () {
+    late List<String> trace;
+    late String? result;
+
+    setUp(() async {
+      trace = [];
+      final command = RecordingCommand<OptionDefinition>(
+        name: 'build',
+        description: 'Build the app',
+        trace: trace,
+        middlewares: [
+          Middlewares.onFinally((final _) {
+            trace.add('onFinally');
+          }),
+        ],
+      );
+      final runner = CommandRunner<OptionDefinition, String>(
+        'tool',
+        'Tools',
+        subcommands: [command],
+      );
+      result = await runner.run(['build']);
+    });
+
+    test(
+      'when the command runs then the callback runs after the command',
+      () {
+        expect(trace, ['build', 'onFinally']);
+      },
+    );
+
+    test('when the command runs then the command result is returned', () {
+      expect(result, 'build');
+    });
+  });
+
+  group('Given Middlewares.onFinally with an asynchronous callback', () {
+    late List<String> trace;
+    late String? result;
+
+    setUp(() async {
+      trace = [];
+      final command = RecordingCommand<OptionDefinition>(
+        name: 'build',
+        description: 'Build the app',
+        trace: trace,
+        middlewares: [
+          Middlewares.onFinally((final _) async {
+            trace.add('onFinally-start');
+            await Future<void>.delayed(Duration.zero);
+            trace.add('onFinally-end');
+          }),
+        ],
+      );
+      final runner = CommandRunner<OptionDefinition, String>(
+        'tool',
+        'Tools',
+        subcommands: [command],
+      );
+      result = await runner.run(['build']);
+    });
+
+    test(
+      'when the command runs then the callback finishes after the command',
+      () {
+        expect(trace, ['build', 'onFinally-start', 'onFinally-end']);
+      },
+    );
+
+    test('when the command runs then the command result is returned', () {
+      expect(result, 'build');
+    });
+  });
+
+  group(
+    'Given Middlewares.onFinally with a synchronous callback '
+    'on a failing command',
+    () {
+      late List<String> trace;
+      late Object? error;
+
+      setUp(() async {
+        trace = [];
+        error = null;
+        final command = RecordingCommand<OptionDefinition>(
+          name: 'build',
+          description: 'Build the app',
+          trace: trace,
+          body: (final _) => throw StateError('boom'),
+          middlewares: [
+            Middlewares.onFinally((final _) {
+              trace.add('onFinally');
+            }),
+          ],
+        );
+        final runner = CommandRunner<OptionDefinition, String>(
+          'tool',
+          'Tools',
+          subcommands: [command],
+        );
+        try {
+          await runner.run(['build']);
+        } on StateError catch (thrown) {
+          error = thrown;
+        }
+      });
+
+      test(
+        'when the command fails then the callback runs after the command',
+        () {
+          expect(trace, ['build', 'onFinally']);
+        },
+      );
+
+      test('when the command fails then the exception propagates', () {
+        expect(
+          error,
+          isA<StateError>().having(
+            (final error) => error.message,
+            'message',
+            'boom',
+          ),
+        );
+      });
+    },
+  );
+
+  group(
+    'Given Middlewares.onFinally with an asynchronous callback '
+    'on a failing command',
+    () {
+      late List<String> trace;
+      late Object? error;
+
+      setUp(() async {
+        trace = [];
+        error = null;
+        final command = RecordingCommand<OptionDefinition>(
+          name: 'build',
+          description: 'Build the app',
+          trace: trace,
+          body: (final _) => throw StateError('boom'),
+          middlewares: [
+            Middlewares.onFinally((final _) async {
+              trace.add('onFinally-start');
+              await Future<void>.delayed(Duration.zero);
+              trace.add('onFinally-end');
+            }),
+          ],
+        );
+        final runner = CommandRunner<OptionDefinition, String>(
+          'tool',
+          'Tools',
+          subcommands: [command],
+        );
+        try {
+          await runner.run(['build']);
+        } on StateError catch (thrown) {
+          error = thrown;
+        }
+      });
+
+      test(
+        'when the command fails then the callback finishes after the command',
+        () {
+          expect(trace, ['build', 'onFinally-start', 'onFinally-end']);
+        },
+      );
+
+      test('when the command fails then the exception propagates', () {
+        expect(
+          error,
+          isA<StateError>().having(
+            (final error) => error.message,
+            'message',
+            'boom',
+          ),
+        );
+      });
+    },
+  );
+
+  group(
+    'Given Middlewares.onFinally with a synchronous callback that throws',
+    () {
+      late List<String> trace;
+      late String? result;
+
+      setUp(() async {
+        trace = [];
+        final command = RecordingCommand<OptionDefinition>(
+          name: 'build',
+          description: 'Build the app',
+          trace: trace,
+          middlewares: [
+            Middlewares.onFinally((final _) {
+              trace.add('onFinally');
+              throw StateError('onFinally');
+            }),
+          ],
+        );
+        final runner = CommandRunner<OptionDefinition, String>(
+          'tool',
+          'Tools',
+          subcommands: [command],
+        );
+        result = await runner.run(['build']);
+      });
+
+      test(
+        'when the command runs then the callback runs after the command',
+        () {
+          expect(trace, ['build', 'onFinally']);
+        },
+      );
+
+      test('when the command runs then the command result is returned', () {
+        expect(result, 'build');
+      });
+    },
+  );
+
+  group(
+    'Given Middlewares.onFinally with an asynchronous callback that throws',
+    () {
+      late List<String> trace;
+      late String? result;
+
+      setUp(() async {
+        trace = [];
+        final command = RecordingCommand<OptionDefinition>(
+          name: 'build',
+          description: 'Build the app',
+          trace: trace,
+          middlewares: [
+            Middlewares.onFinally((final _) async {
+              trace.add('onFinally-start');
+              await Future<void>.delayed(Duration.zero);
+              throw StateError('onFinally');
+            }),
+          ],
+        );
+        final runner = CommandRunner<OptionDefinition, String>(
+          'tool',
+          'Tools',
+          subcommands: [command],
+        );
+        result = await runner.run(['build']);
+      });
+
+      test(
+        'when the command runs then the callback runs after the command',
+        () {
+          expect(trace, ['build', 'onFinally-start']);
+        },
+      );
+
+      test('when the command runs then the command result is returned', () {
+        expect(result, 'build');
+      });
+    },
+  );
+
+  group(
+    'Given Middlewares.onFinally with a synchronous callback that throws '
+    'on a failing command',
+    () {
+      late List<String> trace;
+      late Object? error;
+
+      setUp(() async {
+        trace = [];
+        error = null;
+        final command = RecordingCommand<OptionDefinition>(
+          name: 'build',
+          description: 'Build the app',
+          trace: trace,
+          body: (final _) => throw StateError('boom'),
+          middlewares: [
+            Middlewares.onFinally((final _) {
+              trace.add('onFinally');
+              throw StateError('onFinally');
+            }),
+          ],
+        );
+        final runner = CommandRunner<OptionDefinition, String>(
+          'tool',
+          'Tools',
+          subcommands: [command],
+        );
+        try {
+          await runner.run(['build']);
+        } on StateError catch (thrown) {
+          error = thrown;
+        }
+      });
+
+      test(
+        'when the command fails then the callback runs after the command',
+        () {
+          expect(trace, ['build', 'onFinally']);
+        },
+      );
+
+      test('when the command fails then the command exception propagates', () {
+        expect(
+          error,
+          isA<StateError>().having(
+            (final error) => error.message,
+            'message',
+            'boom',
+          ),
+        );
+      });
+    },
+  );
+
+  group(
+    'Given Middlewares.onFinally with an asynchronous callback that throws '
+    'on a failing command',
+    () {
+      late List<String> trace;
+      late Object? error;
+
+      setUp(() async {
+        trace = [];
+        error = null;
+        final command = RecordingCommand<OptionDefinition>(
+          name: 'build',
+          description: 'Build the app',
+          trace: trace,
+          body: (final _) => throw StateError('boom'),
+          middlewares: [
+            Middlewares.onFinally((final _) async {
+              trace.add('onFinally-start');
+              await Future<void>.delayed(Duration.zero);
+              throw StateError('onFinally');
+            }),
+          ],
+        );
+        final runner = CommandRunner<OptionDefinition, String>(
+          'tool',
+          'Tools',
+          subcommands: [command],
+        );
+        try {
+          await runner.run(['build']);
+        } on StateError catch (thrown) {
+          error = thrown;
+        }
+      });
+
+      test(
+        'when the command fails then the callback runs after the command',
+        () {
+          expect(trace, ['build', 'onFinally-start']);
+        },
+      );
+
+      test('when the command fails then the command exception propagates', () {
+        expect(
+          error,
+          isA<StateError>().having(
+            (final error) => error.message,
+            'message',
+            'boom',
+          ),
+        );
+      });
+    },
+  );
+
   group('Given Middlewares.withHooks with synchronous callbacks', () {
     const marker = StringOption(argName: 'marker');
 
@@ -1320,6 +1692,210 @@ void main() {
       );
 
       test('when the command fails then the callback value is returned', () {
+        expect(result, 'recovered:boom');
+      });
+    },
+  );
+
+  group(
+    'Given Middlewares.withHooks with a synchronous onFinally callback',
+    () {
+      late List<String> trace;
+      late String? result;
+
+      setUp(() async {
+        trace = [];
+        final command = RecordingCommand<OptionDefinition>(
+          name: 'build',
+          description: 'Build the app',
+          trace: trace,
+          middlewares: [
+            Middlewares.withHooks(
+              onReturn: (final _, final response) {
+                trace.add('onReturn');
+                return 'hook:$response';
+              },
+              onFinally: (final _) {
+                trace.add('onFinally');
+              },
+            ),
+          ],
+        );
+        final runner = CommandRunner<OptionDefinition, String>(
+          'tool',
+          'Tools',
+          subcommands: [command],
+        );
+        result = await runner.run(['build']);
+      });
+
+      test(
+        'when the command runs then onFinally runs after onReturn',
+        () {
+          expect(trace, ['build', 'onReturn', 'onFinally']);
+        },
+      );
+
+      test('when the command runs then the onReturn value is returned', () {
+        expect(result, 'hook:build');
+      });
+    },
+  );
+
+  group(
+    'Given Middlewares.withHooks with an asynchronous onFinally callback',
+    () {
+      late List<String> trace;
+      late String? result;
+
+      setUp(() async {
+        trace = [];
+        final command = RecordingCommand<OptionDefinition>(
+          name: 'build',
+          description: 'Build the app',
+          trace: trace,
+          middlewares: [
+            Middlewares.withHooks(
+              onReturn: (final _, final response) async {
+                trace.add('onReturn-start');
+                await Future<void>.delayed(Duration.zero);
+                trace.add('onReturn-end');
+                return 'hook:$response';
+              },
+              onFinally: (final _) async {
+                trace.add('onFinally-start');
+                await Future<void>.delayed(Duration.zero);
+                trace.add('onFinally-end');
+              },
+            ),
+          ],
+        );
+        final runner = CommandRunner<OptionDefinition, String>(
+          'tool',
+          'Tools',
+          subcommands: [command],
+        );
+        result = await runner.run(['build']);
+      });
+
+      test(
+        'when the command runs then onFinally finishes after onReturn',
+        () {
+          expect(trace, [
+            'build',
+            'onReturn-start',
+            'onReturn-end',
+            'onFinally-start',
+            'onFinally-end',
+          ]);
+        },
+      );
+
+      test('when the command runs then the onReturn value is returned', () {
+        expect(result, 'hook:build');
+      });
+    },
+  );
+
+  group(
+    'Given Middlewares.withHooks with synchronous onError and onFinally '
+    'callbacks',
+    () {
+      late List<String> trace;
+      late String? result;
+
+      setUp(() async {
+        trace = [];
+        final command = RecordingCommand<OptionDefinition>(
+          name: 'build',
+          description: 'Build the app',
+          trace: trace,
+          body: (final _) => throw StateError('boom'),
+          middlewares: [
+            Middlewares.withHooks(
+              onError: (final error, final _, final _) {
+                trace.add('onError');
+                return 'recovered:${(error as StateError).message}';
+              },
+              onFinally: (final _) {
+                trace.add('onFinally');
+              },
+            ),
+          ],
+        );
+        final runner = CommandRunner<OptionDefinition, String>(
+          'tool',
+          'Tools',
+          subcommands: [command],
+        );
+        result = await runner.run(['build']);
+      });
+
+      test(
+        'when the command fails then onFinally runs after onError',
+        () {
+          expect(trace, ['build', 'onError', 'onFinally']);
+        },
+      );
+
+      test('when the command fails then the onError value is returned', () {
+        expect(result, 'recovered:boom');
+      });
+    },
+  );
+
+  group(
+    'Given Middlewares.withHooks with asynchronous onError and onFinally '
+    'callbacks',
+    () {
+      late List<String> trace;
+      late String? result;
+
+      setUp(() async {
+        trace = [];
+        final command = RecordingCommand<OptionDefinition>(
+          name: 'build',
+          description: 'Build the app',
+          trace: trace,
+          body: (final _) => throw StateError('boom'),
+          middlewares: [
+            Middlewares.withHooks(
+              onError: (final error, final _, final _) async {
+                trace.add('onError-start');
+                await Future<void>.delayed(Duration.zero);
+                trace.add('onError-end');
+                return 'recovered:${(error as StateError).message}';
+              },
+              onFinally: (final _) async {
+                trace.add('onFinally-start');
+                await Future<void>.delayed(Duration.zero);
+                trace.add('onFinally-end');
+              },
+            ),
+          ],
+        );
+        final runner = CommandRunner<OptionDefinition, String>(
+          'tool',
+          'Tools',
+          subcommands: [command],
+        );
+        result = await runner.run(['build']);
+      });
+
+      test(
+        'when the command fails then onFinally finishes after onError',
+        () {
+          expect(trace, [
+            'build',
+            'onError-start',
+            'onError-end',
+            'onFinally-start',
+            'onFinally-end',
+          ]);
+        },
+      );
+
+      test('when the command fails then the onError value is returned', () {
         expect(result, 'recovered:boom');
       });
     },
