@@ -342,6 +342,759 @@ void main() {
       },
     );
   });
+
+  group(
+    'Given a MiddlewareComposer with synchronous onReturn and onFinally',
+    () {
+      late List<String> trace;
+      late String result;
+
+      setUp(() async {
+        trace = [];
+        final composer = MiddlewareComposer<String, String>(
+          onReturn: (final arg, final response) {
+            trace.add('onReturn');
+            return 'returned:$response';
+          },
+          onFinally: (final arg) {
+            trace.add('onFinally');
+          },
+        );
+        final handler = composer.middleware((final arg) {
+          trace.add('next');
+          return 'from-next';
+        });
+        result = await handler('original');
+      });
+
+      test('when the handler runs then onFinally runs after onReturn', () {
+        expect(trace, ['next', 'onReturn', 'onFinally']);
+      });
+
+      test('when the handler runs then the onReturn value is returned', () {
+        expect(result, 'returned:from-next');
+      });
+    },
+  );
+
+  group(
+    'Given a MiddlewareComposer with a synchronous onReturn '
+    'and an asynchronous onFinally',
+    () {
+      late List<String> trace;
+      late String result;
+
+      setUp(() async {
+        trace = [];
+        final composer = MiddlewareComposer<String, String>(
+          onReturn: (final arg, final response) {
+            trace.add('onReturn');
+            return 'returned:$response';
+          },
+          onFinally: (final arg) async {
+            trace.add('onFinally-start');
+            await Future<void>.delayed(Duration.zero);
+            trace.add('onFinally-end');
+          },
+        );
+        final handler = composer.middleware((final arg) {
+          trace.add('next');
+          return 'from-next';
+        });
+        result = await handler('original');
+      });
+
+      test(
+        'when the handler runs '
+        'then onFinally runs after onReturn has completed',
+        () {
+          expect(trace, [
+            'next',
+            'onReturn',
+            'onFinally-start',
+            'onFinally-end',
+          ]);
+        },
+      );
+
+      test('when the handler runs then the onReturn value is returned', () {
+        expect(result, 'returned:from-next');
+      });
+    },
+  );
+
+  group(
+    'Given a MiddlewareComposer with an asynchronous onReturn '
+    'and a synchronous onFinally',
+    () {
+      late List<String> trace;
+      late String result;
+
+      setUp(() async {
+        trace = [];
+        final composer = MiddlewareComposer<String, String>(
+          onReturn: (final arg, final response) async {
+            trace.add('onReturn-start');
+            await Future<void>.delayed(Duration.zero);
+            trace.add('onReturn-end');
+            return 'returned:$response';
+          },
+          onFinally: (final arg) {
+            trace.add('onFinally');
+          },
+        );
+        final handler = composer.middleware((final arg) {
+          trace.add('next');
+          return 'from-next';
+        });
+        result = await handler('original');
+      });
+
+      test(
+        'when the handler runs '
+        'then onFinally runs after onReturn has completed',
+        () {
+          expect(trace, [
+            'next',
+            'onReturn-start',
+            'onReturn-end',
+            'onFinally',
+          ]);
+        },
+      );
+
+      test('when the handler runs then the onReturn value is returned', () {
+        expect(result, 'returned:from-next');
+      });
+    },
+  );
+
+  group(
+    'Given a MiddlewareComposer with asynchronous onReturn and onFinally',
+    () {
+      late List<String> trace;
+      late String result;
+
+      setUp(() async {
+        trace = [];
+        final composer = MiddlewareComposer<String, String>(
+          onReturn: (final arg, final response) async {
+            trace.add('onReturn-start');
+            await Future<void>.delayed(Duration.zero);
+            trace.add('onReturn-end');
+            return 'returned:$response';
+          },
+          onFinally: (final arg) async {
+            trace.add('onFinally-start');
+            await Future<void>.delayed(Duration.zero);
+            trace.add('onFinally-end');
+          },
+        );
+        final handler = composer.middleware((final arg) {
+          trace.add('next');
+          return 'from-next';
+        });
+        result = await handler('original');
+      });
+
+      test(
+        'when the handler runs '
+        'then onFinally runs after onReturn has completed',
+        () {
+          expect(trace, [
+            'next',
+            'onReturn-start',
+            'onReturn-end',
+            'onFinally-start',
+            'onFinally-end',
+          ]);
+        },
+      );
+
+      test('when the handler runs then the onReturn value is returned', () {
+        expect(result, 'returned:from-next');
+      });
+    },
+  );
+
+  group(
+    'Given a MiddlewareComposer with synchronous onError and onFinally',
+    () {
+      late List<String> trace;
+      late String result;
+
+      setUp(() async {
+        trace = [];
+        final composer = MiddlewareComposer<String, String>(
+          onError: (final error, final stackTrace, final arg) {
+            trace.add('onError');
+            return 'recovered:${(error as StateError).message}';
+          },
+          onFinally: (final arg) {
+            trace.add('onFinally');
+          },
+        );
+        final handler = composer.middleware((final arg) {
+          trace.add('next');
+          throw StateError('boom');
+        });
+        result = await handler('original');
+      });
+
+      test(
+        'when the next handler throws then onFinally runs after onError',
+        () {
+          expect(trace, ['next', 'onError', 'onFinally']);
+        },
+      );
+
+      test(
+        'when the next handler throws then the onError value is returned',
+        () {
+          expect(result, 'recovered:boom');
+        },
+      );
+    },
+  );
+
+  group(
+    'Given a MiddlewareComposer with a synchronous onError '
+    'and an asynchronous onFinally',
+    () {
+      late List<String> trace;
+      late String result;
+
+      setUp(() async {
+        trace = [];
+        final composer = MiddlewareComposer<String, String>(
+          onError: (final error, final stackTrace, final arg) {
+            trace.add('onError');
+            return 'recovered:${(error as StateError).message}';
+          },
+          onFinally: (final arg) async {
+            trace.add('onFinally-start');
+            await Future<void>.delayed(Duration.zero);
+            trace.add('onFinally-end');
+          },
+        );
+        final handler = composer.middleware((final arg) {
+          trace.add('next');
+          throw StateError('boom');
+        });
+        result = await handler('original');
+      });
+
+      test(
+        'when the next handler throws '
+        'then onFinally runs after onError has completed',
+        () {
+          expect(trace, [
+            'next',
+            'onError',
+            'onFinally-start',
+            'onFinally-end',
+          ]);
+        },
+      );
+
+      test(
+        'when the next handler throws then the onError value is returned',
+        () {
+          expect(result, 'recovered:boom');
+        },
+      );
+    },
+  );
+
+  group(
+    'Given a MiddlewareComposer with an asynchronous onError '
+    'and a synchronous onFinally',
+    () {
+      late List<String> trace;
+      late String result;
+
+      setUp(() async {
+        trace = [];
+        final composer = MiddlewareComposer<String, String>(
+          onError: (final error, final stackTrace, final arg) async {
+            trace.add('onError-start');
+            await Future<void>.delayed(Duration.zero);
+            trace.add('onError-end');
+            return 'recovered:${(error as StateError).message}';
+          },
+          onFinally: (final arg) {
+            trace.add('onFinally');
+          },
+        );
+        final handler = composer.middleware((final arg) {
+          trace.add('next');
+          throw StateError('boom');
+        });
+        result = await handler('original');
+      });
+
+      test(
+        'when the next handler throws '
+        'then onFinally runs after onError has completed',
+        () {
+          expect(trace, [
+            'next',
+            'onError-start',
+            'onError-end',
+            'onFinally',
+          ]);
+        },
+      );
+
+      test(
+        'when the next handler throws then the onError value is returned',
+        () {
+          expect(result, 'recovered:boom');
+        },
+      );
+    },
+  );
+
+  group(
+    'Given a MiddlewareComposer with asynchronous onError and onFinally',
+    () {
+      late List<String> trace;
+      late String result;
+
+      setUp(() async {
+        trace = [];
+        final composer = MiddlewareComposer<String, String>(
+          onError: (final error, final stackTrace, final arg) async {
+            trace.add('onError-start');
+            await Future<void>.delayed(Duration.zero);
+            trace.add('onError-end');
+            return 'recovered:${(error as StateError).message}';
+          },
+          onFinally: (final arg) async {
+            trace.add('onFinally-start');
+            await Future<void>.delayed(Duration.zero);
+            trace.add('onFinally-end');
+          },
+        );
+        final handler = composer.middleware((final arg) {
+          trace.add('next');
+          throw StateError('boom');
+        });
+        result = await handler('original');
+      });
+
+      test(
+        'when the next handler throws '
+        'then onFinally runs after onError has completed',
+        () {
+          expect(trace, [
+            'next',
+            'onError-start',
+            'onError-end',
+            'onFinally-start',
+            'onFinally-end',
+          ]);
+        },
+      );
+
+      test(
+        'when the next handler throws then the onError value is returned',
+        () {
+          expect(result, 'recovered:boom');
+        },
+      );
+    },
+  );
+
+  group(
+    'Given a MiddlewareComposer whose synchronous onFinally throws '
+    'after onReturn',
+    () {
+      late List<String> trace;
+      late String result;
+
+      setUp(() async {
+        trace = [];
+        final composer = MiddlewareComposer<String, String>(
+          onReturn: (final arg, final response) {
+            trace.add('onReturn');
+            return 'returned:$response';
+          },
+          onFinally: (final arg) {
+            trace.add('onFinally');
+            throw StateError('onFinally');
+          },
+        );
+        final handler = composer.middleware((final arg) {
+          trace.add('next');
+          return 'from-next';
+        });
+        result = await handler('original');
+      });
+
+      test('when the handler runs then onFinally runs after onReturn', () {
+        expect(trace, ['next', 'onReturn', 'onFinally']);
+      });
+
+      test('when the handler runs then the onReturn value is returned', () {
+        expect(result, 'returned:from-next');
+      });
+    },
+  );
+
+  group(
+    'Given a MiddlewareComposer whose asynchronous onFinally throws '
+    'after onReturn',
+    () {
+      late List<String> trace;
+      late String result;
+
+      setUp(() async {
+        trace = [];
+        final composer = MiddlewareComposer<String, String>(
+          onReturn: (final arg, final response) async {
+            trace.add('onReturn-start');
+            await Future<void>.delayed(Duration.zero);
+            trace.add('onReturn-end');
+            return 'returned:$response';
+          },
+          onFinally: (final arg) async {
+            trace.add('onFinally-start');
+            await Future<void>.delayed(Duration.zero);
+            throw StateError('onFinally');
+          },
+        );
+        final handler = composer.middleware((final arg) {
+          trace.add('next');
+          return 'from-next';
+        });
+        result = await handler('original');
+      });
+
+      test(
+        'when the handler runs '
+        'then onFinally runs after onReturn has completed',
+        () {
+          expect(trace, [
+            'next',
+            'onReturn-start',
+            'onReturn-end',
+            'onFinally-start',
+          ]);
+        },
+      );
+
+      test('when the handler runs then the onReturn value is returned', () {
+        expect(result, 'returned:from-next');
+      });
+    },
+  );
+
+  group(
+    'Given a MiddlewareComposer whose synchronous onFinally throws '
+    'after onError recovers',
+    () {
+      late List<String> trace;
+      late String result;
+
+      setUp(() async {
+        trace = [];
+        final composer = MiddlewareComposer<String, String>(
+          onError: (final error, final stackTrace, final arg) {
+            trace.add('onError');
+            return 'recovered:${(error as StateError).message}';
+          },
+          onFinally: (final arg) {
+            trace.add('onFinally');
+            throw StateError('onFinally');
+          },
+        );
+        final handler = composer.middleware((final arg) {
+          trace.add('next');
+          throw StateError('boom');
+        });
+        result = await handler('original');
+      });
+
+      test(
+        'when the next handler throws then onFinally runs after onError',
+        () {
+          expect(trace, ['next', 'onError', 'onFinally']);
+        },
+      );
+
+      test(
+        'when the next handler throws then the onError value is returned',
+        () {
+          expect(result, 'recovered:boom');
+        },
+      );
+    },
+  );
+
+  group(
+    'Given a MiddlewareComposer whose asynchronous onFinally throws '
+    'after onError recovers',
+    () {
+      late List<String> trace;
+      late String result;
+
+      setUp(() async {
+        trace = [];
+        final composer = MiddlewareComposer<String, String>(
+          onError: (final error, final stackTrace, final arg) async {
+            trace.add('onError-start');
+            await Future<void>.delayed(Duration.zero);
+            trace.add('onError-end');
+            return 'recovered:${(error as StateError).message}';
+          },
+          onFinally: (final arg) async {
+            trace.add('onFinally-start');
+            await Future<void>.delayed(Duration.zero);
+            throw StateError('onFinally');
+          },
+        );
+        final handler = composer.middleware((final arg) {
+          trace.add('next');
+          throw StateError('boom');
+        });
+        result = await handler('original');
+      });
+
+      test(
+        'when the next handler throws '
+        'then onFinally runs after onError has completed',
+        () {
+          expect(trace, [
+            'next',
+            'onError-start',
+            'onError-end',
+            'onFinally-start',
+          ]);
+        },
+      );
+
+      test(
+        'when the next handler throws then the onError value is returned',
+        () {
+          expect(result, 'recovered:boom');
+        },
+      );
+    },
+  );
+
+  group(
+    'Given a MiddlewareComposer whose synchronous onFinally throws '
+    'after onError rethrows',
+    () {
+      late List<String> trace;
+      late Object? error;
+
+      setUp(() async {
+        trace = [];
+        final composer = MiddlewareComposer<String, String>(
+          onError: (final error, final stackTrace, final arg) {
+            trace.add('onError');
+            Error.throwWithStackTrace(error, stackTrace);
+          },
+          onFinally: (final arg) {
+            trace.add('onFinally');
+            throw StateError('onFinally');
+          },
+        );
+        final handler = composer.middleware((final arg) {
+          trace.add('next');
+          throw StateError('boom');
+        });
+        try {
+          await handler('original');
+          error = null;
+        } catch (thrown) {
+          error = thrown;
+        }
+      });
+
+      test(
+        'when the next handler throws then onFinally runs after onError',
+        () {
+          expect(trace, ['next', 'onError', 'onFinally']);
+        },
+      );
+
+      test(
+        'when the next handler throws '
+        'then the next handler exception propagates',
+        () {
+          expect(error, _stateError('boom'));
+        },
+      );
+    },
+  );
+
+  group(
+    'Given a MiddlewareComposer whose asynchronous onFinally throws '
+    'after onError rethrows',
+    () {
+      late List<String> trace;
+      late Object? error;
+
+      setUp(() async {
+        trace = [];
+        final composer = MiddlewareComposer<String, String>(
+          onError: (final error, final stackTrace, final arg) async {
+            trace.add('onError-start');
+            await Future<void>.delayed(Duration.zero);
+            trace.add('onError-end');
+            Error.throwWithStackTrace(error, stackTrace);
+          },
+          onFinally: (final arg) async {
+            trace.add('onFinally-start');
+            await Future<void>.delayed(Duration.zero);
+            throw StateError('onFinally');
+          },
+        );
+        final handler = composer.middleware((final arg) {
+          trace.add('next');
+          throw StateError('boom');
+        });
+        try {
+          await handler('original');
+          error = null;
+        } catch (thrown) {
+          error = thrown;
+        }
+      });
+
+      test(
+        'when the next handler throws '
+        'then onFinally runs after onError has completed',
+        () {
+          expect(trace, [
+            'next',
+            'onError-start',
+            'onError-end',
+            'onFinally-start',
+          ]);
+        },
+      );
+
+      test(
+        'when the next handler throws '
+        'then the next handler exception propagates',
+        () {
+          expect(error, _stateError('boom'));
+        },
+      );
+    },
+  );
+
+  group(
+    'Given a MiddlewareComposer whose synchronous onFinally throws '
+    'after onReturn throws',
+    () {
+      late List<String> trace;
+      late Object? error;
+
+      setUp(() async {
+        trace = [];
+        final composer = MiddlewareComposer<String, String>(
+          onReturn: (final arg, final response) {
+            trace.add('onReturn');
+            throw StateError('onReturn');
+          },
+          onFinally: (final arg) {
+            trace.add('onFinally');
+            throw StateError('onFinally');
+          },
+        );
+        final handler = composer.middleware((final arg) {
+          trace.add('next');
+          return 'from-next';
+        });
+        try {
+          await handler('original');
+          error = null;
+        } catch (thrown) {
+          error = thrown;
+        }
+      });
+
+      test('when the handler runs then onFinally runs after onReturn', () {
+        expect(trace, ['next', 'onReturn', 'onFinally']);
+      });
+
+      test(
+        'when the handler runs then the onReturn exception propagates',
+        () {
+          expect(error, _stateError('onReturn'));
+        },
+      );
+    },
+  );
+
+  group(
+    'Given a MiddlewareComposer whose asynchronous onFinally throws '
+    'after onReturn throws',
+    () {
+      late List<String> trace;
+      late Object? error;
+
+      setUp(() async {
+        trace = [];
+        final composer = MiddlewareComposer<String, String>(
+          onReturn: (final arg, final response) async {
+            trace.add('onReturn-start');
+            await Future<void>.delayed(Duration.zero);
+            trace.add('onReturn-end');
+            throw StateError('onReturn');
+          },
+          onFinally: (final arg) async {
+            trace.add('onFinally-start');
+            await Future<void>.delayed(Duration.zero);
+            throw StateError('onFinally');
+          },
+        );
+        final handler = composer.middleware((final arg) {
+          trace.add('next');
+          return 'from-next';
+        });
+        try {
+          await handler('original');
+          error = null;
+        } catch (thrown) {
+          error = thrown;
+        }
+      });
+
+      test(
+        'when the handler runs '
+        'then onFinally runs after onReturn has completed',
+        () {
+          expect(trace, [
+            'next',
+            'onReturn-start',
+            'onReturn-end',
+            'onFinally-start',
+          ]);
+        },
+      );
+
+      test(
+        'when the handler runs then the onReturn exception propagates',
+        () {
+          expect(error, _stateError('onReturn'));
+        },
+      );
+    },
+  );
+}
+
+Matcher _stateError(final String message) {
+  return isA<StateError>().having(
+    (final StateError error) => error.message,
+    'message',
+    message,
+  );
 }
 
 class _NullOnRun extends MiddlewareHooks<String, String?> {
