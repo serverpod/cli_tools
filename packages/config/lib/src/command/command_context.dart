@@ -24,9 +24,6 @@ class CommandContext<O extends OptionDefinition, T> {
   /// Whether this context is part of executing or completing the command line.
   final CommandRunMode runMode;
 
-  /// Whether middleware is running for completion rather than execution.
-  bool get isCompletion => runMode == CommandRunMode.completion;
-
   /// The configuration of the command's own (application-defined) options.
   final Configuration<O> config;
 

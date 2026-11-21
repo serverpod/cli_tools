@@ -1483,7 +1483,9 @@ CommandRunner<OptionDefinition, void> _runner({
     description,
     globalOptions: globalOptions,
     subcommands: subcommands,
-    usageLineLength: usageLineLength,
+    usageOutput: UsageOutputHandler(
+      usageSettings: UsageSettings(usageLineLength: usageLineLength),
+    ),
     rootFooter: rootFooter,
     // The built-in completion command is covered by the completion tests.
     completion: CompletionSettings.disabled,

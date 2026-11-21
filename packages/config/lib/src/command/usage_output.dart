@@ -7,6 +7,7 @@ import 'output_sinks.dart';
 /// controls the help output and the usage exception output.
 class UsageOutputHandler {
   final OutputSinks sinks;
+  final UsageSettings usageSettings;
   final UsageExceptionSettings exceptionSettings;
 
   final UsageExceptionHandler? _standardExceptionHandler;
@@ -24,6 +25,7 @@ class UsageOutputHandler {
   /// constructed with no handlers.
   UsageOutputHandler({
     this.sinks = const OutputSinks(),
+    this.usageSettings = const UsageSettings(),
     this.exceptionSettings = const UsageExceptionSettings(),
     final Iterable<UsageExceptionHandler>? addExceptionHandlers,
   }) : _standardExceptionHandler = standardUsageExceptionHandler,
@@ -34,6 +36,7 @@ class UsageOutputHandler {
   /// Replaces the standard exception handlers with the given exception handlers.
   UsageOutputHandler.replace({
     this.sinks = const OutputSinks(),
+    this.usageSettings = const UsageSettings(),
     this.exceptionSettings = const UsageExceptionSettings(),
     required final Iterable<UsageExceptionHandler> exceptionHandlers,
   }) : _standardExceptionHandler = null,
@@ -67,6 +70,15 @@ class UsageOutputHandler {
     }
     return exception;
   }
+}
+
+class UsageSettings {
+  /// If non-null, specifies the line length for usage output wrapping.
+  final int? usageLineLength;
+
+  const UsageSettings({
+    this.usageLineLength,
+  });
 }
 
 ////////////////////////

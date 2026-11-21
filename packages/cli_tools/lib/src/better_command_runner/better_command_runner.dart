@@ -159,7 +159,6 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     super.rootFooter,
     super.subcommands,
     final List<CommandMiddleware<O, T>>? prependMiddlewares,
-    final int? wrapTextColumn,
     final SetLogLevel? setLogLevel,
     super.usageGenerator,
     super.ignoreUnexpectedPositionalArgs,
@@ -168,6 +167,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
     final CompletionSettings? completion,
     final OnAnalyticsEvent? onAnalyticsEvent,
     final BuildCommandLinePropertiesForAnalytics? buildAnalyticsProperties,
+    @Deprecated('Use usageOutput instead') final int? wrapTextColumn,
     @Deprecated('Use a middleware instead')
     final OnBeforeRunCommand? onBeforeRunCommand,
     @Deprecated('Use usageOutput instead') final MessageOutput? messageOutput,
@@ -179,8 +179,11 @@ class BetterCommandRunner<O extends OptionDefinition, T>
        super(
          globalOptions: _makeGlobalOptions(globalOptions, onAnalyticsEvent),
          canRunAsLeafCommand: true, // prints usage when run as leaf command
-         usageLineLength: wrapTextColumn,
-         usageOutput: _makeUsageOutputHandler(usageOutput, messageOutput),
+         usageOutput: _makeUsageOutputHandler(
+           usageOutput,
+           messageOutput,
+           wrapTextColumn,
+         ),
          completion:
              completion ??
              CompletionSettings(enabled: enableCompletionCommand ?? true),
@@ -251,6 +254,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   static UsageOutputHandler _makeUsageOutputHandler(
     final UsageOutputHandler? usageOutput,
     final MessageOutput? messageOutput,
+    final int? wrapTextColumn,
   ) {
     if (usageOutput != null) {
       if (messageOutput != null) {
@@ -259,11 +263,15 @@ class BetterCommandRunner<O extends OptionDefinition, T>
       return usageOutput;
     }
 
-    if (messageOutput == null) return UsageOutputHandler();
-
+    if (messageOutput == null) {
+      return UsageOutputHandler(
+        usageSettings: UsageSettings(usageLineLength: wrapTextColumn),
+      );
+    }
     // create a UsageOutputHandler with wrappers around the legacy messageOutput
     return UsageOutputHandler(
       sinks: OutputSinks(out: BridgeUsagePrinter(messageOutput)),
+      usageSettings: UsageSettings(usageLineLength: wrapTextColumn),
       exceptionSettings: UsageExceptionSettings(
         exceptionPrinter: BridgeUsageExceptionPrinter(messageOutput),
       ),
@@ -324,7 +332,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   ) async {
     if (onAnalyticsEvent == null) return false;
 
-    if (context.isCompletion) return false;
+    if (context.runMode == CommandRunMode.completion) return false;
 
     const name = BetterCommandRunnerFlags.analytics;
     if (context.config.findValueOf(argName: name) == false) {

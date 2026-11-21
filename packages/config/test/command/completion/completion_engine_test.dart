@@ -768,7 +768,7 @@ void main() {
           Middlewares.withHooks(
             onRun: (final ctx) {
               trace.add('${ctx.command.name}:onRun:${ctx.runMode.name}');
-              if (ctx.isCompletion &&
+              if (ctx.runMode == CommandRunMode.completion &&
                   ctx.leaf().config.options.contains(projectOption)) {
                 final project = ctx.leaf().config.optionalValue(projectOption);
                 ctx.provider.store(_ProjectApi(project ?? 'none'));

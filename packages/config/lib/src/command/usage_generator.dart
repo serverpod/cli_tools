@@ -27,11 +27,6 @@ class StandardCommandUsageGenerator implements UsageGenerator {
   }
 }
 
-int? _getUsageLineLength(AbstractCommand command) {
-  int? lineLength = command.usageLineLength;
-  while (lineLength == null && command.hasParent) {
-    command = command.parent;
-    lineLength = command.usageLineLength;
-  }
-  return lineLength;
+int? _getUsageLineLength(final AbstractCommand command) {
+  return command.runner.usageOutput.usageSettings.usageLineLength;
 }
