@@ -1,3 +1,12 @@
+## 1.0.0-beta.1
+
+> Note: This release has breaking changes.
+
+ - **FEAT**(config): Added onFinally hook to middleware ([#150](https://github.com/serverpod/cli_tools/issues/150)). ([5628537e](https://github.com/serverpod/cli_tools/commit/5628537e530abeecfe13aaf327d3cd5b31766787))
+ - **BREAKING** **REFACTOR**(config,cli_tools): Improved initialization params and docs ([#151](https://github.com/serverpod/cli_tools/issues/151)). ([c96ae7ba](https://github.com/serverpod/cli_tools/commit/c96ae7ba910769f20896be879e9af4de32378a64))
+ - **BREAKING** **REFACTOR**(command): Replaced usageLineLength with usageSettings ([#149](https://github.com/serverpod/cli_tools/issues/149)). ([086da6b5](https://github.com/serverpod/cli_tools/commit/086da6b5476b8016fb0667c928f99b18721c061f))
+ - **BREAKING** **FEAT**(config,cli_tools): Consistent formatting of option and command names ([#152](https://github.com/serverpod/cli_tools/issues/152)). ([2771e338](https://github.com/serverpod/cli_tools/commit/2771e3384387a9ae335268c934814a2c0b03866a))
+
 ## 1.0.0-beta.0
 
  - **FEAT**(command): Accept arguments after -- via parser settings ([#145](https://github.com/serverpod/cli_tools/issues/145)). ([df6feaef](https://github.com/serverpod/cli_tools/commit/df6feaefae37b0b142a9b6580b4828513184cd2a))

@@ -1,3 +1,11 @@
+## 0.15.0-beta.1
+
+> Note: This release has breaking changes.
+
+ - **BREAKING** **REFACTOR**(config,cli_tools): Improved initialization params and docs ([#151](https://github.com/serverpod/cli_tools/issues/151)). ([c96ae7ba](https://github.com/serverpod/cli_tools/commit/c96ae7ba910769f20896be879e9af4de32378a64))
+ - **BREAKING** **REFACTOR**(command): Replaced usageLineLength with usageSettings ([#149](https://github.com/serverpod/cli_tools/issues/149)). ([086da6b5](https://github.com/serverpod/cli_tools/commit/086da6b5476b8016fb0667c928f99b18721c061f))
+ - **BREAKING** **FEAT**(config,cli_tools): Consistent formatting of option and command names ([#152](https://github.com/serverpod/cli_tools/issues/152)). ([2771e338](https://github.com/serverpod/cli_tools/commit/2771e3384387a9ae335268c934814a2c0b03866a))
+
 ## 0.15.0-beta.0
 
 > Note: This release has breaking changes.
