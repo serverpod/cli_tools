@@ -468,7 +468,7 @@ void main() {
     });
 
     test('when all positional arguments are given '
-        'and unexpected positional arguments are ignored '
+        'and the leaf command ignores unexpected positional arguments '
         'then file completion is requested', () async {
       runner = buildCompletionCli(
         usageOutput: UsageOutputHandler(sinks: OutputSinks(out: out)),

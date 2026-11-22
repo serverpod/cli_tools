@@ -290,35 +290,42 @@ void main() {
     });
   });
 
-  group('Given a runner that ignores unexpected positional arguments', () {
-    late List<String> trace;
-    late TracingRunner runner;
+  group(
+    'Given a leaf command that ignores unexpected positional arguments',
+    () {
+      late List<String> trace;
+      late RecordingCommand<OptionDefinition> command;
+      late TracingRunner runner;
 
-    setUp(() {
-      trace = [];
-      runner = TracingRunner(
-        trace,
-        ignoreUnexpectedPositionalArgs: true,
-        subcommands: [
-          RecordingCommand(
-            name: 'build',
-            description: 'Build the app',
-            trace: trace,
-          ),
-        ],
+      setUp(() {
+        trace = [];
+        command = RecordingCommand(
+          name: 'build',
+          description: 'Build the app',
+          trace: trace,
+          ignoreUnexpectedPositionalArgs: true,
+        );
+        runner = TracingRunner(
+          trace,
+          subcommands: [command],
+        );
+      });
+
+      test('when reading the command then the flag is set', () {
+        expect(command.ignoreUnexpectedPositionalArgs, isTrue);
+      });
+
+      test(
+        'when the leaf command receives an extra positional argument '
+        'then the command runs',
+        () async {
+          await runner.run(['build', 'extra']);
+
+          expect(trace, ['build']);
+        },
       );
-    });
-
-    test(
-      'when the leaf command receives an extra positional argument '
-      'then the command runs',
-      () async {
-        await runner.run(['build', 'extra']);
-
-        expect(trace, ['build']);
-      },
-    );
-  });
+    },
+  );
 
   group('Given a command created with a run function', () {
     test(

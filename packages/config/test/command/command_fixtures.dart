@@ -42,10 +42,13 @@ class RecordingCommand<O extends OptionDefinition>
     super.aliases,
     super.suggestionAliases,
     super.hidden,
+    super.invocation,
+    super.summary,
     super.options,
     super.persistentOptions,
     super.subcommands,
     super.middlewares,
+    super.ignoreUnexpectedPositionalArgs,
     this.body,
   });
 
@@ -76,8 +79,6 @@ class TracingRunner<O extends OptionDefinition>
     super.middlewares,
     super.canRunAsLeafCommand,
     super.globalOptions,
-    // super.configBroker,
-    super.ignoreUnexpectedPositionalArgs,
     super.rootFooter,
     super.usageOutput,
   }) : super('tool', 'Tools');

@@ -32,6 +32,10 @@ abstract interface class CommandDefinition<O extends OptionDefinition> {
   /// If false and this command is the last command found on the command line,
   /// the command line parser will yield an error.
   bool get canRunAsLeafCommand => false;
+
+  /// Whether positional arguments that match no positional option are allowed
+  /// after this command. Defaults to false. Only leaf commands use this.
+  bool get ignoreUnexpectedPositionalArgs => false;
 }
 
 class CommandUsageDefinition {

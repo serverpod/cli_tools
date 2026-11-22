@@ -1290,15 +1290,21 @@ void main() {
     late CommandRunner<OptionDefinition, void> runner;
 
     setUp(() {
-      command = _OverrideUsageCommand(
+      command = _command(
         name: 'get',
-        usageDefinition: const CommandUsageDefinition(
-          description: 'Download packages.\nMore detail here.',
-          summary: 'Download packages',
-          invocation: 'get <package>',
-        ),
+        description: 'Download packages.\nMore detail here.',
+        summary: 'Download packages',
+        invocation: 'get <package>',
       );
       runner = _runner(subcommands: [command]);
+    });
+
+    test('when reading the usage definition then the summary is kept', () {
+      expect(command.usageDefinition.summary, 'Download packages');
+    });
+
+    test('when reading the usage definition then the invocation is kept', () {
+      expect(command.usageDefinition.invocation, 'get <package>');
     });
 
     test('when reading the parent usage then the custom summary is shown', () {
@@ -1342,12 +1348,10 @@ void main() {
     late Command<OptionDefinition, void> command;
 
     setUp(() {
-      command = _OverrideUsageCommand(
+      command = _command(
         name: 'add',
-        usageDefinition: const CommandUsageDefinition(
-          description: 'Add a remote',
-          invocation: 'add <name>',
-        ),
+        description: 'Add a remote',
+        invocation: 'add <name>',
       );
       final branch = _command(
         name: 'remote',
@@ -1355,6 +1359,10 @@ void main() {
         subcommands: [command],
       );
       _runner(subcommands: [branch]);
+    });
+
+    test('when reading the usage definition then the invocation is kept', () {
+      expect(command.usageDefinition.invocation, 'add <name>');
     });
 
     test(
@@ -1421,6 +1429,8 @@ void main() {
 Command<OptionDefinition, void> _command({
   required final String name,
   required final String description,
+  final String? invocation,
+  final String? summary,
   final List<String>? aliases,
   final bool? hidden,
   final bool canRunAsLeafCommand = false,
@@ -1431,6 +1441,8 @@ Command<OptionDefinition, void> _command({
   return _UsageCommand(
     name: name,
     description: description,
+    invocation: invocation,
+    summary: summary,
     aliases: aliases,
     hidden: hidden,
     canRunAsLeafCommand: canRunAsLeafCommand,
@@ -1442,23 +1454,12 @@ Command<OptionDefinition, void> _command({
 
 enum _Pace { fast, slow }
 
-class _OverrideUsageCommand extends Command<OptionDefinition, void> {
-  @override
-  final String name;
-
-  _OverrideUsageCommand({
-    required this.name,
-    required final CommandUsageDefinition usageDefinition,
-  }) : super(usageDefinition: usageDefinition);
-
-  @override
-  void run(final CommandContext<OptionDefinition, void> context) {}
-}
-
 class _UsageCommand extends CommandImpl<OptionDefinition, void> {
   _UsageCommand({
     required super.name,
     required super.description,
+    super.invocation,
+    super.summary,
     super.aliases,
     super.hidden,
     super.canRunAsLeafCommand,

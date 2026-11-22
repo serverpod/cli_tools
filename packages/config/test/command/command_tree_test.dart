@@ -324,4 +324,99 @@ void main() {
       expect(identical(runner.subcommands.single, help), isTrue);
     });
   });
+
+  group('Given a leaf command created from parameters', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = CommandImpl.leafWithRunFunction(
+        name: 'get',
+        description: 'Download packages.\nMore detail here.',
+        invocation: 'get <package>',
+        summary: 'Download packages',
+        ignoreUnexpectedPositionalArgs: true,
+        run: (final _) {},
+      );
+    });
+
+    test('when reading the usage definition then the summary is kept', () {
+      expect(command.usageDefinition.summary, 'Download packages');
+    });
+
+    test('when reading the usage definition then the invocation is kept', () {
+      expect(command.usageDefinition.invocation, 'get <package>');
+    });
+
+    test(
+      'when reading the command '
+      'then unexpected positional arguments are ignored',
+      () {
+        expect(command.ignoreUnexpectedPositionalArgs, isTrue);
+      },
+    );
+  });
+
+  group('Given a leaf command created without those parameters', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = CommandImpl.leafWithRunFunction(
+        name: 'get',
+        description: 'Download packages',
+        run: (final _) {},
+      );
+    });
+
+    test(
+      'when reading the usage definition '
+      'then the summary is left to the usage generator',
+      () {
+        expect(command.usageDefinition.summary, isNull);
+      },
+    );
+
+    test(
+      'when reading the usage definition '
+      'then the invocation is left to the usage generator',
+      () {
+        expect(command.usageDefinition.invocation, isNull);
+      },
+    );
+
+    test(
+      'when reading the command '
+      'then unexpected positional arguments are reported',
+      () {
+        expect(command.ignoreUnexpectedPositionalArgs, isFalse);
+      },
+    );
+  });
+
+  group('Given a branch command created from parameters', () {
+    late Command<OptionDefinition, void> command;
+
+    setUp(() {
+      command = CommandImpl.branch(
+        name: 'remote',
+        description: 'Manage remotes.\nMore detail here.',
+        invocation: 'remote <subcommand>',
+        summary: 'Manage remotes',
+        subcommands: [
+          CommandImpl.leafWithRunFunction(
+            name: 'add',
+            description: 'Add a remote',
+            run: (final _) {},
+          ),
+        ],
+      );
+    });
+
+    test('when reading the usage definition then the summary is kept', () {
+      expect(command.usageDefinition.summary, 'Manage remotes');
+    });
+
+    test('when reading the usage definition then the invocation is kept', () {
+      expect(command.usageDefinition.invocation, 'remote <subcommand>');
+    });
+  });
 }
