@@ -48,7 +48,7 @@ void main() async {
       expect(config.errors, hasLength(1));
       expect(
         config.errors.single,
-        equals('Invalid value for option `name`: Value must not be empty'),
+        equals('Invalid value for option `--name`: Value must not be empty'),
       );
     });
 
@@ -61,7 +61,7 @@ void main() async {
       expect(config.errors, hasLength(1));
       expect(
         config.errors.single,
-        equals('Invalid value for option `name`: Value must not be empty'),
+        equals('Invalid value for option `--name`: Value must not be empty'),
       );
     });
 
@@ -76,7 +76,7 @@ void main() async {
         expect(config.errors, hasLength(1));
         expect(
           config.errors.single,
-          equals('Invalid value for option `name`: Value must not be empty'),
+          equals('Invalid value for option `--name`: Value must not be empty'),
         );
       },
     );
@@ -115,7 +115,7 @@ void main() async {
       expect(config.errors, hasLength(1));
       expect(
         config.errors.single,
-        equals('Invalid value for option `name`: Value must not be empty'),
+        equals('Invalid value for option `--name`: Value must not be empty'),
       );
     });
 
@@ -160,7 +160,7 @@ void main() async {
       expect(
         config.errors.single,
         equals(
-          'Invalid value for option `animal`: "unicorn" is not in cat|dog|mouse',
+          'Invalid value for option `--animal`: "unicorn" is not in cat|dog|mouse',
         ),
       );
     });
@@ -206,7 +206,7 @@ void main() async {
       expect(config.errors, hasLength(1));
       expect(
         config.errors.single,
-        contains('Invalid value for option `number` <integer>'),
+        contains('Invalid value for option `--number` <integer>'),
       );
     });
     test('when passed a non-number value then it reports an error', () async {
@@ -219,7 +219,7 @@ void main() async {
       expect(config.errors, hasLength(1));
       expect(
         config.errors.single,
-        contains('Invalid value for option `number` <integer>'),
+        contains('Invalid value for option `--number` <integer>'),
       );
     });
   });
@@ -254,7 +254,7 @@ void main() async {
         expect(
           config.errors.single,
           equals(
-            'Invalid value for option `number` <integer>: 99 is below the minimum (100)',
+            'Invalid value for option `--number` <integer>: 99 is below the minimum (100)',
           ),
         );
       },
@@ -272,7 +272,7 @@ void main() async {
         expect(
           config.errors.single,
           equals(
-            'Invalid value for option `number` <integer>: 201 is above the maximum (200)',
+            'Invalid value for option `--number` <integer>: 201 is above the maximum (200)',
           ),
         );
       },
@@ -306,7 +306,7 @@ void main() async {
         expect(config.errors, hasLength(1));
         expect(
           config.errors.single,
-          contains('`99` is not an allowed value for option `number`'),
+          contains('`99` is not an allowed value for option `--number`'),
         );
       },
     );
@@ -323,8 +323,8 @@ void main() async {
         expect(
           config.errors.single,
           equals(
-            'Invalid value for option `number` <integer>: '
-            '`99` is not an allowed value for option `number`',
+            'Invalid value for option `--number` <integer>: '
+            '`99` is not an allowed value for option `--number`',
           ),
         );
       },
@@ -385,7 +385,7 @@ void main() async {
       expect(config.errors, hasLength(1));
       expect(
         config.errors.single,
-        contains('Invalid value for option `number` <number>'),
+        contains('Invalid value for option `--number` <number>'),
       );
     });
   });
@@ -420,7 +420,7 @@ void main() async {
         expect(
           config.errors.single,
           equals(
-            'Invalid value for option `number` <number>: '
+            'Invalid value for option `--number` <number>: '
             '0.4 is below the minimum (0.5)',
           ),
         );
@@ -440,7 +440,7 @@ void main() async {
         expect(
           config.errors.single,
           equals(
-            'Invalid value for option `number` <number>: '
+            'Invalid value for option `--number` <number>: '
             '1.6 is above the maximum (1.5)',
           ),
         );
@@ -491,7 +491,7 @@ void main() async {
       );
 
       expect(config.errors, [
-        'option `number` value true is of type bool, not double.',
+        'option `--number` value true is of type bool, not double.',
       ]);
     });
   });
@@ -529,7 +529,7 @@ void main() async {
       );
 
       expect(config.errors, [
-        'Invalid value for option `number` <number>: '
+        'Invalid value for option `--number` <number>: '
             '-0.1 is below the minimum (0.0)',
       ]);
     });
@@ -541,7 +541,7 @@ void main() async {
       );
 
       expect(config.errors, [
-        'Invalid value for option `number` <number>: '
+        'Invalid value for option `--number` <number>: '
             'NaN is not a valid number',
       ]);
     });
@@ -558,7 +558,7 @@ void main() async {
       );
 
       expect(config.errors, [
-        'Invalid value for option `number` <number>: '
+        'Invalid value for option `--number` <number>: '
             'NaN is not a valid number',
       ]);
     });
@@ -680,7 +680,7 @@ void main() async {
         expect(
           config.errors.single,
           equals(
-            'Invalid value for option `duration` <integer[us|ms|s|m|h|d]>: -2s is below the minimum (0s)',
+            'Invalid value for option `--duration` <integer[us|ms|s|m|h|d]>: -2s is below the minimum (0s)',
           ),
         );
       },
@@ -699,7 +699,7 @@ void main() async {
         expect(
           config.errors.single,
           equals(
-            'Invalid value for option `duration` <integer[us|ms|s|m|h|d]>: 20d is above the maximum (2d)',
+            'Invalid value for option `--duration` <integer[us|ms|s|m|h|d]>: 20d is above the maximum (2d)',
           ),
         );
       },
@@ -807,7 +807,7 @@ void main() async {
         expect(
           config.errors.single,
           equals(
-            'option `many` value [] is of type List<int>, not List<String>.',
+            'option `--many` value [] is of type List<int>, not List<String>.',
           ),
         );
       },
@@ -850,7 +850,7 @@ void main() async {
         expect(
           config.errors.single,
           equals(
-            'option `many` value [123] is of type List<int>, not List<String>.',
+            'option `--many` value [123] is of type List<int>, not List<String>.',
           ),
         );
       },
@@ -926,7 +926,7 @@ void main() async {
       expect(
         config.errors.single,
         startsWith(
-          'Invalid value for option `many`: Invalid number (at character 1)',
+          'Invalid value for option `--many`: Invalid number (at character 1)',
         ),
       );
     });
@@ -964,7 +964,7 @@ void main() async {
         expect(
           config.errors.single,
           equals(
-            'option `many` value [] is of type List<String>, not List<int>.',
+            'option `--many` value [] is of type List<String>, not List<int>.',
           ),
         );
       },
@@ -1005,7 +1005,7 @@ void main() async {
         expect(
           config.errors.single,
           startsWith(
-            'Invalid value for option `many`: Invalid radix-10 number (at character 1)',
+            'Invalid value for option `--many`: Invalid radix-10 number (at character 1)',
           ),
         );
       },
@@ -1024,7 +1024,7 @@ void main() async {
         expect(
           config.errors.single,
           equals(
-            'option `many` value [123] is of type List<String>, not List<int>.',
+            'option `--many` value [123] is of type List<String>, not List<int>.',
           ),
         );
       },
@@ -1101,7 +1101,7 @@ void main() async {
       expect(
         config.errors.single,
         startsWith(
-          'Invalid value for option `many`: Invalid number (at character 1)',
+          'Invalid value for option `--many`: Invalid number (at character 1)',
         ),
       );
     });
@@ -1148,7 +1148,7 @@ void main() async {
       expect(config.errors, hasLength(1));
       expect(
         config.errors.single,
-        equals('option `many` is mandatory'),
+        equals('option `--many` is mandatory'),
       );
     });
 
@@ -1203,7 +1203,7 @@ void main() async {
       expect(
         config.errors.single,
         startsWith(
-          'Invalid value for option `many`: Invalid number (at character 1)',
+          'Invalid value for option `--many`: Invalid number (at character 1)',
         ),
       );
     });
@@ -1266,7 +1266,7 @@ void main() async {
         expect(config.errors, hasLength(1));
         expect(
           config.errors.single,
-          contains('`wrong` is not an allowed value for option `many`'),
+          contains('`wrong` is not an allowed value for option `--many`'),
         );
         expect(
           () => config.optionalValue(typedOpt),
@@ -1287,7 +1287,7 @@ void main() async {
         expect(
           config.errors.single,
           equals(
-            'Invalid value for option `many`: `wrong` is not an allowed value for option `many`',
+            'Invalid value for option `--many`: `wrong` is not an allowed value for option `--many`',
           ),
         );
         expect(
@@ -1308,7 +1308,7 @@ void main() async {
         expect(config.errors, hasLength(1));
         expect(
           config.errors.single,
-          contains('`wrong` is not an allowed value for option `many`'),
+          contains('`wrong` is not an allowed value for option `--many`'),
         );
         expect(
           () => config.optionalValue(typedOpt),

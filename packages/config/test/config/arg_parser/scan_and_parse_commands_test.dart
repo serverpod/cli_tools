@@ -1042,7 +1042,7 @@ void main() {
             isA<OptionDefinitionError>().having(
               (final e) => e.toString(),
               'toString',
-              contains('Duplicate argument name: opt'),
+              contains('Duplicate argument name: "opt"'),
             ),
           ),
         );
@@ -1428,7 +1428,7 @@ void main() {
             (final e) => e.toString(),
             'toString',
             'CommandDefinitionError: Invalid definition for command `tool`: '
-                'Cannot define positional options on a command with subcommands: option `file`.',
+                'Cannot define positional options on a command with subcommands: option `--file`.',
           ),
         ),
       );
@@ -1455,7 +1455,7 @@ void main() {
               'toString',
               'CommandDefinitionError: Invalid definition for command `tool`: '
                   'Persistent options must not be positional: '
-                  'positional argument 0.',
+                  'positional argument {0}.',
             ),
           ),
         );
@@ -1484,7 +1484,7 @@ void main() {
               'toString',
               'CommandDefinitionError: Invalid definition for command `mid`: '
                   'Cannot define positional options on a command with subcommands: '
-                  'positional argument 0.',
+                  'positional argument {0}.',
             ),
           ),
         );
@@ -1504,7 +1504,7 @@ void main() {
             (final e) => e.toString(),
             'toString',
             'CommandDefinitionError: Invalid definition for command `tool`: '
-                'Persistent options must not be positional: option `file`.',
+                'Persistent options must not be positional: option `--file`.',
           ),
         ),
       );
@@ -1525,7 +1525,7 @@ void main() {
             'toString',
             'CommandDefinitionError: Invalid definition for command `run`: '
                 'Persistent options must not be positional: '
-                'positional argument 0.',
+                'positional argument {0}.',
           ),
         ),
       );
@@ -2528,7 +2528,7 @@ void main() {
               (final e) => e.toString(),
               'toString',
               'CommandDefinitionError: Invalid definition for command `--version`: '
-                  'Subcommand name `--version` collides with option `version` '
+                  'Subcommand name `--version` collides with flag `--version` '
                   'for command tool',
             ),
           ),
@@ -2556,7 +2556,7 @@ void main() {
               (final e) => e.toString(),
               'toString',
               'CommandDefinitionError: Invalid definition for command `--version`: '
-                  'Subcommand name `--version` collides with option `version` '
+                  'Subcommand name `--version` collides with flag `--version` '
                   'for command tool',
             ),
           ),
@@ -2584,7 +2584,7 @@ void main() {
               (final e) => e.toString(),
               'toString',
               'CommandDefinitionError: Invalid definition for command `-V`: '
-                  'Subcommand name `-V` collides with option `version` '
+                  'Subcommand name `-V` collides with flag `--version` '
                   'for command tool',
             ),
           ),
@@ -2615,7 +2615,7 @@ void main() {
               (final e) => e.toString(),
               'toString',
               'CommandDefinitionError: Invalid definition for command `show`: '
-                  'Subcommand alias `-V` collides with option `version` '
+                  'Subcommand alias `-V` collides with flag `--version` '
                   'for command tool',
             ),
           ),
@@ -2641,7 +2641,7 @@ void main() {
             (final e) => e.toString(),
             'toString',
             'CommandDefinitionError: Invalid definition for command `--version`: '
-                'Subcommand name `--version` collides with option `name` '
+                'Subcommand name `--version` collides with option `--name` '
                 'for command tool',
           ),
         ),
@@ -2668,7 +2668,7 @@ void main() {
               (final e) => e.toString(),
               'toString',
               'CommandDefinitionError: Invalid definition for command `--no-color`: '
-                  'Subcommand name `--no-color` collides with option `color` '
+                  'Subcommand name `--no-color` collides with flag `--color` '
                   'for command tool',
             ),
           ),
@@ -2697,7 +2697,7 @@ void main() {
               (final e) => e.toString(),
               'toString',
               'CommandDefinitionError: Invalid definition for command `--verbose`: '
-                  'Subcommand name `--verbose` collides with option `verbose` '
+                  'Subcommand name `--verbose` collides with flag `--verbose` '
                   'for command mid',
             ),
           ),

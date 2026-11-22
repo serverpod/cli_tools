@@ -430,20 +430,25 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
     ];
   }
 
-  // TODO: Present arg options including the '--' prefix,
-  //       and {position 0} for positional arguments without a name.
   @override
-  String toString() => argName ?? envName ?? '<unnamed option>';
+  String toString() => _argString ?? envName ?? _unnamedOptionString;
+
+  String? get _argString => argName != null
+      ? '--$argName'
+      : argPos != null
+      ? '{$argPos}'
+      : null;
 
   String qualifiedString() {
     if (argName != null) {
-      return V is bool ? 'flag `$argName`' : 'option `$argName`';
+      final kind = this is ConfigOptionBase<bool> ? 'flag' : 'option';
+      return '$kind `--$argName`';
+    }
+    if (argPos != null) {
+      return 'positional argument {$argPos}';
     }
     if (envName != null) {
       return 'environment variable `$envName`';
-    }
-    if (argPos != null) {
-      return 'positional argument $argPos';
     }
     final keys = allConfigKeys;
     if (keys.isNotEmpty) {
@@ -914,7 +919,7 @@ List<OptionDefinition> validateOptions(
       if (argPosOpts.containsKey(opt.option.argPos)) {
         throw OptionDefinitionError(
           opt,
-          'Duplicate argument position: ${opt.option.argPos} for $opt',
+          'Duplicate argument position: ${opt.option.argPos} for ${opt.option}',
         );
       }
       argPosOpts[argPos] = opt;
@@ -925,7 +930,7 @@ List<OptionDefinition> validateOptions(
       if (envNameOpts.containsKey(opt.option.envName)) {
         throw OptionDefinitionError(
           opt,
-          'Duplicate environment variable name: ${opt.option.envName} for $opt',
+          'Duplicate environment variable name: ${opt.option.envName} for ${opt.option}',
         );
       }
       envNameOpts[envName] = opt;
@@ -980,7 +985,7 @@ void _claimOptionArgs(
     names,
     argName,
     opt,
-    'Duplicate argument name: $argName for $opt',
+    'Duplicate argument name: "$argName" of ${opt.option}',
   );
   if (opt.option case final FlagOption flag when flag.negatable) {
     final negation = 'no-$argName';
@@ -988,7 +993,7 @@ void _claimOptionArgs(
       names,
       negation,
       opt,
-      'Duplicate argument name: $negation for $opt',
+      'Duplicate argument name: "$negation" of ${opt.option}',
     );
   }
 
@@ -998,7 +1003,7 @@ void _claimOptionArgs(
         names,
         alias,
         opt,
-        'Duplicate argument name: $alias for $opt',
+        'Duplicate argument name: alias "$alias" of ${opt.option}',
       );
     }
   }
@@ -1008,7 +1013,7 @@ void _claimOptionArgs(
       abbrevs,
       abbrev,
       opt,
-      'Duplicate argument abbreviation: $abbrev for $opt',
+      'Duplicate argument abbreviation: "$abbrev" of ${opt.option}',
     );
   }
 }

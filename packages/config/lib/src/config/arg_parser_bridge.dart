@@ -61,7 +61,7 @@ class OldParsedArgs implements ParsedArgs {
   String _optionArgName(final OptionDefinition option) {
     final argName = option.option.argName;
     if (argName == null) {
-      throw StateError('Option has no arg name: $option');
+      throw StateError('Option has no arg name: ${option.option}');
     }
     return argName;
   }

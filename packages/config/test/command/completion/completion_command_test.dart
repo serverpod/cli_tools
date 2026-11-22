@@ -766,7 +766,7 @@ void main() {
             'message',
             allOf(
               contains('Missing value for option: --completion'),
-              contains('`target` is mandatory'),
+              contains('`--target` is mandatory'),
             ),
           ),
         ),
@@ -783,7 +783,7 @@ void main() {
             (final e) => e.message,
             'message',
             allOf(
-              contains('Invalid value for option `completion`: ""'),
+              contains('Invalid value for option `--completion`: ""'),
               contains('bash|zsh|fish|powershell|carapace'),
             ),
           ),
@@ -799,7 +799,7 @@ void main() {
           isA<UsageException>().having(
             (final e) => e.message,
             'message',
-            contains('Invalid value for option `completion`: "ksh"'),
+            contains('Invalid value for option `--completion`: "ksh"'),
           ),
         ),
       );
@@ -814,7 +814,7 @@ void main() {
             (final e) => e.message,
             'message',
             contains(
-              'Invalid value for option `completion`: "ksh" '
+              'Invalid value for option `--completion`: "ksh" '
               'is not in bash|zsh|fish|powershell|carapace',
             ),
           ),
@@ -832,7 +832,7 @@ void main() {
             isA<UsageException>().having(
               (final e) => e.message,
               'message',
-              contains('Invalid value for option `completion`: "Bash"'),
+              contains('Invalid value for option `--completion`: "Bash"'),
             ),
           ),
         );

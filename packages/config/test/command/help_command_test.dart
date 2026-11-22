@@ -528,12 +528,12 @@ void main() {
           'along with the usage', () {
         expect(
           error?.message,
-          'deploy: These options are mutually exclusive: json, yaml.',
+          'deploy: These options are mutually exclusive: --json, --yaml.',
         );
         expect(
           usage.err.toString(),
           _errorThenUsage(
-            'deploy: These options are mutually exclusive: json, yaml.',
+            'deploy: These options are mutually exclusive: --json, --yaml.',
             deploy.usage,
           ),
         );
@@ -597,12 +597,12 @@ void main() {
           'along with the usage', () {
         expect(
           error?.message,
-          'deploy: These options are mutually exclusive: json, yaml.',
+          'deploy: These options are mutually exclusive: --json, --yaml.',
         );
         expect(
           usage.err.toString(),
           _errorThenUsage(
-            'deploy: These options are mutually exclusive: json, yaml.',
+            'deploy: These options are mutually exclusive: --json, --yaml.',
             deploy.usage,
           ),
         );

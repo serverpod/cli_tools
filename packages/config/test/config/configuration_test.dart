@@ -985,7 +985,7 @@ void main() async {
         env: envVars,
       );
       expect(config.errors, hasLength(1));
-      expect(config.errors.first, 'option `project` is mandatory');
+      expect(config.errors.first, 'option `--project` is mandatory');
       expect(
         () => config.value(projectIdOpt),
         throwsA(
@@ -993,7 +993,7 @@ void main() async {
             (final e) => e.message,
             'message',
             contains(
-              'No value available for option `project` due to previous errors',
+              'No value available for option `--project` due to previous errors',
             ),
           ),
         ),
@@ -1015,7 +1015,7 @@ void main() async {
               .having(
                 (final e) => e.message,
                 'message',
-                contains('Option `project` is mandatory.'),
+                contains('Option `--project` is mandatory.'),
               )
               .having(
                 (final e) => e.usage,
@@ -1067,7 +1067,7 @@ void main() async {
         env: envVars,
       );
       expect(config.errors, hasLength(1));
-      expect(config.errors.first, 'option `project` is mandatory');
+      expect(config.errors.first, 'option `--project` is mandatory');
       expect(
         () => config.value(projectIdOpt),
         throwsA(
@@ -1075,7 +1075,7 @@ void main() async {
             (final e) => e.message,
             'message',
             contains(
-              'No value available for option `project` due to previous errors',
+              'No value available for option `--project` due to previous errors',
             ),
           ),
         ),
@@ -1200,7 +1200,7 @@ void main() async {
           allOf(
             isA<OptionDefinitionError>(),
             (final e) => e.toString().contains(
-              'Duplicate argument name: no-color',
+              'Duplicate argument name: alias "no-color"',
             ),
           ),
         ),
@@ -1249,7 +1249,7 @@ void main() async {
             allOf(
               isA<OptionDefinitionError>(),
               (final e) => e.toString().contains(
-                'Duplicate argument abbreviation: x',
+                'Duplicate argument abbreviation: "x"',
               ),
             ),
           ),
@@ -1435,7 +1435,7 @@ void main() async {
         env: envVars,
       );
       expect(config.errors, hasLength(1));
-      expect(config.errors.first, 'positional argument 0 is mandatory');
+      expect(config.errors.first, 'positional argument {0} is mandatory');
       expect(
         () => config.value(positionalOpt),
         throwsA(
@@ -1443,7 +1443,7 @@ void main() async {
             (final e) => e.message,
             'message',
             contains(
-              'No value available for positional argument 0 due to previous errors',
+              'No value available for positional argument {0} due to previous errors',
             ),
           ),
         ),
@@ -2145,7 +2145,7 @@ void main() async {
         expect(config.errors, hasLength(1));
         expect(
           config.errors.single,
-          'These options are mutually exclusive: first, second',
+          'These options are mutually exclusive: --first, --second',
         );
       },
     );
@@ -2161,7 +2161,7 @@ void main() async {
         expect(config.errors, hasLength(1));
         expect(
           config.errors.single,
-          'These options are mutually exclusive: first, second',
+          'These options are mutually exclusive: --first, --second',
         );
       },
     );
@@ -2261,7 +2261,7 @@ void main() async {
         expect(config.errors, hasLength(1));
         expect(
           config.errors.single,
-          'These options are mutually exclusive: first, second',
+          'These options are mutually exclusive: --first, --second',
         );
       },
     );
@@ -2277,7 +2277,7 @@ void main() async {
         expect(config.errors, hasLength(1));
         expect(
           config.errors.single,
-          'These options are mutually exclusive: first, second',
+          'These options are mutually exclusive: --first, --second',
         );
       },
     );
@@ -2389,7 +2389,7 @@ void main() async {
         expect(config.errors, hasLength(1));
         expect(
           config.errors.single,
-          'These options are mutually exclusive: first, second',
+          'These options are mutually exclusive: --first, --second',
         );
       },
     );
@@ -2454,7 +2454,7 @@ void main() async {
         expect(config.errors, hasLength(1));
         expect(
           config.errors.single,
-          'These options are mutually exclusive: first, second',
+          'These options are mutually exclusive: --first, --second',
         );
       },
     );
@@ -2509,7 +2509,7 @@ void main() async {
               isA<OptionDefinitionError>().having(
                 (final e) => e.message,
                 'message',
-                'Out-of-order dependency on not-yet-resolved option `file`',
+                'Out-of-order dependency on not-yet-resolved option `--file`',
               ),
             ),
           );
@@ -2579,7 +2579,7 @@ void main() async {
           isA<ArgumentError>().having(
             (final e) => e.message,
             'message',
-            'option `otherInt` is not part of this configuration',
+            'option `--otherInt` is not part of this configuration',
           ),
         ),
       );

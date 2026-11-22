@@ -316,7 +316,7 @@ void main() {
         args: ['--before', '2026-02-31'],
       );
       expect(config.errors, [
-        'Invalid value for option `before` <YYYY-MM-DDTHH:MM:SSZ>: '
+        'Invalid value for option `--before` <YYYY-MM-DDTHH:MM:SSZ>: '
             'Invalid date-time "2026-02-31": day must be between 1 and 28',
       ]);
     });
@@ -329,7 +329,7 @@ void main() {
           args: ['--on', '2026-08-01T00:00:00Z'],
         );
         expect(config.errors, [
-          'Invalid value for option `on` <YYYY-MM-DD>: '
+          'Invalid value for option `--on` <YYYY-MM-DD>: '
               'Invalid date "2026-08-01T00:00:00Z": a time is not allowed',
         ]);
       },
@@ -357,7 +357,7 @@ void main() {
         args: ['--before', '2026-08-02'],
       );
       expect(config.errors, [
-        'Invalid value for option `before` <YYYY-MM-DDTHH:MM:SSZ>: '
+        'Invalid value for option `--before` <YYYY-MM-DDTHH:MM:SSZ>: '
             '2026-08-02T00:00:00 is above the maximum '
             '(2026-08-01T00:00:00Z)',
       ]);
@@ -455,7 +455,7 @@ void main() {
           return;
         }
         expect(config.errors, [
-          'Invalid value for option `on` <YYYY-MM-DD>: '
+          'Invalid value for option `--on` <YYYY-MM-DD>: '
               '2011-12-30 does not exist in the local time zone',
         ]);
       },
@@ -498,8 +498,8 @@ void main() {
         args: ['--on', '2026-10-01'],
       );
       expect(config.errors, [
-        'Invalid value for option `on` <YYYY-MM-DD>: '
-            '`2026-10-01 00:00:00.000` is not an allowed value for option `on`',
+        'Invalid value for option `--on` <YYYY-MM-DD>: '
+            '`2026-10-01 00:00:00.000` is not an allowed value for option `--on`',
       ]);
     });
   });

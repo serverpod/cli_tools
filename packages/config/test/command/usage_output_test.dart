@@ -1076,7 +1076,7 @@ String _errorUsageAndCommand(
   final String commandUsage,
 ) => '$message\n\n$usage\n---\n$commandUsage';
 
-const _missingName = 'greet: Option `name` is mandatory.';
+const _missingName = 'greet: Option `--name` is mandatory.';
 
 class _CapturedUsage {
   final out = StringBuffer();
