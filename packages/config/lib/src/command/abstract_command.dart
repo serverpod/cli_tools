@@ -83,6 +83,17 @@ abstract class AbstractCommand<O extends OptionDefinition, T>
     final CommandContext<OptionDefinition, T>? prevContext,
   ) => null;
 
+  /// Whether additional positional arguments (that don't match the defined
+  /// positional options) are allowed after this command. Defaults to false.
+  ///
+  /// When true, such arguments are included in [Configuration.remainingPosArgs]
+  /// of this command and do not fail the run.
+  /// Otherwise they are reported as usage errors.
+  ///
+  /// Setting this to true only has effect for leaf commands.
+  @override
+  bool get ignoreUnexpectedPositionalArgs => false;
+
   /// Whether this command accepts a partial command line, i.e. runs as the
   /// last command on the command line even if the command line is incomplete.
   ///
@@ -192,7 +203,7 @@ abstract class AbstractCommand<O extends OptionDefinition, T>
       parsedArgs: parsedArgs,
       env: env,
       configBroker: configBroker(prevContext),
-      ignoreUnexpectedPositionalArgs: runner.ignoreUnexpectedPositionalArgs,
+      ignoreUnexpectedPositionalArgs: ignoreUnexpectedPositionalArgs,
     );
 
     return CommandContext<O, T>(

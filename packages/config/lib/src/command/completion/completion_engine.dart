@@ -35,9 +35,6 @@ import 'option_value_completion.dart';
 class CompletionEngine<O extends OptionDefinition, T> {
   final CommandDefinition<O> rootCommand;
 
-  /// See `CommandRunner.ignoreUnexpectedPositionalArgs`.
-  final bool ignoreUnexpectedPositionalArgs;
-
   /// See `CommandRunner.parserSettings`.
   final ParserSettings parserSettings;
 
@@ -54,7 +51,6 @@ class CompletionEngine<O extends OptionDefinition, T> {
   const CompletionEngine(
     this.rootCommand, {
     this.resolver,
-    this.ignoreUnexpectedPositionalArgs = false,
     this.parserSettings = const ParserSettings(),
     this.onError,
   });
@@ -337,7 +333,7 @@ class CompletionEngine<O extends OptionDefinition, T> {
         return _completeOptionValue(line, option.option, current);
       }
     }
-    return ignoreUnexpectedPositionalArgs
+    return line.leafCommand.ignoreUnexpectedPositionalArgs
         ? const CompletionResponse.files()
         : const CompletionResponse.nothing();
   }

@@ -44,6 +44,47 @@ import 'usage_output.dart';
 /// Using int as T can be sensible in order to return the exit code that the
 /// command executable should return.
 ///
+/// ## Usage
+///
+/// ### Built-in options and commands
+///
+/// The built-in global option `--help` / `-h` is predefined,
+/// as is `--completion <shell>` if the runner has no subcommands,
+/// see [builtinPersistentOptions].
+///
+/// If the runner has subcommands, the built-in commands are added: `help`,
+/// and if completion is enabled, `completion` and`__complete`.
+///
+/// ### Action options
+///
+/// Action options are arguments that have the syntax of an option flag but run
+/// like a command. They are defined by an [OptionDefinition] with the
+/// [ActionOptionMixin] mixin. If present, they run instead of a command.
+/// A use case example is the `--version` option.
+///
+/// ### Pass-through arguments after `--`
+///
+/// To accept arguments written after `--`, pass
+/// [DoubleDashHandling.passThroughRest].
+/// In addition, the command that receives them must set
+/// [ignoreUnexpectedPositionalArgs] to true.
+/// It can then read the list from [Configuration.remainingPosArgs]:
+///
+/// ```dart
+/// CommandRunner<OptionDefinition, void>(
+///   'tool',
+///   'Tools',
+///   parserSettings: const ParserSettings(
+///     doubleDashHandling: DoubleDashHandling.passThroughRest,
+///   ),
+/// );
+/// @override
+/// bool get ignoreUnexpectedPositionalArgs => true;
+/// ...
+/// // tool build -q -- --some --remaining
+/// // context.config.remainingPosArgs == ['--some', '--remaining']
+/// ```
+///
 /// ## Design
 ///
 /// Uses the concept of middlewares to customize the execution logic
@@ -114,13 +155,6 @@ class CommandRunner<O extends OptionDefinition, T>
   final CommandAliasesDefinition aliasesDefinition =
       const CommandAliasesDefinition();
 
-  /// Whether a positional argument that matches no positional option is allowed.
-  ///
-  /// When true, such arguments are included in [Configuration.remainingPosArgs]
-  /// of the command that received them and do not fail the run.
-  /// When false (default) they are reported as a usage error.
-  final bool ignoreUnexpectedPositionalArgs;
-
   /// Settings for scanning and parsing the command line.
   final ParserSettings parserSettings;
 
@@ -138,71 +172,60 @@ class CommandRunner<O extends OptionDefinition, T>
 
   /// Creates a new command runner with the given executable name and description.
   ///
-  /// [globalOptions] is the list of global options.
-  /// Global options are "persistent" which means they are valid anywhere on the
-  /// command line. A subcommand shadows an identical spelling of a global
-  /// option, and leaves the global option's other spellings in place.
+  /// [executableName] is the name of the executable being run, as presented in
+  /// usage and error messages.
   ///
-  /// The built-in global option `--help` / `-h` is available in addition,
-  /// as is `--completion <shell>` for a runner without subcommands,
-  /// see [builtinPersistentOptions].
+  /// [description] is the usage description of this root command
+  /// (the executable).
   ///
-  /// [subcommands] is a list of subcommands that will be added to
-  /// the runner. Can also be added later using [addSubcommand].
+  /// [invocation] overrides the default invocation synopsis of this root
+  /// command (the executable).
+  ///
+  /// [rootFooter] is a string that will be added to this root command's usage
+  /// footer.
+  ///
+  /// [globalOptions] is the list of global options. Global options are
+  /// "persistent" which means they are valid anywhere on the command line.
+  ///
+  /// [subcommands] is a list of subcommands that will be added to the runner.
+  /// Can also be added later using [addSubcommand].
   ///
   /// [middlewares] is a list of middlewares that will be added to the runner.
   ///
-  /// [ignoreUnexpectedPositionalArgs] when true keeps positional arguments
-  /// that match no positional option on [Configuration.remainingPosArgs].
-  /// Defaults to false, which reports them as a usage error.
-  /// If not provided, it defaults to true if [parserSettings.doubleDashHandling]
-  /// is [DoubleDashHandling.passThroughRest].
+  /// [canRunAsLeafCommand] when true allows this command to run as a leaf
+  /// command even if it has subcommands.
   ///
-  /// [parserSettings] controls parsing and defaults to [ParserSettings].
-  /// To accept arguments written after `--`, pass
-  /// [DoubleDashHandling.passThroughRest]. The command that received
-  /// them reads the list from [Configuration.remainingPosArgs]:
+  /// [usageGenerator] overrides the [UsageGenerator] for this root command
+  /// (not its subcommands, each command has its own).
   ///
-  /// ```dart
-  /// CommandRunner<OptionDefinition, void>(
-  ///   'tool',
-  ///   'Tools',
-  ///   parserSettings: const ParserSettings(
-  ///     doubleDashHandling: DoubleDashHandling.passThroughRest,
-  ///   ),
-  ///   ignoreUnexpectedPositionalArgs: true,
-  /// );
-  /// // tool build -q -- --some --remaining
-  /// // context.config.remainingPosArgs == ['--some', '--remaining']
-  /// ```
+  /// [parserSettings] overrides the default [ParserSettings] for this runner
+  /// and its subcommands.
   ///
-  /// [rootFooter] is a string that will be added to the runner's usage footer.
+  /// [usageOutput] overrides the default [UsageOutputHandler] for this runner
+  /// and its subcommands.
   ///
-  /// [completion] configures the built-in shell completion support,
-  /// which is enabled by default. See [CompletionSettings].
+  /// [completion] configures the built-in shell completion support for this
+  /// runner and its subcommands. See [CompletionSettings].
   CommandRunner(
     this.executableName,
     final String description, {
-    final List<O>? globalOptions,
+    final String? invocation,
     final String? rootFooter,
+    final List<O>? globalOptions,
     super.subcommands,
     super.middlewares,
     super.canRunAsLeafCommand,
     final UsageGenerator? usageGenerator,
-    final bool? ignoreUnexpectedPositionalArgs,
     final ParserSettings? parserSettings,
     final UsageOutputHandler? usageOutput,
     final CompletionSettings? completion,
   }) : usageDefinition = CommandUsageDefinition(
          description: description,
          usageFooter: rootFooter,
+         invocation: invocation,
        ),
        usageOutput = usageOutput ?? UsageOutputHandler(),
        completion = completion ?? const CompletionSettings(),
-       ignoreUnexpectedPositionalArgs =
-           ignoreUnexpectedPositionalArgs ??
-           parserSettings?.doubleDashHandling ==
-               DoubleDashHandling.passThroughRest,
        parserSettings = parserSettings ?? const ParserSettings(),
        super(
          usageGenerator: usageGenerator ?? const StandardRunnerUsageGenerator(),
@@ -242,7 +265,9 @@ class CommandRunner<O extends OptionDefinition, T>
   /// and returns `null` without running any command. Middleware still runs
   /// through the runner, which defines `--help`.
   ///
-  /// To make a subcommand which is named like an option, simply define it, for example:
+  /// To make a subcommand which is named like an option, simply define it
+  /// like the following example. But typically it is better to define an
+  /// action option instead.
   /// ```dart
   ///  CommandImpl.leafWithRunFunction(
   ///    name: 'version',
@@ -325,7 +350,6 @@ class CommandRunner<O extends OptionDefinition, T>
     final engine = CompletionEngine<O, T>(
       this,
       resolver: resolver,
-      ignoreUnexpectedPositionalArgs: ignoreUnexpectedPositionalArgs,
       parserSettings: parserSettings,
       onError: (final error, final stackTrace) {
         completion.sinks.err.writeln(

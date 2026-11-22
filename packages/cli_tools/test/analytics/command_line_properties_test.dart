@@ -24,6 +24,7 @@ Command<OptionDefinition, void> _createLeafCommand() {
       ..._createOptions,
       StringOption(argPos: 0),
     ],
+    ignoreUnexpectedPositionalArgs: true,
     run: (final _) {},
   );
 }
@@ -244,7 +245,6 @@ void main() {
       runner = CommandRunner<OptionDefinition, void>(
         'tool',
         'test cli',
-        ignoreUnexpectedPositionalArgs: true,
         subcommands: [
           _createBranchCommand(subcommands: [_templateCommand()]),
         ],

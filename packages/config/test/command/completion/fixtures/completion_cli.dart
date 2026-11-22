@@ -210,7 +210,6 @@ CommandRunner<OptionDefinition, int> buildCompletionCli({
       output: completionOutput,
       errorOutput: completionError,
     ),
-    ignoreUnexpectedPositionalArgs: ignoreUnexpectedPositionalArgs,
     parserSettings: parserSettings,
     middlewares: [
       Middlewares.onBeforeRun((final ctx) {
@@ -221,6 +220,7 @@ CommandRunner<OptionDefinition, int> buildCompletionCli({
       CommandImpl.leafWithRunFunction(
         name: 'build',
         description: 'Build the project.\nIn one of the build modes.',
+        ignoreUnexpectedPositionalArgs: ignoreUnexpectedPositionalArgs,
         options: [
           modeOption,
           outOption,
@@ -236,12 +236,14 @@ CommandRunner<OptionDefinition, int> buildCompletionCli({
       CommandImpl.leafWithRunFunction(
         name: 'deploy',
         description: 'Deploy a bundle to a target.',
+        ignoreUnexpectedPositionalArgs: ignoreUnexpectedPositionalArgs,
         options: [targetOption, bundleOption],
         run: run,
       ),
       CommandImpl.leafWithRunFunction(
         name: 'export',
         description: 'Export data in one of the formats.',
+        ignoreUnexpectedPositionalArgs: ignoreUnexpectedPositionalArgs,
         options: [jsonOption, yamlOption, stdinOption, inputOption],
         run: run,
       ),
@@ -249,12 +251,14 @@ CommandRunner<OptionDefinition, int> buildCompletionCli({
         name: 'internal',
         description: 'A hidden command.',
         hidden: true,
+        ignoreUnexpectedPositionalArgs: ignoreUnexpectedPositionalArgs,
         run: run,
       ),
       CommandImpl.leafWithRunFunction(
         name: 'version',
         aliases: ['--version'],
         description: 'Display the version.',
+        ignoreUnexpectedPositionalArgs: ignoreUnexpectedPositionalArgs,
         run: run,
       ),
       CommandImpl.branch(
@@ -264,12 +268,14 @@ CommandRunner<OptionDefinition, int> buildCompletionCli({
           CommandImpl.leafWithRunFunction(
             name: 'migrate',
             description: 'Run the migrations.',
+            ignoreUnexpectedPositionalArgs: ignoreUnexpectedPositionalArgs,
             options: [stepsOption],
             run: run,
           ),
           CommandImpl.leafWithRunFunction(
             name: 'seed',
             description: 'Seed the database.',
+            ignoreUnexpectedPositionalArgs: ignoreUnexpectedPositionalArgs,
             run: run,
           ),
         ],
@@ -285,7 +291,6 @@ CommandRunner<OptionDefinition, int> buildLeafCompletionCli({
   final CompletionSettings completion = inProcessCompletion,
   final StringSink? completionOutput,
   final StringSink? completionError,
-  final bool ignoreUnexpectedPositionalArgs = false,
 }) {
   return CommandRunner<OptionDefinition, int>(
       'leaftool',
@@ -298,7 +303,6 @@ CommandRunner<OptionDefinition, int> buildLeafCompletionCli({
         errorOutput: completionError,
       ),
       canRunAsLeafCommand: true,
-      ignoreUnexpectedPositionalArgs: ignoreUnexpectedPositionalArgs,
     )
     // Positional options can't be persistent, add them as regular options.
     ..addOption(targetOption)

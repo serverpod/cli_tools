@@ -2983,4 +2983,7 @@ class _EnumCommand<O extends OptionDefinition> implements CommandDefinition<O> {
 
   @override
   final bool canRunAsLeafCommand = false;
+
+  @override
+  final bool ignoreUnexpectedPositionalArgs = false;
 }
