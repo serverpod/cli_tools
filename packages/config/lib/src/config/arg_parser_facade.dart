@@ -101,7 +101,7 @@ class NewParsedArgs implements ParsedArgs {
   bool flag(final FlagOption option) {
     final value = _result.flagOptions[option];
     if (value == null) {
-      throw StateError('Flag ${option.option.argName} not found');
+      throw StateError('Flag ${option.option} not found');
     }
     return value;
   }
@@ -110,7 +110,7 @@ class NewParsedArgs implements ParsedArgs {
   String option(final OptionDefinition option) {
     final value = _result.regularOptions[option];
     if (value == null) {
-      throw StateError('Option ${option.option.argName} not found');
+      throw StateError('Option ${option.option} not found');
     }
     return value;
   }
@@ -119,7 +119,7 @@ class NewParsedArgs implements ParsedArgs {
   List<String> multiOption(final MultiOption option) {
     final value = _result.multiOptions[option];
     if (value == null) {
-      throw StateError('Multi-option ${option.option.argName} not found');
+      throw StateError('Multi-option ${option.option} not found');
     }
     return value;
   }

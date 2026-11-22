@@ -71,7 +71,7 @@ void main() {
       test('then the duplicate command name is reported', () {
         expect(
           error.toString(),
-          'CommandDefinitionError: Invalid definition for command `build`: '
+          'CommandDefinitionError: Invalid definition for command "build": '
           'Duplicate subcommand name: build for command tool',
         );
       });
@@ -138,9 +138,9 @@ void main() {
         isA<CommandDefinitionError>().having(
           (final error) => error.toString(),
           'toString',
-          'CommandDefinitionError: Invalid definition for command `build`: '
+          'CommandDefinitionError: Invalid definition for command "build": '
               'Cannot define positional options on a command with subcommands: '
-              'option `file`.',
+              'option "--file".',
         ),
       );
     });
@@ -200,8 +200,8 @@ void main() {
         isA<OptionDefinitionError>().having(
           (final error) => error.toString(),
           'toString',
-          'OptionDefinitionError: Invalid definition for option `target`: '
-              'Duplicate argument name: target for target',
+          'OptionDefinitionError: Invalid definition for option "--target": '
+              'Duplicate argument name: "target" of --target',
         ),
       );
     });

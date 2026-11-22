@@ -581,7 +581,7 @@ void _rejectSubcommandSpelling(
   final kind = isAlias ? 'alias' : 'name';
   throw CommandDefinitionError(
     subcommand,
-    'Subcommand $kind `$spelling` collides with ${option.option.qualifiedString()} '
+    'Subcommand $kind "$spelling" collides with ${option.option.qualifiedString()} '
     'for command $commandName',
   );
 }

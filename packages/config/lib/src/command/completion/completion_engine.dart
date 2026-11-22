@@ -572,7 +572,7 @@ class _ChainParsedArgs implements ParsedArgs {
       final value = result.flagOptions[option];
       if (value != null) return value;
     }
-    throw StateError('Flag ${option.argName} not found');
+    throw StateError('Flag $option not found');
   }
 
   @override
@@ -581,7 +581,7 @@ class _ChainParsedArgs implements ParsedArgs {
       final value = result.regularOptions[option];
       if (value != null && _wasTyped(value)) return value;
     }
-    throw StateError('Option ${option.argName} not found');
+    throw StateError('Option $option not found');
   }
 
   @override
@@ -594,7 +594,7 @@ class _ChainParsedArgs implements ParsedArgs {
             .toList();
       }
     }
-    throw StateError('Multi-option ${option.argName} not found');
+    throw StateError('Multi-option $option not found');
   }
 
   @override

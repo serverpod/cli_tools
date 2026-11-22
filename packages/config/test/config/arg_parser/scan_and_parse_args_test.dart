@@ -799,7 +799,7 @@ void main() {
           isA<OptionDefinitionError>().having(
             (final e) => e.toString(),
             'toString',
-            contains('Duplicate argument name: name'),
+            contains('Duplicate argument name: "name"'),
           ),
         ),
       );
@@ -820,7 +820,7 @@ void main() {
           isA<OptionDefinitionError>().having(
             (final e) => e.toString(),
             'toString',
-            contains('Duplicate argument abbreviation: x'),
+            contains('Duplicate argument abbreviation: "x"'),
           ),
         ),
       );
@@ -841,7 +841,7 @@ void main() {
           isA<OptionDefinitionError>().having(
             (final e) => e.toString(),
             'toString',
-            contains('Duplicate argument name: no-verbose'),
+            contains('Duplicate argument name: "no-verbose"'),
           ),
         ),
       );

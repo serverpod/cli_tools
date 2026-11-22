@@ -227,7 +227,10 @@ void main() {
         await flushEventQueue();
 
         expect(events, hasLength(1));
-        expect(events.first, equals('help'));
+        expect(
+          events.first,
+          equals(BetterCommandRunnerAnalyticsEvents.help),
+        );
       },
     );
   });

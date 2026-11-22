@@ -31,7 +31,7 @@ class CommandDefinitionError extends ConfigDefinitionError {
 
   @override
   String toString() {
-    final label = 'command `${command.name}`';
+    final label = 'command "${command.name}"';
     return message != null
         ? '$runtimeType: Invalid definition for $label: $message'
         : '$runtimeType: Invalid definition for $label';
