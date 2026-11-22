@@ -99,7 +99,7 @@ void main() {
 
       await Future.delayed(const Duration(milliseconds: 100));
       expect(analyticsEvents, hasLength(1));
-      expect(analyticsEvents.single, 'help');
+      expect(analyticsEvents.single, '--help');
     });
 
     test('when running with subcommand `help` '
