@@ -101,7 +101,7 @@ void main() {
         'then option name is mandatory message is logged to error.',
         () async {
           expect(errors, hasLength(1));
-          expect(errors.first, contains('Option `--name` is mandatory'));
+          expect(errors.first, contains('Option "--name" is mandatory'));
         },
       );
     });
