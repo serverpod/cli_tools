@@ -202,7 +202,7 @@ void main() {
     });
 
     test('when the option is omitted then the missing option is reported', () {
-      expect(error?.message, 'greet: Option `--name` is mandatory.');
+      expect(error?.message, 'greet: Option "--name" is mandatory.');
     });
 
     test(
@@ -253,7 +253,7 @@ void main() {
         expect(
           error?.message,
           'greet: Unknown option: --missing.\n'
-          'greet: Option `--name` is mandatory.',
+          'greet: Option "--name" is mandatory.',
         );
       },
     );
@@ -288,8 +288,8 @@ void main() {
     test('when both options are omitted then both errors are reported', () {
       expect(
         error?.message,
-        'greet: Option `--name` is mandatory.\n'
-        'greet: Option `--target` is mandatory.',
+        'greet: Option "--name" is mandatory.\n'
+        'greet: Option "--target" is mandatory.',
       );
     });
   });
@@ -343,8 +343,8 @@ void main() {
       () {
         expect(
           error?.message,
-          'tool: Option `--verbose` is mandatory.\n'
-          'greet: Option `--name` is mandatory.',
+          'tool: Option "--verbose" is mandatory.\n'
+          'greet: Option "--name" is mandatory.',
         );
       },
     );
@@ -789,8 +789,8 @@ void main() {
       test('when the variable is not allowed then the value is reported', () {
         expect(
           error?.message,
-          'greet: Invalid value for option `--user`: '
-          '`nope` is not an allowed value for option `--user`.',
+          'greet: Invalid value for option "--user": '
+          '`nope` is not an allowed value for option "--user"',
         );
       });
 
@@ -883,7 +883,7 @@ void main() {
       () {
         expect(
           error?.message,
-          'greet: Option `--jobs` value true is of type bool, not int.',
+          'greet: Option "--jobs" value true is of type bool, not int.',
         );
       },
     );

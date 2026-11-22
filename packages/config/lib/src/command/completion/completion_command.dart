@@ -105,10 +105,10 @@ class CompletionCommand<T> extends Command<CompletionOption, T> {
         'The script needs to be installed only once: it asks '
         '$_executableName for the completion alternatives, so it keeps '
         'up automatically when $_executableName is updated.\n\n'
-        'To install it, run `$_executableName completion install`.\n\n'
+        'To install it, run "$_executableName completion install".\n\n'
         '${completionInstallationOverview(_executableName, heading: 'Manual installation:')}\n\n'
         'For a wrapper script with name <name>, generate or install '
-        'the script with `--command <name>`.',
+        'the script with "--command <name>".',
     hidden: _hidden,
   );
 

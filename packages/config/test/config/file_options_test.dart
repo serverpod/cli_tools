@@ -71,7 +71,7 @@ void main() async {
           expect(
             config.errors.single,
             equals(
-              'Invalid value for option `--folder`: Path "$filePath" is not a directory',
+              'Invalid value for option "--folder": Path "$filePath" is not a directory',
             ),
           );
         });
@@ -96,7 +96,7 @@ void main() async {
           expect(
             config.errors.single,
             equals(
-              'Invalid value for option `--folder`: Directory "does-not-exist" does not exist',
+              'Invalid value for option "--folder": Directory "does-not-exist" does not exist',
             ),
           );
         });
@@ -146,7 +146,7 @@ void main() async {
           expect(
             config.errors.single,
             equals(
-              'Invalid value for option `--folder`: Path "$filePath" is not a directory',
+              'Invalid value for option "--folder": Path "$filePath" is not a directory',
             ),
           );
         });
@@ -195,7 +195,7 @@ void main() async {
           expect(
             config.errors.single,
             equals(
-              'Invalid value for option `--folder`: Path "$dirPath" already exists',
+              'Invalid value for option "--folder": Path "$dirPath" already exists',
             ),
           );
         });
@@ -221,7 +221,7 @@ void main() async {
           expect(
             config.errors.single,
             equals(
-              'Invalid value for option `--folder`: Path "$filePath" already exists',
+              'Invalid value for option "--folder": Path "$filePath" already exists',
             ),
           );
         });
@@ -272,7 +272,7 @@ void main() async {
           expect(
             config.errors.single,
             equals(
-              'Invalid value for option `--file`: Path "$dirPath" is not a file',
+              'Invalid value for option "--file": Path "$dirPath" is not a file',
             ),
           );
         });
@@ -321,7 +321,7 @@ void main() async {
           expect(
             config.errors.single,
             equals(
-              'Invalid value for option `--file`: File "does-not-exist" does not exist',
+              'Invalid value for option "--file": File "does-not-exist" does not exist',
             ),
           );
         });
@@ -347,7 +347,7 @@ void main() async {
           expect(
             config.errors.single,
             equals(
-              'Invalid value for option `--file`: Path "$dirPath" is not a file',
+              'Invalid value for option "--file": Path "$dirPath" is not a file',
             ),
           );
         });
@@ -420,7 +420,7 @@ void main() async {
           expect(
             config.errors.single,
             equals(
-              'Invalid value for option `--file`: Path "$dirPath" already exists',
+              'Invalid value for option "--file": Path "$dirPath" already exists',
             ),
           );
         });
@@ -446,7 +446,7 @@ void main() async {
           expect(
             config.errors.single,
             equals(
-              'Invalid value for option `--file`: Path "$filePath" already exists',
+              'Invalid value for option "--file": Path "$filePath" already exists',
             ),
           );
         });

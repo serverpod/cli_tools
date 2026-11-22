@@ -442,7 +442,7 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
   String qualifiedString() {
     if (argName != null) {
       final kind = this is ConfigOptionBase<bool> ? 'flag' : 'option';
-      return '$kind `--$argName`';
+      return '$kind "--$argName"';
     }
     if (argPos != null) {
       return 'positional argument {$argPos}';
