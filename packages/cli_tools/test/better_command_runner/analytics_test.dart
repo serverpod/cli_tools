@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:cli_tools/better_command_runner.dart';
 import 'package:config/command.dart'
-    show CompletionSettings, ContextProvider, OutputSinks;
-import 'package:config/config.dart' show StringOption, Configuration;
+    show CompletionSettings, ContextProvider, OutputSinks, CommandContext;
+import 'package:config/config.dart' show StringOption;
 import 'package:test/test.dart';
 
 import '../test_utils/test_utils.dart' show flushEventQueue;
@@ -15,7 +15,7 @@ class MockCommand extends BetterCommand {
   String get description => 'Mock command used for testing';
 
   @override
-  FutureOr? runWithConfig(final Configuration commandConfig) {}
+  FutureOr? run(final CommandContext context) {}
 
   @override
   String get name => commandName;
@@ -40,7 +40,7 @@ class CompletableMockCommand extends BetterCommand {
   Completer<void> completer = Completer<void>();
 
   @override
-  FutureOr? runWithConfig(final Configuration commandConfig) async {
+  FutureOr? run(final CommandContext context) async {
     await completer.future;
   }
 

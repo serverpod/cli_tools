@@ -120,13 +120,13 @@ class TimeSeriesCommand extends BetterCommand<TimeSeriesOption, void> {
   String get description => 'Generate a series of time stamps';
 
   @override
-  void runWithConfig(final Configuration<TimeSeriesOption> commandConfig) {
+  void run(final CommandContext<TimeSeriesOption, void> context) {
     var start = DateTime.now();
-    final until = commandConfig.value(TimeSeriesOption.until);
+    final until = context.config.value(TimeSeriesOption.until);
 
     // exactly one of these options is set
-    final length = commandConfig.optionalValue(TimeSeriesOption.length);
-    var interval = commandConfig.optionalValue(TimeSeriesOption.interval);
+    final length = context.config.optionalValue(TimeSeriesOption.length);
+    var interval = context.config.optionalValue(TimeSeriesOption.interval);
     interval ??= (until.difference(start) ~/ length!);
     if (interval < const Duration(milliseconds: 1)) {
       interval = const Duration(milliseconds: 1);

@@ -2,8 +2,8 @@ import 'dart:async' show FutureOr, ZoneSpecification, runZoned;
 
 import 'package:cli_tools/better_command_runner.dart'
     show BetterCommandRunner, MessageOutput, BetterCommand;
-import 'package:config/config.dart'
-    show Configuration, OptionDefinition, UsageException;
+import 'package:config/command.dart' show CommandContext;
+import 'package:config/config.dart' show OptionDefinition, UsageException;
 import 'package:test/test.dart';
 
 void main() => _runTests();
@@ -32,9 +32,7 @@ class _DummySubcommand extends BetterCommand<OptionDefinition, void> {
   String get description => 'A dummy subcommand';
 
   @override
-  FutureOr<void> runWithConfig(
-    final Configuration<OptionDefinition> commandConfig,
-  ) {}
+  FutureOr<void> run(final CommandContext<OptionDefinition, void> context) {}
 }
 
 BetterCommandRunner<OptionDefinition, void> _buildBetterRunner() =>
