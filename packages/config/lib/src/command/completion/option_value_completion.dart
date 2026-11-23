@@ -41,15 +41,20 @@ class OptionValueCompletion<O extends OptionDefinition, T> {
 
   const OptionValueCompletion(this.resolver);
 
+  /// Resolves [prelude] with [provider] and runs that chain's middleware.
+  ///
+  /// [provider] is the context provider passed to `CommandRunner.run`, or the
+  /// empty one that run creates when the caller omits it.
   Future<CompletionResult> completeOption(
     final CompletionPrelude prelude,
     final FutureOr<CompletionResult> Function(CompletionContext context)
-    complete,
-  ) async {
+    complete, {
+    required final ContextProvider provider,
+  }) async {
     final contexts = resolver.resolveConfigurations(
       prelude.precedingWords,
       prelude.environment,
-      ContextProvider(),
+      provider,
       runMode: CommandRunMode.completion,
     );
 

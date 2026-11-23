@@ -312,14 +312,14 @@ class CommandRunner<O extends OptionDefinition, T>
   }) {
     final envVars = env ?? Platform.environment;
     final argList = args.toList();
+    final provider = customProvider ?? ContextProvider();
 
     if (completion.enabled) {
       if (argList.isNotEmpty && argList.first == _completeRequestCommand) {
-        return _serveCompletionRequest(argList.sublist(1), envVars);
+        return _serveCompletionRequest(argList.sublist(1), envVars, provider);
       }
     }
 
-    final provider = customProvider ?? ContextProvider();
     final contexts = resolveConfigurations(argList, envVars, provider);
     if (contexts == null) return Future<T?>.value(null);
 
@@ -341,11 +341,15 @@ class CommandRunner<O extends OptionDefinition, T>
   /// through to custom `ConfigOptionBase.complete` implementations, as
   /// `CompletionContext.environment`.
   ///
+  /// [provider] is the one passed to [run]. Completing an option value
+  /// resolves configurations and runs middleware with it.
+  ///
   /// Exits the process with 0 after writing the response if
   /// [CompletionSettings.exitAfterResponse] is true.
   Future<T?> _serveCompletionRequest(
     final List<String> words,
     final Map<String, String> env,
+    final ContextProvider provider,
   ) async {
     final engine = CompletionEngine<O, T>(
       this,
@@ -357,7 +361,11 @@ class CommandRunner<O extends OptionDefinition, T>
         );
       },
     );
-    final response = await engine.complete(words, environment: env);
+    final response = await engine.complete(
+      words,
+      environment: env,
+      provider: provider,
+    );
     await writeCompletionOutput(this, response.format());
     return null;
   }
