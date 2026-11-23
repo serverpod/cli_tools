@@ -20,7 +20,7 @@ Lookup tables for the port (step 4). The package source wins where it differs fr
 | `wrapTextColumn: n` | `usageOutput: UsageOutputHandler(usageSettings: UsageSettings(usageLineLength: n))` |
 | `messageOutput: MessageOutput(usageLogger:, usageExceptionLogger:)` | `usageOutput: UsageOutputHandler(sinks: OutputSinks(out:, err:))`. For another layout of usage errors: `exceptionSettings: UsageExceptionSettings(exceptionPrinter:)`. |
 | `onBeforeRunCommand` | A middleware. See [patterns.md](patterns.md#runner-overrides-and-callbacks). |
-| `setLogLevel` | Still present. The callback gets no context. See [patterns.md](patterns.md#runner-overrides-and-callbacks). |
+| `setLogLevel` | Unchanged. It is not called for completion requests. See [patterns.md](patterns.md#runner-overrides-and-callbacks). |
 | `onAnalyticsEvent: (event, properties)` | `onAnalyticsEvent: (context, event, properties)`. `context` is the context of the root command. Its type is nullable; the built-in analytics middleware always passes it. |
 | `enableCompletionCommand` | Remove it. Completion is on by default and stays on. `completion: CompletionSettings(...)` changes its settings. |
 | `embeddedCompletions` | Removed. The completion scripts hold no commands or options, so nothing is embedded. |
@@ -71,7 +71,7 @@ New definition rules, checked when `run` starts, that throw `CommandDefinitionEr
 |---|---|
 | `argResults['x']`, `argResults.flag('x')` | `context.config.value(Option.x)`, `optionalValue(Option.x)` |
 | `argResults.wasParsed('x')` | `config.valueSourceType(Option.x) == ValueSourceType.arg` |
-| The options given on the command line | `config.optionsWhereSource((s) => s == ValueSourceType.arg)`, for each context in the chain |
+| The options given on the command line | `config.optionsWhereSource((s) => s == ValueSourceType.arg)`, for each context in the chain. Built-in options such as `--help` are in `context.builtinConfig`. |
 | `argResults.rest` | Positional options (`argPos`). For extra words: `ignoreUnexpectedPositionalArgs` and `config.remainingPosArgs`. |
 | `topLevelResults.command?.name` | `context.root().next?.command.name` |
 | Walk of `argResults.command` | Walk of `context.next`. The last one is `context.leaf()`. |
