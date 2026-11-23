@@ -123,15 +123,6 @@ void main() {
       expect(analyticsEvents.single, 'mock-command');
     });
 
-    test('when running with invalid subcommand '
-        'then invalid command analytics is sent', () async {
-      await runner.run(['no-such-command']).catchError((final _) {});
-
-      await Future.delayed(const Duration(milliseconds: 100));
-      expect(analyticsEvents, hasLength(1));
-      expect(analyticsEvents.single, 'invalid');
-    });
-
     test('when running with subcommand `mock-command` '
         'and --no-analytics flag '
         'then subcommand analytics is not sent', () async {

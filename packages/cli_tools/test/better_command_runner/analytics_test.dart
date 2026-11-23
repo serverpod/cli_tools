@@ -147,42 +147,6 @@ void main() {
     );
 
     test(
-      'when running invalid command then "invalid" analytics event is sent.',
-      () async {
-        final args = ['this could be a command argument'];
-
-        try {
-          await runner.run(args);
-        } catch (_) {
-          // Ignore any exception
-        }
-
-        await flushEventQueue();
-
-        expect(events, hasLength(1));
-        expect(events.first, equals('invalid'));
-      },
-    );
-
-    test(
-      'when running with unknown command then "invalid" analytics event is sent.',
-      () async {
-        final args = ['--unknown-command'];
-
-        try {
-          await runner.run(args);
-        } catch (_) {
-          // Ignore any exception
-        }
-
-        await flushEventQueue();
-
-        expect(events, hasLength(1));
-        expect(events.first, equals('invalid'));
-      },
-    );
-
-    test(
       'when running with no command then the runner name is sent.',
       () async {
         await runner.run([]);
@@ -279,24 +243,6 @@ void main() {
     );
 
     test(
-      'when running with registered command but invalid option then "invalid" analytics event is sent,',
-      () async {
-        final args = [MockCommand.commandName, '--name', 'invalid'];
-
-        try {
-          await runner.run(args);
-        } catch (_) {
-          // Ignore any exception
-        }
-
-        await flushEventQueue();
-
-        expect(events, hasLength(1));
-        expect(events.first, equals('invalid'));
-      },
-    );
-
-    test(
       'when running in completion mode then no analytics event is sent.',
       () async {
         final completionOutput = StringBuffer();
@@ -374,26 +320,6 @@ void main() {
 
         expect(events, hasLength(1));
         expect(events.first, equals(CompletableMockCommand.commandName));
-
-        command.completer.complete();
-      },
-    );
-
-    test(
-      'when running with registered command that hangs but invalid option then "invalid" analytics event is sent,',
-      () async {
-        final args = [CompletableMockCommand.commandName, '--name', 'invalid'];
-
-        unawaited(
-          runner.run(args).catchError((final _) {
-            // Ignore parse error
-          }),
-        );
-
-        await flushEventQueue();
-
-        expect(events, hasLength(1));
-        expect(events.first, equals('invalid'));
 
         command.completer.complete();
       },

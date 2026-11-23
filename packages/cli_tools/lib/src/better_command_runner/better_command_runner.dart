@@ -168,12 +168,6 @@ class BetterCommandRunner<O extends OptionDefinition, T>
              CompletionSettings(enabled: enableCompletionCommand ?? true),
          middlewares: prependMiddlewares,
        ) {
-    this.usageOutput.addUsageExceptionHandler(
-      UsageExceptions.simpleHandler(
-        (_, _, _) => sendAnalyticsEvent(null, 'invalid'),
-      ),
-    );
-
     final analyticsPropertiesBuilder =
         buildAnalyticsProperties ?? buildCommandLinePropertiesForAnalytics;
 
@@ -280,8 +274,6 @@ class BetterCommandRunner<O extends OptionDefinition, T>
   OnAnalyticsEvent? get onAnalyticsEvent => _onAnalyticsEvent;
 
   /// Sends an analytics event, provided the analytics are enabled.
-  /// On configuration resolution errors it is invoked with a null context,
-  /// on command execution it is invoked with the context.
   ///
   /// It calls the [onAnalyticsEvent] callback with the event name, or command
   /// name if applicable, and silently ignores any errors thrown by the callback.
