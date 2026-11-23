@@ -107,6 +107,8 @@ class UsageExceptionSettings {
            exceptionPrinter ?? const StandardUsageExceptionPrinter();
 }
 
+/// [exception] is typically a [CommandUsageException].
+/// [fromCommand] is a fallback if it isn't.
 typedef UsageExceptionHandler =
     UsageException? Function(
       UsageException exception,

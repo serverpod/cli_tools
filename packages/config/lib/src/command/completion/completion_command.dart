@@ -117,7 +117,6 @@ class CompletionCommand<T> extends Command<CompletionOption, T> {
   @override
   Future<T?> run(final CommandContext<CompletionOption, T> context) async {
     final request = _CompletionRequest.of(context);
-    if (request == null) return null;
     await writeCompletionOutput(request.runner, request.script);
     return null;
   }
@@ -155,7 +154,6 @@ class CompletionInstallCommand<T> extends Command<CompletionInstallOption, T> {
     final CommandContext<CompletionInstallOption, T> context,
   ) async {
     final request = _CompletionRequest.of(context);
-    if (request == null) return null;
     final dryRun = context.config.value(CompletionInstallOption.dryRun);
 
     // The script is saved in a file named after the command: a path
@@ -168,7 +166,6 @@ class CompletionInstallCommand<T> extends Command<CompletionInstallOption, T> {
         'Cannot install the completion for "$commandName". '
         'Specify the name of the command with --command, not its path.',
       );
-      return null;
     }
 
     final steps = (_installer ?? CompletionInstaller()).plan(
@@ -215,10 +212,10 @@ class _CompletionRequest {
   /// The request of the command line that ends with [context], whose
   /// [CompletionOption]s are those of the [CompletionCommand] on it.
   ///
-  /// If the shell is neither given nor detected, a usage error is reported
-  /// for the command of [context]. Returns null if the usage output
-  /// settings of the runner suppress the exception.
-  static _CompletionRequest? of<T>(
+  /// If the shell is neither given nor detected, a usage error is thrown
+  /// for the command of [context]. [CommandRunner.runCommandLine] prints
+  /// it and rethrows it, unless the usage output settings suppress it.
+  static _CompletionRequest of<T>(
     final CommandContext<OptionDefinition, T> context,
   ) {
     final runner = context.command.runner;
@@ -240,7 +237,6 @@ class _CompletionRequest {
         context,
         'Could not detect the shell. Specify it with --shell.',
       );
-      return null;
     }
     return _CompletionRequest(
       runner,
@@ -250,19 +246,15 @@ class _CompletionRequest {
   }
 }
 
-/// Reports the usage error [message] for the command of [context].
-/// Returns if the usage output settings of the runner suppress the
-/// exception.
-void _reportUsageError<T>(
+/// Throws a usage error with [message] for the command of [context].
+Never _reportUsageError<T>(
   final CommandContext<OptionDefinition, T> context,
   final String message,
 ) {
-  final command = context.command;
-  final exception = command.runner.usageOutput.onUsageException(
-    CommandUsageException('${command.name}: $message', command),
-    fromCommand: command,
+  throw CommandUsageException(
+    '${context.command.name}: $message',
+    context.command,
   );
-  if (exception != null) throw exception;
 }
 
 /// Writes the completion script of [shell] for [runner] to

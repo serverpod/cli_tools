@@ -598,6 +598,139 @@ void main() {
     });
   });
 
+  group('Given a command that throws a usage exception from run', () {
+    const message = 'build: A target is required.';
+    late List<String> trace;
+    late StringBuffer err;
+    late RecordingCommand<OptionDefinition> command;
+    late TracingRunner runner;
+    late CommandDefinition? seenFrom;
+    late int handlerCalls;
+
+    void setUpRunner({
+      required final bool asynchronous,
+      final bool suppressException = false,
+    }) {
+      trace = [];
+      err = StringBuffer();
+      seenFrom = null;
+      handlerCalls = 0;
+      command = RecordingCommand(
+        name: 'build',
+        description: 'Build the app',
+        trace: trace,
+        body: (final _) {
+          final error = CommandUsageException(message, command);
+          if (asynchronous) return Future<String?>.error(error);
+          throw error;
+        },
+      );
+      runner = TracingRunner(
+        trace,
+        usageOutput: UsageOutputHandler(
+          sinks: OutputSinks(err: err),
+          exceptionSettings: UsageExceptionSettings(
+            noUsageException: suppressException,
+          ),
+          addExceptionHandlers: [
+            (final exception, final _, {required final fromCommand}) {
+              handlerCalls++;
+              seenFrom = fromCommand;
+              return exception;
+            },
+          ],
+        ),
+        subcommands: [command],
+      );
+    }
+
+    for (final asynchronous in [false, true]) {
+      final when = asynchronous
+          ? 'when run throws asynchronously'
+          : 'when run throws synchronously';
+
+      group(when, () {
+        late UsageException? error;
+
+        setUp(() async {
+          setUpRunner(asynchronous: asynchronous);
+          error = await _captureUsageError(() => runner.run(['build']));
+        });
+
+        test('then the usage exception is thrown', () {
+          expect(
+            error,
+            isA<CommandUsageException>().having(
+              (final e) => e.message,
+              'message',
+              message,
+            ),
+          );
+        });
+
+        test('then the handler runs once for the runner', () {
+          expect(handlerCalls, 1);
+          expect(seenFrom, same(runner));
+        });
+
+        test('then the error and the command usage are printed once', () {
+          expect(err.toString(), '$message\n\n${command.usage}');
+        });
+      });
+    }
+
+    group('when an asynchronous run throws and exceptions are suppressed', () {
+      late String? result;
+
+      setUp(() async {
+        setUpRunner(asynchronous: true, suppressException: true);
+        result = await runner.run(['build']);
+      });
+
+      test('then the runner returns null', () {
+        expect(result, isNull);
+      });
+
+      test('then the error is printed once', () {
+        expect(message.allMatches(err.toString()), hasLength(1));
+        expect(err.toString(), contains(command.usage));
+      });
+    });
+
+    test('when run throws an exception that is not a usage exception '
+        'then it propagates without usage output', () async {
+      trace = [];
+      err = StringBuffer();
+      handlerCalls = 0;
+      runner = TracingRunner(
+        trace,
+        usageOutput: UsageOutputHandler(
+          sinks: OutputSinks(err: err),
+          addExceptionHandlers: [
+            (final exception, final _, {required final fromCommand}) {
+              handlerCalls++;
+              return exception;
+            },
+          ],
+        ),
+        subcommands: [
+          RecordingCommand(
+            name: 'build',
+            description: 'Build the app',
+            trace: trace,
+            body: (final _) async {
+              throw StateError('boom');
+            },
+          ),
+        ],
+      );
+
+      await expectLater(runner.run(['build']), throwsA(isA<StateError>()));
+      expect(handlerCalls, 0);
+      expect(err.toString(), isEmpty);
+    });
+  });
+
   group('Given a command that completes asynchronously', () {
     late List<String> trace;
     late TracingRunner runner;

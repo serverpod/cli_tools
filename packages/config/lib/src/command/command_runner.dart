@@ -305,7 +305,7 @@ class CommandRunner<O extends OptionDefinition, T>
     }
   }
 
-  FutureOr<T?> _run(
+  Future<T?> _run(
     final Iterable<String> args, {
     final Map<String, String>? env,
     final ContextProvider? customProvider,
@@ -321,7 +321,7 @@ class CommandRunner<O extends OptionDefinition, T>
 
     final provider = customProvider ?? ContextProvider();
     final contexts = resolveConfigurations(argList, envVars, provider);
-    if (contexts == null) return null;
+    if (contexts == null) return Future<T?>.value(null);
 
     contexts.provider.store(OriginalCommandLine(argList));
 
@@ -432,8 +432,18 @@ class CommandRunner<O extends OptionDefinition, T>
 
   /// Runs the command line: the middlewares of the commands on the command
   /// line, then the tail command or an action option.
-  FutureOr<T?> runCommandLine(final CommandContext<O, T> contexts) {
-    return _runNested(contexts);
+  ///
+  /// If a command (or middleware) throws a [UsageException], it is handled by
+  /// [usageOutput] the same way as for configuration input errors.
+  Future<T?> runCommandLine(final CommandContext<O, T> contexts) async {
+    try {
+      return await _runNested(contexts);
+    } on UsageException catch (e, s) {
+      // commands may implement custom usage checks and throw UsageException
+      final exception = usageOutput.onUsageException(e, fromCommand: this);
+      if (exception == null) return null;
+      Error.throwWithStackTrace(exception, s);
+    }
   }
 
   /// Runs the commands on the command line as one nested middleware chain.
