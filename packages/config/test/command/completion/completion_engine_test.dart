@@ -936,6 +936,225 @@ void main() {
     });
   });
 
+  group('Given a pass-through command that completes its arguments', () {
+    late _PassThroughProbe probe;
+
+    setUp(() {
+      probe = _PassThroughProbe();
+      runner = buildCompletionCli(
+        trace: trace,
+        completionOutput: out,
+        completionError: err,
+        extraCommands: [_PassThroughCommand(probe)],
+      );
+    });
+
+    test('when completing the name of the command '
+        'then the runner offers it like any subcommand', () async {
+      final response = await complete(runner, out, ['re']);
+      expect(response.lines, ['relay\tRun the other tool.']);
+      expect(probe.words, isNull);
+    });
+
+    test('when completing the first word after the command '
+        'then the command is asked to complete an empty word', () async {
+      await complete(runner, out, ['relay', '']);
+      expect(probe.words, ['']);
+    });
+
+    test('when completing after words and options '
+        'then the command is asked with them as written', () async {
+      await complete(runner, out, ['relay', 'build', '--mode', 'de']);
+      expect(probe.words, ['build', '--mode', 'de']);
+    });
+
+    test('when completing an option with an attached value '
+        'then the command is asked with the whole word', () async {
+      await complete(runner, out, ['relay', 'build', '--mode=de']);
+      expect(probe.words, ['build', '--mode=de']);
+    });
+
+    test('when completing after a double dash '
+        'then the command is asked with the double dash', () async {
+      await complete(runner, out, ['relay', '--', 'x']);
+      expect(probe.words, ['--', 'x']);
+    });
+
+    test('then the response of the command is returned as it is', () async {
+      probe.response = const CompletionResponse(
+        [
+          CompletionCandidate('deploy', description: 'Deploy it'),
+          CompletionCandidate('db'),
+        ],
+        directive:
+            CompletionDirective.noFileCompletion |
+            CompletionDirective.noSpace |
+            CompletionDirective.keepOrder,
+      );
+      final response = await complete(runner, out, ['relay', 'd']);
+      expect(response.lines, ['deploy\tDeploy it', 'db']);
+      expect(response.directive, 38);
+    });
+
+    group('when a global flag is given before and after the command', () {
+      setUp(() async {
+        await complete(runner, out, ['--verbose', 'relay', '--verbose', '']);
+      });
+
+      test('then the command is asked with the one after it only', () {
+        expect(probe.words, ['--verbose', '']);
+      });
+
+      test('then the resolved root command has the one before it', () {
+        expect(probe.rootVerbose, isTrue);
+      });
+    });
+
+    group('when completing after a word', () {
+      late ContextProvider provider;
+
+      setUp(() async {
+        provider = ContextProvider();
+        await complete(
+          runner,
+          out,
+          ['relay', 'build', ''],
+          provider: provider,
+        );
+      });
+
+      test('then the middleware of the commands runs '
+          'and the command does not', () {
+        expect(trace, ['middleware:comptool']);
+      });
+
+      test('then the context of the command is in completion mode', () {
+        expect(probe.runMode, CommandRunMode.completion);
+      });
+
+      test('then the context of the command has the words '
+          'before the one being completed', () {
+        expect(probe.contextArgs, ['build']);
+      });
+
+      test('then the context of the command has the provider '
+          'passed to run', () {
+        expect(probe.provider, same(provider));
+      });
+    });
+
+    group('when the command throws', () {
+      late Response response;
+
+      setUp(() async {
+        probe.failure = StateError('no such program');
+        response = await complete(runner, out, ['relay', '']);
+      });
+
+      test('then the response is an error and nothing is offered', () {
+        expect(response.lines, isEmpty);
+        expect(response.directive, CompletionDirective.error);
+      });
+
+      test('then the failure is written to the error sink', () {
+        expect(
+          err.toString(),
+          contains('Completion failed: Bad state: no such program'),
+        );
+      });
+    });
+
+    group('when completing the target of a redirection', () {
+      late Response response;
+
+      setUp(() async {
+        response = await complete(runner, out, ['relay', 'build', '>', 'ou']);
+      });
+
+      test('then the shell completes files', () {
+        expect(response.lines, isEmpty);
+        expect(response.directive, CompletionDirective.defaultDirective);
+      });
+
+      test('then the command is not asked', () {
+        expect(probe.words, isNull);
+      });
+    });
+
+    test('when completing after a redirection '
+        'then the command is asked without the redirection', () async {
+      await complete(runner, out, ['relay', '>', 'out.txt', 'bu']);
+      expect(probe.words, ['bu']);
+    });
+
+    group('when the engine is used without a resolver', () {
+      late CompletionResponse response;
+
+      setUp(() async {
+        final engine = CompletionEngine<OptionDefinition, int>(runner);
+        response = await engine.complete(['relay', '']);
+      });
+
+      test('then the shell completes files', () {
+        expect(response.candidates, isEmpty);
+        expect(response.directive, CompletionDirective.defaultDirective);
+      });
+
+      test('then the command is not asked', () {
+        expect(probe.words, isNull);
+      });
+    });
+  });
+
+  group('Given a pass-through command under a middleware '
+      'that does not run the following command', () {
+    late _PassThroughProbe probe;
+    late Response response;
+
+    setUp(() async {
+      probe = _PassThroughProbe();
+      runner = CommandRunner<OptionDefinition, int>(
+        'tool',
+        'Tools',
+        completion: CompletionSettings(
+          sinks: OutputSinks(out: out, err: err),
+        ),
+        middlewares: [
+          (final next) =>
+              (final context) => null,
+        ],
+        subcommands: [_PassThroughCommand(probe)],
+      );
+      response = await complete(runner, out, ['relay', '']);
+    });
+
+    test('when completing an argument of the command '
+        'then nothing is offered', () {
+      expect(response.lines, isEmpty);
+      expect(response.directive, CompletionDirective.noFileCompletion);
+    });
+
+    test('when completing an argument of the command '
+        'then the command is not asked', () {
+      expect(probe.words, isNull);
+    });
+  });
+
+  group('Given a pass-through command that does not complete '
+      'its arguments', () {
+    test('when completing an argument of the command '
+        'then the shell completes files', () async {
+      runner = buildCompletionCli(
+        completionOutput: out,
+        completionError: err,
+        extraCommands: [_PlainPassThroughCommand()],
+      );
+      final response = await complete(runner, out, ['plain', '--x', '']);
+      expect(response.lines, isEmpty);
+      expect(response.directive, CompletionDirective.defaultDirective);
+    });
+  });
+
   group('Given a CompletionEngine used directly', () {
     test('when completing then a response object is returned', () async {
       final engine = CompletionEngine<OptionDefinition, int>(runner);
@@ -1192,6 +1411,60 @@ void main() {
       expect(response.allowsFileCompletion, isTrue);
     });
   });
+}
+
+/// What a [_PassThroughCommand] was asked to complete, and how it answers.
+class _PassThroughProbe {
+  List<String>? words;
+  List<String>? contextArgs;
+  CommandRunMode? runMode;
+  bool? rootVerbose;
+  ContextProvider? provider;
+
+  CompletionResponse response = const CompletionResponse.nothing();
+  Object? failure;
+}
+
+/// A command named `relay` that passes its arguments through, and completes
+/// them with the response of its [probe].
+class _PassThroughCommand extends CommandImpl<OptionDefinition, int> {
+  final _PassThroughProbe probe;
+
+  _PassThroughCommand(this.probe)
+    : super(name: 'relay', description: 'Run the other tool.\nMore.');
+
+  @override
+  bool get passThroughArgs => true;
+
+  @override
+  int? run(final CommandContext<OptionDefinition, int> context) => 0;
+
+  @override
+  Future<CompletionResponse> completePassThroughArgs(
+    final CommandContext<OptionDefinition, int> context,
+    final List<String> words,
+  ) async {
+    probe.words = words;
+    probe.contextArgs = context.config.remainingPosArgs;
+    probe.runMode = context.runMode;
+    probe.rootVerbose = context.root().config.optionalValue(verboseOption);
+    probe.provider = context.provider;
+    if (probe.failure case final Object failure) throw failure;
+    return probe.response;
+  }
+}
+
+/// A command named `plain` that passes its arguments through, with the
+/// default completion of them.
+class _PlainPassThroughCommand extends CommandImpl<OptionDefinition, int> {
+  _PlainPassThroughCommand()
+    : super(name: 'plain', description: 'Run another tool.');
+
+  @override
+  bool get passThroughArgs => true;
+
+  @override
+  int? run(final CommandContext<OptionDefinition, int> context) => 0;
 }
 
 const endpointOption = StringOption(
