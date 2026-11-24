@@ -696,9 +696,16 @@ void main() {
         expect(err.toString(), contains(command.usage));
       });
     });
+  });
 
-    test('when run throws an exception that is not a usage exception '
-        'then it propagates without usage output', () async {
+  group('Given a command that throws a non-usage exception from run', () {
+    late List<String> trace;
+    late StringBuffer err;
+    late TracingRunner runner;
+    late int handlerCalls;
+    late Object? error;
+
+    setUp(() {
       trace = [];
       err = StringBuffer();
       handlerCalls = 0;
@@ -724,10 +731,29 @@ void main() {
           ),
         ],
       );
+    });
 
-      await expectLater(runner.run(['build']), throwsA(isA<StateError>()));
-      expect(handlerCalls, 0);
-      expect(err.toString(), isEmpty);
+    group('when the command is invoked', () {
+      setUp(() async {
+        try {
+          await runner.run(['build']);
+          error = null;
+        } on Object catch (caught) {
+          error = caught;
+        }
+      });
+
+      test('then the exception propagates', () {
+        expect(error, isA<StateError>());
+      });
+
+      test('then the usage handler is not called', () {
+        expect(handlerCalls, 0);
+      });
+
+      test('then no error output is printed', () {
+        expect(err.toString(), isEmpty);
+      });
     });
   });
 

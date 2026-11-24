@@ -670,11 +670,9 @@ void main() {
         test(
           'then the error and the install command usage are printed once',
           () {
+            const usageHeading = 'Usage: comptool completion install';
             expect(message.allMatches(err.toString()), hasLength(1));
-            expect(
-              err.toString(),
-              contains('Usage: comptool completion install'),
-            );
+            expect(usageHeading.allMatches(err.toString()), hasLength(1));
           },
         );
 
