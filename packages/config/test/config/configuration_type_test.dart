@@ -1317,6 +1317,144 @@ void main() async {
       },
     );
   });
+
+  group(
+    'Given a MultiOption whose element parser throws FormatException',
+    () {
+      const option = MultiOption<String>(
+        multiParser: MultiParser(_RejectValueParser('android')),
+        argName: 'platforms',
+        envName: 'PLATFORMS',
+        valueHelp: 'platform',
+      );
+
+      group('when the value is given as a named argument', () {
+        late Configuration fromArg;
+        late Configuration fromEnv;
+
+        setUp(() {
+          fromArg = Configuration.resolveNoExcept(
+            options: [option],
+            args: ['--platforms', 'android'],
+          );
+          fromEnv = Configuration.resolveNoExcept(
+            options: [option],
+            env: {'PLATFORMS': 'android'},
+          );
+        });
+
+        test('then the error matches the environment variable error', () {
+          expect(fromArg.errors, fromEnv.errors);
+        });
+
+        test('then the error does not mention FormatException', () {
+          expect(
+            fromArg.errors.single,
+            isNot(contains('FormatException')),
+          );
+        });
+
+        test('then the error quotes the parser message', () {
+          expect(
+            fromArg.errors.single,
+            equals(
+              'Invalid value for option "--platforms" <platform>: '
+              'Invalid platform "android".',
+            ),
+          );
+        });
+      });
+
+      group('when a later named occurrence is rejected', () {
+        late Configuration fromArg;
+        late Configuration fromEnv;
+
+        setUp(() {
+          fromArg = Configuration.resolveNoExcept(
+            options: [option],
+            args: ['--platforms', 'linux', '--platforms', 'android'],
+          );
+          fromEnv = Configuration.resolveNoExcept(
+            options: [option],
+            env: {'PLATFORMS': 'android'},
+          );
+        });
+
+        test('then the error matches the environment variable error', () {
+          expect(fromArg.errors, fromEnv.errors);
+        });
+      });
+    },
+  );
+
+  group('Given a MultiOption with a string separator', () {
+    const option = MultiOption<String>(
+      multiParser: MultiParser(StringParser(), separator: '|'),
+      argName: 'item',
+    );
+
+    test(
+      'when passed repeated named arguments then each occurrence is kept',
+      () async {
+        final config = Configuration.resolveNoExcept(
+          options: [option],
+          args: ['--item', 'a', '--item', 'b'],
+        );
+        expect(config.optionalValue(option), equals(['a', 'b']));
+      },
+    );
+
+    test(
+      'when passed a separated named argument then it splits on the separator',
+      () async {
+        final config = Configuration.resolveNoExcept(
+          options: [option],
+          args: ['--item', 'a|b|c'],
+        );
+        expect(config.optionalValue(option), equals(['a', 'b', 'c']));
+      },
+    );
+
+    test(
+      'when passed repeated separated arguments then every element is kept',
+      () async {
+        final config = Configuration.resolveNoExcept(
+          options: [option],
+          args: ['--item', 'a|b', '--item', 'c'],
+        );
+        expect(config.optionalValue(option), equals(['a', 'b', 'c']));
+      },
+    );
+  });
+
+  group('Given a MultiOption with no separator', () {
+    const option = MultiOption<String>(
+      multiParser: MultiParser(StringParser(), separator: null),
+      argName: 'item',
+    );
+
+    test(
+      'when passed a named argument containing commas then it stays one element',
+      () async {
+        final config = Configuration.resolveNoExcept(
+          options: [option],
+          args: ['--item', 'a,b'],
+        );
+        expect(config.optionalValue(option), equals(['a,b']));
+      },
+    );
+
+    test(
+      'when passed repeated named arguments then each occurrence is one element',
+      () async {
+        final config = Configuration.resolveNoExcept(
+          options: [option],
+          args: ['--item', 'a,b', '--item', 'c'],
+        );
+        expect(config.optionalValue(option), equals(['a,b', 'c']));
+      },
+    );
+  });
 }
 
 class _TestConfigBroker implements ConfigurationBroker {
@@ -1327,5 +1465,19 @@ class _TestConfigBroker implements ConfigurationBroker {
   @override
   Object? valueOrNull(final String key, final Configuration cfg) {
     return entries[key];
+  }
+}
+
+class _RejectValueParser extends ValueParser<String> {
+  final String rejected;
+
+  const _RejectValueParser(this.rejected);
+
+  @override
+  String parse(final String value) {
+    if (value == rejected) {
+      throw FormatException('Invalid platform "$value".');
+    }
+    return value;
   }
 }

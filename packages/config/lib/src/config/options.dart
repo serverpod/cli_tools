@@ -42,6 +42,7 @@ abstract interface class OptionDefinition<V> {
   ConfigOptionBase<V> get option;
 }
 
+/// {@template option_group}
 /// An option group allows grouping options together under a common name,
 /// and optionally provide option value validation on the group as a whole.
 ///
@@ -49,6 +50,7 @@ abstract interface class OptionDefinition<V> {
 /// so it is recommended to format it appropriately, e.g. `File mode`.
 ///
 /// An [OptionGroup] is uniquely identified by its [name].
+/// {@endtemplate}
 class OptionGroup {
   final String name;
 
@@ -215,9 +217,16 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
   final String? helpText;
   final String? valueHelp;
   final Map<String, String>? allowedHelp;
+
+  /// {@macro option_group}
   final OptionGroup? group;
 
   final List<V>? allowedValues;
+
+  /// A [customValidator] may be provided for an individual option.
+  /// If a value was provided the customValidator is invoked,
+  /// and shall throw a [FormatException] if its format is invalid,
+  /// or a [InvalidValueException] if the it is invalid for other reasons.
   final void Function(V value)? customValidator;
   final bool mandatory;
   final bool hide;
@@ -497,18 +506,19 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
       return res;
     }
 
-    final stringValue = res.stringValue;
-    if (stringValue != null) {
-      // value provided by string-based config source, parse to the designated type
-      try {
-        res = res.copyWithValue(
-          option.option.valueParser.parse(stringValue),
-        );
-      } on FormatException catch (e) {
-        return res.copyWithError(
-          _makeFormatErrorMessage(e),
-        );
+    try {
+      // String sources are parsed here, outside [_doResolve], so a
+      // [FormatException] is reported as an invalid value. Repeated occurrences
+      // stay separate: each is parsed on its own and the results are expanded.
+      if (res.multiStringValues case final List<String> stringValues) {
+        res = res.copyWithValue(_parseMultiStringValues(stringValues));
+      } else if (res.stringValue case final String stringValue) {
+        res = res.copyWithValue(option.option.valueParser.parse(stringValue));
       }
+    } on FormatException catch (e) {
+      return res.copyWithError(
+        _makeFormatErrorMessage(e),
+      );
     }
 
     final error = validateOptionValue(res.value);
@@ -550,6 +560,14 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
     if (result != null) return result;
 
     return const OptionResolutionImpl.noValue();
+  }
+
+  /// Parses each raw occurrence into [V].
+  /// Only [MultiOption] supplies [OptionResolutionImpl.multiStringValues].
+  V _parseMultiStringValues(final List<String> values) {
+    throw StateError(
+      '${qualifiedString()} cannot be parsed from ${values.length} strings',
+    );
   }
 
   OptionResolutionImpl<V>? _resolveNamedArg(final ParsedArgs? args) {
@@ -829,11 +847,15 @@ class MultiOption<T> extends ConfigOptionBase<List<T>> {
     if (argName == null || args == null || !args.wasParsed(this)) {
       return null;
     }
-    final multiParser = valueParser as MultiParser<T>;
     return OptionResolutionImpl(
-      value: args.multiOption(this).expand(multiParser.parse).toList(),
+      multiStringValues: args.multiOption(this),
       source: ValueSourceType.arg,
     );
+  }
+
+  @override
+  List<T> _parseMultiStringValues(final List<String> values) {
+    return values.expand(multiParser.parse).toList();
   }
 
   @override
