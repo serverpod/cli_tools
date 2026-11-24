@@ -210,6 +210,88 @@ tool build -q -- --some --remaining --args
 If `build` declares a positional option, that option takes the first of
 those words, and only the unused ones stay in `remainingPosArgs`.
 
+## Pass-through commands
+
+A command can pass everything after it on to another program, for example a
+subcommand that runs a separately installed CLI. Such a command overrides
+`passThroughArgs`:
+
+```dart
+import 'dart:io';
+
+import 'package:config/command.dart';
+import 'package:config/config.dart';
+
+class CloudCommand extends CommandImpl<OptionDefinition, int> {
+  CloudCommand() : super(name: 'cloud', description: 'Cloud commands.');
+
+  @override
+  bool get passThroughArgs => true;
+
+  @override
+  Future<int?> run(final CommandContext<OptionDefinition, int> context) async {
+    final process = await Process.start(
+      'cloudtool',
+      context.config.remainingPosArgs,
+      mode: ProcessStartMode.inheritStdio,
+    );
+    return process.exitCode;
+  }
+
+  @override
+  Future<CompletionResponse> completePassThroughArgs(
+    final CommandContext<OptionDefinition, int> context,
+    final List<String> words,
+  ) => requestCompletionFrom('cloudtool', words);
+}
+```
+
+```sh
+mycli --verbose cloud deploy --verbose --help
+```
+
+The first `--verbose` is a global option of `mycli`. Nothing after `cloud` is
+parsed: those arguments are not options, subcommands or option values of
+`mycli`, whatever they look like. In `run`, `context.config.remainingPosArgs`
+is `['deploy', '--verbose', '--help']`, as written. That includes `--`.
+
+`--help` after the command therefore goes to the other program.
+`mycli --help cloud` and `mycli help cloud` print the usage of the command
+itself, whose synopsis is `mycli cloud [arguments]`.
+
+A pass-through command must not have subcommands or command line options,
+since they would never be parsed, and the root command cannot be one. These
+are definition errors (`CommandDefinitionError`). Options that are set from
+other sources only, such as an environment variable, are allowed.
+
+To parse the options of a command and pass through only what follows a `--`,
+use `DoubleDashHandling.passThroughRest` instead, see above.
+
+### Completing the arguments
+
+`completePassThroughArgs` completes the arguments after the command. `words`
+are the ones typed so far, and the last of them is the (possibly empty) word
+being completed. The default is the shell's file completion.
+
+`requestCompletionFrom(program, words)` asks another program instead. It runs
+`program __complete <words...>`, the request that the completion scripts send
+(see [Shell completion](#shell-completion)), and returns the response as it
+is: alternatives, descriptions and directive. Any program that serves that
+request can be asked, such as one built on `CommandRunner`. The installed
+completion script of `mycli` is used unchanged, and the completion of the
+other program does not need to be installed.
+
+Like the `complete` method of an option, `completePassThroughArgs` is called
+with the configurations resolved from the command line typed so far, inside
+the middleware of the commands, in completion mode. `context` is that of the
+pass-through command, so the program can be looked up the same way as in
+`run`.
+
+If it throws, nothing is offered and the failure is written to the completion
+error sink. `requestCompletionFrom` throws a `ProcessException` when the
+program cannot be run, exits with a non-zero exit code, or prints something
+other than a completion response.
+
 ## Shell completion
 
 The `CommandRunner` in `package:config/command.dart` has built-in command line
@@ -327,6 +409,8 @@ output has been written.
   group is given (by name or as a positional argument), the other options of
   the group are no longer offered, and a positional argument belonging to the
   group is not completed.
+- The arguments of a pass-through command: what that command offers, see
+  [Pass-through commands](#pass-through-commands).
 
 Completion works on partial command lines, so missing mandatory options or
 subcommands never block it. The same goes for the built-in `help` command:

@@ -85,6 +85,13 @@ import 'usage_output.dart';
 /// // context.config.remainingPosArgs == ['--some', '--remaining']
 /// ```
 ///
+/// ### Pass-through commands
+///
+/// A command that overrides [AbstractCommand.passThroughArgs] passes every
+/// argument after it through unparsed, for example to another program.
+/// It reads them from [Configuration.remainingPosArgs] and completes them
+/// in [AbstractCommand.completePassThroughArgs].
+///
 /// ## Design
 ///
 /// Uses the concept of middlewares to customize the execution logic
