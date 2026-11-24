@@ -2,7 +2,7 @@ name: serverpod_logging_cli
 description: >-
   A cli_tools.Logger bridge for the serverpod_logging architecture, rendering
   scoped logs and progress to the terminal.
-version: 0.2.1
+version: 0.2.0
 repository: https://github.com/serverpod/serverpod
 homepage: https://serverpod.dev
 issue_tracker: https://github.com/serverpod/serverpod/issues
