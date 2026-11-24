@@ -590,13 +590,21 @@ void main() {
       test('then a usage error tells to specify the name of the command', () {
         expect(
           error,
-          isA<UsageException>().having(
+          isA<CommandUsageException>().having(
             (final e) => e.message,
             'message',
             'install: Cannot install the completion for "${wrapper.path}". '
                 'Specify the name of the command with --command, '
                 'not its path.',
           ),
+        );
+      });
+
+      test('then the error and the install command usage are printed once', () {
+        final exception = error as CommandUsageException;
+        expect(
+          err.toString(),
+          '${exception.message}\n\n${exception.command.usage}',
         );
       });
 
@@ -615,6 +623,68 @@ void main() {
         expect(out.toString(), isEmpty);
       });
     });
+
+    group(
+      'when the runner does not throw usage exceptions '
+      'and `completion install` is given a path as the command name',
+      () {
+        const commandName = '../mywrap';
+        const message =
+            'install: Cannot install the completion for "$commandName". '
+            'Specify the name of the command with --command, not its path.';
+        late int? result;
+
+        setUp(() async {
+          runner = buildCompletionCli(
+            usageOutput: UsageOutputHandler(
+              sinks: OutputSinks(out: out, err: err),
+              exceptionSettings: const UsageExceptionSettings(
+                noUsageException: true,
+              ),
+            ),
+            trace: trace,
+            completionOutput: out,
+            completionError: err,
+            extraCommands: [
+              CompletionCommand<int>(
+                installer: CompletionInstaller(
+                  environment: {'HOME': home.path},
+                ),
+              ),
+            ],
+          );
+          result = await runner.run([
+            'completion',
+            'install',
+            '--shell',
+            'bash',
+            '--command',
+            commandName,
+          ]);
+        });
+
+        test('then the runner returns null', () {
+          expect(result, isNull);
+        });
+
+        test(
+          'then the error and the install command usage are printed once',
+          () {
+            const usageHeading = 'Usage: comptool completion install';
+            expect(message.allMatches(err.toString()), hasLength(1));
+            expect(usageHeading.allMatches(err.toString()), hasLength(1));
+          },
+        );
+
+        test('then nothing is printed about an installation', () {
+          expect(out.toString(), isEmpty);
+        });
+
+        test('then nothing is created', () {
+          expect(home.listSync(), isEmpty);
+        });
+      },
+    );
 
     test('when running `completion install --shell zsh --dry-run` '
         'with a parent directory in the command name '

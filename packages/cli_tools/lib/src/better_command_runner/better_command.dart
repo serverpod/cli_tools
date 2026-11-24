@@ -1,5 +1,3 @@
-import 'dart:async' show FutureOr;
-
 import 'package:config/command.dart';
 import 'package:config/config.dart';
 
@@ -64,16 +62,4 @@ abstract class BetterCommand<O extends OptionDefinition, T>
     }
     return _messageOutput;
   }
-
-  /// Runs this command.
-  /// The default implementation runs the command subclass via [runWithConfig].
-  @override
-  FutureOr<T?> run(final CommandContext<O, T> context) {
-    final config = context.config;
-    return runWithConfig(config);
-  }
-
-  /// Runs this command with the resolved configuration (option values).
-  /// Subclasses should override this method.
-  FutureOr<T?> runWithConfig(final Configuration<O> commandConfig);
 }

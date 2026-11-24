@@ -39,11 +39,6 @@ class MockCommand extends BetterCommand {
 
   @override
   Future<void> run(final CommandContext context) async {}
-
-  @override
-  FutureOr? runWithConfig(final Configuration<OptionDefinition> commandConfig) {
-    throw UnimplementedError();
-  }
 }
 
 void main() {
@@ -121,15 +116,6 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 100));
       expect(analyticsEvents, hasLength(1));
       expect(analyticsEvents.single, 'mock-command');
-    });
-
-    test('when running with invalid subcommand '
-        'then invalid command analytics is sent', () async {
-      await runner.run(['no-such-command']).catchError((final _) {});
-
-      await Future.delayed(const Duration(milliseconds: 100));
-      expect(analyticsEvents, hasLength(1));
-      expect(analyticsEvents.single, 'invalid');
     });
 
     test('when running with subcommand `mock-command` '

@@ -1,6 +1,7 @@
 import 'dart:io' show exit;
 
 import 'package:cli_tools/better_command_runner.dart';
+import 'package:config/command.dart' show CommandContext;
 import 'package:config/config.dart';
 
 /// Example of using [BetterCommandRunner] to create subcommands
@@ -58,8 +59,8 @@ class ShowCommand extends BetterCommand<ShowOption, void> {
   String get description => 'Show the configured interval';
 
   @override
-  void runWithConfig(final Configuration<ShowOption> commandConfig) {
-    final interval = commandConfig.value(ShowOption.interval);
+  void run(final CommandContext<ShowOption, void> context) {
+    final interval = context.config.value(ShowOption.interval);
     print('interval: $interval');
   }
 }

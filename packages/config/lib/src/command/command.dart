@@ -5,7 +5,7 @@ import '../../config.dart'
         OptionDefinition,
         CommandUsageDefinition,
         CommandAliasesDefinition,
-        UsageException;
+        CommandUsageException;
 import 'abstract_command.dart';
 import 'command_context.dart';
 import 'command_middleware.dart';
@@ -161,7 +161,7 @@ abstract class BridgeCommand<O extends OptionDefinition, T>
   void printUsage() => runner.usageOutput.printUsage(this);
 
   Never usageException(final String message) =>
-      throw UsageException(message, usage);
+      throw CommandUsageException(message, this);
 }
 
 /// The type of the [Command.run] method.

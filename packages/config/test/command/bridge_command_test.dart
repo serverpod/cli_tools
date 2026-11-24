@@ -501,7 +501,7 @@ void main() {
     });
 
     group('when a usage exception is raised', () {
-      late UsageException? error;
+      late CommandUsageException? error;
 
       setUp(() {
         error = _throwUsageException(command, 'Missing target.');
@@ -512,7 +512,7 @@ void main() {
       });
 
       test('then the command usage is attached', () {
-        expect(error?.usage, command.usage);
+        expect(error?.command, command);
       });
     });
   });
@@ -543,13 +543,13 @@ Future<UsageException?> _captureUsageError(
   return null;
 }
 
-UsageException? _throwUsageException(
+CommandUsageException? _throwUsageException(
   final BridgeCommand<OptionDefinition, String> command,
   final String message,
 ) {
   try {
     command.usageException(message);
-  } on UsageException catch (error) {
+  } on CommandUsageException catch (error) {
     return error;
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cli_tools/better_command_runner.dart';
+import 'package:config/command.dart' show CommandContext;
 import 'package:config/config.dart';
 import 'package:test/test.dart';
 
@@ -14,10 +15,10 @@ class MockCommand extends BetterCommand<OptionDefinition, void> {
   String get description => 'Mock command used for testing';
 
   @override
-  void runWithConfig(final Configuration<OptionDefinition> commandConfig) {
+  void run(final CommandContext<OptionDefinition, void> context) {
     onRun?.call();
     numberOfRuns++;
-    trackedOptions.add(commandConfig.findValueOf(argName: 'name') as String);
+    trackedOptions.add(context.config.findValueOf(argName: 'name') as String);
   }
 
   @override

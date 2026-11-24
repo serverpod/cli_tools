@@ -14,8 +14,13 @@ Future<Response> complete(
   final StringBuffer out,
   final List<String> words, {
   final Map<String, String>? env,
+  final ContextProvider? provider,
 }) async {
-  final result = await runner.run(['__complete', ...words], env: env);
+  final result = await runner.run(
+    ['__complete', ...words],
+    env: env,
+    provider: provider,
+  );
   expect(result, isNull, reason: 'a completion request runs no command');
   final lines = out.toString().split('\n');
   expect(lines.last, isEmpty, reason: 'the response ends with a newline');
@@ -882,6 +887,55 @@ void main() {
     });
   });
 
+  group('Given a provider seeded with an account', () {
+    late _SeedProbe probe;
+    late ContextProvider provider;
+    late Response response;
+
+    setUp(() async {
+      probe = _SeedProbe();
+      provider = ContextProvider()..store(const _Account('ada'));
+      runner = CommandRunner<OptionDefinition, int>(
+        'tool',
+        'Tools',
+        usageOutput: UsageOutputHandler(
+          sinks: OutputSinks(out: out, err: err),
+        ),
+        completion: CompletionSettings(
+          sinks: OutputSinks(out: out, err: err),
+        ),
+        middlewares: [
+          Middlewares.onBeforeRun((final ctx) {
+            probe.rootProvider = ctx.provider;
+          }),
+        ],
+        subcommands: [_SeededCommand(probe)],
+      );
+      response = await complete(
+        runner,
+        out,
+        ['greet', '--user', ''],
+        provider: provider,
+      );
+    });
+
+    test('when completing an option value '
+        'then middleware receives the provider passed to run', () {
+      expect(probe.rootProvider, same(provider));
+      expect(probe.commandProvider, same(provider));
+    });
+
+    test('when completing an option value '
+        'then the configuration broker receives that provider', () {
+      expect(probe.brokerProvider, same(provider));
+    });
+
+    test('when completing an option value '
+        'then the option is completed from the account seeded on it', () {
+      expect(valuesOf(response), ['ada']);
+    });
+  });
+
   group('Given a CompletionEngine used directly', () {
     test('when completing then a response object is returned', () async {
       final engine = CompletionEngine<OptionDefinition, int>(runner);
@@ -1218,6 +1272,76 @@ class _OwnValuesOption extends MultiStringOption {
         'not parsed',
     ]);
   }
+}
+
+class _Account {
+  final String name;
+
+  const _Account(this.name);
+}
+
+class _SeedProbe {
+  ContextProvider? rootProvider;
+  ContextProvider? commandProvider;
+  ContextProvider? brokerProvider;
+}
+
+/// Reads an account seeded on the run's provider and offers that name.
+class _SeededUserOption extends StringOption {
+  final _SeedProbe probe;
+
+  _SeededUserOption(this.probe)
+    : super(
+        argName: 'user',
+        configKey: 'user',
+        helpText: 'Who to greet.',
+      );
+
+  @override
+  CompletionResult complete(final CompletionContext context) {
+    final leaf = commandContextOf<OptionDefinition, int>(context);
+    final name = leaf?.config.optionalValue(this);
+    return CompletionResult.strings([name ?? 'missing']);
+  }
+}
+
+class _AccountBroker implements ConfigurationBroker {
+  final String name;
+
+  _AccountBroker(this.name);
+
+  @override
+  Object? valueOrNull(final String key, final Configuration cfg) {
+    return key == 'user' ? name : null;
+  }
+}
+
+class _SeededCommand extends CommandImpl<OptionDefinition, int> {
+  final _SeedProbe probe;
+
+  _SeededCommand(this.probe)
+    : super(
+        name: 'greet',
+        description: 'Greet someone.',
+        options: [_SeededUserOption(probe)],
+        middlewares: [
+          Middlewares.onBeforeRun((final ctx) {
+            probe.commandProvider = ctx.provider;
+          }),
+        ],
+      );
+
+  @override
+  ConfigurationBroker? configBroker(
+    final CommandContext<OptionDefinition, int>? prevContext,
+  ) {
+    probe.brokerProvider = prevContext?.provider;
+    final account = prevContext?.provider.maybeFetch<_Account>();
+    return account == null ? null : _AccountBroker(account.name);
+  }
+
+  @override
+  int? run(final CommandContext<OptionDefinition, int> context) => 0;
 }
 
 class _ProbeOption extends StringOption {

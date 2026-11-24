@@ -20,6 +20,7 @@ import '../../config/config.dart'
         OptionDefinition,
         ParsedArgs;
 import '../command_resolver.dart';
+import '../context_provider.dart';
 import 'completion_protocol.dart';
 import 'option_value_completion.dart';
 
@@ -63,12 +64,17 @@ class CompletionEngine<O extends OptionDefinition, T> {
   /// [environment] is passed to [resolver], when one is given, and to
   /// custom `ConfigOptionBase.complete` implementations as
   /// `CompletionContext.environment`.
+  ///
+  /// [provider] is passed to [resolver] when an option value is completed,
+  /// so configuration brokers and middleware see objects seeded on it.
+  /// When omitted, an empty provider is used.
   Future<CompletionResponse> complete(
     final List<String> words, {
     final Map<String, String> environment = const {},
+    final ContextProvider? provider,
   }) async {
     try {
-      return await _complete(words, environment);
+      return await _complete(words, environment, provider);
     } catch (e, s) {
       onError?.call(e, s);
       return const CompletionResponse.error();
@@ -82,6 +88,7 @@ class CompletionEngine<O extends OptionDefinition, T> {
   Future<CompletionResponse> _complete(
     final List<String> allWords,
     final Map<String, String> environment,
+    final ContextProvider? provider,
   ) async {
     final words = allWords.isEmpty ? const [''] : allWords;
     final current = words.last;
@@ -117,7 +124,7 @@ class CompletionEngine<O extends OptionDefinition, T> {
     // The word being completed is the value of the preceding option.
     final valueOption = _optionAwaitingValue(line);
     if (valueOption != null) {
-      return _completeOptionValue(line, valueOption, current);
+      return _completeOptionValue(line, valueOption, current, provider);
     }
 
     // The word being completed is an option with an attached value:
@@ -131,7 +138,12 @@ class CompletionEngine<O extends OptionDefinition, T> {
           ? null
           : _findOptionBySpelling(line, spelling);
       if (option == null) return const CompletionResponse.nothing();
-      return _completeOptionValue(line, option, current.substring(equals + 1));
+      return _completeOptionValue(
+        line,
+        option,
+        current.substring(equals + 1),
+        provider,
+      );
     }
 
     if (current.startsWith('-')) {
@@ -144,7 +156,7 @@ class CompletionEngine<O extends OptionDefinition, T> {
       return _completeSubcommands(line.leafCommand, current);
     }
 
-    return _completePositional(line, current);
+    return _completePositional(line, current, provider);
   }
 
   /// The option whose value is the word being completed, if any.
@@ -194,6 +206,7 @@ class CompletionEngine<O extends OptionDefinition, T> {
     final _CommandLine line,
     final ConfigOptionBase option,
     final String word,
+    final ContextProvider? provider,
   ) async {
     // Complete the last element of a multi-value option word, e.g. `a,b<TAB>`.
     var prefix = '';
@@ -223,6 +236,7 @@ class CompletionEngine<O extends OptionDefinition, T> {
       pending = OptionValueCompletion(resolver).completeOption(
         prelude,
         option.complete,
+        provider: provider ?? ContextProvider(),
       );
     } else {
       pending = option.complete(
@@ -321,6 +335,7 @@ class CompletionEngine<O extends OptionDefinition, T> {
   Future<CompletionResponse> _completePositional(
     final _CommandLine line,
     final String current,
+    final ContextProvider? provider,
   ) async {
     final index = line.leaf.positionalWords
         .where((final word) => word != _sentinel)
@@ -330,7 +345,7 @@ class CompletionEngine<O extends OptionDefinition, T> {
         if (line.isExcluded(option.option)) {
           return const CompletionResponse.nothing();
         }
-        return _completeOptionValue(line, option.option, current);
+        return _completeOptionValue(line, option.option, current, provider);
       }
     }
     return line.leafCommand.ignoreUnexpectedPositionalArgs
