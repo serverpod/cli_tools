@@ -2073,6 +2073,202 @@ void main() {
     });
   });
 
+  group('Given a pass-through command under a root with a persistent flag '
+      'and another subcommand', () {
+    const verbose = FlagOption(argName: 'verbose', argAbbrev: 'v');
+    final relay = TestCommand(
+      name: 'relay',
+      aliasesDefinition: const CommandAliasesDefinition(aliases: ['--relay']),
+      passThroughArgs: true,
+    );
+    final build = TestCommand(name: 'build');
+    final root = TestCommand(
+      name: 'tool',
+      persistentOptions: [verbose],
+      subcommands: [relay, build],
+    );
+
+    ArgParseResult parse(final List<String> args) =>
+        scanAndParseCommands(args, rootCommand: root);
+
+    group('when options, words and -- follow the command', () {
+      const rest = ['build', '-v', '--unknown=1', '--help', '--', '-', 'x'];
+      late ArgParseResult result;
+      late ArgParseResult relayResult;
+
+      setUp(() {
+        result = parse(['relay', ...rest]);
+        relayResult = childResult(result);
+      });
+
+      test('then the command keeps them all unparsed, as written', () {
+        expect(relayResult.unparsedArgs, rest);
+      });
+
+      test('then no usage error is recorded', () {
+        expect([...result.errors, ...relayResult.errors], isEmpty);
+      });
+
+      test('then the persistent flag among them is not recorded', () {
+        expect(result.flagOptions[verbose], isNull);
+      });
+
+      test('then the subcommand name among them is not entered', () {
+        expect(relayResult.child, isNull);
+      });
+
+      test('then none of them is a positional word', () {
+        expect(relayResult.positionalWords, isEmpty);
+      });
+    });
+
+    group('when a persistent flag precedes the command', () {
+      late ArgParseResult result;
+
+      setUp(() {
+        result = parse(['-v', 'relay', '-v']);
+      });
+
+      test('then the root records the flag', () {
+        expect(result.flagOptions[verbose], isTrue);
+      });
+
+      test('then the command keeps what follows it', () {
+        expect(childResult(result).unparsedArgs, ['-v']);
+      });
+    });
+
+    group('when nothing follows the command', () {
+      late ArgParseResult relayResult;
+
+      setUp(() {
+        relayResult = childResult(parse(['relay']));
+      });
+
+      test('then the command has no unparsed arguments', () {
+        expect(relayResult.unparsedArgs, isEmpty);
+      });
+
+      test('then no usage error is recorded', () {
+        expect(relayResult.errors, isEmpty);
+      });
+    });
+
+    test('when the command is selected by its option-like alias '
+        'then it keeps what follows it', () {
+      final result = parse(['--relay', '--x', 'y']);
+
+      expect(childResult(result).unparsedArgs, ['--x', 'y']);
+    });
+
+    group('when the option-like alias has a value attached', () {
+      late ArgParseResult relayResult;
+
+      setUp(() {
+        relayResult = childResult(parse(['--relay=a', 'b']));
+      });
+
+      test('then the attached value is an error', () {
+        expect(relayResult.errors, ['Unexpected value: --relay=a']);
+      });
+
+      test('then the command keeps what follows it', () {
+        expect(relayResult.unparsedArgs, ['b']);
+      });
+    });
+  });
+
+  group('Given a pass-through command definition', () {
+    Matcher throwsDefinitionError(final String message) => throwsA(
+      isA<CommandDefinitionError>().having(
+        (final e) => e.toString(),
+        'toString',
+        'CommandDefinitionError: Invalid definition for $message',
+      ),
+    );
+
+    void parseTree(final TestCommand root) =>
+        scanAndParseCommands(<String>[], rootCommand: root);
+
+    test('when the root command is a pass-through command '
+        'then parsing fails', () {
+      final root = TestCommand(name: 'tool', passThroughArgs: true);
+
+      expect(
+        () => parseTree(root),
+        throwsDefinitionError(
+          'command "tool": '
+          'The root command must not be a pass-through command.',
+        ),
+      );
+    });
+
+    test('when the pass-through command has a subcommand '
+        'then parsing fails', () {
+      final relay = TestCommand(
+        name: 'relay',
+        passThroughArgs: true,
+        subcommands: [TestCommand(name: 'leaf')],
+      );
+
+      expect(
+        () => parseTree(TestCommand(name: 'tool', subcommands: [relay])),
+        throwsDefinitionError(
+          'command "relay": '
+          'A pass-through command must not have subcommands.',
+        ),
+      );
+    });
+
+    test('when the pass-through command has a named option '
+        'then parsing fails', () {
+      final relay = TestCommand(
+        name: 'relay',
+        passThroughArgs: true,
+        options: const [StringOption(argName: 'target')],
+      );
+
+      expect(
+        () => parseTree(TestCommand(name: 'tool', subcommands: [relay])),
+        throwsDefinitionError(
+          'command "relay": A pass-through command must not define '
+          'command line options: option "--target".',
+        ),
+      );
+    });
+
+    test('when the pass-through command has a positional option '
+        'then parsing fails', () {
+      final relay = TestCommand(
+        name: 'relay',
+        passThroughArgs: true,
+        options: const [StringOption(argPos: 0)],
+      );
+
+      expect(
+        () => parseTree(TestCommand(name: 'tool', subcommands: [relay])),
+        throwsDefinitionError(
+          'command "relay": A pass-through command must not define '
+          'command line options: positional argument {0}.',
+        ),
+      );
+    });
+
+    test('when the pass-through command has an option that is set '
+        'from an environment variable only then parsing succeeds', () {
+      final relay = TestCommand(
+        name: 'relay',
+        passThroughArgs: true,
+        options: const [StringOption(envName: 'RELAY_PROGRAM')],
+      );
+
+      expect(
+        () => parseTree(TestCommand(name: 'tool', subcommands: [relay])),
+        returnsNormally,
+      );
+    });
+  });
+
   group('Given a command that cannot run as a leaf', () {
     const verbose = FlagOption(argName: 'verbose');
     final leaf = TestCommand(
@@ -2986,4 +3182,7 @@ class _EnumCommand<O extends OptionDefinition> implements CommandDefinition<O> {
 
   @override
   final bool ignoreUnexpectedPositionalArgs = false;
+
+  @override
+  final bool passThroughArgs = false;
 }

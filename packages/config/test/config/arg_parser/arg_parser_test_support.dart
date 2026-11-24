@@ -16,6 +16,7 @@ class TestCommand implements CommandDefinition<OptionDefinition> {
     this.subcommands = const [],
     this.canRunAsLeafCommand = false,
     this.ignoreUnexpectedPositionalArgs = false,
+    this.passThroughArgs = false,
   });
 
   @override
@@ -50,4 +51,7 @@ class TestCommand implements CommandDefinition<OptionDefinition> {
 
   @override
   final bool ignoreUnexpectedPositionalArgs;
+
+  @override
+  final bool passThroughArgs;
 }

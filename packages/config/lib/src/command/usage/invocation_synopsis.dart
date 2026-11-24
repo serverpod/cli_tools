@@ -22,10 +22,13 @@ import '../abstract_command.dart' show AbstractCommand;
 /// A command with subcommands ends in `<subcommand> [arguments]`.
 /// When [AbstractCommand.canRunAsLeafCommand] is set, a second `or:` line
 /// omits that suffix.
+///
+/// A pass-through command ends in `[arguments]`.
 String commandInvocationSynopsis(final AbstractCommand cmd) {
   final path = _commandPath(cmd);
   final tokens = _synopsisTokens(cmd);
   final leaf = [path, ...tokens].join(' ');
+  if (cmd.passThroughArgs) return '$leaf [arguments]';
   if (cmd.subcommands.isEmpty) return leaf;
 
   final branch = [path, ...tokens, '<subcommand> [arguments]'].join(' ');
