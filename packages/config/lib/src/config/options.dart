@@ -506,18 +506,19 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
       return res;
     }
 
-    final stringValue = res.stringValue;
-    if (stringValue != null) {
-      // value provided by string-based config source, parse to the designated type
-      try {
-        res = res.copyWithValue(
-          option.option.valueParser.parse(stringValue),
-        );
-      } on FormatException catch (e) {
-        return res.copyWithError(
-          _makeFormatErrorMessage(e),
-        );
+    try {
+      // String sources are parsed here, outside [_doResolve], so a
+      // [FormatException] is reported as an invalid value. Repeated occurrences
+      // stay separate: each is parsed on its own and the results are expanded.
+      if (res.multiStringValues case final List<String> stringValues) {
+        res = res.copyWithValue(_parseMultiStringValues(stringValues));
+      } else if (res.stringValue case final String stringValue) {
+        res = res.copyWithValue(option.option.valueParser.parse(stringValue));
       }
+    } on FormatException catch (e) {
+      return res.copyWithError(
+        _makeFormatErrorMessage(e),
+      );
     }
 
     final error = validateOptionValue(res.value);
@@ -559,6 +560,14 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
     if (result != null) return result;
 
     return const OptionResolutionImpl.noValue();
+  }
+
+  /// Parses each raw occurrence into [V].
+  /// Only [MultiOption] supplies [OptionResolutionImpl.multiStringValues].
+  V _parseMultiStringValues(final List<String> values) {
+    throw StateError(
+      '${qualifiedString()} cannot be parsed from ${values.length} strings',
+    );
   }
 
   OptionResolutionImpl<V>? _resolveNamedArg(final ParsedArgs? args) {
@@ -838,11 +847,15 @@ class MultiOption<T> extends ConfigOptionBase<List<T>> {
     if (argName == null || args == null || !args.wasParsed(this)) {
       return null;
     }
-    final multiParser = valueParser as MultiParser<T>;
     return OptionResolutionImpl(
-      value: args.multiOption(this).expand(multiParser.parse).toList(),
+      multiStringValues: args.multiOption(this),
       source: ValueSourceType.arg,
     );
+  }
+
+  @override
+  List<T> _parseMultiStringValues(final List<String> values) {
+    return values.expand(multiParser.parse).toList();
   }
 
   @override
