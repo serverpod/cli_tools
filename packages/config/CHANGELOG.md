@@ -1,3 +1,9 @@
+## 1.0.0-beta.2
+
+ - **FIX**(command): Throw CommandUsageException instead of UsageException
+ - **FIX**(command): Completion receives the original ContextProvider
+ - **FIX**(command): Handle UsageException thrown from commands/middlewares
+ 
 ## 1.0.0-beta.1
 
 > Note: This release has breaking changes.

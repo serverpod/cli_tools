@@ -1,3 +1,11 @@
+## 0.15.0-beta.2
+
+> Note: This release has breaking changes.
+
+ - **BREAKING** **REFACTOR**(cli_tools): Removed obsolete runWithConfig abstract method, and other fixes ([#154](https://github.com/serverpod/cli_tools/issues/154)). ([9cf11811](https://github.com/serverpod/cli_tools/commit/9cf11811d7a019e286a4e701d351b56077d13d69))
+ - **FIX**(cli_tools): Stop sending 'invalid' analytics event
+ - **FIX**(cli_tools): Removed obsolete completion system docs
+
 ## 0.15.0-beta.1
 
 > Note: This release has breaking changes.
