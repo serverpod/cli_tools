@@ -23,7 +23,11 @@ import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 import 'fixtures/completion_cli.dart'
-    show afterRunnerMarker, buildCompletionCli, noUsageExceptionVariable;
+    show
+        afterRunnerMarker,
+        buildCompletionCli,
+        noUsageExceptionVariable,
+        relayProgramVariable;
 
 const _exeName = 'comptool';
 
@@ -218,6 +222,85 @@ void _executableTests(final _Environment env) {
       expect(result.exitCode, 64);
       expect(result.stderr, contains('"tcsh"'));
       expect(result.stdout, isNot(contains(afterRunnerMarker)));
+    });
+  });
+
+  group('Given the fixture CLI compiled to an executable '
+      'with a relay command that passes its arguments through '
+      'to that executable', () {
+    test('when completing a subcommand prefix after the relay command '
+        'then the response of the executable is relayed', () async {
+      final result = await env.run(env.exePath, ['__complete', 'relay', 'bu']);
+      expect(result.stdout, 'build\tBuild the project.\n:4\n');
+    });
+
+    test('when completing a file option value after the relay command '
+        'then the directive of the executable is relayed', () async {
+      final result = await env.run(
+        env.exePath,
+        ['__complete', 'relay', 'build', '--spec', ''],
+      );
+      expect(result.stdout, 'yaml\nyml\n:8\n');
+    });
+
+    test('when completing after two relay commands '
+        'then the response is relayed through both', () async {
+      final result = await env.run(
+        env.exePath,
+        ['__complete', 'relay', 'relay', 'db', 'm'],
+      );
+      expect(result.stdout, 'migrate\tRun the migrations.\n:4\n');
+    });
+
+    test('when running the relay command with the help option '
+        'then the executable prints the usage for its own '
+        'command line', () async {
+      final result = await env.run(env.exePath, ['relay', 'build', '--help']);
+      expect(result.stdout, contains('Usage: $_exeName build '));
+    });
+
+    group('when running the relay command with an option '
+        'that the executable does not know', () {
+      late _ProcessOutput result;
+
+      setUp(() async {
+        result = await env.run(
+          env.exePath,
+          ['relay', 'build', '--bogus'],
+          expectSuccess: false,
+        );
+      });
+
+      test('then the executable reports it', () {
+        expect(result.stderr, contains('build: Unknown option: --bogus.'));
+      });
+
+      test('then the exit code of the executable is returned', () {
+        expect(result.exitCode, 64);
+      });
+    });
+
+    group('when completing after the relay command '
+        'and the program it passes to cannot be run', () {
+      late _ProcessOutput result;
+
+      setUp(() async {
+        result = await env.run(
+          env.exePath,
+          ['__complete', 'relay', ''],
+          environment: {
+            relayProgramVariable: p.join(env.root.path, 'no_such_program'),
+          },
+        );
+      });
+
+      test('then the response is an error and nothing is offered', () {
+        expect(result.stdout, ':1\n');
+      });
+
+      test('then the failure is reported on stderr', () {
+        expect(result.stderr, contains('Completion failed: ProcessException'));
+      });
     });
   });
 
@@ -487,6 +570,21 @@ void _bashTests(
     test('when completing a subcommand prefix '
         'then only the matching subcommand is offered', () async {
       expect(await complete(['bu']), ['build']);
+    });
+
+    test('when completing a subcommand prefix after the relay command, '
+        'which passes its arguments through to the executable, '
+        'then the matching subcommand of the executable is offered', () async {
+      expect(await complete(['relay', 'bu']), ['build']);
+    });
+
+    test('when completing an enum option value after the relay command '
+        'then the values that the executable offers are offered', () async {
+      expect(await complete(['relay', 'build', '--mode', '']), [
+        'debug',
+        'profile',
+        'release',
+      ]);
     });
 
     test('when completing a dash then the options are offered', () async {
@@ -791,6 +889,20 @@ void _zshTests(
         'then the subcommand is inserted', () async {
       final result = await completeLine('$_exeName bu', installInFpath: true);
       expect(result.buffer, '$_exeName build ');
+    });
+
+    test('when completing a unique subcommand prefix after the relay '
+        'command, which passes its arguments through to the executable, '
+        'then the subcommand of the executable is inserted', () async {
+      final result = await completeLine('$_exeName relay bu');
+      expect(result.buffer, '$_exeName relay build ');
+    });
+
+    test('when completing an option value attached with an equals sign '
+        'after the relay command '
+        'then the value that the executable offers is inserted', () async {
+      final result = await completeLine('$_exeName relay build --mode=re');
+      expect(result.buffer, '$_exeName relay build --mode=release ');
     });
 
     test('when completing the first word '
@@ -1361,6 +1473,16 @@ void _carapaceTests(
         final results = await complete(['bu']);
         expect(results.map((final r) => r.value), ['build']);
       });
+
+      test(
+        'when completing a subcommand prefix after the relay command, '
+        'which passes its arguments through to the executable, '
+        'then the matching subcommand of the executable is offered',
+        () async {
+          final results = await complete(['relay', 'bu']);
+          expect(results.map((final r) => r.value), ['build']);
+        },
+      );
 
       test('when completing an enum option value '
           'then its values are offered', () async {

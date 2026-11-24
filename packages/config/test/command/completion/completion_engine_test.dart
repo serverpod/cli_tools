@@ -1411,6 +1411,71 @@ void main() {
       expect(response.allowsFileCompletion, isTrue);
     });
   });
+
+  group('Given the text of a completion response', () {
+    test('when a formatted response is parsed '
+        'then it has the candidates and the directive '
+        'of that response', () {
+      const response = CompletionResponse(
+        [
+          CompletionCandidate('build', description: 'Build the project.'),
+          CompletionCandidate(' spaced '),
+        ],
+        directive:
+            CompletionDirective.noFileCompletion | CompletionDirective.noSpace,
+      );
+      final parsed = CompletionResponse.tryParse(response.format());
+      expect(parsed?.candidates, response.candidates);
+      expect(parsed?.directive, response.directive);
+    });
+
+    test('when the text is a directive line only '
+        'then there are no candidates', () {
+      final parsed = CompletionResponse.tryParse(':16\n');
+      expect(parsed?.candidates, isEmpty);
+      expect(parsed?.directive, CompletionDirective.filterDirectories);
+    });
+
+    test('when the directive has flags that are not known '
+        'then it is kept as it is', () {
+      expect(CompletionResponse.tryParse('a\n:1028\n')?.directive, 1028);
+    });
+
+    test('when the lines end with a carriage return and a newline '
+        'then the response is parsed the same', () {
+      final parsed = CompletionResponse.tryParse('a\tAn a\r\nb\r\n:4\r\n');
+      expect(parsed?.candidates, const [
+        CompletionCandidate('a', description: 'An a'),
+        CompletionCandidate('b'),
+      ]);
+      expect(parsed?.directive, CompletionDirective.noFileCompletion);
+    });
+
+    test('when the description has a tab then it is kept in it', () {
+      expect(CompletionResponse.tryParse('a\tb\tc\n:4\n')?.candidates, const [
+        CompletionCandidate('a', description: 'b\tc'),
+      ]);
+    });
+
+    test('when the text does not end with a directive line '
+        'then it is not a response', () {
+      expect(CompletionResponse.tryParse('build\tBuild it.\n'), isNull);
+    });
+
+    test('when the last line only starts like a directive '
+        'then it is not a response', () {
+      expect(CompletionResponse.tryParse('build\n:4 files\n'), isNull);
+    });
+
+    test('when the directive is too large to be a number '
+        'then it is not a response', () {
+      expect(CompletionResponse.tryParse('a\n:${'9' * 40}\n'), isNull);
+    });
+
+    test('when the text is empty then it is not a response', () {
+      expect(CompletionResponse.tryParse(''), isNull);
+    });
+  });
 }
 
 /// What a [_PassThroughCommand] was asked to complete, and how it answers.

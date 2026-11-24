@@ -315,7 +315,7 @@ class CommandRunner<O extends OptionDefinition, T>
     final provider = customProvider ?? ContextProvider();
 
     if (completion.enabled) {
-      if (argList.isNotEmpty && argList.first == _completeRequestCommand) {
+      if (argList.isNotEmpty && argList.first == completeRequestCommand) {
         return _serveCompletionRequest(argList.sublist(1), envVars, provider);
       }
     }
@@ -500,24 +500,6 @@ class CommandRunner<O extends OptionDefinition, T>
     return null;
   }
 }
-
-/// The hidden built-in root command word that serves completion requests
-/// from the shell completion scripts.
-///
-/// The request has the form:
-/// ```
-/// <executable> __complete <word>... <word-to-complete>
-/// ```
-/// where the words are the command line arguments typed so far and the last
-/// word is the (possibly empty) partial word being completed.
-///
-/// The response on stdout is one line per completion candidate, in the form
-/// `value` or `value<TAB>description`, followed by a final line `:<N>`
-/// where N is the sum of the [CompletionDirective] flags.
-///
-/// This is the protocol of Cobra's `__complete` command, which is understood
-/// by third-party completion engines such as Carapace.
-const String _completeRequestCommand = '__complete';
 
 class OriginalCommandLine {
   final List<String> args;
