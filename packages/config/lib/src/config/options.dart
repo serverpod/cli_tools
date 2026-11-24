@@ -42,6 +42,7 @@ abstract interface class OptionDefinition<V> {
   ConfigOptionBase<V> get option;
 }
 
+/// {@template option_group}
 /// An option group allows grouping options together under a common name,
 /// and optionally provide option value validation on the group as a whole.
 ///
@@ -49,6 +50,7 @@ abstract interface class OptionDefinition<V> {
 /// so it is recommended to format it appropriately, e.g. `File mode`.
 ///
 /// An [OptionGroup] is uniquely identified by its [name].
+/// {@endtemplate}
 class OptionGroup {
   final String name;
 
@@ -215,9 +217,16 @@ abstract class ConfigOptionBase<V> implements OptionDefinition<V> {
   final String? helpText;
   final String? valueHelp;
   final Map<String, String>? allowedHelp;
+
+  /// {@macro option_group}
   final OptionGroup? group;
 
   final List<V>? allowedValues;
+
+  /// A [customValidator] may be provided for an individual option.
+  /// If a value was provided the customValidator is invoked,
+  /// and shall throw a [FormatException] if its format is invalid,
+  /// or a [InvalidValueException] if the it is invalid for other reasons.
   final void Function(V value)? customValidator;
   final bool mandatory;
   final bool hide;
