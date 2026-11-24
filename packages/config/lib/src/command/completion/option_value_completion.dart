@@ -4,10 +4,10 @@ import '../../config/arg_parser/arg_parser.dart' show CommandDefinition;
 import '../../config/arg_parser_facade.dart' show ParsedArgs;
 import '../../config/completion.dart';
 import '../../config/options.dart' show OptionDefinition;
-import '../command_context.dart';
 import '../command_resolver.dart';
 import '../context_provider.dart';
 import 'command_completion_context.dart';
+import 'completion_at_leaf.dart';
 
 /// The command line state for one option-value completion.
 ///
@@ -33,9 +33,10 @@ class CompletionPrelude {
 /// Completes an option value after resolving the command line typed so far.
 ///
 /// Uses [resolver] for the configurations, then runs the middleware of those
-/// commands in [CommandRunMode.completion]. [complete] is called where the
-/// leaf command's `run` would run, so each middleware's `onRun` has finished
-/// and its `onReturn` runs afterwards. No command `run` method is called.
+/// commands in completion mode. [complete] is called where the leaf command's
+/// `run` would run, so each middleware's `onRun` has finished and its
+/// `onReturn` runs afterwards. No command `run` method is called.
+/// See [completeAtLeaf].
 class OptionValueCompletion<O extends OptionDefinition, T> {
   final CommandResolver<O, T> resolver;
 
@@ -51,16 +52,12 @@ class OptionValueCompletion<O extends OptionDefinition, T> {
     complete, {
     required final ContextProvider provider,
   }) async {
-    final contexts = resolver.resolveConfigurations(
-      prelude.precedingWords,
-      prelude.environment,
-      provider,
-      runMode: CommandRunMode.completion,
-    );
-
-    CompletionResult? result;
-    await _runMiddlewares(contexts, (final leaf) async {
-      final pending = complete(
+    final result = await completeAtLeaf(
+      resolver,
+      precedingWords: prelude.precedingWords,
+      environment: prelude.environment,
+      provider: provider,
+      complete: (final leaf) => complete(
         CommandCompletionContext(
           leafContext: leaf,
           wordToComplete: prelude.wordToComplete,
@@ -69,34 +66,8 @@ class OptionValueCompletion<O extends OptionDefinition, T> {
           parsedArgs: prelude.parsedArgs,
           environment: prelude.environment,
         ),
-      );
-      result = pending is Future<CompletionResult> ? await pending : pending;
-    });
+      ),
+    );
     return result ?? const CompletionResult.none();
-  }
-
-  /// Runs the middleware of each command on [context]'s chain, outermost
-  /// first, and invokes [complete] at the leaf.
-  FutureOr<T?> _runMiddlewares(
-    final CommandContext<OptionDefinition, T> context,
-    final Future<void> Function(CommandContext<OptionDefinition, T> leaf)
-    complete,
-  ) {
-    final next = context.next == null
-        ? (final CommandContext<OptionDefinition, T> forwarded) async {
-            await complete(forwarded);
-            return null;
-          }
-        : (final CommandContext<OptionDefinition, T> forwarded) {
-            final child = forwarded.next;
-            if (child == null) {
-              throw StateError(
-                '${forwarded.command.name} has no following command.',
-              );
-            }
-            return _runMiddlewares(child, complete);
-          };
-
-    return context.command.runCommand(context, runNextCommand: next);
   }
 }
