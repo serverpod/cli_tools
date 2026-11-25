@@ -1,3 +1,8 @@
+## 1.0.0-beta.3
+
+ - **FIX**(config): Consistent FormatException handling for MultiOption ([#158](https://github.com/serverpod/cli_tools/issues/158)). ([cf0b1471](https://github.com/serverpod/cli_tools/commit/cf0b147114e5c69bffa43e519f7841ac7f093685))
+ - **FEAT**(command): Support completion with external subcommands ([#159](https://github.com/serverpod/cli_tools/issues/159)). ([cd43405b](https://github.com/serverpod/cli_tools/commit/cd43405b336eb2678bbbfb2262a7df9d8b3e832f))
+
 ## 1.0.0-beta.2
 
  - **FIX**(command): Throw CommandUsageException instead of UsageException
