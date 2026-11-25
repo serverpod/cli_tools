@@ -21,6 +21,7 @@ import '../../config/config.dart'
         ParsedArgs;
 import '../command_resolver.dart';
 import '../context_provider.dart';
+import 'completion_at_leaf.dart';
 import 'completion_protocol.dart';
 import 'option_value_completion.dart';
 
@@ -44,9 +45,13 @@ class CompletionEngine<O extends OptionDefinition, T> {
 
   /// When set, option-value completion resolves the command line typed so far
   /// and runs that chain's middleware before asking the option for candidates.
+  /// The same goes for the arguments of a pass-through command, which that
+  /// command completes.
   ///
   /// Subcommand and option-name completion does not use it. Without a
-  /// resolver, option values are completed from the raw command line only.
+  /// resolver, option values are completed from the raw command line only,
+  /// and the shell completes the arguments of a pass-through command as
+  /// files.
   final CommandResolver<O, T>? resolver;
 
   const CompletionEngine(
@@ -116,6 +121,12 @@ class CompletionEngine<O extends OptionDefinition, T> {
       environment: environment,
     );
 
+    // The words after a pass-through command are not parsed: they belong
+    // to another program, and that command completes them.
+    if (line.leafCommand.passThroughArgs) {
+      return _completePassThroughArgs(line, current, provider);
+    }
+
     // After `--`, nothing is parsed; let the shell complete files.
     if (line.leaf.unparsedArgs.contains(_sentinel)) {
       return const CompletionResponse.files();
@@ -157,6 +168,34 @@ class CompletionEngine<O extends OptionDefinition, T> {
     }
 
     return _completePositional(line, current, provider);
+  }
+
+  /// Completes [current], an argument of the pass-through command that is
+  /// the leaf of [line], with `AbstractCommand.completePassThroughArgs`.
+  ///
+  /// That method takes the resolved context of its command. Without a
+  /// [resolver] there is none, and the shell completes files.
+  Future<CompletionResponse> _completePassThroughArgs(
+    final _CommandLine line,
+    final String current,
+    final ContextProvider? provider,
+  ) async {
+    final resolver = this.resolver;
+    if (resolver == null) return const CompletionResponse.files();
+
+    final words = [
+      ...line.leaf.unparsedArgs.where((final word) => word != _sentinel),
+      current,
+    ];
+    final response = await completeAtLeaf(
+      resolver,
+      precedingWords: line.preceding,
+      environment: line.environment,
+      provider: provider ?? ContextProvider(),
+      complete: (final leaf) =>
+          leaf.command.completePassThroughArgs(leaf, words),
+    );
+    return response ?? const CompletionResponse.nothing();
   }
 
   /// The option whose value is the word being completed, if any.

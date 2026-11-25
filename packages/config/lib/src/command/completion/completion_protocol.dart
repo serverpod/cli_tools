@@ -1,4 +1,24 @@
+import 'dart:convert' show LineSplitter;
+
 import '../../config/completion.dart';
+
+/// The hidden built-in root command word that serves completion requests
+/// from the shell completion scripts.
+///
+/// The request has the form:
+/// ```
+/// <executable> __complete <word>... <word-to-complete>
+/// ```
+/// where the words are the command line arguments typed so far and the last
+/// word is the (possibly empty) partial word being completed.
+///
+/// The response on stdout is one line per completion candidate, in the form
+/// `value` or `value<TAB>description`, followed by a final line `:<N>`
+/// where N is the sum of the [CompletionDirective] flags.
+///
+/// This is the protocol of Cobra's `__complete` command, which is understood
+/// by third-party completion engines such as Carapace.
+const String completeRequestCommand = '__complete';
 
 /// Flags that instruct the shell how to treat the completion response.
 ///
@@ -95,6 +115,39 @@ class CompletionResponse {
           directive: directive,
         );
     }
+  }
+
+  /// Parses a response in the wire format, the inverse of [format].
+  ///
+  /// Returns null if [text] does not end with a directive line, i.e. it is
+  /// not a completion response. The directive is kept as it is, including
+  /// flags this version does not know.
+  static CompletionResponse? tryParse(final String text) {
+    final lines = LineSplitter.split(
+      text,
+    ).where((final line) => line.isNotEmpty).toList();
+    if (lines.isEmpty) return null;
+    final digits = _directiveLine.firstMatch(lines.removeLast())?[1];
+    final directive = digits == null ? null : int.tryParse(digits);
+    if (directive == null) return null;
+
+    return CompletionResponse(
+      [for (final line in lines) _parseCandidate(line)],
+      directive: directive,
+    );
+  }
+
+  static final _directiveLine = RegExp(r'^:(\d+)$');
+
+  /// A candidate line: `value` or `value<TAB>description`.
+  static CompletionCandidate _parseCandidate(final String line) {
+    final tab = line.indexOf('\t');
+    if (tab < 0) return CompletionCandidate(line);
+    final description = line.substring(tab + 1);
+    return CompletionCandidate(
+      line.substring(0, tab),
+      description: description.isEmpty ? null : description,
+    );
   }
 
   /// Whether the shell may fall back to file completion.

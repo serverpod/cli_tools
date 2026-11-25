@@ -5,7 +5,7 @@
 library;
 
 import 'dart:async' show FutureOr;
-import 'dart:io' show Platform, exitCode;
+import 'dart:io' show Platform, Process, ProcessStartMode, exitCode;
 
 import 'package:config/command.dart';
 import 'package:config/config.dart';
@@ -309,6 +309,43 @@ CommandRunner<OptionDefinition, int> buildLeafCompletionCli({
     ..addOption(bundleOption);
 }
 
+/// A hidden command that passes its arguments through to [program], which
+/// serves the completion request, as this tool does.
+class RelayCommand extends CommandImpl<OptionDefinition, int> {
+  final String program;
+
+  RelayCommand(this.program)
+    : super(
+        name: 'relay',
+        description: 'Run the arguments with another program.',
+        hidden: true,
+      );
+
+  @override
+  bool get passThroughArgs => true;
+
+  @override
+  Future<int?> run(final CommandContext<OptionDefinition, int> context) async {
+    final process = await Process.start(
+      program,
+      context.config.remainingPosArgs,
+      mode: ProcessStartMode.inheritStdio,
+    );
+    return process.exitCode;
+  }
+
+  @override
+  Future<CompletionResponse> completePassThroughArgs(
+    final CommandContext<OptionDefinition, int> context,
+    final List<String> words,
+  ) => requestCompletionFrom(program, words);
+}
+
+/// The environment variable that, when set, names the program that the
+/// compiled fixture's `relay` command passes its arguments to, instead of
+/// the fixture itself.
+const relayProgramVariable = 'COMPTOOL_RELAY_PROGRAM';
+
 /// Printed after the runner returns, as a program might do. The fixture
 /// exits after completion output, so this never follows a completion
 /// response or script.
@@ -329,6 +366,12 @@ Future<void> main(final List<String> args) async {
             )
           : null,
       completion: const CompletionSettings(exitAfterResponse: true),
+      extraCommands: [
+        RelayCommand(
+          Platform.environment[relayProgramVariable] ??
+              Platform.resolvedExecutable,
+        ),
+      ],
     ).run(args);
     print('$afterRunnerMarker $result');
     exitCode = result ?? 0;

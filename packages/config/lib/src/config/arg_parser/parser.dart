@@ -209,6 +209,18 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
   required final ParserSettings settings,
 }) {
   final result = ArgParseResult<O>(command: command, parent: parent);
+
+  // The current argument is the one that selected this command.
+  if (command != null && command.passThroughArgs) {
+    if (scannedArgs.nextContinuesRaw) {
+      // Selected by an option-like alias with text attached to it:
+      // `--alias=value`, or `-a` inside the cluster `-ab`.
+      result.errors.add('Unexpected value: ${scannedArgs.takeCurrentRaw()}');
+    }
+    result.unparsedArgs.addAll(scannedArgs.takeRemainingRaw());
+    return result;
+  }
+
   var rejectedSubcommand = false;
 
   final ownOptions = <OptionDefinition>[
@@ -465,11 +477,13 @@ bool _isNegatedFlag(final FlagOption flag, final String name) {
 void _validateCommandsAndOptions<O extends OptionDefinition>(
   final CommandDefinition<O> command, {
   final List<OptionDefinition> inheritedPersistentOptions = const [],
+  final bool isRoot = true,
 }) {
   final ownOptions = command.allOptions();
   validateOptions(ownOptions);
 
   _rejectPositionalPersistentOptions(command);
+  _rejectInvalidPassThrough(command, isRoot: isRoot);
 
   // Ancestors first, so a spelling defined on this command replaces the same
   // spelling of an inherited persistent option.
@@ -496,6 +510,40 @@ void _validateCommandsAndOptions<O extends OptionDefinition>(
     _validateCommandsAndOptions(
       subcommand,
       inheritedPersistentOptions: persistentOptions,
+      isRoot: false,
+    );
+  }
+}
+
+/// Rejects a pass-through command that is the root command, or that defines
+/// what the parser never reaches: subcommands and command line options.
+///
+/// Options that are set from other sources only, such as an environment
+/// variable, are allowed.
+void _rejectInvalidPassThrough<O extends OptionDefinition>(
+  final CommandDefinition<O> command, {
+  required final bool isRoot,
+}) {
+  if (!command.passThroughArgs) return;
+  if (isRoot) {
+    throw CommandDefinitionError(
+      command,
+      'The root command must not be a pass-through command.',
+    );
+  }
+  if (command.subcommands.isNotEmpty) {
+    throw CommandDefinitionError(
+      command,
+      'A pass-through command must not have subcommands.',
+    );
+  }
+  for (final option in command.allOptions()) {
+    final definition = option.option;
+    if (definition.argName == null && definition.argPos == null) continue;
+    throw CommandDefinitionError(
+      command,
+      'A pass-through command must not define command line options: '
+      '${definition.qualifiedString()}.',
     );
   }
 }

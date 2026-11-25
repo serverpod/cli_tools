@@ -13,6 +13,7 @@ import 'command.dart' show Command;
 import 'command_context.dart';
 import 'command_middleware.dart';
 import 'command_runner.dart' show CommandRunner;
+import 'completion/completion_protocol.dart' show CompletionResponse;
 import 'context_provider.dart';
 import 'help_command.dart';
 import 'usage_generator.dart' show UsageGenerator;
@@ -93,6 +94,42 @@ abstract class AbstractCommand<O extends OptionDefinition, T>
   /// Setting this to true only has effect for leaf commands.
   @override
   bool get ignoreUnexpectedPositionalArgs => false;
+
+  /// Whether every argument after this command is left unparsed, to be
+  /// passed through to another program. Defaults to false.
+  ///
+  /// When true, the arguments are not options, subcommands or option values
+  /// of this command line, whatever they look like. That includes `--help`
+  /// and `--`. They are [Configuration.remainingPosArgs] of this command,
+  /// as they were written. Options before this command are parsed as usual.
+  ///
+  /// Completion of those arguments is up to [completePassThroughArgs].
+  ///
+  /// A pass-through command must not be the root command, and must not have
+  /// subcommands or command line options: the parser would never reach them.
+  @override
+  bool get passThroughArgs => false;
+
+  /// Completes the arguments of this pass-through command, see
+  /// [passThroughArgs].
+  ///
+  /// [words] are the arguments after this command that are typed so far.
+  /// The last one is the (possibly empty) word being completed.
+  ///
+  /// [context] is the context of this command, resolved from the command
+  /// line before the word being completed. This is called where [runAsLeaf]
+  /// would be when the command line is run, inside the middleware of the
+  /// commands, with [CommandContext.runMode] being
+  /// [CommandRunMode.completion].
+  ///
+  /// The default requests file completion from the shell. To offer what
+  /// another program offers, return `requestCompletionFrom(program, words)`.
+  ///
+  /// If this throws, nothing is offered.
+  FutureOr<CompletionResponse> completePassThroughArgs(
+    final CommandContext<O, T> context,
+    final List<String> words,
+  ) => const CompletionResponse.files();
 
   /// Whether this command accepts a partial command line, i.e. runs as the
   /// last command on the command line even if the command line is incomplete.
@@ -203,7 +240,8 @@ abstract class AbstractCommand<O extends OptionDefinition, T>
       parsedArgs: parsedArgs,
       env: env,
       configBroker: configBroker(prevContext),
-      ignoreUnexpectedPositionalArgs: ignoreUnexpectedPositionalArgs,
+      ignoreUnexpectedPositionalArgs:
+          ignoreUnexpectedPositionalArgs || passThroughArgs,
     );
 
     return CommandContext<O, T>(

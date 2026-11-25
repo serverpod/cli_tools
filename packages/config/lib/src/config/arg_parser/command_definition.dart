@@ -36,6 +36,16 @@ abstract interface class CommandDefinition<O extends OptionDefinition> {
   /// Whether positional arguments that match no positional option are allowed
   /// after this command. Defaults to false. Only leaf commands use this.
   bool get ignoreUnexpectedPositionalArgs => false;
+
+  /// Whether every argument after this command is left unparsed, to be
+  /// passed through to another program. Defaults to false.
+  ///
+  /// The arguments are not options, subcommands or option values of this
+  /// command line, whatever they look like. That includes `--help` and `--`.
+  ///
+  /// A pass-through command must not be the root command, and must not have
+  /// subcommands or command line options: the parser would never reach them.
+  bool get passThroughArgs => false;
 }
 
 class CommandUsageDefinition {

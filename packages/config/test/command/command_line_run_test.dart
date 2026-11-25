@@ -787,6 +787,155 @@ void main() {
       },
     );
   });
+
+  group('Given a runner with a global flag and a pass-through command', () {
+    const verbose = FlagOption(
+      argName: 'verbose',
+      argAbbrev: 'v',
+      negatable: false,
+      defaultsTo: false,
+    );
+
+    late List<String> trace;
+    late StringBuffer out;
+    late List<String>? received;
+    late bool? rootVerbose;
+    late TracingRunner runner;
+
+    setUp(() {
+      trace = [];
+      out = StringBuffer();
+      received = null;
+      rootVerbose = null;
+      runner = TracingRunner(
+        trace,
+        globalOptions: [verbose],
+        usageOutput: UsageOutputHandler(
+          sinks: OutputSinks(out: out, err: StringBuffer()),
+          exceptionSettings: const UsageExceptionSettings(
+            noUsageExceptionOutput: true,
+          ),
+        ),
+        subcommands: [
+          _PassThroughCommand(
+            trace: trace,
+            body: (final context) {
+              received = context.config.remainingPosArgs;
+              rootVerbose = context.root().config.optionalValue(verbose);
+              return null;
+            },
+          ),
+        ],
+      );
+    });
+
+    group('when options, words and -- follow the command', () {
+      const rest = ['build', '--unknown=1', '-x', '--', '-', 'y'];
+
+      setUp(() async {
+        await runner.run(['relay', ...rest]);
+      });
+
+      test('then the command runs', () {
+        expect(trace, ['relay']);
+      });
+
+      test('then the command receives them all, as written', () {
+        expect(received, rest);
+      });
+    });
+
+    group('when the help option follows the command', () {
+      setUp(() async {
+        await runner.run(['relay', '--help']);
+      });
+
+      test('then the command receives it', () {
+        expect(received, ['--help']);
+      });
+
+      test('then no usage is printed', () {
+        expect(out.toString(), isEmpty);
+      });
+    });
+
+    group('when the global flag is given before and after the command', () {
+      setUp(() async {
+        await runner.run(['-v', 'relay', '-v']);
+      });
+
+      test('then the root command is given the one before it', () {
+        expect(rootVerbose, isTrue);
+      });
+
+      test('then the command receives the one after it', () {
+        expect(received, ['-v']);
+      });
+    });
+
+    test('when the global flag is given after the command only '
+        'then the root command is not given it', () async {
+      await runner.run(['relay', '-v']);
+
+      expect(rootVerbose, isFalse);
+    });
+
+    test('when nothing follows the command '
+        'then the command receives no arguments', () async {
+      await runner.run(['relay']);
+
+      expect(received, isEmpty);
+    });
+
+    group('when an unknown option precedes the command', () {
+      late UsageException? error;
+
+      setUp(() async {
+        error = await _captureUsageError(
+          () => runner.run(['--missing', 'relay', 'x']),
+        );
+      });
+
+      test('then the unknown option is reported', () {
+        expect(error?.message, 'tool: Unknown option: --missing.');
+      });
+
+      test('then the command does not run', () {
+        expect(trace, isEmpty);
+      });
+    });
+
+    group('when the help option precedes the command', () {
+      setUp(() async {
+        await runner.run(['--help', 'relay', 'x']);
+      });
+
+      test('then the usage of the command is printed, '
+          'with arguments in its synopsis', () {
+        expect(out.toString(), contains('Usage: tool relay [arguments]\n'));
+      });
+
+      test('then the command does not run', () {
+        expect(trace, isEmpty);
+      });
+    });
+
+    test('when the help command is given the command '
+        'then the usage of the command is printed', () async {
+      await runner.run(['help', 'relay']);
+
+      expect(out.toString(), contains('Usage: tool relay [arguments]\n'));
+    });
+  });
+}
+
+/// A command named `relay` that passes its arguments through.
+class _PassThroughCommand extends RecordingCommand<OptionDefinition> {
+  _PassThroughCommand({required super.trace, super.body})
+    : super(name: 'relay', description: 'Run the other tool.');
+
+  @override
+  bool get passThroughArgs => true;
 }
 
 Future<UsageException?> _captureUsageError(
