@@ -18,7 +18,7 @@ Lookup tables for the port (step 4). The package source wins where it differs fr
 |---|---|
 | `globalOptions` | Unchanged. A global option cannot be positional. |
 | `wrapTextColumn: n` | `usageOutput: UsageOutputHandler(usageSettings: UsageSettings(usageLineLength: n))` |
-| `messageOutput: MessageOutput(usageLogger:, usageExceptionLogger:)` | `usageOutput: UsageOutputHandler(sinks: OutputSinks(out:, err:))`. For another layout of usage errors: `exceptionSettings: UsageExceptionSettings(exceptionPrinter:)`. |
+| `messageOutput: MessageOutput(usageLogger:, usageExceptionLogger:)` | `usageOutput: UsageOutputHandler(sinks: OutputSinks(out:, err:))`. `out` replaces `usageLogger`. `err` replaces `usageExceptionLogger`. A custom `exceptionPrinter` changes the layout of a usage error. See [patterns.md](patterns.md#where-output-goes). |
 | `onBeforeRunCommand` | A middleware. See [patterns.md](patterns.md#runner-overrides-and-callbacks). |
 | `setLogLevel` | Unchanged. It is not called for completion requests. See [patterns.md](patterns.md#runner-overrides-and-callbacks). |
 | `onAnalyticsEvent: (event, properties)` | `onAnalyticsEvent: (context, event, properties)`. `context` is the context of the root command. Its type is nullable; the built-in analytics middleware always passes it. |
@@ -57,7 +57,8 @@ Lookup tables for the port (step 4). The package source wins where it differs fr
 | `argParser` | `options`, `allOptions()` |
 | `runner` (nullable) | Not nullable. Throws `StateError` when the command is not in a runner's tree. |
 | `parent` (nullable) | Not nullable. Throws `StateError` when there is no parent. Test `hasParent` first. |
-| `name`, `description`, `aliases`, `hidden`, `category`, `summary`, `invocation`, `usageFooter`, `suggestionAliases`, `usage`, `printUsage()`, `usageException(message)` | Unchanged. |
+| `name`, `description`, `aliases`, `hidden`, `category`, `summary`, `usageFooter`, `suggestionAliases`, `usage`, `printUsage()`, `usageException(message)` | Unchanged. |
+| `invocation` | Delete the override. The usage generator writes the synopsis from the command's options, for example `greet --name=<name> [--region=<region>]`. Keep the override when that synopsis does not describe the command, and say why in the notes. A custom value replaces this command's own name and arguments; parent names are still prepended. |
 
 New definition rules, checked when `run` starts, that throw `CommandDefinitionError`:
 
@@ -76,7 +77,7 @@ New definition rules, checked when `run` starts, that throw `CommandDefinitionEr
 | `topLevelResults.command?.name` | `context.root().next?.command.name` |
 | Walk of `argResults.command` | Walk of `context.next`. The last one is `context.leaf()`. |
 | `topLevelResults.arguments` | `context.provider.fetch<OriginalCommandLine>().args` |
-| A subclass of `Configuration` built in `resolveConfiguration` | `typedef GlobalConfiguration = Configuration<GlobalOption>` and an extension with the typed getters. |
+| A subclass of `Configuration` built in `resolveConfiguration` | `typedef GlobalConfiguration = Configuration<GlobalOption>`. Typed getters are a function in the file that reads them, or an extension on `Configuration<GlobalOption>` when other files read them. See [patterns.md](patterns.md#how-a-reader-reaches-a-stored-value). |
 
 ## Command tree
 
@@ -95,6 +96,7 @@ New definition rules, checked when `run` starts, that throw `CommandDefinitionEr
 | `UsageException` from `package:args/command_runner.dart` | The same class, imported from `package:config/config.dart`. |
 | (none) | `CommandUsageException(message, command)`: the subclass that has the `command`. The framework throws it for errors in the command line, and `usageException(message)` throws it. |
 | A project class that extends `UsageException` | It extends `CommandUsageException`, and each throw passes the command. See [patterns.md](patterns.md#project-subclasses-of-usageexception). |
+| Entry point code that sends usage or a usage error to a logger | `OutputSinks.out` and `OutputSinks.err`. See [patterns.md](patterns.md#where-output-goes). |
 | Entry point code that prints extra fields of a caught usage exception | A custom exception printer on the runner. See [patterns.md](patterns.md#custom-printout). |
 | `throw UsageException(message, usage)` in a command | `throw CommandUsageException(message, this)`, or `usageException(message)`. |
 | `ArgumentError` from `argParser` for a bad definition | `OptionDefinitionError`, `CommandDefinitionError`. Both are `ConfigDefinitionError`s, thrown by `run` before anything else happens. |

@@ -3,14 +3,45 @@
 `AppCommand`, `AppLogger`, `AppUsageException`, `ApiClient`, and `GlobalOption` stand for the project's own types. The result type of the runner is `int` in the examples.
 
 - [Per-run data](#per-run-data)
-- [Middlewares](#middlewares): forms, order, reach and guards, base command, runner overrides, usage errors
+- [Middlewares](#middlewares): one responsibility, forms, order, reach and guards, base command, runner overrides, usage errors, where output goes
 - [Action options](#action-options)
 - [Entry point](#entry-point)
 - [Tests](#tests)
 
 ## Per-run data
 
-### Read through a context extension
+### Where an object lives
+
+Option values stay on the context. `context.config` holds the options of the command itself. `context.root().config` holds the global options. The contexts of the commands before it are on `prev`.
+
+| When the object exists | Who reads it | Where it lives |
+|---|---|---|
+| Before `run` (the runner constructor, or the caller before `run`) | The runner, or one callback fixed at construction (`setLogLevel`, the usage sinks) | A final field of the runner, or the caller. |
+| Before `run` | Commands or middlewares | A final field of the runner works. `context.provider` is the convenient place, so commands reach it without the runner. The caller passes `provider:` to `run`, or a middleware stores the field at the start of the run. |
+| During `run`, in one command | That command only | A local variable in its `run`. |
+| During `run`, in one command | Other code too, such as a helper or a teardown middleware | The command creates it where its work produces it, and stores it on `context.provider`. A middleware that reads it uses `maybeFetch`, because the command may not have run. |
+| During `run` | More than one command | A middleware creates it, stores it on `context.provider`, and releases it in `onFinally` of the same middleware. |
+
+An object is created where it belongs, and it travels on the context. A constructor parameter or a field is for an object that exists before `run`.
+
+`configBroker` runs during resolution, before every middleware. It reads a construction-time field of its command or runner. The broker of a subcommand also reads what the caller seeded on the provider, through `prevContext`. The broker of the runner gets a null `prevContext` and no provider, so what it needs is a construction-time field of the runner.
+
+An option completer reads a value stored by a middleware that also runs for completion requests, or a value the caller seeded. No output and no prompt in completion mode.
+
+The usage output (`UsageOutputHandler`), the completion output (`CompletionSettings`), and the `setLogLevel` callback are fixed at construction and get no context. A logger they use is one the caller owns. The runner builder receives sink adapters for that logger (`OutputSinks`) and the `setLogLevel` callback.
+
+The provider is keyed by the type argument. `store<AppLogger>(StdOutAppLogger())` is read with `fetch<AppLogger>()`. Give `store` the type argument whenever the value is a subtype or a fake. `fetch` throws `ContextValueNotFound`. Use `maybeFetch` where an empty slot is a valid state. Two values of one type would share a slot, which is usually not desired. A value derived during the run, such as a resolved project directory, gets its own class.
+
+### How a reader reaches a stored value
+
+When only one file reads the value, it can use a local function in that file:
+
+```dart
+AppLogger _loggerOf(CommandContext<OptionDefinition, int> context) =>
+    context.provider.fetch<AppLogger>();
+```
+
+When commands in other files read it, an extension on `CommandContext` gives them a getter:
 
 ```dart
 typedef GlobalConfiguration = Configuration<GlobalOption>;
@@ -25,24 +56,9 @@ extension AppContext<O extends OptionDefinition, T> on CommandContext<O, T> {
 }
 ```
 
-- `context.config` holds the options of the command itself. `context.root().config` holds the global options. The contexts of the commands before it are on `prev`.
-- The provider is keyed by the type argument. `store<AppLogger>(StdOutAppLogger())` is read with `fetch<AppLogger>()`. Give `store` the type argument whenever the value is a subtype or a fake.
-- `fetch` throws `ContextValueNotFound`. Use `maybeFetch` where an empty slot is a valid state.
-- For frequent or essential provider values, an extension on `CommandContext` can give direct getters, like `AppContext` above.
-- A value derived during the run, such as a resolved project directory, gets its own class, is stored by a middleware, and gets a getter in the extension. Two values of one type would share a slot, which is usually not desired.
-- Typed getters for global options can go in an extension on `Configuration<GlobalOption>`.
+The same choice for typed getters of global options: a function in the file, or an extension on `Configuration<GlobalOption>` when other files read them.
 
-### Where a per-run object is created
-
-| The object is needed | Create it | Then |
-|---|---|---|
-| While middlewares and commands run. This is the default. | In a middleware, from `context.config` and a factory that the runner builder received. | Store it on the provider. Release it in `onFinally` of the same middleware. |
-| During resolution (in `configBroker`), or by the caller before and after `run`: the logger of the entry point, for example. | By the caller, which passes `provider:` to `run`. | The same provider serves a completion request. |
-| By an option completer. | In a middleware that also runs for completion requests, or by the caller. | No output and no prompt in completion mode. |
-
-Three settings of the runner are fixed at construction and get no context: the usage output (`UsageOutputHandler`), the completion output (`CompletionSettings`), and the `setLogLevel` callback. They can reach a logger only when the caller of `run` owns it. The caller then gives the runner builder sink adapters for that logger (`OutputSinks`) and the `setLogLevel` callback. These are the only places where an object of a run is fixed at construction.
-
-A middleware-created object:
+The client below depends on the resolved configuration, so the middleware creates it during the run and stores it for the commands:
 
 ```dart
 BetterCommandRunner<GlobalOption, int> buildRunner({
@@ -58,16 +74,16 @@ BetterCommandRunner<GlobalOption, int> buildRunner({
           context.provider.store<ApiClient>(createApiClient(context.config));
           return context;
         },
-        onFinally: (context) => context.apiClient.close(),
+        onFinally: (context) => context.provider.fetch<ApiClient>().close(),
       ),
     ],
   );
 }
 ```
 
-The builder takes factories, never instances that belong to a run. Tests pass a factory that returns a fake.
+The builder takes a factory for an object created from the resolved configuration. Tests pass a factory that returns a fake.
 
-`configBroker` runs during resolution, before every middleware. It sees the configurations of the commands before it, and what the caller seeded:
+The `configBroker` of a subcommand sees the configurations of the commands before it, and what the caller seeded:
 
 ```dart
 @override
@@ -84,6 +100,10 @@ ConfigurationBroker? configBroker(
 
 ## Middlewares
 
+### One responsibility
+
+Each middleware has one responsibility. A login check, an error mapping, and creating a client are three middlewares. The setup and teardown of one object are one responsibility and share one `withHooks`, so `onFinally` runs only when that setup ran.
+
 ### Forms
 
 | Form | Use |
@@ -93,8 +113,8 @@ ConfigurationBroker? configBroker(
 | `Middlewares.onReturn((context, result) => result)` | Runs after a normal return. Returns the result to pass back. |
 | `Middlewares.onError((error, stackTrace, context) => ...)` | Runs after a throw. Returns a result to recover, or throws. |
 | `Middlewares.onFinally((context) { ... })` | Runs last in both cases. Its own errors are ignored. |
-| `Middlewares.withHooks(onRun:, onReturn:, onError:, onFinally:)` | Hooks that belong together, such as setup and teardown. |
-| `class X extends CommandMiddlewareHooks<O, T>`, used as `const X().middleware` | A named unit with its own tests. Construction-time dependencies are constructor fields; per-run state goes on the provider. |
+| `Middlewares.withHooks(onRun:, onReturn:, onError:, onFinally:)` | The setup and teardown of one responsibility. |
+| `class X extends CommandMiddlewareHooks<O, T>`, used as `const X().middleware` | A named unit with its own tests. Construction-time dependencies are constructor fields. State created during the run and read from more than one place goes on the provider. |
 | `(next) => (context) async { ...; return next(context); }` | The raw form. Only this form can skip the rest of the run and return normally, by not calling `next`. |
 
 ### Order
@@ -116,35 +136,35 @@ Placement rules:
 - A middleware that reads `AnalyticsEnabled` goes in position 4.
 - Logic for one branch of commands is added to that branch command with `addMiddleware`.
 - An `onError` hook sees the errors of everything inside it: later middlewares and the command. It does not see errors of earlier middlewares or of its own `onRun`. Put error mapping outside everything whose errors it maps.
-- Teardown shares one `withHooks` with its setup. Then `onFinally` runs only when that setup ran.
 
 ### Reach and guards
 
 A root middleware runs for every valid command line, not only when a project command runs. It also runs for `--help`, `help <command>`, action options, the root usage, the built-in `completion` command, and completion requests for an option value. It does not run when the command line has a usage error. The full table is in [behavior-changes.md](behavior-changes.md#which-invocations-reach-which-hook).
 
-Code that moved from a base command ran only when a project command ran. Give it that reach again:
+Code that moved from a base command ran only when a project command ran. Give it that reach again. These functions live in the file that holds the middlewares. Move them to an extension on `CommandContext` when another file reads them too.
 
 ```dart
-extension AppRun<O extends OptionDefinition, T> on CommandContext<O, T> {
-  /// Whether an action option, such as `--help`, runs instead of a command.
-  bool get runsActionOption {
-    CommandContext<OptionDefinition, T>? context = root();
-    while (context != null) {
-      if (context.specifiedActionOptions().isNotEmpty) return true;
-      context = context.next;
-    }
-    return false;
+/// Whether an action option, such as `--help`, runs instead of a command.
+bool runsActionOption<T>(CommandContext<OptionDefinition, T> context) {
+  CommandContext<OptionDefinition, T>? current = context.root();
+  while (current != null) {
+    if (current.specifiedActionOptions().isNotEmpty) return true;
+    current = current.next;
   }
+  return false;
+}
 
-  /// The project command that this run executes, or null when the run prints
-  /// help, runs an action option, or serves a completion request.
-  AppCommand? get executedCommand {
-    if (runMode == CommandRunMode.completion || runsActionOption) return null;
-    return switch (leaf().command) {
-      final AppCommand command => command,
-      _ => null,
-    };
+/// The project command that this run executes, or null when the run prints
+/// help, runs an action option, or serves a completion request.
+AppCommand? executedCommand<T>(CommandContext<OptionDefinition, T> context) {
+  if (context.runMode == CommandRunMode.completion ||
+      runsActionOption(context)) {
+    return null;
   }
+  return switch (context.leaf().command) {
+    final AppCommand command => command,
+    _ => null,
+  };
 }
 ```
 
@@ -162,8 +182,8 @@ Each part of the old wrapper in the base command's `run` or `runWithConfig` has 
 | Part of the old wrapper | Becomes |
 |---|---|
 | `try`/`catch` that maps exceptions to messages and exit codes | `Middlewares.onError` on the runner |
-| A check before the command (login, required mode) that depends on a property of the command | `Middlewares.onBeforeRun` on the runner, which reads the property from `context.executedCommand` |
-| A helper object built for the command, such as an output formatter | A middleware stores it on the provider; the context extension gets a getter |
+| A check before the command (login, required mode) that depends on a property of the command | `Middlewares.onBeforeRun` on the runner, which reads the property from `executedCommand(context)` |
+| A helper object built for the command, such as an output formatter | When more than one place reads it, a middleware stores it on the provider. A function in that file reads it, or an extension when other files read it |
 | Cleanup after the command | `onFinally`, in the `withHooks` of its setup |
 | The hook that subclasses implemented, such as `runWithOutput(config, output)` | Each leaf command overrides `run(context)` |
 
@@ -218,7 +238,7 @@ runner.addMiddleware(
 
 runner.addMiddleware(
   Middlewares.onBeforeRun((context) async {
-    final command = context.executedCommand;
+    final command = executedCommand(context);
     if (command == null || !command.requireLogin) return;
     if (!await context.apiClient.isLoggedIn()) {
       context.logger.error('Log in first.');
@@ -243,7 +263,7 @@ The error mapping is added first, so it also maps the errors of the login check.
 | `setLogLevel` | Stays a callback. It gets no context, so it suits a logger that the caller of `run` owns. A logger that a middleware creates gets its level in that middleware, from `context.config`. |
 | `determineAnalyticsSettings()` | Stays an override; it is the extension point for consent. It takes the context, reads what position 1 middlewares stored, and returns false first when `context.runMode` is `CommandRunMode.completion`. |
 | `sendAnalyticsEvent` override, `analyticsEnabled()` override | Move the logic into the `onAnalyticsEvent` callback and `determineAnalyticsSettings`. |
-| `messageOutput` | `usageOutput`. See [api-map.md](api-map.md). |
+| `messageOutput` | `usageOutput` with `OutputSinks`. See [Where output goes](#where-output-goes). |
 
 ### Usage errors thrown during execution
 
@@ -282,6 +302,20 @@ The constructor takes the command instead of a usage text. Each place that throw
 Throw a plain `UsageException` directly in the same way: as `CommandUsageException(message, command)`.
 
 Keep `UsageException` as the superclass only where no command exists at the place of the throw, and give the reason in the notes.
+
+### Where output goes
+
+Redirect usage and errors by setting the sinks:
+
+```dart
+usageOutput: UsageOutputHandler(
+  sinks: OutputSinks(out: logger.out, err: logger.err),
+),
+```
+
+`out` receives usage text such as `--help`. `err` receives usage errors. Completion output has its own sinks on `CompletionSettings`.
+
+A custom `UsageExceptionPrinter` changes the layout of a usage error. The standard printer already writes to `usageOutput.sinks.err`. Sending that standard text to another destination is the `err` sink.
 
 #### Custom printout
 
@@ -397,6 +431,7 @@ Future<void> main(List<String> args) async {
 
 - The framework has printed a usage error before `run` throws it. The entry point sets the exit code only.
 - Keep the exit codes of the baseline.
+- The logger exists before `run`. Seeding it on the provider lets commands read it without taking the runner. A logger that only the sinks and `setLogLevel` use stays with the caller and has no provider slot.
 - For a completion request, stdout must hold the completion response only. An entry point that prints after `run` returns sets `completion: CompletionSettings(exitAfterResponse: true)`.
 
 ## Tests
@@ -415,4 +450,5 @@ expect(provider.fetch<ApiClient>().closed, isTrue);
 
 - Capture usage text with `UsageOutputHandler(sinks: OutputSinks(out: buffer, err: buffer))` and a `StringBuffer`. Capture completion output with `CompletionSettings(sinks: ...)`.
 - One runner serves many runs, also concurrent ones, because it holds no state of a run.
-- A test that read a field of the runner or of a command now reads the provider, or the output.- Cover each guard of a middleware with the invocations that it separates: a project command, `--help`, an action option, a usage error, and a completion request (`['__complete', '<command>', '--<option>', '']`).
+- A test that read an object now created during the run reads the provider, or the output.
+- Cover each guard of a middleware with the invocations that it separates: a project command, `--help`, an action option, a usage error, and a completion request (`['__complete', '<command>', '--<option>', '']`).
