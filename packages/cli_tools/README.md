@@ -79,10 +79,15 @@ Future<void> main(final List<String> args) async {
   // through the context.
   runner.addMiddleware(
     Middlewares.onBeforeRun((final context) {
-      final verbose = context.config.value(StandardGlobalOption.verbose);
-      context.provider.store<Logger>(
-        StdOutLogger(verbose ? LogLevel.debug : LogLevel.info),
-      );
+      final LogLevel logLevel;
+      if (context.config.value(StandardGlobalOption.verbose)) {
+        logLevel = LogLevel.debug;
+      } else if (context.config.value(StandardGlobalOption.quiet)) {
+        logLevel = LogLevel.error;
+      } else {
+        logLevel = LogLevel.info;
+      }
+      context.provider.store<Logger>(StdOutLogger(logLevel));
     }),
   );
 
@@ -98,6 +103,7 @@ Future<void> main(final List<String> args) async {
 ```sh
 example greet World --shout
 example --verbose greet World
+example --quiet greet World  # prints nothing
 example greet --help
 ```
 

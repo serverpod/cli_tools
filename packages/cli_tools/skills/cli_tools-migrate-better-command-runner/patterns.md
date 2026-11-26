@@ -21,7 +21,7 @@ Option values stay on the context. `context.config` holds the options of the com
 | During `run` | One place | A local variable there. |
 | During `run` | More than one place | `context.provider`. The middleware that creates it stores it and releases it in `onFinally` of the same middleware. |
 
-`configBroker` runs during resolution, before every middleware. It reads a construction-time field and what the caller seeded on the provider.
+`configBroker` runs during resolution, before every middleware. It reads a construction-time field of its command or runner. The broker of a subcommand also reads what the caller seeded on the provider, through `prevContext`. The broker of the runner gets a null `prevContext` and no provider, so what it needs is a construction-time field of the runner.
 
 An option completer reads a value stored by a middleware that also runs for completion requests, or a value the caller seeded. No output and no prompt in completion mode.
 
@@ -80,7 +80,7 @@ BetterCommandRunner<GlobalOption, int> buildRunner({
 
 The builder takes a factory for an object created from the resolved configuration. Tests pass a factory that returns a fake.
 
-`configBroker` sees the configurations of the commands before it, and what the caller seeded:
+The `configBroker` of a subcommand sees the configurations of the commands before it, and what the caller seeded:
 
 ```dart
 @override

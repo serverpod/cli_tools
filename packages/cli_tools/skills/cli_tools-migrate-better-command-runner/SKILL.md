@@ -111,7 +111,7 @@ Done when all of these are true:
 Work through group A of the inventory. See [patterns.md](patterns.md#per-run-data).
 
 1. Give each object the place the table in [patterns.md](patterns.md#per-run-data) names.
-2. Create an object that is born during `run` in the middleware that owns it. Store it on the provider when more than one place reads it.
+2. An object that is created during `run` and read from more than one place is created in a middleware, which stores it on the provider. An object that only one command reads is a local variable in that command's `run`.
 3. Read a provider value through a function in that file. Use an extension on `CommandContext` when other files read it too.
 4. Remove fields and constructor parameters that carried an object created during `run`. An object that exists before `run` may stay a final field of the runner.
 
