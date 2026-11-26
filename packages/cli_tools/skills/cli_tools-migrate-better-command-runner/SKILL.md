@@ -14,8 +14,8 @@ This skill ports a CLI to the new API and then moves its code onto the new const
 
 The migration is done when all four statements hold.
 
-1. **Per-run data is on the context.** Runner and command classes hold only what is fixed when the command tree is built: names, descriptions, options, subcommands, middlewares, output settings, factories. Everything that belongs to one run is read from the `CommandContext`: option values from `context.config` and the `prev` chain, every other object from `context.provider`. That includes collaborators such as the logger, API clients, and service providers.
-2. **Cross-cutting logic is in middlewares.** Logic that serves more than one command runs in a middleware: setup and teardown, login and mode checks, error mapping, update checks. A command's `run` contains the work of that command only.
+1. **Shared run data is on the context.** Option values are read from `context.config` and the `prev` chain. An object created during `run` and read from more than one place is on `context.provider`. An object that exists when the runner is constructed may stay on the runner. The provider is the convenient place for it when commands would otherwise take the runner to reach it. Runner and command classes hold definitions (names, descriptions, options, subcommands, middlewares, output settings) and those construction-time objects.
+2. **Cross-cutting logic is in middlewares.** Logic that serves more than one command runs in a middleware: setup and teardown, login and mode checks, error mapping, update checks. Each middleware has one responsibility. A command's `run` contains the work of that command only.
 3. **Option-style commands are action options.** An argument that is written as an option and runs like a command, such as `--version`, is an option definition with `ActionOptionMixin`.
 4. **The CLI behaves as before.** The only differences are the ones the framework forces, and the ones the person running the migration decided.
 
@@ -44,7 +44,7 @@ Read the runner subclass, the base command classes, the entry point, and the tes
 
 | Group | What to list |
 |---|---|
-| A. Per-run state | Every instance field of the runner and command classes that is assigned after construction, or that holds an object used during a run: global configuration, analytics consent, logger, clients, service providers, resolved paths. Also the getters that expose them, and their callers. |
+| A. Per-run state | Every instance field of the runner and command classes that is assigned after construction, or that holds an object used during a run: global configuration, analytics consent, logger, clients, service providers, resolved paths. Also the getters that expose them, and their callers. For each object, note whether it exists before `run` or is created during `run`, and how many places read it. |
 | B. Cross-cutting logic | Runner overrides: `run`, `runCommand`, `parse`, `resolveConfiguration`, `printUsage`, `determineAnalyticsSettings`, `sendAnalyticsEvent`. Constructor callbacks: `onBeforeRunCommand`, `setLogLevel`, `onAnalyticsEvent`, `messageOutput`. In the base command classes: everything in `run` or `runWithConfig` that runs before, after, or around the hook that subclasses implement. |
 | C. Option-style commands | Options that the runner tests in order to do something and skip the command. Commands whose name or alias starts with `-`. |
 | D. `package:args` API | `ArgResults`, `argResults`, `globalResults`, `argParser`, `wasParsed`, the `.command` chain, `.rest`, `.arguments`. |
@@ -53,27 +53,28 @@ Read the runner subclass, the base command classes, the entry point, and the tes
 | G. Completion | `enableCompletionCommand`, `embeddedCompletions`, completion scripts, install tasks, user docs. |
 | H. Descriptions | READMEs, contributor docs, and agent rules that describe the runner and command structure. |
 
-Give each row in groups A to C a destination: stays as a definition, `context.config`, `context.provider`, a middleware (which one, and where in the order), an action option, the `run` of one command, stays as an override or a callback, or deleted. [patterns.md](patterns.md) has the rules.
+Give each row in groups A to C a destination: stays as a definition, a final field of the runner, `context.config`, `context.provider`, a middleware (which one, and where in the order), an action option, the `run` of one command, stays as an override or a callback, or deleted. [patterns.md](patterns.md) has the rules.
 
 For each row in group B, also write which invocations reached that code before. Use the table in [behavior-changes.md](behavior-changes.md#which-invocations-reach-which-hook).
 
 Done when every field, override, and callback of the runner and base command classes has a row with a destination, and every group B row has its reach.
 
-### 2. Ask about option collisions
+### 2. Record option collisions
 
-Check every spelling of every global option against the options of every command: the `--name`, the abbreviation, each alias, and the `--no-name` form of a negatable flag.
+Check every spelling of every option against the options of every command below it: the `--name`, the abbreviation, each alias, and the `--no-name` form of a negatable flag.
 
-A subcommand option with the same spelling shadows the global option after that subcommand. The old CLI did the same, so keeping both changes nothing for users. The alternatives remove a spelling that users may rely on.
+A subcommand option with the same spelling shadows the parent option. Leave both definitions in place and record the collision for the report. Shadowing is per spelling:
 
-**Stop and ask the person running the migration. Show every collision, and for each one the choices:**
+- After the subcommand, that spelling sets the subcommand's option.
+- Before the subcommand, and through spellings the subcommand does not define, it sets the parent option.
+- A non-persistent option hides the spelling only on the command that defines it, so a further nested command sees the parent spelling again.
+- A persistent option hides the spelling for that command and every command below it, until another option shadows it.
 
-- Keep both. After the subcommand the spelling sets the subcommand's option. Before it, and through its other spellings, it sets the global option.
-- Change the spelling of the global option.
-- Change the spelling of the subcommand's option.
+Write each collision in the notes: the parent option, the subcommand option, and the shared spellings. Step 10 lists them.
 
-A command name or alias that equals an option spelling is different. When that option is valid on the parent command, global options included, the runner throws a `CommandDefinitionError` at startup. Step 4 removes the usual case, an alias such as `--version`, when it converts that command to an action option. Ask about any other case.
+A command name or alias that equals an option spelling is a different case. When that option is valid on the parent command, global options included, the runner throws a `CommandDefinitionError` at startup. Step 4 removes the usual case, an alias such as `--version`, when it converts that command to an action option. Ask about any other case.
 
-Done when each collision has a decision from that person in the notes, or the check found none.
+Done when each option collision is in the notes with its shared spellings, or the check found none, and each remaining command-name clash has a decision.
 
 ### 3. Record the baseline
 
@@ -88,9 +89,10 @@ Done when the scratch directory has one capture per listed invocation, and a not
 
 1. Set `cli_tools` to 0.15 and `config` to 1.0 in `pubspec.yaml`. Use the newest published versions, pre-releases included. Both packages need Dart SDK 3.9 or later. Remove `args` when no other code imports it.
 2. Replace each old member with its entry in [api-map.md](api-map.md). This covers group D, and it moves `env` from the runner constructor to `run`.
-3. Apply the collision decisions from step 2.
-4. Change each class that extends `UsageException` (group E) to extend `CommandUsageException`, and pass the command at each throw. Remove the entry point code that prints a caught `UsageException`: the framework prints it now. Where that code printed more than the message, such as a hint field, put that text in the message or give the runner a custom exception printer. See [patterns.md](patterns.md#project-subclasses-of-usageexception) and [patterns.md](patterns.md#custom-printout).
-5. Update the tests for the forced changes in [behavior-changes.md](behavior-changes.md#forced-changes) only.
+3. Delete `invocation` overrides that restate the generated synopsis. The api-map row says when to keep one.
+4. Change each class that extends `UsageException` (group E) to extend `CommandUsageException`, and pass the command at each throw. Remove the entry point code that prints a caught `UsageException`: the framework prints it now. Where that code printed more than the message, such as a hint field, put that text in the message or give the runner a custom exception printer. Code that only sent the usage or the error somewhere else sets `OutputSinks.out` and `OutputSinks.err`. See [patterns.md](patterns.md#project-subclasses-of-usageexception) and [patterns.md](patterns.md#where-output-goes).
+5. Apply a command-name change decided in step 2.
+6. Update the tests for the forced changes in [behavior-changes.md](behavior-changes.md#forced-changes) only.
 
 Where an old member has no direct replacement, build the target structure from [patterns.md](patterns.md) now, not an interim bridge. This pulls work of steps 5 to 7 into this step. Two cases always do:
 
@@ -108,22 +110,23 @@ Done when all of these are true:
 
 Work through group A of the inventory. See [patterns.md](patterns.md#per-run-data).
 
-1. Store per-run objects in the CommandContext provider.
-2. Create each object in a middleware, or let the caller of `run` seed it. The table in patterns.md decides which.
-3. Change each command to read them from `context.provider`, directly or through an extension on `CommandContext`.
-4. Remove the fields, the getters, and the constructor parameters that carried those objects.
+1. Give each object the place the table in [patterns.md](patterns.md#per-run-data) names.
+2. Create an object that is born during `run` in the middleware that owns it. Store it on the provider when more than one place reads it.
+3. Read a provider value through a function in that file. Use an extension on `CommandContext` when other files read it too.
+4. Remove fields and constructor parameters that carried an object created during `run`. An object that exists before `run` may stay a final field of the runner.
 
 Done when all of these are true:
 
-- Every instance field of the runner and command classes is `final`, is set in the constructor, and holds a definition or a factory.
-- No command and no middleware reads per-run data from the runner or from a command instance.
-- Commands take no collaborator as a constructor parameter.
+- Every instance field of the runner and command classes is `final` and is set in the constructor.
+- Every object created during `run` and read from more than one place is on `context.provider`.
+- A command reads an object created during `run` from `context.provider` or from a local variable.
+- A command constructor takes no object that is created during `run`.
 
 ### 6. Move cross-cutting logic to middlewares
 
 Work through group B of the inventory. See [patterns.md](patterns.md#middlewares).
 
-1. Turn each part of the base command's wrapper into a middleware on the runner. Keep the order that the wrapper had.
+1. Turn each part of the base command's wrapper into its own middleware on the runner. Keep the order that the wrapper had. Setup and teardown of one object stay in one `withHooks`. See [patterns.md](patterns.md#one-responsibility).
 2. Give each runner override and constructor callback the replacement in the table in [patterns.md](patterns.md#runner-overrides-and-callbacks).
 3. Guard each middleware so that it acts for the same invocations as the code it replaces. See [patterns.md](patterns.md#reach-and-guards).
 
@@ -147,7 +150,7 @@ Done when all of these are true:
 
 ### 8. Update the entry point, completion, tools, and descriptions
 
-1. Entry point: pass the seeded `provider` to `run`, and set only the exit code for a caught `UsageException`. See [patterns.md](patterns.md#entry-point).
+1. Entry point: pass `provider:` when a command reads a construction-time object from the context, and set only the exit code for a caught `UsageException`. See [patterns.md](patterns.md#entry-point).
 2. Completion (group G): leave completion enabled, which is the default. Remove the embedded scripts and their generators, and change install tasks and user docs to `completion install`. A CLI that had no completion command gets the built-in one; name that in the report.
 3. Command tree readers (group F): port them with [api-map.md](api-map.md#command-tree), then run them and compare their output with the baseline.
 4. Descriptions (group H): rewrite the parts that describe the old structure.
@@ -159,7 +162,7 @@ Done when the scripts and tasks in groups F and G run, and no file in group H na
 1. `dart analyze` reports no issues. `dart format` leaves the changed files unchanged.
 2. No runner, command, or test of them imports `package:args`, and no group D row is left.
 3. The tests pass, apart from the failures noted in step 3.
-4. Capture the baseline invocations again and compare them with step 3. Each difference is a forced change, a decision from step 2, or a defect to fix.
+4. Capture the baseline invocations again and compare them with step 3. Each difference is a forced change, a command-name change decided in step 2, a kept `invocation` override, or the shadowing of a collision recorded in step 2. Anything else is a defect to fix.
 5. Request an option value completion (`<executable> __complete <command> --<option> ''`) for one option with a custom completer and one without. Nothing but the completion response is written to stdout, nothing prompts, and no analytics event is sent.
 6. Read the done criteria of steps 5 to 7 once more against the final code.
 
@@ -170,6 +173,8 @@ Done when all six pass.
 Tell the person running the migration:
 
 - each CLI-visible difference from the baseline, with the invocation that shows it,
-- each decision they made in step 2, and where it was applied,
+- each option collision from step 2: the shared spellings, and that the subcommand option shadows the parent,
+- each command-name clash decided in step 2, and where it was applied,
+- each `invocation` override that was kept, and why,
 - each exception to a done criterion that the notes record, with its reason,
 - each baseline invocation that was skipped, and anything else that is not verified.
