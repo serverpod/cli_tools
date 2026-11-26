@@ -6,6 +6,7 @@ import '../../config.dart'
         CommandDefinition,
         Configuration,
         ConfigurationBroker,
+        InvalidParseStateError,
         ArgParseResult,
         NewParsedArgs;
 import '../../middleware.dart' show MiddlewareChain, Middleware;
@@ -80,6 +81,9 @@ abstract class AbstractCommand<O extends OptionDefinition, T>
   /// Provides the configuration broker for resolving the configuration for this
   /// command, if any. [prevContext] and its predecessor contexts are the
   /// resolved contexts of the parent commands.
+  ///
+  /// May throw an [InvalidParseStateError] if the broker accesses values of
+  /// options on preceding commands that failed to resolve.
   ConfigurationBroker? configBroker(
     final CommandContext<OptionDefinition, T>? prevContext,
   ) => null;
@@ -239,7 +243,7 @@ abstract class AbstractCommand<O extends OptionDefinition, T>
       options: [...persistentOptions, ...options],
       parsedArgs: parsedArgs,
       env: env,
-      configBroker: configBroker(prevContext),
+      configBroker: _configBrokerFor(prevContext),
       ignoreUnexpectedPositionalArgs:
           ignoreUnexpectedPositionalArgs || passThroughArgs,
     );
@@ -251,6 +255,24 @@ abstract class AbstractCommand<O extends OptionDefinition, T>
       provider: provider,
       runMode: runMode,
     );
+  }
+
+  /// Returns [configBroker] for [prevContext].
+  ///
+  /// When [configBroker] reads an option of a preceding command that failed to
+  /// resolve, the returned broker fails every lookup with that
+  /// [InvalidParseStateError] instead.
+  /// [Configuration] then treats the options of this command that depend on
+  /// the broker as failed, without reporting them: the error that caused it is
+  /// already reported for the preceding command.
+  ConfigurationBroker? _configBrokerFor(
+    final CommandContext<OptionDefinition, T>? prevContext,
+  ) {
+    try {
+      return configBroker(prevContext);
+    } on InvalidParseStateError catch (error) {
+      return _UnavailableConfigBroker(error);
+    }
   }
 
   /// Runs this command, including its middlewares (hooks).
@@ -280,4 +302,15 @@ abstract class AbstractCommand<O extends OptionDefinition, T>
   ///
   /// Invoked only when this command is the last command on the command line.
   FutureOr<T?> runAsLeaf(final CommandContext<O, T> context);
+}
+
+/// Stands in for a configuration broker that could not be provided, because
+/// an option that it depends on failed to resolve. Every lookup throws [error].
+class _UnavailableConfigBroker implements ConfigurationBroker {
+  const _UnavailableConfigBroker(this.error);
+
+  final InvalidParseStateError error;
+
+  @override
+  Object? valueOrNull(final String key, final Configuration cfg) => throw error;
 }
