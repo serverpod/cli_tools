@@ -111,7 +111,7 @@ Done when all of these are true:
 Work through group A of the inventory. See [patterns.md](patterns.md#per-run-data).
 
 1. Give each object the place the table in [patterns.md](patterns.md#per-run-data) names.
-2. An object that is created during `run` and read from more than one place is created in a middleware, which stores it on the provider. An object that only one command reads is a local variable in that command's `run`.
+2. Create each object where it belongs. A command creates an object that its own work produces. A middleware creates an object that more than one command uses. An object that other code reads travels on the provider: its creator stores it there.
 3. Read a provider value through a function in that file. Use an extension on `CommandContext` when other files read it too.
 4. Remove fields and constructor parameters that carried an object created during `run`. An object that exists before `run` may stay a final field of the runner.
 
@@ -120,6 +120,7 @@ Done when all of these are true:
 - Every instance field of the runner and command classes is `final` and is set in the constructor.
 - Every object created during `run` and read from more than one place is on `context.provider`.
 - A command reads an object created during `run` from `context.provider` or from a local variable.
+- Every object that more than one command uses is created in a middleware.
 - A command constructor takes no object that is created during `run`.
 
 ### 6. Move cross-cutting logic to middlewares

@@ -18,8 +18,11 @@ Option values stay on the context. `context.config` holds the options of the com
 |---|---|---|
 | Before `run` (the runner constructor, or the caller before `run`) | The runner, or one callback fixed at construction (`setLogLevel`, the usage sinks) | A final field of the runner, or the caller. |
 | Before `run` | Commands or middlewares | A final field of the runner works. `context.provider` is the convenient place, so commands reach it without the runner. The caller passes `provider:` to `run`, or a middleware stores the field at the start of the run. |
-| During `run` | One place | A local variable there. |
-| During `run` | More than one place | `context.provider`. The middleware that creates it stores it and releases it in `onFinally` of the same middleware. |
+| During `run`, in one command | That command only | A local variable in its `run`. |
+| During `run`, in one command | Other code too, such as a helper or a teardown middleware | The command creates it where its work produces it, and stores it on `context.provider`. A middleware that reads it uses `maybeFetch`, because the command may not have run. |
+| During `run` | More than one command | A middleware creates it, stores it on `context.provider`, and releases it in `onFinally` of the same middleware. |
+
+An object is created where it belongs, and it travels on the context. A constructor parameter or a field is for an object that exists before `run`.
 
 `configBroker` runs during resolution, before every middleware. It reads a construction-time field of its command or runner. The broker of a subcommand also reads what the caller seeded on the provider, through `prevContext`. The broker of the runner gets a null `prevContext` and no provider, so what it needs is a construction-time field of the runner.
 
