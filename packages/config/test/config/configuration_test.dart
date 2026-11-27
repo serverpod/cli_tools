@@ -2408,6 +2408,104 @@ void main() async {
     );
   });
 
+  group('Given two options in groups of the same name but different types', () {
+    const plainOpt = StringOption(
+      argName: 'plain',
+      group: OptionGroup('same-name'),
+    );
+    const mutexOpt = StringOption(
+      argName: 'mutex',
+      group: MutuallyExclusive('same-name'),
+    );
+
+    test('when the plain group is defined first '
+        'then option group validation throws error', () async {
+      expect(
+        () => Configuration.resolveNoExcept(
+          options: [plainOpt, mutexOpt],
+          args: [],
+        ),
+        throwsA(
+          isA<OptionDefinitionError>().having(
+            (final e) => e.message,
+            'message',
+            'Option group `same-name` is defined as both '
+                'OptionGroup and MutuallyExclusive',
+          ),
+        ),
+      );
+    });
+
+    test('when the mutually exclusive group is defined first '
+        'then option group validation throws error', () async {
+      expect(
+        () => Configuration.resolveNoExcept(
+          options: [mutexOpt, plainOpt],
+          args: [],
+        ),
+        throwsA(
+          isA<OptionDefinitionError>().having(
+            (final e) => e.message,
+            'message',
+            'Option group `same-name` is defined as both '
+                'MutuallyExclusive and OptionGroup',
+          ),
+        ),
+      );
+    });
+  });
+
+  group('Given two options in mutually exclusive groups of the same name '
+      'but different modes', () {
+    const optionalOpt = StringOption(
+      argName: 'optional',
+      group: MutuallyExclusive('same-name'),
+    );
+    const mandatoryOpt = StringOption(
+      argName: 'mandatory',
+      group: MutuallyExclusive(
+        'same-name',
+        mode: MutuallyExclusiveMode.mandatory,
+      ),
+    );
+
+    test('when the non-mandatory group is defined first '
+        'then option group validation throws error', () async {
+      expect(
+        () => Configuration.resolveNoExcept(
+          options: [optionalOpt, mandatoryOpt],
+          args: [],
+        ),
+        throwsA(
+          isA<OptionDefinitionError>().having(
+            (final e) => e.message,
+            'message',
+            'Option group `same-name` is defined with both '
+                'mode noDefaults and mode mandatory',
+          ),
+        ),
+      );
+    });
+
+    test('when the mandatory group is defined first '
+        'then option group validation throws error', () async {
+      expect(
+        () => Configuration.resolveNoExcept(
+          options: [mandatoryOpt, optionalOpt],
+          args: [],
+        ),
+        throwsA(
+          isA<OptionDefinitionError>().having(
+            (final e) => e.message,
+            'message',
+            'Option group `same-name` is defined with both '
+                'mode mandatory and mode noDefaults',
+          ),
+        ),
+      );
+    });
+  });
+
   group('Given four mutually exclusive options in two option groups', () {
     const firstOpt = StringOption(
       argName: 'first',
