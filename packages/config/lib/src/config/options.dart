@@ -50,6 +50,8 @@ abstract interface class OptionDefinition<V> {
 /// so it is recommended to format it appropriately, e.g. `File mode`.
 ///
 /// An [OptionGroup] is uniquely identified by its [name].
+/// Group objects with the same name are the same group, so the options of
+/// a command must not use groups of that name that differ in type or settings.
 /// {@endtemplate}
 class OptionGroup {
   final String name;
@@ -969,6 +971,16 @@ List<OptionDefinition> validateOptions(
   }
 
   optionGroups.forEach((final group, final options) {
+    for (final opt in options) {
+      final sameName = opt.option.group;
+      if (sameName.runtimeType != group.runtimeType) {
+        throw OptionDefinitionError(
+          opt,
+          'Option group `${group.name}` is defined as both '
+          '${group.runtimeType} and ${sameName.runtimeType}',
+        );
+      }
+    }
     group.validateDefinitions(options);
   });
 

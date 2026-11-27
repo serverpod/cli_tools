@@ -1205,6 +1205,88 @@ void main() {
     });
   });
 
+  group('Given mutually exclusive groups of the same name '
+      'on a parent command and on its subcommand', () {
+    const target = MutuallyExclusive('Target');
+    const globalOpt = FlagOption(
+      argName: 'global',
+      negatable: false,
+      group: target,
+    );
+    const rootOnlyOpt = FlagOption(
+      argName: 'root-only',
+      negatable: false,
+      group: target,
+    );
+    const localOpt = FlagOption(
+      argName: 'local',
+      negatable: false,
+      group: target,
+    );
+    const otherLocalOpt = FlagOption(
+      argName: 'other-local',
+      negatable: false,
+      group: target,
+    );
+
+    late CompletionEngine<OptionDefinition, int> engine;
+
+    setUp(() {
+      engine = CompletionEngine(
+        TestCommand(
+          name: 'tool',
+          persistentOptions: [globalOpt],
+          options: [rootOnlyOpt],
+          subcommands: [
+            TestCommand(name: 'build', options: [localOpt, otherLocalOpt]),
+          ],
+        ),
+      );
+    });
+
+    test('when the option of the parent command is given '
+        'then the options of the subcommand are still offered', () async {
+      final response = await engine.complete(['--global', 'build', '--']);
+
+      expect(
+        [for (final c in response.candidates) c.value],
+        containsAll(['--local', '--other-local']),
+      );
+    });
+
+    test('when an option of the subcommand is given '
+        'then the option of the parent command is still offered', () async {
+      final response = await engine.complete(['build', '--local', '--']);
+
+      expect(
+        [for (final c in response.candidates) c.value],
+        contains('--global'),
+      );
+    });
+
+    test('when an option of the subcommand is given '
+        'then the other option of the subcommand '
+        'is no longer offered', () async {
+      final response = await engine.complete(['build', '--local', '--']);
+
+      expect(
+        [for (final c in response.candidates) c.value],
+        isNot(contains('--other-local')),
+      );
+    });
+
+    test('when a non-persistent option of the parent command is given '
+        'then its persistent option is no longer offered '
+        'on the subcommand', () async {
+      final response = await engine.complete(['--root-only', 'build', '--']);
+
+      expect(
+        [for (final c in response.candidates) c.value],
+        isNot(contains('--global')),
+      );
+    });
+  });
+
   group('Given a subcommand option that shadows a global option', () {
     const globalOpt = StringOption(
       argName: 'opt',

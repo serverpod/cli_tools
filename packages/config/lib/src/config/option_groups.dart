@@ -35,10 +35,18 @@ class MutuallyExclusive extends OptionGroup {
   void validateDefinitions(
     final Iterable<OptionDefinition> options,
   ) {
-    if (mode == MutuallyExclusiveMode.allowDefaults) return;
+    final allowDefaults = mode == MutuallyExclusiveMode.allowDefaults;
 
     for (final opt in options) {
-      if (opt.option.defaultValue() != null) {
+      final group = opt.option.group;
+      if (group is MutuallyExclusive && group.mode != mode) {
+        throw OptionDefinitionError(
+          opt,
+          'Option group `$name` is defined with both mode ${mode.name} '
+          'and mode ${group.mode.name}',
+        );
+      }
+      if (!allowDefaults && opt.option.defaultValue() != null) {
         throw OptionDefinitionError(
           opt,
           'Option group `$name` does not allow defaults',

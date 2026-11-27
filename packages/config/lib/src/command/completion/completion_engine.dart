@@ -570,13 +570,20 @@ class _CommandLine {
 
   /// Whether [option] can no longer be given because another option of its
   /// [MutuallyExclusive] group was given on the command line.
+  ///
+  /// A group is validated among the options of one command, so only the
+  /// options of a command that defines [option] exclude it.
   bool isExcluded(final ConfigOptionBase option) {
     final group = option.group;
     if (group is! MutuallyExclusive) return false;
-    return visibleOptions.any(
-      (final other) =>
-          other != option && other.group == group && wasGiven(other),
-    );
+    return commands.any((final command) {
+      final options = command.allOptions().map((final o) => o.option);
+      return options.contains(option) &&
+          options.any(
+            (final other) =>
+                other != option && other.group == group && wasGiven(other),
+          );
+    });
   }
 
   /// Whether a preceding word was rejected as an unknown subcommand

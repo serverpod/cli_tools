@@ -1559,6 +1559,52 @@ void main() {
         );
       });
     });
+
+    group('when the subcommand adds a grouped global option '
+        'to its inherited usage options', () {
+      const logging = OptionGroup('Logging');
+      const debug = FlagOption(
+        argName: 'debug',
+        negatable: false,
+        group: logging,
+      );
+      late Command<OptionDefinition, void> command;
+
+      setUp(() {
+        command = _InheritingCommand(
+          name: 'build',
+          description: 'Build the app',
+          inherited: const [debug],
+          options: const [
+            StringOption(argName: 'target'),
+            FlagOption(argName: 'quiet', negatable: false, group: logging),
+          ],
+        );
+        _runner(globalOptions: const [server, debug], subcommands: [command]);
+      });
+
+      test('then that global option is listed under the headline of its group, '
+          'together with the own options of that group', () {
+        expect(
+          command.usage,
+          _usage(const [
+            'Build the app',
+            '',
+            'Usage: tool build [--target=<target>] [--quiet]',
+            '',
+            'Options:',
+            '-h, --help    Print this usage information.',
+            '--target      ',
+            '',
+            'Logging',
+            '--debug       ',
+            '--quiet       ',
+            '',
+            'Run "tool help" to see global options.',
+          ]),
+        );
+      });
+    });
   });
 }
 
