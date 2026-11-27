@@ -188,12 +188,47 @@ void main() {
         _usage(const [
           'Tools',
           '',
-          'Usage: tool [global-options]',
+          'Usage: tool',
           '',
           'Global options:',
           '-h, --help    Print this usage information.',
           '',
         ]),
+      );
+    });
+  });
+
+  group('Given a runner with no subcommands and with options', () {
+    late CommandRunner<OptionDefinition, void> runner;
+
+    setUp(() {
+      const format = MutuallyExclusive(
+        'format',
+        mode: MutuallyExclusiveMode.mandatory,
+      );
+      runner = _runner(
+        globalOptions: const [
+          FlagOption(argName: 'verbose', negatable: false),
+        ],
+      );
+      runner
+        ..addOption(
+          const StringOption(argPos: 0, valueHelp: 'file', mandatory: true),
+        )
+        ..addOption(const FlagOption(argName: 'number', negatable: false))
+        ..addOption(const StringOption(argName: 'json', group: format))
+        ..addOption(
+          const StringOption(argName: 'text', valueHelp: 'file', group: format),
+        );
+    });
+
+    test('when reading usage then the synopsis spells out the options', () {
+      expect(
+        runner.usage,
+        contains(
+          'Usage: tool <file> [--verbose] [--number] '
+          '(--json=<json> | --text=<file>)',
+        ),
       );
     });
   });

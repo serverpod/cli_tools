@@ -8,13 +8,15 @@ import 'options_usage.dart';
 
 const _usagePrefix = 'Usage: ';
 
-String _runnerInvocation(final AbstractCommand command) {
-  final invocation = '${command.name} [global-options]';
-  if (command.subcommands.isEmpty) return invocation;
-  return '$invocation <command> [arguments]';
-}
+/// Invocation of a root command that has subcommands.
+String _runnerInvocation(final AbstractCommand command) =>
+    '${command.name} [global-options] <command> [arguments]';
 
 /// The usage invocation line.
+///
+/// A subcommand, and a root command without subcommands, spells its options
+/// out, including mutually exclusive alternatives. A root command with
+/// subcommands keeps the options collapsed and asks for a command.
 ///
 /// A custom invocation replaces this command's own name and argument
 /// synopsis, and is appended to the parent command chain.
@@ -23,9 +25,10 @@ String _runnerInvocation(final AbstractCommand command) {
 String _invocation(final AbstractCommand command, final bool isSubcommand) {
   final custom = command.usageDefinition.invocation;
   if (custom == null) {
-    return isSubcommand
-        ? commandInvocationSynopsis(command)
-        : _runnerInvocation(command);
+    if (isSubcommand || command.subcommands.isEmpty) {
+      return commandInvocationSynopsis(command);
+    }
+    return _runnerInvocation(command);
   }
 
   final parents = <String>[];
