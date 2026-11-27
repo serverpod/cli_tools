@@ -12,6 +12,12 @@ The command tree, options, and middleware are defined when the runner is created
 Mistakes in those definitions are fail-fast. A mistake in the user's input is
 reported as a usage error. Help and shell completion are built in.
 
+## Skills
+
+Agentic skills for developing with this package are included. See:
+- [config-commands](skills/config-commands/SKILL.md)
+- [config-options](skills/config-options/SKILL.md)
+
 ## Design
 
 Uses the concept of middlewares to customize the execution logic
@@ -78,10 +84,47 @@ valid on that command, before the next subcommand.
 > Persistent options are always named; a positional option cannot be persistent,
  since it would conflict with additional subcommands.
 
+An option group, such as `MutuallyExclusive`, applies among the options of one
+command, persistent or not. Options of a parent command and of its subcommand
+that use a group of the same name share its headline in the usage text, but
+are validated separately.
+
+### Persistent options in the usage text
+
+The usage of the root command lists the global options. The usage of a
+subcommand lists its own options, and of the persistent options of its parent
+commands only the built-in `--help`, since there can be many of them.
+
+A command can list more of them by overriding `inheritedUsageOptions`, for
+example the global options that matter most to it:
+
+```dart
+@override
+List<OptionDefinition> get inheritedUsageOptions => [
+  ...super.inheritedUsageOptions, // --help
+  GlobalOption.verbose,
+];
+```
+
+The listed options keep their option groups: an option without a group is
+listed at the top with `--help`, and an option with a group under the headline
+of that group, as in the usage of the command that defines it.
+
+This affects the usage text only. All persistent options of the parent
+commands remain valid for the command.
+
 ## Action options
 
 An action option behaves similarly to a subcommand. It has a run method and the
 runner runs it instead of a subcommand.
+
+An action option takes the place of a subcommand, so it is a usage error to
+write a subcommand or another action option after it. Regular options may
+still follow it.
+
+An action option that overrides `isExclusive` to return false is exempt from
+this rule and may be written anywhere on the command line. The built-in
+`--help` is such an option, see [Help](#help).
 
 ### Example: --version action option
 
@@ -90,12 +133,13 @@ besides printing the version information.
 
 ```sh
 executable --version
-executable --version subcommand  # prints the version, subcommand is not run
 executable subcommand --version  # the same, when --version is a global option
+executable --version --verbose   # the same, a regular option may follow
+executable --version subcommand  # error: subcommand after --version
+executable --version --license   # error: two action options
 ```
 
-The rest of the command line is still parsed, so an unknown subcommand or
-option is an error.
+The rest of the command line is still parsed, so an unknown option is an error.
 
 ### Built-in action options
 
@@ -106,14 +150,18 @@ it, see [Shell completion](#shell-completion).
 
 ### Help
 
-`--help` / `-h` is an action option and also a persistent option, so it may come
-before or after other subcommands. It prints the usage of the last command on
-the line.
+`--help` / `-h` is an action option and also a persistent option. Unlike other
+action options it is not exclusive, so it may come before or after other
+subcommands. It prints the usage of the last command on the line.
+
+`--help` takes precedence over any other action option on the command line,
+whichever is written first.
 
 ```sh
 executable --help
 executable --help subcommand
 executable subcommand --help
+executable --version --help     # prints the usage, not the version
 ```
 
 ## Commands / actions accepting incomplete command lines
@@ -130,8 +178,9 @@ and ignores any errors due to what was left out:
 - Ignored: a mandatory option never written, a mandatory exclusive group with
   no member chosen, and a required subcommand never named.
 - Reported: unknown options and subcommands, invalid values, options that
-  exclude each other, and a missing value for an option that was written
-  (`--target` with nothing after it).
+  exclude each other, a subcommand or another action option after an action
+  option, and a missing value for an option that was written (`--target` with
+  nothing after it).
 
 The ignored errors stay on `CommandContext.config.errors`.
 
@@ -148,8 +197,9 @@ A custom command opts in by overriding `acceptsPartialCommandLine`.
 
 ## Parser settings and extra positional arguments
 
-`CommandRunner` has two independent settings for arguments that are not
-options of the command being parsed.
+Two independent settings decide what happens to arguments that are not
+options of the command being parsed: `parserSettings` of the `CommandRunner`,
+and `ignoreUnexpectedPositionalArgs` of each command.
 
 ### `ParserSettings`
 
@@ -173,6 +223,10 @@ command suggestions. The default is 2. Set it to 0 to disable suggestions.
 A positional word that matches no positional option is unexpected.
 Arguments left unparsed after `--` count as such words.
 
+`ignoreUnexpectedPositionalArgs` is a property of each command. `CommandImpl`
+and `CommandImpl.leafWithRunFunction` take it as a parameter, and other
+commands override the getter.
+
 When `ignoreUnexpectedPositionalArgs` is false, the default, those words
 fail the run and are reported as a usage error.
 
@@ -195,7 +249,17 @@ final runner = CommandRunner<OptionDefinition, void>(
   parserSettings: const ParserSettings(
     doubleDashHandling: DoubleDashHandling.passThroughRest,
   ),
-  ignoreUnexpectedPositionalArgs: true,
+  subcommands: [
+    CommandImpl.leafWithRunFunction<OptionDefinition, void>(
+      name: 'build',
+      description: 'Builds the project.',
+      options: [const FlagOption(argName: 'quiet', argAbbrev: 'q')],
+      ignoreUnexpectedPositionalArgs: true,
+      run: (final context) {
+        print(context.config.remainingPosArgs);
+      },
+    ),
+  ],
 );
 ```
 
@@ -407,8 +471,8 @@ output has been written.
 - `--option=value` is completed as well.
 - Mutually exclusive option groups: once an option of a `MutuallyExclusive`
   group is given (by name or as a positional argument), the other options of
-  the group are no longer offered, and a positional argument belonging to the
-  group is not completed.
+  the group on the same command are no longer offered, and a positional
+  argument belonging to the group is not completed.
 - The arguments of a pass-through command: what that command offers, see
   [Pass-through commands](#pass-through-commands).
 
@@ -464,7 +528,8 @@ CompletionResult complete(final CompletionContext context) {
 The middleware of those commands runs as well, around the `complete` call,
 so that it can prepare what `complete` needs, e.g. store a service on
 `CommandContext.provider`. No command `run` method is called. A middleware
-tells the two apart with `CommandContext.isCompletion`, and should skip
+tells the two apart with `CommandContext.runMode`, which is
+`CommandRunMode.completion` during a completion request, and should then skip
 anything meant only for a command being run, such as analytics or printing:
 output on stdout would end up among the completion alternatives.
 
@@ -502,9 +567,17 @@ CompletionCommand<int>(
 )
 ```
 
-The options of the built-in command, `--shell` and `--command`
-(`CompletionOption`) and `--dry-run` (`CompletionInstallOption`),
-must not be the names of global options of the application.
+A global option of the application may have the same name as an option of the
+built-in command: `--shell` and `--command` (`CompletionOption`), and
+`--dry-run` (`CompletionInstallOption`). The option of the built-in command
+then shadows the global one after `completion` on the command line, see
+[Persistent options](#persistent-options):
+
+```sh
+mycli --shell mine completion --shell zsh
+```
+
+This sets the global `--shell` to `mine` and prints the script for Zsh.
 
 The built-in global options `--help` and `--completion`
 (`BuiltinGlobalOption`) are kept apart from the application's typed

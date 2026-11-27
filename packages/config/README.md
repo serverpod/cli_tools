@@ -51,6 +51,12 @@ composabilty, extensibility, and ease of use in mind.
 
 [README_command.md](README_command.md)
 
+## Skills
+
+Agentic skills for developing with this package are included. See:
+- [config-options](skills/config-options/SKILL.md)
+- [config-commands](skills/config-commands/SKILL.md)
+
 ## Overview
 
 The config library is a significant extension to the Dart args package.
@@ -79,6 +85,8 @@ The main features are:
 - Named option groups are supported.
   - A group can specify mutually exclusive options.
   - A group can be mandatory in that at least one of its options is set.
+  - A group is identified by its name. Groups of the same name must have the
+    same type and settings, otherwise the option definitions are invalid.
 
 - Tracability - the information on an option's value source is retained.
 
@@ -99,9 +107,8 @@ It maintains almost complete compatibility with the original package while
 enabling direct use of the new features.
 
 It achieves complete compatibility with the original package with the exception
-of addCommand(), which you can replace with
-[`BetterCommandRunner`](https://github.com/serverpod/cli_tools/blob/main/packages/cli_tools/lib/src/better_command_runner/better_command_runner.dart)
-from the [`cli_tools package`](https://pub.dev/packages/cli_tools).
+of addCommand(). For commands, use `CommandRunner` and `Command` of the
+[command framework](README_command.md) instead.
 
 - **Compatibility**: The `ConfigParser` implements the same interface as
   `ArgParser`, and returns a `ConfigResults` object that implements `ArgResults`.
@@ -116,7 +123,7 @@ from the [`cli_tools package`](https://pub.dev/packages/cli_tools).
 
 - **Key Differences**:
   - The `addCommand()` method is not supported
-  (see [`BetterCommandRunner`](https://github.com/serverpod/cli_tools/blob/main/packages/cli_tools/lib/src/better_command_runner/better_command_runner.dart) instead)
+  (see the [command framework](README_command.md) instead)
   - All validation is performed up-front with consistent error messages
   - The parser supports additional configuration sources (environment variables, config files)
 
@@ -170,19 +177,32 @@ enum LogOption<V> implements OptionDefinition<V> {
 }
 ```
 
-The enum form enables constant initialization, typed `Configuration<LogType>`,
+The enum form enables constant initialization, typed `Configuration<LogOption>`,
 and easy reference.
 
+The option values are resolved from the command line arguments and the
+environment variables, and read with their types:
+
 ```dart
-  Future<void> runWithConfig(
-    final Configuration<LogOption> commandConfig,
-  ) async {
-    final limit = commandConfig.value(LogOption.limit);
-    final inUtc = commandConfig.value(LogOption.utc);
-    final recentOpt = commandConfig.optionalValue(LogOption.recent);
-    final beforeOpt = commandConfig.optionalValue(LogOption.before);
-    ...
+void main(final List<String> args) {
+  final Configuration<LogOption> config;
+  try {
+    config = Configuration.resolve(
+      options: LogOption.values,
+      args: args,
+      env: Platform.environment,
+    );
+  } on UsageException catch (e) {
+    print(e);
+    exit(1);
   }
+
+  final limit = config.value(LogOption.limit);
+  final inUtc = config.value(LogOption.utc);
+  final recentOpt = config.optionalValue(LogOption.recent);
+  final beforeOpt = config.optionalValue(LogOption.before);
+  ...
+}
 ```
 
 It is also possible to create them as a List:
@@ -191,27 +211,27 @@ It is also possible to create them as a List:
 abstract final class _ProjectOptions {
   static const name = StringOption(
     argName: 'name',
-    mandatory: true
+    mandatory: true,
   );
   static const enable = FlagOption(
     argName: 'enable',
     defaultsTo: false,
   );
 
-  static createOptions = <OptionDefinition>[
+  static const options = <OptionDefinition>[
     name,
     enable,
   ];
 }
 ...
 
-  Future<void> runWithConfig(
-    final Configuration commandConfig,
-  ) async {
-    final name = commandConfig.value(_ProjectOptions.name);
-    final enable = commandConfig.value(_ProjectOptions.enable);
-    ...
-  }
+  final config = Configuration.resolve(
+    options: _ProjectOptions.options,
+    args: args,
+  );
+  final name = config.value(_ProjectOptions.name);
+  final enable = config.value(_ProjectOptions.enable);
+  ...
 ```
 
 > Note that options that are mandatory or have a default value have a guaranteed value.
@@ -219,7 +239,7 @@ They return a non-nullable type, while "optional" options return a nullable type
 
 ### Main classes
 
-An instance of the [OptionDefinition](lib/src/config/configuration.dart) class
+An instance of the [OptionDefinition](lib/src/config/options.dart) class
 defines an option.
 This is an abstract class and implemented by option Enum types
 as well as the base option class `ConfigOptionBase`. 
@@ -288,10 +308,10 @@ The library provides a rich set of typed options out of the box. All option type
 | Double | `DoubleOption` | `min`<br>`max` | Minimum allowed value<br>Maximum allowed value |
 | DateTime | `DateTimeOption` | `min`<br>`max` | Minimum allowed date/time<br>Maximum allowed date/time |
 | Duration | `DurationOption` | `min`<br>`max` | Minimum allowed duration<br>Maximum allowed duration |
-| Any Enum | `EnumOption<E>` | None | Typed enum values |
+| Any Enum | `EnumOption<E>` | `enumParser` | Required, the parser for the enum: `EnumParser(E.values)` |
 | File | `FileOption` | `mode` | Whether the file must exist, must not exist, or may exist |
 | Directory | `DirOption` | `mode` | Whether the directory must exist, must not exist, or may exist |
-| String List | `MultiStringOption` | `splitCommas` | Whether to split input on commas |
+| String List | `MultiStringOption` | `MultiStringOption.noSplit` | Constructor that keeps each input string as one element, instead of splitting it on commas |
 | Any List | `MultiOption<T>` | `multiParser` | Parser for the element type |
 
 It is easy to add custom option types, and to reuse the parsing code from existing option types. Just copy code from existing options and modify as needed.
@@ -338,16 +358,36 @@ sequenceDiagram
 
 ## Integration with commands
 
-In Dart, commands are often implemented using `Command` and `CommandRunner`
-from the `args` package.
+The config package has its own command framework, in the library
+`package:config/command.dart`. Its `CommandRunner` and `Command` classes build
+a command line application from a tree of commands, where each command has its
+own options. A command reads the resolved `Configuration` of its options from
+the context it is run with:
 
-To use the config library with these, they need to be subclassed
-to modify the use of `ArgParser` and introduce `Configuration`. This has
-already been done for you, with the `BetterCommand` and `BetterCommandRunner`
-classes in the `better_command_runner` library in the
-[`cli_tools package`](https://pub.dev/packages/cli_tools).
+```dart
+class LogCommand extends CommandImpl<LogOption, void> {
+  LogCommand()
+    : super(
+        name: 'log',
+        description: 'Show the logs.',
+        options: LogOption.values,
+      );
 
-See the full example [cli_tools/example/simple_command_example.dart](https://github.com/serverpod/cli_tools/blob/main/packages/cli_tools/example/simple_command_example.dart).
+  @override
+  void run(final CommandContext<LogOption, void> context) {
+    final limit = context.config.value(LogOption.limit);
+    final recentOpt = context.config.optionalValue(LogOption.recent);
+    ...
+  }
+}
+```
+
+See [README_command.md](README_command.md), and the full example
+[example/command_example.dart](example/command_example.dart).
+
+The `BetterCommandRunner` and `BetterCommand` classes of the
+[`cli_tools package`](https://pub.dev/packages/cli_tools) extend this framework
+with standard global options, log level handling, and analytics.
 
 ## Using configuration files
 
@@ -358,7 +398,7 @@ a `ConfigurationBroker` needs to be provided when resolving the
 ```dart
   Configuration.resolve(
     options: options,
-    argResults: argResults,
+    args: args,
     env: envVariables,
     configBroker: FileConfigBroker(),
   );
