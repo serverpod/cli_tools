@@ -21,6 +21,9 @@ void main() {
           '',
           'Usage: tool version',
           '',
+          'Options:',
+          '-h, --help    Print this usage information.',
+          '',
           'Run "tool help" to see global options.',
         ]),
       );
@@ -50,8 +53,9 @@ void main() {
           'Usage: tool greet --name=<name>',
           '',
           'Options:',
-          '--name    ',
-          '          (mandatory)',
+          '-h, --help    Print this usage information.',
+          '--name        ',
+          '              (mandatory)',
           '',
           'Run "tool help" to see global options.',
         ]),
@@ -87,6 +91,7 @@ void main() {
             'Usage: tool build [<arg0>] [--target=<target>] [--[no-]release]',
             '',
             'Options:',
+            '-h, --help        Print this usage information.',
             '-t, --target      ',
             '--[no-]release    ',
             '                  (defaults to false)',
@@ -126,7 +131,8 @@ void main() {
           'Usage: tool remote [--env=<env>] <subcommand> [arguments]',
           '',
           'Options:',
-          '-e, --env    ',
+          '-h, --help    Print this usage information.',
+          '-e, --env     ',
           '',
           'Available subcommands:',
           '  add   Add a remote',
@@ -163,8 +169,9 @@ void main() {
           'Usage: tool build --target=<target> <subcommand> [arguments]',
           '',
           'Options:',
-          '--target    ',
-          '            (mandatory)',
+          '-h, --help    Print this usage information.',
+          '--target      ',
+          '              (mandatory)',
           '',
           'Available subcommands:',
           '  version   Show the version',
@@ -357,6 +364,9 @@ void main() {
           'Show help for a command.',
           '',
           'Usage: tool help [<command>]',
+          '',
+          'Options:',
+          '-h, --help    Print this usage information.',
           '',
           'Available subcommands:',
           '  build   Build the app',
@@ -615,8 +625,10 @@ void main() {
             'Usage: tool build [--release]',
             '',
             'Options:',
-            '--release    Compile with optimizations',
-            '             for a production release.',
+            '-h, --help    Print this usage',
+            '              information.',
+            '--release     Compile with optimizations',
+            '              for a production release.',
             '',
             'Run "tool help" to see global options.',
           ]),
@@ -731,13 +743,16 @@ void main() {
       _runner(subcommands: [command]);
     });
 
-    test('when reading usage then no option sections are shown', () {
+    test('when reading usage then only the help option is shown', () {
       expect(
         command.usage,
         _usage(const [
           'Log in',
           '',
           'Usage: tool login',
+          '',
+          'Options:',
+          '-h, --help    Print this usage information.',
           '',
           'Run "tool help" to see global options.',
         ]),
@@ -768,6 +783,7 @@ void main() {
           'Usage: tool deploy',
           '',
           'Options:',
+          '-h, --help    Print this usage information.',
           '{endpoint}    Server endpoint',
           '              key "endpoint"',
           '',
@@ -804,6 +820,7 @@ void main() {
           'Usage: tool deploy [--endpoint=<endpoint>]',
           '',
           'Options:',
+          '-h, --help    Print this usage information.',
           '--endpoint    ',
           '              key "endpoint"',
           '              key "server.endpoint"',
@@ -841,9 +858,10 @@ void main() {
             'Usage: tool build [--zebra] [--alpha] [--middle]',
             '',
             'Options:',
-            '--zebra     ',
-            '--alpha     ',
-            '--middle    ',
+            '-h, --help    Print this usage information.',
+            '--zebra       ',
+            '--alpha       ',
+            '--middle      ',
             '',
             'Run "tool help" to see global options.',
           ]),
@@ -885,16 +903,17 @@ void main() {
                 '[--quiet] [--text]',
             '',
             'Options:',
-            '--zebra      ',
-            '--alpha      ',
+            '-h, --help    Print this usage information.',
+            '--zebra       ',
+            '--alpha       ',
             '',
             'Logging',
-            '--verbose    ',
-            '--quiet      ',
+            '--verbose     ',
+            '--quiet       ',
             '',
             'Output',
-            '--json       ',
-            '--text       ',
+            '--json        ',
+            '--text        ',
             '',
             'Run "tool help" to see global options.',
           ]),
@@ -933,8 +952,9 @@ void main() {
             'Usage: tool go [--pace=<pace>]',
             '',
             'Options:',
-            '--pace    How fast to go',
-            '          values: [fast, slow (default)]',
+            '-h, --help    Print this usage information.',
+            '--pace        How fast to go',
+            '              values: [fast, slow (default)]',
             '',
             'Run "tool help" to see global options.',
           ]),
@@ -1001,8 +1021,9 @@ void main() {
             'Usage: tool play [--suit=<suit>]',
             '',
             'Options:',
-            '--suit    Like in cards',
-            '          values: [spades, clubs (default), hearts, diamonds]',
+            '-h, --help    Print this usage information.',
+            '--suit        Like in cards',
+            '              values: [spades, clubs (default), hearts, diamonds]',
             '',
             'Run "tool help" to see global options.',
           ]),
@@ -1081,11 +1102,12 @@ void main() {
             'Usage: tool play [--suit=<suit>]',
             '',
             'Options:',
-            '--suit    Like in cards',
-            '          [spades]    Swords of a soldier',
-            '          [clubs]     Weapons of war (default)',
-            '          [diamonds]  Money for this art',
-            '          [hearts]    The shape of my heart',
+            '-h, --help    Print this usage information.',
+            '--suit        Like in cards',
+            '              [spades]    Swords of a soldier',
+            '              [clubs]     Weapons of war (default)',
+            '              [diamonds]  Money for this art',
+            '              [hearts]    The shape of my heart',
             '',
             'Run "tool help" to see global options.',
           ]),
@@ -1129,11 +1151,12 @@ void main() {
             'Usage: tool play [--suit=<suit>]...',
             '',
             'Options:',
-            '--suit    Like in cards',
-            '          [spades]    Swords of a soldier',
-            '          [clubs]     Weapons of war (default)',
-            '          [diamonds]  Money for this art',
-            '          [hearts]    The shape of my heart (default)',
+            '-h, --help    Print this usage information.',
+            '--suit        Like in cards',
+            '              [spades]    Swords of a soldier',
+            '              [clubs]     Weapons of war (default)',
+            '              [diamonds]  Money for this art',
+            '              [hearts]    The shape of my heart (default)',
             '',
             'Run "tool help" to see global options.',
           ]),
@@ -1171,6 +1194,7 @@ void main() {
           'Usage: tool write [--output-dir=<output-dir>]',
           '',
           'Options:',
+          '-h, --help          Print this usage information.',
           '-d, --output-dir    '
               'Override the directory to write the Dart source file to',
           '                    (defaults to <package-root>/packages/cli_tools/)',
@@ -1309,9 +1333,10 @@ void main() {
             'Usage: tool play [--count=<integer>]',
             '',
             'Options:',
-            '--count    How many',
-            '           integer',
-            '           values: [1 - 10] (defaults to 2)',
+            '-h, --help    Print this usage information.',
+            '--count       How many',
+            '              integer',
+            '              values: [1 - 10] (defaults to 2)',
             '',
             'Run "tool help" to see global options.',
           ]),
@@ -1372,6 +1397,9 @@ void main() {
             '',
             'Usage: tool get <package>',
             '',
+            'Options:',
+            '-h, --help    Print this usage information.',
+            '',
             'Run "tool help" to see global options.',
           ]),
         );
@@ -1409,6 +1437,9 @@ void main() {
             'Add a remote',
             '',
             'Usage: tool remote add <name>',
+            '',
+            'Options:',
+            '-h, --help    Print this usage information.',
             '',
             'Run "tool help" to see global options.',
           ]),
@@ -1449,9 +1480,10 @@ void main() {
             'Usage: tool play [--count=<integer>]',
             '',
             'Options:',
-            '--count    How many',
-            '           integer',
-            '           values: [1, 2 (default), 5]',
+            '-h, --help    Print this usage information.',
+            '--count       How many',
+            '              integer',
+            '              values: [1, 2 (default), 5]',
             '',
             'Run "tool help" to see global options.',
           ]),
@@ -1459,6 +1491,93 @@ void main() {
       },
     );
   });
+
+  group('Given a subcommand of a runner with global options', () {
+    const verbose = FlagOption(argName: 'verbose', argAbbrev: 'v');
+    const server = StringOption(argName: 'server');
+
+    group('when reading the usage of the subcommand', () {
+      late Command<OptionDefinition, void> command;
+
+      setUp(() {
+        command = _command(
+          name: 'build',
+          description: 'Build the app',
+          options: const [StringOption(argName: 'target')],
+        );
+        _runner(globalOptions: const [verbose, server], subcommands: [command]);
+      });
+
+      test('then of the global options only help is listed', () {
+        expect(
+          command.usage,
+          _usage(const [
+            'Build the app',
+            '',
+            'Usage: tool build [--target=<target>]',
+            '',
+            'Options:',
+            '-h, --help    Print this usage information.',
+            '--target      ',
+            '',
+            'Run "tool help" to see global options.',
+          ]),
+        );
+      });
+    });
+
+    group('when the subcommand adds a global option '
+        'to its inherited usage options', () {
+      late Command<OptionDefinition, void> command;
+
+      setUp(() {
+        command = _InheritingCommand(
+          name: 'build',
+          description: 'Build the app',
+          inherited: const [verbose],
+          options: const [StringOption(argName: 'target')],
+        );
+        _runner(globalOptions: const [verbose, server], subcommands: [command]);
+      });
+
+      test('then that global option is listed after help '
+          'and before the own options', () {
+        expect(
+          command.usage,
+          _usage(const [
+            'Build the app',
+            '',
+            'Usage: tool build [--target=<target>]',
+            '',
+            'Options:',
+            '-h, --help            Print this usage information.',
+            '-v, --[no-]verbose    ',
+            '--target              ',
+            '',
+            'Run "tool help" to see global options.',
+          ]),
+        );
+      });
+    });
+  });
+}
+
+/// A command whose usage also lists the [inherited] options of its parents.
+class _InheritingCommand extends _UsageCommand {
+  _InheritingCommand({
+    required super.name,
+    required super.description,
+    required this.inherited,
+    super.options,
+  });
+
+  final List<OptionDefinition> inherited;
+
+  @override
+  List<OptionDefinition> get inheritedUsageOptions => [
+    ...super.inheritedUsageOptions,
+    ...inherited,
+  ];
 }
 
 Command<OptionDefinition, void> _command({

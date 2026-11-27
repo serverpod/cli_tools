@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import '../../config/config.dart' show OptionDefinition;
 import '../abstract_command.dart' show AbstractCommand;
+import '../command.dart' show Command;
 import 'invocation_synopsis.dart' show commandInvocationSynopsis;
 import 'options_usage.dart';
 
@@ -82,7 +83,10 @@ String commandUsage(
     );
   }
 
-  final options = _visibleOptions(command.options);
+  final options = _visibleOptions([
+    if (command is Command) ...command.inheritedUsageOptions,
+    ...command.options,
+  ]);
   if (options.isNotEmpty) {
     buffer.writeln(
       getOptionsUsage(

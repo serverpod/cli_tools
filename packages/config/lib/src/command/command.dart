@@ -68,6 +68,16 @@ abstract class Command<O extends OptionDefinition, T>
              usageGenerator ?? const StandardCommandUsageGenerator(),
        );
 
+  /// The persistent options of the parent commands that are listed in this
+  /// command's usage, before its own [options].
+  /// This affects the usage text only.
+  ///
+  /// By default the built-in global options of the runner, i.e. `--help`.
+  /// Override to list a bespoke subset of the parents' persistent options,
+  /// for example the global options that are most relevant to this command.
+  List<OptionDefinition> get inheritedUsageOptions =>
+      hasParent ? runner.builtinPersistentOptions : const [];
+
   @override
   FutureOr<T?> runAsLeaf(final CommandContext<O, T> context) {
     return run(context);
