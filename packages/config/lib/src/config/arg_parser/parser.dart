@@ -45,8 +45,9 @@ ArgParseResult<O> scanAndParseArgs<O extends OptionDefinition>(
 /// treating the args as a command line potentially containing subcommands.
 ///
 /// A subcommand whose name or alias uses option syntax (`--version`, `-v`)
-/// is considered an "action option". It is run as a command although it has
-/// the name syntax of an option.
+/// is an "option-like command". It is run as a command although it has
+/// the name syntax of an option. It resembles an action option but is not one:
+/// actual action options are option definitions with `ActionOptionMixin`.
 ///
 /// Usage problems are recorded on the [ArgParseResult] for the command
 /// whose arguments contained them, and parsing continues.
@@ -122,6 +123,13 @@ class _ArgCursor {
   final List<ScannedArg> _args;
   int _argIndex = 0;
   int _tokenIndex = -1;
+
+  /// The first exclusive action option written on the command line, and how
+  /// it was written. Null until one is written.
+  ({ConfigOptionBase option, String written})? actionOption;
+
+  /// The exclusive action options of the commands entered so far.
+  final Set<ConfigOptionBase> exclusiveActionOptions = {};
 
   _ArgCursor(this._args);
 
@@ -227,6 +235,10 @@ ArgParseResult<O> _parseArgs<O extends OptionDefinition>(
     ...?command?.allOptions(),
     ...?options,
   ];
+  scannedArgs.exclusiveActionOptions.addAll([
+    for (final option in ownOptions)
+      if (_isExclusiveActionOption(option)) option.option,
+  ]);
 
   // Spread keeps ancestor registration order. Re-inserting an option this
   // command also defines moves that key to the end, so a later command sees
@@ -428,6 +440,17 @@ void _assignOption<O extends OptionDefinition>({
   required final bool longOption,
 }) {
   final written = '${longOption ? '--' : '-'}$name';
+  if (scannedArgs.exclusiveActionOptions.contains(option)) {
+    final first = scannedArgs.actionOption ??= (
+      option: option,
+      written: written,
+    );
+    if (first.option != option) {
+      result.errors.add(
+        'Option $written cannot be combined with ${first.written}',
+      );
+    }
+  }
   switch (option.option) {
     case final FlagOption flag:
       if (_recordIfSpecifiedMoreThanOnce(
@@ -466,6 +489,17 @@ void _assignOption<O extends OptionDefinition>({
         target.regularOptions[option] = value;
       }
   }
+}
+
+/// Whether [definition] is an exclusive action option.
+///
+/// The action option is either the definition itself, such as an enum value,
+/// or the option that it wraps.
+bool _isExclusiveActionOption(final OptionDefinition definition) {
+  final action = definition is ActionOptionDefinition
+      ? definition
+      : definition.option;
+  return action is ActionOptionDefinition && action.isExclusive;
 }
 
 bool _isNegatedFlag(final FlagOption flag, final String name) {
@@ -635,7 +669,7 @@ void _rejectSubcommandSpelling(
 }
 
 /// Whether [name] is a long option (`--version`) or a one-character short
-/// option (`-v`), the spellings the parser can select as action options.
+/// option (`-v`), the spellings the parser can select as option-like commands.
 bool _isOptionLikeCommandName(final String name) {
   if (name.startsWith('--')) {
     return name.length > 2 && !name.contains('=');
@@ -684,8 +718,8 @@ bool _recordIfSpecifiedMoreThanOnce(
 
 /// Selects the first subcommand whose name or alias is [name].
 ///
-/// Action options call this with the option spelling (`--version`, `-v`)
-/// after no defined option matched that spelling.
+/// Option-like commands are selected by calling this with the option spelling
+/// (`--version`, `-v`) after no defined option matched that spelling.
 bool _enterMatchedSubcommand<O extends OptionDefinition>({
   required final ArgParseResult<O> result,
   required final _ArgCursor scannedArgs,
@@ -698,6 +732,12 @@ bool _enterMatchedSubcommand<O extends OptionDefinition>({
   if (subcommands == null || subcommands.isEmpty) return false;
   if (_matchSubcommand(subcommands, name)
       case final CommandDefinition subcommand) {
+    if (scannedArgs.actionOption case final actionOption?) {
+      result.errors.add(
+        'Subcommand "$name" cannot be specified after '
+        '${actionOption.written}',
+      );
+    }
     result.child = _parseArgs(
       scannedArgs,
       command: subcommand,

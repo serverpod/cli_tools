@@ -760,6 +760,69 @@ void main() {
     });
   });
 
+  group('Given a runner with a global version action option', () {
+    late List<String> trace;
+    late TracingRunner runner;
+    late RecordingCommand build;
+    late _CapturedUsage usage;
+
+    setUp(() {
+      trace = [];
+      usage = _CapturedUsage();
+      build = _buildCommand(trace);
+      runner = TracingRunner(
+        trace,
+        globalOptions: [_VersionAction(trace)],
+        usageOutput: usage.handler,
+        subcommands: [build],
+      );
+    });
+
+    for (final args in [
+      ['--help', '--version'],
+      ['--version', '--help'],
+    ]) {
+      group('when ${args.join(' ')} is passed', () {
+        setUp(() async {
+          await runner.run(args);
+        });
+
+        test('then usage for the runner is printed to standard output', () {
+          expect(usage.out.toString(), runner.usage);
+          expect(usage.err.toString(), isEmpty);
+        });
+
+        test('then the version action option does not run', () {
+          expect(trace, isEmpty);
+        });
+      });
+    }
+
+    for (final args in [
+      ['build', '--help', '--version'],
+      ['build', '--version', '--help'],
+    ]) {
+      group('when ${args.join(' ')} is passed', () {
+        setUp(() async {
+          await runner.run(args);
+        });
+
+        test(
+          'then usage for the build command is printed to standard output',
+          () {
+            expect(usage.out.toString(), build.usage);
+            expect(usage.err.toString(), isEmpty);
+          },
+        );
+
+        test('then neither the version action option '
+            'nor the build command runs', () {
+          expect(trace, isEmpty);
+        });
+      });
+    }
+  });
+
   group('Given a visible command and a hidden command', () {
     late List<String> trace;
     late TracingRunner runner;
@@ -1017,6 +1080,21 @@ Future<UsageException?> _captureUsageError(
     return error;
   }
   return null;
+}
+
+/// A `--version` action option that records its run in [trace].
+class _VersionAction extends FlagOption with ActionOptionMixin<bool> {
+  _VersionAction(this.trace) : super(argName: 'version', negatable: false);
+
+  final List<String> trace;
+
+  @override
+  FutureOr<R?> run<O extends OptionDefinition, R>(
+    final CommandContext<O, R> context,
+  ) {
+    trace.add('version');
+    return null;
+  }
 }
 
 /// Buffers passed to [UsageOutputHandler] so tests can read usage text.

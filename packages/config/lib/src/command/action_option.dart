@@ -1,6 +1,6 @@
 import 'dart:async' show FutureOr;
 
-import '../../config.dart' show OptionDefinition;
+import '../../config.dart' show ActionOptionDefinition, OptionDefinition;
 import 'command_context.dart';
 
 /// ActionOptionMixin can be added to an option definition to make CommandRunner
@@ -8,7 +8,16 @@ import 'command_context.dart';
 ///
 /// As a convenience, access the full option object via the inherited [option]
 /// getter.
-mixin ActionOptionMixin<V> implements OptionDefinition<V> {
+mixin ActionOptionMixin<V> implements ActionOptionDefinition<V> {
+  /// Whether this action option takes the place of a subcommand, so that it
+  /// is a usage error to write a subcommand or another exclusive action
+  /// option after it on the command line.
+  ///
+  /// True by default. `--help` is not exclusive: it can be written anywhere
+  /// on the command line.
+  @override
+  bool get isExclusive => true;
+
   /// Whether this action option accepts a partial command line,
   /// i.e. runs even if the command line is incomplete.
   ///

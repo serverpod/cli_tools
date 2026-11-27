@@ -875,6 +875,17 @@ void main() {
       );
     });
 
+    for (final args in [
+      ['--help', '--completion', 'bash'],
+      ['--completion', 'bash', '--help'],
+    ]) {
+      test('when running `${args.join(' ')}` '
+          'then the usage is printed instead of the script', () async {
+        await runner.run(args);
+        expect(out.toString(), runner.usage);
+      });
+    }
+
     test('when running `--completion` with an unknown shell '
         'then the invalid value is reported', () async {
       await expectLater(

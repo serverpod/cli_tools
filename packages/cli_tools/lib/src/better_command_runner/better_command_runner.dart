@@ -176,7 +176,7 @@ class BetterCommandRunner<O extends OptionDefinition, T>
         final analyticsEnabled = await determineAnalyticsSettings(ctx);
         ctx.provider.store(AnalyticsEnabled(analyticsEnabled));
         if (analyticsEnabled) {
-          final actionOption = ctx.specifiedActionOptions().firstOrNull;
+          final actionOption = ctx.specifiedActionOption;
           final commandName = actionOption is HelpActionOption
               ? BetterCommandRunnerAnalyticsEvents.help
               : actionOption?.option.toString() ??

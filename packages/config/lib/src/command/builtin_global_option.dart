@@ -32,6 +32,10 @@ class HelpActionOption extends FlagOption with ActionOptionMixin<bool> {
         helpText: 'Print this usage information.',
       );
 
+  /// Help can be written anywhere on the command line.
+  @override
+  bool get isExclusive => false;
+
   @override
   FutureOr<R?> run<O extends OptionDefinition, R>(
     final CommandContext<O, R> context,
