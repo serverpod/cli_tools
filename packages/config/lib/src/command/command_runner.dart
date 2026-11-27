@@ -452,7 +452,7 @@ class CommandRunner<O extends OptionDefinition, T>
   /// [usageOutput] the same way as for configuration input errors.
   Future<T?> runCommandLine(final CommandContext<O, T> contexts) async {
     try {
-      return await _runNested(contexts);
+      return await innerRunCommandLine(contexts);
     } on UsageException catch (e, s) {
       // commands may implement custom usage checks and throw UsageException
       final exception = usageOutput.onUsageException(e, fromCommand: this);
@@ -466,10 +466,15 @@ class CommandRunner<O extends OptionDefinition, T>
   /// The first command's middleware is the outermost span. Each following
   /// command's middleware runs inside the previous command's middleware.
   /// Only the last command's [run] or the action option's [run] is invoked.
+  Future<T?> innerRunCommandLine(final CommandContext<O, T> contexts) async {
+    return _runNested(contexts);
+  }
+
+  /// Runs the remaining commands on the command line as one nested middleware chain.
   FutureOr<T?> _runNested(
     final CommandContext<OptionDefinition, T> context,
   ) {
-    final actionOption = context.specifiedActionOptions().firstOrNull;
+    final actionOption = context.specifiedActionOption;
     if (actionOption != null) {
       return context.command.runCommand(
         context,

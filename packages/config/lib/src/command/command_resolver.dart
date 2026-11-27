@@ -194,7 +194,7 @@ class StandardCommandResolver<O extends OptionDefinition, T>
 ActionOptionMixin? _specifiedActionOption(final CommandContext contexts) {
   CommandContext? context = contexts;
   while (context != null) {
-    final actionOption = context.specifiedActionOptions().firstOrNull;
+    final actionOption = context.specifiedActionOption;
     if (actionOption != null) return actionOption;
     context = context.next;
   }

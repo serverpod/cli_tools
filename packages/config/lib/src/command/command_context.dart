@@ -84,22 +84,28 @@ class CommandContext<O extends OptionDefinition, T> {
     return nextContext == null ? this : nextContext.leaf();
   }
 
-  /// Returns the action options of the command that were specified on the
-  /// command line, if any.
-  ///
-  /// If non-empty, the first one is run instead of the command.
-  List<ActionOptionMixin> specifiedActionOptions() {
+  bool _cachedSpecifiedActionOptionIsSet = false;
+  ActionOptionMixin? _cachedSpecifiedActionOption;
+
+  /// Returns the action option of the command that was specified on the
+  /// command line, if any. If non-null, it is run instead of a command.
+  ActionOptionMixin? get specifiedActionOption {
+    if (_cachedSpecifiedActionOptionIsSet) {
+      return _cachedSpecifiedActionOption;
+    }
     final allArgOptions = [
-      ...config.optionsWhereSource(
-        (final ValueSourceType s) => s == ValueSourceType.arg,
-      ),
       ...builtinConfig.optionsWhereSource(
         (final ValueSourceType s) => s == ValueSourceType.arg,
       ),
+      ...config.optionsWhereSource(
+        (final ValueSourceType s) => s == ValueSourceType.arg,
+      ),
     ];
-    return allArgOptions
+    _cachedSpecifiedActionOption = allArgOptions
         .map((final o) => o is ActionOptionMixin ? o : o.option)
         .whereType<ActionOptionMixin>()
-        .toList();
+        .firstOrNull;
+    _cachedSpecifiedActionOptionIsSet = true;
+    return _cachedSpecifiedActionOption;
   }
 }

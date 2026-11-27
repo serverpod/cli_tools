@@ -1923,11 +1923,11 @@ void main() {
       );
     });
 
-    group('when --version precedes a subcommand', () {
+    group('when --version follows a subcommand', () {
       late String? result;
 
       setUp(() async {
-        result = await runner.run(['--version', 'project']);
+        result = await runner.run(['project', '--version']);
       });
 
       test(
@@ -2031,7 +2031,7 @@ void main() {
       late String? result;
 
       setUp(() async {
-        result = await runner.run(['--version', 'project']);
+        result = await runner.run(['project', '--version']);
       });
 
       test('then that enum runs and the subcommand does not', () {

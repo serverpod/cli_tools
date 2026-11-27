@@ -48,6 +48,18 @@ abstract interface class CommandDefinition<O extends OptionDefinition> {
   bool get passThroughArgs => false;
 }
 
+/// An option that is run like a subcommand when it is written on the command
+/// line, see `ActionOptionMixin`.
+///
+abstract interface class ActionOptionDefinition<V>
+    implements OptionDefinition<V> {
+  /// Whether this action option takes the place of a subcommand.
+  /// If true it is a usage error to write a subcommand or another
+  /// exclusive action option after it.
+  /// If false it can be written anywhere on the command line, like `--help`.
+  bool get isExclusive;
+}
+
 class CommandUsageDefinition {
   /// A description of this command, included in usage.
   final String description;

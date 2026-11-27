@@ -3114,6 +3114,117 @@ void main() {
       ]);
     });
   });
+
+  group('Given a command with action options and a subcommand', () {
+    const help = _ActionFlag(argName: 'help', isExclusive: false);
+    const version = _ActionFlag(argName: 'version', argAbbrev: 'V');
+    final build = TestCommand(name: 'build');
+    final root = TestCommand(
+      name: 'tool',
+      persistentOptions: [help, version, _EnumAction.license],
+      subcommands: [build],
+      canRunAsLeafCommand: true,
+    );
+
+    ArgParseResult parse(final List<String> args) {
+      return scanAndParseCommands(args, rootCommand: root);
+    }
+
+    List<String> allErrors(final List<String> args) {
+      return [for (final result in parse(args).toList()) ...result.errors];
+    }
+
+    test('when an exclusive action option follows the subcommand '
+        'then there are no errors', () {
+      expect(allErrors(['build', '--version']), isEmpty);
+    });
+
+    group('when the subcommand follows an exclusive action option', () {
+      late ArgParseResult result;
+
+      setUp(() {
+        result = parse(['-V', 'build']);
+      });
+
+      test('then the subcommand is reported', () {
+        expect(result.errors, [
+          'Subcommand "build" cannot be specified after -V',
+        ]);
+      });
+
+      test('then the subcommand is still parsed', () {
+        expect(childResult(result).command, same(build));
+      });
+    });
+
+    test('when the subcommand follows an exclusive action option '
+        'that is an enum value then the subcommand is reported', () {
+      expect(parse(['--license', 'build']).errors, [
+        'Subcommand "build" cannot be specified after --license',
+      ]);
+    });
+
+    test('when another exclusive action option follows an exclusive one '
+        'then the later one is reported', () {
+      expect(parse(['--version', '--license']).errors, [
+        'Option --license cannot be combined with --version',
+      ]);
+    });
+
+    test('when an exclusive action option on the subcommand follows another '
+        'then it is reported on the subcommand', () {
+      expect(childResult(parse(['--version', 'build', '--license'])).errors, [
+        'Option --license cannot be combined with --version',
+      ]);
+    });
+
+    test('when the same exclusive action option is repeated '
+        'then only the repetition is reported', () {
+      expect(parse(['--version', '-V']).errors, [
+        'Option --version cannot be specified more than once',
+      ]);
+    });
+
+    test('when the subcommand follows an action option that is not exclusive '
+        'then there are no errors', () {
+      expect(allErrors(['--help', 'build']), isEmpty);
+    });
+
+    test('when an action option that is not exclusive precedes '
+        'an exclusive one then there are no errors', () {
+      expect(allErrors(['--help', '--version']), isEmpty);
+    });
+
+    test('when an action option that is not exclusive follows '
+        'an exclusive one then there are no errors', () {
+      expect(allErrors(['--version', '--help']), isEmpty);
+    });
+  });
+}
+
+/// A flag that the parser treats as an action option.
+class _ActionFlag extends FlagOption implements ActionOptionDefinition<bool> {
+  const _ActionFlag({
+    super.argName,
+    super.argAbbrev,
+    this.isExclusive = true,
+  }) : super(negatable: false);
+
+  @override
+  final bool isExclusive;
+}
+
+/// An option enum whose values, not their options, are the action options.
+enum _EnumAction<V extends Object> implements ActionOptionDefinition<V> {
+  license(FlagOption(argName: 'license', negatable: false));
+
+  const _EnumAction(this.option);
+
+  @override
+  final ConfigOptionBase<V> option;
+
+  @override
+  bool get isExclusive => true;
 }
 
 const _verbose = FlagOption(argName: 'verbose', argAbbrev: 'v');
