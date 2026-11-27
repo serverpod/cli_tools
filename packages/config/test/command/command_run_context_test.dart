@@ -905,6 +905,106 @@ void main() {
     );
   });
 
+  group('Given a command whose configuration broker reads a global option', () {
+    const profile = StringOption(
+      argName: 'profile',
+      mandatory: true,
+      allowedValues: ['dev', 'prod'],
+    );
+    const user = StringOption(
+      argName: 'user',
+      configKey: 'user',
+      mandatory: true,
+    );
+
+    late List<String> trace;
+    late StringBuffer out;
+    late StringBuffer err;
+    late Command<OptionDefinition, String> command;
+    late CommandRunner<OptionDefinition, String> runner;
+
+    setUp(() {
+      trace = [];
+      out = StringBuffer();
+      err = StringBuffer();
+      command = _DependentBrokerCommand<OptionDefinition, String>(
+        name: 'greet',
+        description: 'Greet',
+        options: [user],
+        createBroker: (final prevContext) {
+          final profileName = prevContext!.root().config.value(profile);
+          return _MapBroker({'user': 'ada@$profileName'});
+        },
+        middlewares: [
+          (final next) => (final context) {
+            trace.add('middleware');
+            return next(context);
+          },
+        ],
+        run: (final context) {
+          trace.add('run');
+          return context.config.value(user);
+        },
+      );
+      runner = CommandRunner<OptionDefinition, String>(
+        'tool',
+        'Tools',
+        globalOptions: [profile],
+        usageOutput: UsageOutputHandler(
+          sinks: OutputSinks(out: out, err: err),
+        ),
+        subcommands: [command],
+      );
+    });
+
+    test(
+      'when the global option is valid '
+      'then the command receives the value from that broker',
+      () async {
+        expect(await runner.run(['--profile', 'dev', 'greet']), 'ada@dev');
+      },
+    );
+
+    group('when the global option is invalid', () {
+      late UsageException? error;
+
+      setUp(() async {
+        error = null;
+        try {
+          await runner.run(['--profile', 'nope', 'greet']);
+        } on UsageException catch (e) {
+          error = e;
+        }
+      });
+
+      test('then only the global option is reported', () {
+        expect(
+          error?.message,
+          'tool: Invalid value for option "--profile": '
+          '`nope` is not an allowed value for option "--profile"',
+        );
+      });
+
+      test("then the error and the runner's usage are printed", () {
+        expect(err.toString(), '${error!.message}\n\n${runner.usage}');
+      });
+
+      test('then the command and its middleware do not run', () {
+        expect(trace, isEmpty);
+      });
+    });
+
+    test(
+      'when the global option is missing and help is requested for the command '
+      "then that command's usage is printed",
+      () async {
+        await runner.run(['greet', '--help']);
+
+        expect(out.toString(), command.usage);
+      },
+    );
+  });
+
   group('Given a runner with result type Object?', () {
     test(
       'when a null-returning command runs under a runner middleware '
@@ -1025,6 +1125,35 @@ class _BrokerCommand<O extends OptionDefinition, T> extends CommandImpl<O, T> {
   ConfigurationBroker? configBroker(
     final CommandContext<OptionDefinition, T>? prevContext,
   ) => broker;
+
+  @override
+  FutureOr<T?> run(final CommandContext<O, T> context) => _run(context);
+}
+
+/// A command whose configuration broker is created from the context of the
+/// preceding command.
+class _DependentBrokerCommand<O extends OptionDefinition, T>
+    extends CommandImpl<O, T> {
+  _DependentBrokerCommand({
+    required super.name,
+    required super.description,
+    required this.createBroker,
+    required final CommandRunFunction<O, T> run,
+    super.options,
+    super.middlewares,
+  }) : _run = run;
+
+  final ConfigurationBroker? Function(
+    CommandContext<OptionDefinition, T>? prevContext,
+  )
+  createBroker;
+
+  final CommandRunFunction<O, T> _run;
+
+  @override
+  ConfigurationBroker? configBroker(
+    final CommandContext<OptionDefinition, T>? prevContext,
+  ) => createBroker(prevContext);
 
   @override
   FutureOr<T?> run(final CommandContext<O, T> context) => _run(context);
