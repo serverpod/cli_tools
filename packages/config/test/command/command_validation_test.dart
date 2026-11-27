@@ -218,4 +218,107 @@ void main() {
       },
     );
   });
+
+  group(
+    'Given a completion request and two subcommands with the same name',
+    () {
+      late StringBuffer out;
+      late StringBuffer err;
+
+      setUp(() async {
+        out = StringBuffer();
+        err = StringBuffer();
+        final runner = CommandRunner<OptionDefinition, String>(
+          'tool',
+          'Tools',
+          usageOutput: UsageOutputHandler(sinks: OutputSinks(err: err)),
+          completion: CompletionSettings(
+            hideCommand: true,
+            sinks: OutputSinks(out: out, err: err),
+          ),
+          subcommands: [
+            RecordingCommand(
+              name: 'build',
+              description: 'Build the app',
+              trace: [],
+            ),
+            RecordingCommand(
+              name: 'build',
+              description: 'Build again',
+              trace: [],
+            ),
+          ],
+        );
+        await runner.run(['__complete', '']);
+      });
+
+      test('when a completion request is served for the first word '
+          'then both subcommands are offered', () {
+        expect(
+          out.toString(),
+          'build\tBuild the app\n'
+          'build\tBuild again\n'
+          ':${CompletionDirective.noFileCompletion}\n',
+        );
+      });
+
+      test('when a completion request is served for the first word '
+          'then no completion failure is reported', () {
+        expect(err.toString(), isEmpty);
+      });
+    },
+  );
+
+  group(
+    'Given a completion request and a command with two options of the same name',
+    () {
+      late StringBuffer out;
+      late StringBuffer err;
+
+      setUp(() async {
+        out = StringBuffer();
+        err = StringBuffer();
+        final runner = CommandRunner<OptionDefinition, String>(
+          'tool',
+          'Tools',
+          usageOutput: UsageOutputHandler(sinks: OutputSinks(err: err)),
+          completion: CompletionSettings(
+            hideCommand: true,
+            sinks: OutputSinks(out: out, err: err),
+          ),
+          subcommands: [
+            RecordingCommand<OptionDefinition>(
+              name: 'build',
+              description: 'Build the app',
+              trace: [],
+              options: const [
+                StringOption(
+                  argName: 'target',
+                  allowedValues: ['app', 'lib'],
+                ),
+                StringOption(
+                  argName: 'target',
+                  allowedValues: ['app', 'lib'],
+                ),
+              ],
+            ),
+          ],
+        );
+        await runner.run(['__complete', 'build', '--target', '']);
+      });
+
+      test('when a completion request is served for an option value '
+          'then the allowed values are offered', () {
+        expect(
+          out.toString(),
+          'app\nlib\n:${CompletionDirective.noFileCompletion}\n',
+        );
+      });
+
+      test('when a completion request is served for an option value '
+          'then no completion failure is reported', () {
+        expect(err.toString(), isEmpty);
+      });
+    },
+  );
 }

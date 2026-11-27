@@ -43,9 +43,16 @@ OldParsedArgs legacyParsedArgsFromArgResults(final ArgResults argResults) {
 
 NewParsedArgs newParsedArgs(
   final Iterable<OptionDefinition> options,
-  final Iterable<String> args,
-) {
-  return NewParsedArgs(scanAndParseArgs(args, options: options));
+  final Iterable<String> args, {
+  final bool validateDefinitions = true,
+}) {
+  return NewParsedArgs(
+    scanAndParseArgs(
+      args,
+      options: options,
+      validateDefinitions: validateDefinitions,
+    ),
+  );
 }
 
 /// A proxy (wrapper) for the parsed command-line arguments for an individual

@@ -31,6 +31,7 @@ import 'option_value_completion.dart';
 /// The partial command line is parsed with the regular argument parser,
 /// so the same rules apply as when running the command line: persistent
 /// options, option aliases and abbreviations, `--option=value`, `--`, etc.
+/// Command and option definitions are not checked.
 ///
 /// The engine never throws; on any error it responds with
 /// [CompletionDirective.error].
@@ -113,6 +114,7 @@ class CompletionEngine<O extends OptionDefinition, T> {
       [...preceding, _sentinel],
       rootCommand: rootCommand,
       settings: parserSettings,
+      validateDefinitions: false,
     );
     final chain = parsed.toList();
     final line = _CommandLine(

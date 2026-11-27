@@ -246,6 +246,7 @@ abstract class AbstractCommand<O extends OptionDefinition, T>
       configBroker: _configBrokerFor(prevContext),
       ignoreUnexpectedPositionalArgs:
           ignoreUnexpectedPositionalArgs || passThroughArgs,
+      validateDefinitions: runMode != CommandRunMode.completion,
     );
 
     return CommandContext<O, T>(

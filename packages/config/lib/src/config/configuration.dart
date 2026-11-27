@@ -90,6 +90,9 @@ class Configuration<O extends OptionDefinition> {
   /// If [ignoreUnexpectedPositionalArgs] is true, unexpected positional
   /// arguments will be ignored, and available as [remainingPosArgs].
   /// If false they will be reported as errors.
+  ///
+  /// When [validateDefinitions] is false, option definitions are not checked
+  /// and an invalid definition does not throw.
   /// {@endtemplate}
   ///
   /// This does not throw upon value parsing or validation errors,
@@ -103,13 +106,18 @@ class Configuration<O extends OptionDefinition> {
     final ConfigurationBroker? configBroker,
     final Map<O, Object?>? presetValues,
     final bool ignoreUnexpectedPositionalArgs = false,
+    final bool validateDefinitions = true,
   }) : _options = List<O>.from(options),
        _config = <O, OptionResolutionImpl>{},
        _errors = <String>[] {
     if (argResults != null) {
       parsedArgs = legacyParsedArgsFromArgResults(argResults);
     } else if (args != null) {
-      parsedArgs = newParsedArgs(options, args);
+      parsedArgs = newParsedArgs(
+        options,
+        args,
+        validateDefinitions: validateDefinitions,
+      );
     }
 
     _resolveWithArgResults(
@@ -118,6 +126,7 @@ class Configuration<O extends OptionDefinition> {
       configBroker: configBroker,
       presetValues: presetValues,
       ignoreUnexpectedPositionalArgs: ignoreUnexpectedPositionalArgs,
+      validateDefinitions: validateDefinitions,
     );
   }
 
@@ -135,13 +144,18 @@ class Configuration<O extends OptionDefinition> {
     final ConfigurationBroker? configBroker,
     final Map<O, Object?>? presetValues,
     final bool ignoreUnexpectedPositionalArgs = false,
+    final bool validateDefinitions = true,
   }) : _options = List<O>.from(options),
        _config = <O, OptionResolutionImpl>{},
        _errors = <String>[] {
     if (argResults != null) {
       parsedArgs = legacyParsedArgsFromArgResults(argResults);
     } else if (args != null) {
-      parsedArgs = newParsedArgs(options, args);
+      parsedArgs = newParsedArgs(
+        options,
+        args,
+        validateDefinitions: validateDefinitions,
+      );
     }
 
     _resolveWithArgResults(
@@ -150,6 +164,7 @@ class Configuration<O extends OptionDefinition> {
       configBroker: configBroker,
       presetValues: presetValues,
       ignoreUnexpectedPositionalArgs: ignoreUnexpectedPositionalArgs,
+      validateDefinitions: validateDefinitions,
     );
 
     throwExceptionOnErrors();
@@ -309,8 +324,11 @@ class Configuration<O extends OptionDefinition> {
     final ConfigurationBroker? configBroker,
     final Map<O, Object?>? presetValues,
     final bool ignoreUnexpectedPositionalArgs = false,
+    final bool validateDefinitions = true,
   }) {
-    validateOptions(_options);
+    if (validateDefinitions) {
+      validateOptions(_options);
+    }
 
     _errors.addAll(parsedArgs?.parseErrors ?? []);
 
