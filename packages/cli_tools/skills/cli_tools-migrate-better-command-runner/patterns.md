@@ -403,7 +403,9 @@ enum GlobalOption<V extends Object> implements OptionDefinition<V> {
 }
 ```
 
-- The option is defined on the command where it is valid. A global action option is valid anywhere on the command line.
+- The option is defined on the command where it is valid. A global action option is valid on the runner and after every command.
+- It takes the place of a subcommand. A subcommand or another action option after it is a usage error: `<executable> --version <command>` fails, `<executable> <command> --version` runs. Regular options may follow it.
+- `--help` is exempt: it is valid anywhere on the line, and with an action option on the same line the usage is printed.
 - When it is given, it runs instead of every command. The middlewares run from the root through the command that defines the option, so its `run` reads collaborators from the context like a command does.
 - It also runs on an incomplete command line: a missing mandatory option or subcommand is not an error. An unknown option or command still is.
 - `context` is the context of the command that defines the option.
