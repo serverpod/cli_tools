@@ -147,7 +147,7 @@ Done when all of these are true:
 
 - No command name or alias starts with `-`.
 - No middleware and no command tests an option value in order to skip the command.
-- Tests run each action option alone, before a subcommand, after a subcommand, and on a command line with a mandatory option missing.
+- Tests run each action option alone, after its subcommand, on a command line with a mandatory option missing, and before another subcommand, which is a usage error.
 
 ### 8. Update the entry point, completion, tools, and descriptions
 

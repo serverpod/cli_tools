@@ -62,7 +62,7 @@ Usage text:
 
 - The usage line of the root is `Usage: <executable> [global-options] <command> [arguments]`.
 - The usage line of a command is the generated synopsis, for example `Usage: <executable> greet --name=<name> [--region=<region>]`. It was `Usage: <executable> greet [arguments]`. An `invocation` override that restated the command line is removed, so the baseline shows this generated line. An override kept because the synopsis does not describe the command stays, and the report names it.
-- The option list of a command has a new layout, and no `-h, --help` row.
+- The option list of a command has a new layout. Its first row is `-h, --help`, as before.
 - The root usage lists the built-in `completion` command.
 
 Usage errors:
@@ -81,7 +81,8 @@ Command line:
 
 - `--help` after a command with missing mandatory options prints the usage, as before. `help <command>` does the same.
 - `help <command>` does not find a hidden command. `<command> --help` does.
-- An action option runs wherever it is valid on the line, also next to a subcommand.
+- An action option takes the place of a subcommand: a subcommand or another action option after it is a usage error. An option-style command that was accepted before a subcommand is a usage error there now.
+- `--help` is exempt and is valid anywhere on the line. With an action option on the same line, the usage is printed.
 - On a shared spelling, the subcommand option shadows the parent option. Both definitions stay. The migration notes record each collision, and the report lists them.
 
 Analytics, with `BetterCommandRunner`:
