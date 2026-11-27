@@ -24,13 +24,20 @@ const String subcommandRequiredErrorPrefix = 'A subcommand is required under ';
 ///
 /// Does not handle subcommands.
 /// Usage problems are recorded on [ArgParseResult.errors] and parsing
-/// continues. Invalid option definitions still throw.
+/// continues.
+///
+/// Invalid option definitions throw when [validateDefinitions] is true,
+/// the default. When it is false, those checks are skipped and an invalid
+/// definition does not throw.
 ArgParseResult<O> scanAndParseArgs<O extends OptionDefinition>(
   final Iterable<String> args, {
   required final Iterable<O> options,
   final ParserSettings settings = const ParserSettings(),
+  final bool validateDefinitions = true,
 }) {
-  validateOptions(options);
+  if (validateDefinitions) {
+    validateOptions(options);
+  }
 
   final scannedArgs = scanArgs(args);
 
@@ -51,13 +58,19 @@ ArgParseResult<O> scanAndParseArgs<O extends OptionDefinition>(
 ///
 /// Usage problems are recorded on the [ArgParseResult] for the command
 /// whose arguments contained them, and parsing continues.
-/// Invalid command or option definitions still throw.
+///
+/// Invalid command or option definitions throw when [validateDefinitions]
+/// is true, the default. When it is false, those checks are skipped and an
+/// invalid definition does not throw.
 ArgParseResult<O> scanAndParseCommands<O extends OptionDefinition>(
   final Iterable<String> args, {
   required final CommandDefinition<O> rootCommand,
   final ParserSettings settings = const ParserSettings(),
+  final bool validateDefinitions = true,
 }) {
-  _validateCommandsAndOptions(rootCommand);
+  if (validateDefinitions) {
+    _validateCommandsAndOptions(rootCommand);
+  }
 
   final scannedArgs = scanArgs(args);
 

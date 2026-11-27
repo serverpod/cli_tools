@@ -31,8 +31,8 @@ abstract interface class CommandResolver<O extends OptionDefinition, T> {
   ///
   /// When [runMode] is [CommandRunMode.completion], those errors are left on
   /// the contexts and no exception is thrown, so a command line that is not
-  /// finished can still be completed. [runMode] is recorded on every context
-  /// in the chain.
+  /// finished can still be completed. Command and option definitions are not
+  /// checked. [runMode] is recorded on every context in the chain.
   CommandContext<O, T> resolveConfigurations(
     final Iterable<String> args,
     final Map<String, String>? env,
@@ -60,6 +60,7 @@ class StandardCommandResolver<O extends OptionDefinition, T>
       args,
       rootCommand: runner,
       settings: runner.parserSettings,
+      validateDefinitions: runMode != CommandRunMode.completion,
     );
 
     final contextChain = resolveNext(

@@ -117,6 +117,7 @@ import 'usage_output.dart';
 /// Configuration validation runs first and validates the consistency of all the
 /// defined commands and options. Validation errors are considered programming
 /// errors and if any errors are found a [ConfigDefinitionError] is thrown.
+/// A completion request skips this check.
 ///
 /// Configuration resolution runs next and resolves the current configurations
 /// for the command line, env vars, and config files. Resolution errors are user
@@ -288,6 +289,7 @@ class CommandRunner<O extends OptionDefinition, T>
   ///
   /// Throws [ConfigDefinitionError] if any command or option *definition* is
   /// invalid, before running any middleware or commands.
+  /// A completion request does not check definitions.
   ///
   /// Throws [UsageException] if any configuration input including arguments,
   /// environment variables, and configuration files is invalid,
@@ -338,6 +340,8 @@ class CommandRunner<O extends OptionDefinition, T>
   /// Serves a completion request from a shell completion script:
   /// writes the completion alternatives for the partial command line
   /// [words] to [CompletionSettings.sinks].
+  ///
+  /// Command and option definitions are not checked.
   ///
   /// Completing an option value resolves the configurations of the commands
   /// typed so far and runs their middleware in [CommandRunMode.completion].
@@ -419,12 +423,15 @@ class CommandRunner<O extends OptionDefinition, T>
   }) {
     final parsedArgs = NewParsedArgs(parseResult);
 
+    final validateDefinitions = runMode != CommandRunMode.completion;
+
     final Configuration<O> config = Configuration.resolveNoExcept(
       options: [...persistentOptions, ...options],
       parsedArgs: parsedArgs,
       env: env,
       configBroker: configBroker(prevContext),
       ignoreUnexpectedPositionalArgs: ignoreUnexpectedPositionalArgs,
+      validateDefinitions: validateDefinitions,
     );
 
     // Note, parse errors and positional arguments of [parsedArgs] belong to the
@@ -433,6 +440,7 @@ class CommandRunner<O extends OptionDefinition, T>
       options: builtinPersistentOptions,
       parsedArgs: _FilteredParsedArgs(parsedArgs),
       env: env,
+      validateDefinitions: validateDefinitions,
     );
 
     return CommandContext<O, T>(
